@@ -43,6 +43,7 @@ const GET_TASK = gql`
       completedAt
       dueDate
       reminderAt
+      recurrence
       sortOrder
       createdAt
       steps {
@@ -232,6 +233,7 @@ interface TaskDetail {
   completedAt: string | null;
   dueDate: string | null;
   reminderAt: string | null;
+  recurrence: string | null;
   sortOrder: number;
   createdAt: string;
   steps: TaskStep[];
