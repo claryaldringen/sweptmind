@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useState } from "react";
-import { X, Bell, Calendar, Trash2, Plus, Tag, MapPin } from "lucide-react";
+import { X, Bell, Calendar, Trash2, Plus, Tag, MapPin, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -335,6 +335,7 @@ export function TaskDetailPanel() {
   const [reminderOpen, setReminderOpen] = useState(false);
   const [locationPopoverOpen, setLocationPopoverOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
+  const [recurrenceOpen, setRecurrenceOpen] = useState(false);
 
   if (!taskId) return null;
 
@@ -464,6 +465,41 @@ export function TaskDetailPanel() {
       variables: { id: task.id, input: { locationId: null } },
       refetchQueries: [{ query: GET_TASK, variables: { id: task.id } }],
     });
+  }
+
+  function formatRecurrence(recurrence: string | null): string | null {
+    if (!recurrence) return null;
+    if (recurrence === "DAILY") return t("recurrence.everyDay");
+    if (recurrence === "MONTHLY") return t("recurrence.everyMonth");
+    if (recurrence === "YEARLY") return t("recurrence.everyYear");
+    if (recurrence.startsWith("WEEKLY:")) {
+      const days = recurrence.slice(7).split(",").map(Number);
+      const dayNames = t("recurrence.daysShort") as unknown as string[];
+      if (days.length === 7) return t("recurrence.everyDay");
+      return days.map((d) => dayNames[d]).join(", ");
+    }
+    return null;
+  }
+
+  function handleSetRecurrence(value: string | null) {
+    if (!task) return;
+    updateTask({ variables: { id: task.id, input: { recurrence: value } } });
+    if (value === null) setRecurrenceOpen(false);
+  }
+
+  function handleToggleWeeklyDay(day: number) {
+    if (!task) return;
+    const current = task.recurrence?.startsWith("WEEKLY:")
+      ? task.recurrence.slice(7).split(",").map(Number)
+      : [];
+    const updated = current.includes(day)
+      ? current.filter((d) => d !== day)
+      : [...current, day].sort((a, b) => a - b);
+    if (updated.length === 0) {
+      handleSetRecurrence(null);
+    } else {
+      handleSetRecurrence(`WEEKLY:${updated.join(",")}`);
+    }
   }
 
   if (loading) {
@@ -636,6 +672,89 @@ export function TaskDetailPanel() {
               showTimeToggle={false}
             />
           </ResponsivePicker>
+
+          {/* Recurrence */}
+          <Popover open={recurrenceOpen} onOpenChange={setRecurrenceOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                className={cn("w-full justify-start gap-2", task.recurrence && "text-blue-500")}
+              >
+                <Repeat className="h-4 w-4" />
+                {task.recurrence
+                  ? formatRecurrence(task.recurrence)
+                  : t("recurrence.addRecurrence")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 space-y-2 p-3" align="start">
+              <div className="space-y-1">
+                {(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"] as const).map((type) => (
+                  <Button
+                    key={type}
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "w-full justify-start",
+                      task.recurrence === type && "bg-accent",
+                      type === "WEEKLY" && task.recurrence?.startsWith("WEEKLY:") && "bg-accent",
+                    )}
+                    onClick={() => {
+                      if (type === "WEEKLY") {
+                        const today = new Date().getDay();
+                        handleSetRecurrence(`WEEKLY:${today}`);
+                      } else {
+                        handleSetRecurrence(type);
+                      }
+                    }}
+                  >
+                    {t(`recurrence.${type.toLowerCase() as "daily" | "weekly" | "monthly" | "yearly"}`)}
+                  </Button>
+                ))}
+              </div>
+
+              {task.recurrence?.startsWith("WEEKLY:") && (
+                <>
+                  <Separator />
+                  <div className="flex gap-1">
+                    {(t("recurrence.daysShort") as unknown as string[]).map(
+                      (dayName, index) => {
+                        const isActive = task.recurrence
+                          ?.slice(7)
+                          .split(",")
+                          .map(Number)
+                          .includes(index);
+                        return (
+                          <Button
+                            key={index}
+                            variant={isActive ? "default" : "outline"}
+                            size="sm"
+                            className="h-8 w-8 p-0 text-xs"
+                            onClick={() => handleToggleWeeklyDay(index)}
+                          >
+                            {dayName}
+                          </Button>
+                        );
+                      },
+                    )}
+                  </div>
+                </>
+              )}
+
+              {task.recurrence && (
+                <>
+                  <Separator />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive w-full justify-start"
+                    onClick={() => handleSetRecurrence(null)}
+                  >
+                    {t("recurrence.removeRecurrence")}
+                  </Button>
+                </>
+              )}
+            </PopoverContent>
+          </Popover>
 
           {/* Tags */}
           <div className="space-y-2">
