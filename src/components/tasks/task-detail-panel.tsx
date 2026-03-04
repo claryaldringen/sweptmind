@@ -201,6 +201,12 @@ const CREATE_LOCATION = gql`
   }
 `;
 
+const DELETE_LOCATION = gql`
+  mutation DeleteLocation($id: String!) {
+    deleteLocation(id: $id)
+  }
+`;
+
 interface TaskStep {
   id: string;
   taskId: string;
@@ -323,6 +329,9 @@ export function TaskDetailPanel() {
   });
   const [updateStepTitle] = useMutation(UPDATE_STEP);
   const [createLocation] = useMutation<{ createLocation: TaskLocation }>(CREATE_LOCATION, {
+    refetchQueries: [{ query: GET_LOCATIONS }],
+  });
+  const [deleteLocation] = useMutation<{ deleteLocation: boolean }>(DELETE_LOCATION, {
     refetchQueries: [{ query: GET_LOCATIONS }],
   });
   const { isNearby: checkNearby, userLatitude, userLongitude } = useNearby();
@@ -880,9 +889,18 @@ export function TaskDetailPanel() {
                     {(locationsData?.locations ?? []).length > 0 && (
                       <CommandGroup heading={t("tasks.savedLocations")}>
                         {(locationsData?.locations ?? []).map((loc) => (
-                          <CommandItem key={loc.id} onSelect={() => handleSelectLocation(loc.id)}>
+                          <CommandItem key={loc.id} onSelect={() => handleSelectLocation(loc.id)} className="group/loc">
                             <MapPin className="mr-2 h-3 w-3" />
-                            {loc.name}
+                            <span className="flex-1 truncate">{loc.name}</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteLocation({ variables: { id: loc.id } });
+                              }}
+                              className="rounded-full p-0.5 opacity-0 transition-opacity hover:bg-black/10 group-hover/loc:opacity-100 dark:hover:bg-white/10"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
                           </CommandItem>
                         ))}
                       </CommandGroup>

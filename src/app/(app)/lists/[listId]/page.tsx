@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { List, MapPin, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { List, MapPin, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 import { SortableTaskList } from "@/components/tasks/sortable-task-list";
 import { TaskInput } from "@/components/tasks/task-input";
 import { TaskDetailPanel } from "@/components/tasks/task-detail-panel";
@@ -127,6 +127,12 @@ const CREATE_LOCATION = gql`
   }
 `;
 
+const DELETE_LOCATION = gql`
+  mutation DeleteLocation($id: String!) {
+    deleteLocation(id: $id)
+  }
+`;
+
 const DELETE_LIST = gql`
   mutation DeleteList($id: String!) {
     deleteList(id: $id)
@@ -230,6 +236,9 @@ export default function ListPage() {
   });
 
   const [createLocation] = useMutation<{ createLocation: LocationInfo }>(CREATE_LOCATION, {
+    refetchQueries: [{ query: GET_LOCATIONS }],
+  });
+  const [deleteLocation] = useMutation<{ deleteLocation: boolean }>(DELETE_LOCATION, {
     refetchQueries: [{ query: GET_LOCATIONS }],
   });
 
@@ -370,9 +379,18 @@ export default function ListPage() {
                     {(locationsData?.locations ?? []).length > 0 && (
                       <CommandGroup heading={t("tasks.savedLocations")}>
                         {(locationsData?.locations ?? []).map((loc) => (
-                          <CommandItem key={loc.id} onSelect={() => handleSelectListLocation(loc.id)}>
+                          <CommandItem key={loc.id} onSelect={() => handleSelectListLocation(loc.id)} className="group/loc">
                             <MapPin className="mr-2 h-3 w-3" />
-                            {loc.name}
+                            <span className="flex-1 truncate">{loc.name}</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteLocation({ variables: { id: loc.id } });
+                              }}
+                              className="rounded-full p-0.5 opacity-0 transition-opacity hover:bg-black/10 group-hover/loc:opacity-100 dark:hover:bg-white/10"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
                           </CommandItem>
                         ))}
                       </CommandGroup>
