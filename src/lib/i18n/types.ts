@@ -1,0 +1,128 @@
+export interface Dictionary {
+  auth: {
+    welcome: string;
+    signInSubtitle: string;
+    orContinueWith: string;
+    email: string;
+    emailPlaceholder: string;
+    password: string;
+    passwordPlaceholder: string;
+    invalidCredentials: string;
+    signingIn: string;
+    signIn: string;
+    noAccount: string;
+    signUp: string;
+    createAccount: string;
+    getStartedSubtitle: string;
+    name: string;
+    namePlaceholder: string;
+    creatingAccount: string;
+    alreadyHaveAccount: string;
+    signUpSuccessLoginFailed: string;
+    continueGoogle: string;
+    continueGithub: string;
+  };
+  sidebar: {
+    planned: string;
+    nearby: string;
+    tasks: string;
+    newList: string;
+    settings: string;
+  };
+  tasks: {
+    addTask: string;
+    future: string;
+    completed: string;
+    addStep: string;
+    addDueDate: string;
+    dueDate: string;
+    addReminder: string;
+    reminder: string;
+    removeReminder: string;
+    addTag: string;
+    searchOrCreateTag: string;
+    createTag: string;
+    addNote: string;
+    created: string;
+    addLocation: string;
+    searchLocation: string;
+    savedLocations: string;
+    searchResults: string;
+    removeLocation: string;
+  };
+  lists: {
+    newList: string;
+    listName: string;
+    cancel: string;
+    create: string;
+    rename: string;
+    delete: string;
+    fallbackName: string;
+  };
+  settings: {
+    title: string;
+    appearance: string;
+    light: string;
+    dark: string;
+    system: string;
+    taskCount: string;
+    taskCountDesc: string;
+    allIncomplete: string;
+    onlyVisible: string;
+    language: string;
+  };
+  common: {
+    loading: string;
+    user: string;
+    signOut: string;
+  };
+  landing: {
+    tagline: string;
+    getStarted: string;
+    signIn: string;
+  };
+  pages: {
+    planned: string;
+    nearby: string;
+    tag: string;
+  };
+  locations: {
+    enableTracking: string;
+    trackingActive: string;
+    nearbyRadius: string;
+    permissionDenied: string;
+    approximateLocation: string;
+  };
+  recurrence: {
+    addRecurrence: string;
+    none: string;
+    daily: string;
+    weekly: string;
+    monthly: string;
+    yearly: string;
+    everyDay: string;
+    everyWeek: string;
+    everyMonth: string;
+    everyYear: string;
+    daysShort: string[];
+    removeRecurrence: string;
+  };
+  datePicker: {
+    today: string;
+    tomorrow: string;
+    nextWeek: string;
+    addTime: string;
+    removeTime: string;
+    removeDate: string;
+    dueDate: string;
+    reminder: string;
+  };
+  validation: {
+    invalidEmail: string;
+    passwordRequired: string;
+    nameTooShort: string;
+    passwordTooShort: string;
+  };
+}
+
+export type Locale = "cs" | "en";
