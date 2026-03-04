@@ -43,6 +43,7 @@ const GET_TASKS_BY_LIST = gql`
       isCompleted
       dueDate
       reminderAt
+      recurrence
       sortOrder
       createdAt
       steps {
