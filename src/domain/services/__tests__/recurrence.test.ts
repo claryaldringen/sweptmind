@@ -21,6 +21,13 @@ describe("parseRecurrence", () => {
     expect(parseRecurrence("YEARLY")).toEqual({ type: "YEARLY" });
   });
 
+  it("deduplicates WEEKLY days", () => {
+    expect(parseRecurrence("WEEKLY:1,1,3")).toEqual({
+      type: "WEEKLY",
+      days: [1, 3],
+    });
+  });
+
   it("returns null for invalid input", () => {
     expect(parseRecurrence("INVALID")).toBeNull();
     expect(parseRecurrence("")).toBeNull();
@@ -48,6 +55,10 @@ describe("computeNextDueDate", () => {
     // 2026-03-06 is Friday (day 5). WEEKLY:1,5 = Mon, Fri.
     // Next matching day: Monday 2026-03-09
     expect(computeNextDueDate("WEEKLY:1,5", "2026-03-06")).toBe("2026-03-09");
+  });
+
+  it("WEEKLY: preserves time component", () => {
+    expect(computeNextDueDate("WEEKLY:1,5", "2026-03-04T14:00")).toBe("2026-03-06T14:00");
   });
 
   it("WEEKLY: single day wraps to same day next week", () => {

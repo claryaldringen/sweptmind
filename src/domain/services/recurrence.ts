@@ -36,7 +36,7 @@ export function parseRecurrence(recurrence: string): Recurrence | null {
     const days = daysStr.split(",").map(Number);
     if (days.some((d) => isNaN(d) || d < 0 || d > 6)) return null;
     if (days.length === 0) return null;
-    return { type: "WEEKLY", days: days.sort((a, b) => a - b) };
+    return { type: "WEEKLY", days: [...new Set(days)].sort((a, b) => a - b) };
   }
 
   return null;
