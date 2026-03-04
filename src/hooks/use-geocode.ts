@@ -180,7 +180,7 @@ export function useGeocode(options?: UseGeocodeOptions): UseGeocodeReturn {
         const displayNames = await nominatimLookup(osmIds, locale);
 
         // Step 4: Build results with localized names, sort by distance
-        let converted: GeocodingResult[] = features.map((f, i) => {
+        const converted: GeocodingResult[] = features.map((f, i) => {
           const osmId = featureOsmIds[i];
           const localizedName = osmId ? displayNames.get(osmId) : null;
           const fallbackName = f.properties.name ?? "?";
