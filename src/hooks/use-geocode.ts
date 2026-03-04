@@ -28,12 +28,6 @@ const MIN_INTERVAL_MS = 1000;
 const FETCH_LIMIT = 15;
 const MAX_RESULTS = 5;
 
-function distanceSq(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const dLat = lat2 - lat1;
-  const dLon = (lon2 - lon1) * Math.cos(((lat1 + lat2) / 2) * (Math.PI / 180));
-  return dLat * dLat + dLon * dLon;
-}
-
 // Module-level: single shared promise so IP is fetched at most once
 let ipInfoPromise: Promise<{ latitude: number; longitude: number } | null> | null = null;
 
@@ -179,7 +173,7 @@ export function useGeocode(options?: UseGeocodeOptions): UseGeocodeReturn {
         // Step 3: Nominatim batch lookup for localized display names
         const displayNames = await nominatimLookup(osmIds, locale);
 
-        // Step 4: Build results with localized names, sort by distance
+        // Step 4: Build results with localized names (keep Photon's relevance order)
         const converted: GeocodingResult[] = features.map((f, i) => {
           const osmId = featureOsmIds[i];
           const localizedName = osmId ? displayNames.get(osmId) : null;
@@ -191,15 +185,15 @@ export function useGeocode(options?: UseGeocodeOptions): UseGeocodeReturn {
           };
         });
 
-        if (lat != null && lon != null) {
-          converted.sort(
-            (a, b) =>
-              distanceSq(lat, lon, +a.lat, +a.lon) -
-              distanceSq(lat, lon, +b.lat, +b.lon),
-          );
-        }
+        // Deduplicate by display_name (Nominatim can map different OSM IDs to same name)
+        const seen = new Set<string>();
+        const unique = converted.filter((r) => {
+          if (seen.has(r.display_name)) return false;
+          seen.add(r.display_name);
+          return true;
+        });
 
-        setResults(converted.slice(0, MAX_RESULTS));
+        setResults(unique.slice(0, MAX_RESULTS));
       } catch {
         setResults([]);
       } finally {
