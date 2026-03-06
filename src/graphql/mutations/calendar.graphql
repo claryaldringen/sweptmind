@@ -1,0 +1,11 @@
+mutation GetCalendarToken {
+  getCalendarToken
+}
+
+mutation RegenerateCalendarToken {
+  regenerateCalendarToken
+}
+
+mutation UpdateCalendarSyncAll($syncAll: Boolean!) {
+  updateCalendarSyncAll(syncAll: $syncAll)
+}

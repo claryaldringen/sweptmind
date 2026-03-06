@@ -49,6 +49,12 @@ export interface Dictionary {
     savedLocations: string;
     searchResults: string;
     removeLocation: string;
+    deleteConfirmDesc: string;
+    moveTo: string;
+    convertToList: string;
+    today: string;
+    tomorrow: string;
+    dayAfterTomorrow: string;
   };
   lists: {
     newList: string;
@@ -58,6 +64,15 @@ export interface Dictionary {
     rename: string;
     delete: string;
     fallbackName: string;
+    deleteConfirmDesc: string;
+    renameList: string;
+    save: string;
+  };
+  tags: {
+    rename: string;
+    delete: string;
+    deleteConfirmDesc: string;
+    renameTag: string;
   };
   settings: {
     title: string;
@@ -70,21 +85,81 @@ export interface Dictionary {
     allIncomplete: string;
     onlyVisible: string;
     language: string;
+    import: string;
+    importTitle: string;
+    importDescription: string;
+    importButton: string;
+    importPreview: string;
+    importSuccess: string;
+    importError: string;
+    importEmpty: string;
+    importTaskCount: string;
+    importListCount: string;
+    importConfirm: string;
+    importing: string;
   };
   common: {
     loading: string;
     user: string;
     signOut: string;
+    deleteConfirmTitle: string;
+    deleteConfirmCancel: string;
+    deleteConfirmAction: string;
+    errorTitle: string;
+    errorDescription: string;
+    errorRetry: string;
+    notFoundTitle: string;
+    notFoundDescription: string;
+    notFoundBackHome: string;
   };
   landing: {
     tagline: string;
     getStarted: string;
     signIn: string;
+    heroHeadline: string;
+    heroDescription: string;
+    gtdSectionTitle: string;
+    gtdSectionSubtitle: string;
+    gtdCaptureName: string;
+    gtdCaptureDesc: string;
+    gtdOrganizeName: string;
+    gtdOrganizeDesc: string;
+    gtdExecuteName: string;
+    gtdExecuteDesc: string;
+    featuresSectionTitle: string;
+    featuresSectionSubtitle: string;
+    featureListsName: string;
+    featureListsDesc: string;
+    featurePlanningName: string;
+    featurePlanningDesc: string;
+    featureRecurrenceName: string;
+    featureRecurrenceDesc: string;
+    featureLocationName: string;
+    featureLocationDesc: string;
+    featureTagsName: string;
+    featureTagsDesc: string;
+    featureContextName: string;
+    featureContextDesc: string;
+    ctaHeadline: string;
+    ctaButton: string;
+    ctaSignIn: string;
+    footerMadeWith: string;
+    footerRights: string;
+    footerContact: string;
+    footerPrivacy: string;
   };
   pages: {
     planned: string;
     nearby: string;
     tag: string;
+  };
+  planned: {
+    overdue: string;
+    today: string;
+    tomorrow: string;
+    thisWeek: string;
+    later: string;
+    empty: string;
   };
   locations: {
     enableTracking: string;
@@ -116,6 +191,18 @@ export interface Dictionary {
     removeDate: string;
     dueDate: string;
     reminder: string;
+  };
+  calendar: {
+    title: string;
+    caldavUrl: string;
+    caldavDescription: string;
+    copied: string;
+    copy: string;
+    regenerateToken: string;
+    regenerateConfirm: string;
+    syncAllLabel: string;
+    syncAllDescription: string;
+    generating: string;
   };
   validation: {
     invalidEmail: string;

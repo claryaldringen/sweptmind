@@ -20,8 +20,7 @@ export const en: Dictionary = {
     namePlaceholder: "Your name",
     creatingAccount: "Creating account...",
     alreadyHaveAccount: "Already have an account?",
-    signUpSuccessLoginFailed:
-      "Registration succeeded but sign-in failed. Please try logging in.",
+    signUpSuccessLoginFailed: "Registration succeeded but sign-in failed. Please try logging in.",
     continueGoogle: "Continue with Google",
     continueGithub: "Continue with GitHub",
   },
@@ -52,6 +51,12 @@ export const en: Dictionary = {
     savedLocations: "Saved locations",
     searchResults: "Search results",
     removeLocation: "Remove location",
+    deleteConfirmDesc: "Are you sure you want to delete this task? This action cannot be undone.",
+    moveTo: "Move to",
+    convertToList: "Convert to list",
+    today: "Today",
+    tomorrow: "Tomorrow",
+    dayAfterTomorrow: "Day after tomorrow",
   },
   lists: {
     newList: "New list",
@@ -61,6 +66,16 @@ export const en: Dictionary = {
     rename: "Rename list",
     delete: "Delete list",
     fallbackName: "List",
+    deleteConfirmDesc:
+      "Are you sure you want to delete this list? All tasks in it will be deleted. This action cannot be undone.",
+    renameList: "Rename list",
+    save: "Save",
+  },
+  tags: {
+    rename: "Rename tag",
+    delete: "Delete tag",
+    deleteConfirmDesc: "Are you sure you want to delete this tag? This action cannot be undone.",
+    renameTag: "Rename tag",
   },
   settings: {
     title: "Settings",
@@ -73,22 +88,93 @@ export const en: Dictionary = {
     allIncomplete: "All incomplete",
     onlyVisible: "Only visible",
     language: "Language",
+    import: "Import",
+    importTitle: "Import tasks",
+    importDescription: "Import tasks from a CSV file (exported from Outlook or Microsoft To Do).",
+    importButton: "Import from CSV",
+    importPreview: "Preview ({count} tasks)",
+    importSuccess: "Successfully imported {count} tasks.",
+    importError: "Import failed. Please check the file format.",
+    importEmpty: "CSV file contains no tasks.",
+    importTaskCount: "{count} tasks",
+    importListCount: "{count} lists",
+    importConfirm: "Import",
+    importing: "Importing...",
   },
   common: {
     loading: "Loading...",
     user: "User",
     signOut: "Sign out",
+    deleteConfirmTitle: "Are you sure?",
+    deleteConfirmCancel: "Cancel",
+    deleteConfirmAction: "Delete",
+    errorTitle: "Something went wrong",
+    errorDescription: "An unexpected error occurred. Please try again.",
+    errorRetry: "Try again",
+    notFoundTitle: "Page not found",
+    notFoundDescription: "The page you're looking for doesn't exist or has been moved.",
+    notFoundBackHome: "Back to tasks",
   },
   landing: {
-    tagline:
-      "Stay organized, get things done. A GTD-inspired task management app.",
-    getStarted: "Get Started",
+    tagline: "Stay organized, get things done. A GTD-inspired task management app.",
+    getStarted: "Get Started Free",
     signIn: "Sign In",
+    heroHeadline: "Clear your mind.\nGet things done.",
+    heroDescription:
+      "SweptMind is a task management app inspired by the Getting Things Done methodology. It helps you get every thought out of your head and into a system you can trust.",
+    gtdSectionTitle: "A method that works",
+    gtdSectionSubtitle:
+      "Getting Things Done is a proven productivity system by David Allen. Three simple steps that will change the way you work.",
+    gtdCaptureName: "Capture everything",
+    gtdCaptureDesc:
+      "Get everything out of your head. Every task, idea, or commitment goes straight into your inbox so nothing slips through.",
+    gtdOrganizeName: "Organize",
+    gtdOrganizeDesc:
+      "Assign lists, due dates, and tags. Break big things into small steps. The system shows you what matters.",
+    gtdExecuteName: "Get it done",
+    gtdExecuteDesc:
+      "Focus only on what's next. No more wondering what to do — the system knows for you.",
+    featuresSectionTitle: "Everything you need",
+    featuresSectionSubtitle:
+      "SweptMind gives you tools that naturally support the GTD workflow. Simple, yet powerful.",
+    featureListsName: "Smart lists",
+    featureListsDesc:
+      "Organize tasks into lists and groups. Every project, life area, or context has its place.",
+    featurePlanningName: "Planning",
+    featurePlanningDesc:
+      "Due dates, reminders, and smart visibility. Tasks show up exactly when you need them.",
+    featureRecurrenceName: "Recurrence",
+    featureRecurrenceDesc:
+      "Daily, weekly, or monthly routines. Set it once and SweptMind takes care of the rest.",
+    featureLocationName: "Locations",
+    featureLocationDesc:
+      "Attach tasks to places. See what needs doing nearby — shopping, pickups, meetings.",
+    featureTagsName: "Tags",
+    featureTagsDesc:
+      "Categorize tasks across lists. Filter by context, priority, or whatever makes sense to you.",
+    featureContextName: "Context lists",
+    featureContextDesc:
+      "Split tasks by context — at home, at work, at the computer, on the phone. Always know what you can do right now.",
+    ctaHeadline: "Ready to start?",
+    ctaButton: "Create a free account",
+    ctaSignIn: "Already have an account?",
+    footerMadeWith: "Made with love in Prague",
+    footerRights: "All rights reserved.",
+    footerContact: "Contact",
+    footerPrivacy: "Privacy",
   },
   pages: {
     planned: "Planned",
     nearby: "Nearby",
     tag: "Tag",
+  },
+  planned: {
+    overdue: "Overdue",
+    today: "Today",
+    tomorrow: "Tomorrow",
+    thisWeek: "This week",
+    later: "Later",
+    empty: "No planned tasks",
   },
   locations: {
     enableTracking: "Enable location tracking",
@@ -120,6 +206,21 @@ export const en: Dictionary = {
     removeDate: "Remove date",
     dueDate: "Due date",
     reminder: "Reminder",
+  },
+  calendar: {
+    title: "Calendar",
+    caldavUrl: "CalDAV URL",
+    caldavDescription:
+      "Add this URL to your calendar app (Google Calendar, Apple Calendar, Outlook) to sync tasks.",
+    copied: "Copied!",
+    copy: "Copy",
+    regenerateToken: "Regenerate Token",
+    regenerateConfirm:
+      "This will invalidate the current URL. Calendar apps will need the new URL. Continue?",
+    syncAllLabel: "Sync all tasks with a due date",
+    syncAllDescription:
+      "Default: only tasks with an exact time. Enable to also sync date-only tasks.",
+    generating: "Generating...",
   },
   validation: {
     invalidEmail: "Invalid email address",

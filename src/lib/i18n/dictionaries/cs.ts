@@ -20,8 +20,7 @@ export const cs: Dictionary = {
     namePlaceholder: "Tvoje jméno",
     creatingAccount: "Vytváření účtu...",
     alreadyHaveAccount: "Máš už účet?",
-    signUpSuccessLoginFailed:
-      "Registrace proběhla, ale přihlášení selhalo. Přihlas se ručně.",
+    signUpSuccessLoginFailed: "Registrace proběhla, ale přihlášení selhalo. Přihlas se ručně.",
     continueGoogle: "Pokračovat přes Google",
     continueGithub: "Pokračovat přes GitHub",
   },
@@ -52,6 +51,12 @@ export const cs: Dictionary = {
     savedLocations: "Uložená místa",
     searchResults: "Výsledky hledání",
     removeLocation: "Odebrat místo",
+    deleteConfirmDesc: "Opravdu chceš smazat tento úkol? Tuto akci nelze vrátit zpět.",
+    moveTo: "Přesunout do",
+    convertToList: "Udělat seznam z úkolu",
+    today: "Dnes",
+    tomorrow: "Zítra",
+    dayAfterTomorrow: "Pozítří",
   },
   lists: {
     newList: "Nový seznam",
@@ -61,6 +66,16 @@ export const cs: Dictionary = {
     rename: "Přejmenovat seznam",
     delete: "Smazat seznam",
     fallbackName: "Seznam",
+    deleteConfirmDesc:
+      "Opravdu chceš smazat tento seznam? Všechny úkoly v něm budou smazány. Tuto akci nelze vrátit zpět.",
+    renameList: "Přejmenovat seznam",
+    save: "Uložit",
+  },
+  tags: {
+    rename: "Přejmenovat štítek",
+    delete: "Smazat štítek",
+    deleteConfirmDesc: "Opravdu chceš smazat tento štítek? Tuto akci nelze vrátit zpět.",
+    renameTag: "Přejmenovat štítek",
   },
   settings: {
     title: "Nastavení",
@@ -69,27 +84,97 @@ export const cs: Dictionary = {
     dark: "Tmavý",
     system: "Systém",
     taskCount: "Počet úkolů u seznamů",
-    taskCountDesc:
-      "Číslo zobrazené vedle seznamu v postranním panelu.",
+    taskCountDesc: "Číslo zobrazené vedle seznamu v postranním panelu.",
     allIncomplete: "Všechny nedokončené",
     onlyVisible: "Pouze viditelné",
     language: "Jazyk",
+    import: "Import",
+    importTitle: "Import úkolů",
+    importDescription: "Importuj úkoly z CSV souboru (export z Outlooku nebo Microsoft To Do).",
+    importButton: "Importovat z CSV",
+    importPreview: "Náhled ({count} úkolů)",
+    importSuccess: "Úspěšně importováno {count} úkolů.",
+    importError: "Import se nezdařil. Zkontroluj formát souboru.",
+    importEmpty: "CSV soubor neobsahuje žádné úkoly.",
+    importTaskCount: "{count} úkolů",
+    importListCount: "{count} seznamů",
+    importConfirm: "Importovat",
+    importing: "Importování...",
   },
   common: {
     loading: "Načítání...",
     user: "Uživatel",
     signOut: "Odhlásit se",
+    deleteConfirmTitle: "Opravdu smazat?",
+    deleteConfirmCancel: "Zrušit",
+    deleteConfirmAction: "Smazat",
+    errorTitle: "Něco se pokazilo",
+    errorDescription: "Došlo k neočekávané chybě. Zkuste to prosím znovu.",
+    errorRetry: "Zkusit znovu",
+    notFoundTitle: "Stránka nenalezena",
+    notFoundDescription: "Stránka, kterou hledáš, neexistuje nebo byla přesunuta.",
+    notFoundBackHome: "Zpět na úkoly",
   },
   landing: {
-    tagline:
-      "Organizuj se, zvládej věci. GTD-inspirovaná aplikace na správu úkolů.",
-    getStarted: "Začít",
+    tagline: "Organizuj se, zvládej věci. GTD-inspirovaná aplikace na správu úkolů.",
+    getStarted: "Začít zdarma",
     signIn: "Přihlásit se",
+    heroHeadline: "Ukliď si hlavu.\nZvládni vše.",
+    heroDescription:
+      "SweptMind je aplikace na správu úkolů inspirovaná metodou Getting Things Done. Pomůže ti dostat všechny myšlenky z hlavy do systému, kterému můžeš důvěřovat.",
+    gtdSectionTitle: "Metoda, která funguje",
+    gtdSectionSubtitle:
+      "Getting Things Done je osvědčený systém produktivity od Davida Allena. Tři jednoduché kroky, které změní způsob, jakým pracuješ.",
+    gtdCaptureName: "Zapiš vše",
+    gtdCaptureDesc:
+      "Vysyp z hlavy všechno, co tě napadne. Každý úkol, nápad nebo závazek okamžitě zapiš, ať ti nic neunikne.",
+    gtdOrganizeName: "Roztřiď",
+    gtdOrganizeDesc:
+      "Přiřaď úkolům seznamy, termíny a štítky. Rozděl velké věci na malé kroky. Systém ti ukáže, co je důležité.",
+    gtdExecuteName: "Udělej to",
+    gtdExecuteDesc:
+      "Soustřeď se jen na to, co je teď na řadě. Žádné přemýšlení co dál — systém to ví za tebe.",
+    featuresSectionTitle: "Všechno co potřebuješ",
+    featuresSectionSubtitle:
+      "SweptMind ti dává nástroje, které přirozeně podporují GTD workflow. Jednoduché, ale mocné.",
+    featureListsName: "Chytré seznamy",
+    featureListsDesc:
+      "Organizuj úkoly do seznamů a skupin. Každý projekt, oblast života nebo kontext má své místo.",
+    featurePlanningName: "Plánování",
+    featurePlanningDesc:
+      "Termíny, remindery a chytrá viditelnost. Úkoly se zobrazí právě tehdy, když je potřebuješ.",
+    featureRecurrenceName: "Opakování",
+    featureRecurrenceDesc:
+      "Denní, týdenní nebo měsíční rutiny. Nastav jednou a SweptMind se postará o zbytek.",
+    featureLocationName: "Lokace",
+    featureLocationDesc:
+      "Připoj úkoly k místu. Uvidíš co je potřeba udělat v okolí — nakupování, vyzvednutí, schůzky.",
+    featureTagsName: "Štítky",
+    featureTagsDesc:
+      "Kategorizuj úkoly napříč seznamy. Filtruj podle kontextu, priority nebo čehokoli, co ti dává smysl.",
+    featureContextName: "Kontextové seznamy",
+    featureContextDesc:
+      "Rozděluj úkoly podle kontextu — doma, v práci, u počítače, na telefonu. Vždy víš, co můžeš udělat právě teď.",
+    ctaHeadline: "Připraven/a začít?",
+    ctaButton: "Vytvořit účet zdarma",
+    ctaSignIn: "Už máš účet?",
+    footerMadeWith: "Vytvořeno s láskou v Praze",
+    footerRights: "Všechna práva vyhrazena.",
+    footerContact: "Kontakt",
+    footerPrivacy: "Ochrana soukromí",
   },
   pages: {
     planned: "Plánované",
     nearby: "V okolí",
     tag: "Štítek",
+  },
+  planned: {
+    overdue: "Zpožděné",
+    today: "Dnes",
+    tomorrow: "Zítra",
+    thisWeek: "Tento týden",
+    later: "Později",
+    empty: "Žádné naplánované úkoly",
   },
   locations: {
     enableTracking: "Zapnout sledování polohy",
@@ -121,6 +206,21 @@ export const cs: Dictionary = {
     removeDate: "Odebrat datum",
     dueDate: "Datum splnění",
     reminder: "Připomenutí",
+  },
+  calendar: {
+    title: "Kalendář",
+    caldavUrl: "CalDAV URL",
+    caldavDescription:
+      "Přidej tuto URL do svého kalendáře (Google Calendar, Apple Calendar, Outlook) pro synchronizaci úkolů.",
+    copied: "Zkopírováno!",
+    copy: "Kopírovat",
+    regenerateToken: "Přegenerovat token",
+    regenerateConfirm:
+      "Tím se zneplatní aktuální URL. Kalendářové aplikace budou potřebovat novou URL. Pokračovat?",
+    syncAllLabel: "Synchronizovat všechny úkoly s termínem",
+    syncAllDescription:
+      "Výchozí: pouze úkoly s přesným časem. Zapnutím se budou synchronizovat i úkoly pouze s datem.",
+    generating: "Generuji...",
   },
   validation: {
     invalidEmail: "Neplatná e-mailová adresa",
