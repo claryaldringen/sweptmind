@@ -28,8 +28,16 @@ describe("buildPropfindResponse", () => {
 describe("buildCalendarMultigetResponse", () => {
   it("builds response with multiple events", () => {
     const items = [
-      { href: "/api/caldav/tok/calendars/tasks/uid1.ics", etag: '"etag1"', calendarData: "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:uid1\r\nEND:VEVENT\r\nEND:VCALENDAR" },
-      { href: "/api/caldav/tok/calendars/tasks/uid2.ics", etag: '"etag2"', calendarData: "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:uid2\r\nEND:VEVENT\r\nEND:VCALENDAR" },
+      {
+        href: "/api/caldav/tok/calendars/tasks/uid1.ics",
+        etag: '"etag1"',
+        calendarData: "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:uid1\r\nEND:VEVENT\r\nEND:VCALENDAR",
+      },
+      {
+        href: "/api/caldav/tok/calendars/tasks/uid2.ics",
+        etag: '"etag2"',
+        calendarData: "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:uid2\r\nEND:VEVENT\r\nEND:VCALENDAR",
+      },
     ];
     const xml = buildCalendarMultigetResponse(items);
     expect(xml).toContain("uid1.ics");
@@ -41,9 +49,7 @@ describe("buildCalendarMultigetResponse", () => {
 
 describe("buildMultistatus", () => {
   it("builds list of hrefs with etags", () => {
-    const items = [
-      { href: "/api/caldav/tok/calendars/tasks/uid1.ics", etag: '"e1"' },
-    ];
+    const items = [{ href: "/api/caldav/tok/calendars/tasks/uid1.ics", etag: '"e1"' }];
     const xml = buildMultistatus(items);
     expect(xml).toContain("uid1.ics");
     expect(xml).toContain('"e1"');

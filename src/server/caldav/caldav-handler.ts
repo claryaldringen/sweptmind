@@ -27,10 +27,7 @@ export class CalDavHandler {
     return { id: user.id, calendarSyncAll: syncAll };
   }
 
-  async handlePropfind(
-    token: string,
-    path: string,
-  ): Promise<{ status: number; body: string }> {
+  async handlePropfind(token: string, path: string): Promise<{ status: number; body: string }> {
     const base = `/api/caldav/${token}`;
 
     if (path === "/" || path === "") {
@@ -82,10 +79,7 @@ export class CalDavHandler {
     body: string,
   ): Promise<{ status: number; body: string }> {
     const base = `/api/caldav/${token}`;
-    const tasks = await this.calendarService.getSyncableTasks(
-      user.id,
-      user.calendarSyncAll,
-    );
+    const tasks = await this.calendarService.getSyncableTasks(user.id, user.calendarSyncAll);
     const isMultiget = body.includes("calendar-multiget");
 
     if (isMultiget) {
@@ -101,8 +95,7 @@ export class CalDavHandler {
         const syncEntry = await this.calendarService.getSyncEntry(task.id);
         const icalUid = syncEntry?.icalUid ?? task.id;
         const href = `${base}/calendars/tasks/${icalUid}.ics`;
-        if (requestedHrefs.length > 0 && !requestedHrefs.includes(href))
-          continue;
+        if (requestedHrefs.length > 0 && !requestedHrefs.includes(href)) continue;
         const vevent = taskToVevent(task, icalUid);
         const calendarData = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//SweptMind//CalDAV//EN\r\n${vevent}\r\nEND:VCALENDAR`;
         const etag = this.calendarService.generateEtag(task);
@@ -134,15 +127,9 @@ export class CalDavHandler {
     user: CalDavUser,
     icalUid: string,
   ): Promise<{ status: number; body: string; etag?: string }> {
-    const syncEntry = await this.calendarService.getSyncEntryByIcalUid(
-      user.id,
-      icalUid,
-    );
+    const syncEntry = await this.calendarService.getSyncEntryByIcalUid(user.id, icalUid);
     const taskId = syncEntry?.taskId ?? icalUid;
-    const tasks = await this.calendarService.getSyncableTasks(
-      user.id,
-      user.calendarSyncAll,
-    );
+    const tasks = await this.calendarService.getSyncableTasks(user.id, user.calendarSyncAll);
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return { status: 404, body: "Not Found" };
 
@@ -172,20 +159,13 @@ export class CalDavHandler {
     if (!defaultList) return { status: 500, body: "No default list" };
 
     if (ifMatch) {
-      const existing = await this.calendarService.getSyncEntryByIcalUid(
-        user.id,
-        data.icalUid,
-      );
+      const existing = await this.calendarService.getSyncEntryByIcalUid(user.id, data.icalUid);
       if (existing && existing.etag !== ifMatch) {
         return { status: 412, body: "Precondition Failed" };
       }
     }
 
-    const { task } = await this.calendarService.upsertFromIcal(
-      user.id,
-      defaultList.id,
-      data,
-    );
+    const { task } = await this.calendarService.upsertFromIcal(user.id, defaultList.id, data);
 
     return {
       status: 201,
@@ -194,10 +174,7 @@ export class CalDavHandler {
     };
   }
 
-  async handleDelete(
-    user: CalDavUser,
-    icalUid: string,
-  ): Promise<{ status: number; body: string }> {
+  async handleDelete(user: CalDavUser, icalUid: string): Promise<{ status: number; body: string }> {
     await this.calendarService.deleteFromIcal(user.id, icalUid);
     return { status: 204, body: "" };
   }

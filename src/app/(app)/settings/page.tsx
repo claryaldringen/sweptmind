@@ -90,29 +90,23 @@ export default function SettingsPage() {
 
   // Calendar state
   const [calendarToken, setCalendarToken] = useState<string | null>(null);
-  const [calendarTokenLoading, setCalendarTokenLoading] = useState(false);
+  const [calendarTokenLoading, setCalendarTokenLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [syncAll, setSyncAll] = useState(false);
 
   const [getToken] = useMutation<GetCalendarTokenData>(GET_CALENDAR_TOKEN);
   const [regenerateToken] = useMutation<RegenerateCalendarTokenData>(REGENERATE_CALENDAR_TOKEN);
   const [updateSyncAllMutation] = useMutation(UPDATE_CALENDAR_SYNC_ALL);
   const { data: syncAllData } = useQuery<CalendarSyncAllData>(CALENDAR_SYNC_ALL);
 
+  const syncAll = syncAllData?.calendarSyncAll ?? false;
+
   useEffect(() => {
-    setCalendarTokenLoading(true);
     getToken()
       .then(({ data }) => {
         if (data?.getCalendarToken) setCalendarToken(data.getCalendarToken);
       })
       .finally(() => setCalendarTokenLoading(false));
   }, [getToken]);
-
-  useEffect(() => {
-    if (syncAllData?.calendarSyncAll != null) {
-      setSyncAll(syncAllData.calendarSyncAll);
-    }
-  }, [syncAllData]);
 
   const caldavUrl = calendarToken
     ? `${window.location.origin}/api/caldav/${calendarToken}/calendars/tasks/`
@@ -131,7 +125,6 @@ export default function SettingsPage() {
   };
 
   const handleSyncAllToggle = async (checked: boolean) => {
-    setSyncAll(checked);
     await updateSyncAllMutation({ variables: { syncAll: checked } });
   };
 
@@ -232,9 +225,7 @@ export default function SettingsPage() {
 
         <div>
           <h2 className="mb-3 text-lg font-semibold">{t("settings.taskCount")}</h2>
-          <p className="text-muted-foreground mb-3 text-sm">
-            {t("settings.taskCountDesc")}
-          </p>
+          <p className="text-muted-foreground mb-3 text-sm">{t("settings.taskCountDesc")}</p>
           <div className="flex gap-2">
             <Button
               variant={taskCountMode === "all" ? "default" : "outline"}
@@ -271,9 +262,7 @@ export default function SettingsPage() {
 
         <div>
           <h2 className="mb-3 text-lg font-semibold">{t("settings.importTitle")}</h2>
-          <p className="text-muted-foreground mb-3 text-sm">
-            {t("settings.importDescription")}
-          </p>
+          <p className="text-muted-foreground mb-3 text-sm">{t("settings.importDescription")}</p>
 
           <input
             ref={fileInputRef}

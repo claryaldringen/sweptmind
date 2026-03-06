@@ -32,9 +32,7 @@ describe("recurrenceToRrule", () => {
     expect(recurrenceToRrule("DAILY")).toBe("FREQ=DAILY");
   });
   it("converts WEEKLY with days", () => {
-    expect(recurrenceToRrule("WEEKLY:1,3,5")).toBe(
-      "FREQ=WEEKLY;BYDAY=MO,WE,FR"
-    );
+    expect(recurrenceToRrule("WEEKLY:1,3,5")).toBe("FREQ=WEEKLY;BYDAY=MO,WE,FR");
   });
   it("converts WEEKLY with Sunday", () => {
     expect(recurrenceToRrule("WEEKLY:0,6")).toBe("FREQ=WEEKLY;BYDAY=SU,SA");
@@ -55,9 +53,7 @@ describe("rruleToRecurrence", () => {
     expect(rruleToRecurrence("FREQ=DAILY")).toBe("DAILY");
   });
   it("converts FREQ=WEEKLY;BYDAY=MO,WE,FR", () => {
-    expect(rruleToRecurrence("FREQ=WEEKLY;BYDAY=MO,WE,FR")).toBe(
-      "WEEKLY:1,3,5"
-    );
+    expect(rruleToRecurrence("FREQ=WEEKLY;BYDAY=MO,WE,FR")).toBe("WEEKLY:1,3,5");
   });
   it("converts FREQ=MONTHLY", () => {
     expect(rruleToRecurrence("FREQ=MONTHLY")).toBe("MONTHLY");

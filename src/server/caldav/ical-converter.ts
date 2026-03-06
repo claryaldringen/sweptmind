@@ -42,7 +42,7 @@ export function rruleToRecurrence(rrule: string): string | null {
     rule.split(";").map((p) => {
       const [k, v] = p.split("=");
       return [k, v] as [string, string];
-    })
+    }),
   );
   const freq = parts.get("FREQ");
   if (freq === "DAILY") return "DAILY";
@@ -74,7 +74,7 @@ function addOneDay(dateStr: string): string {
   const d = new Date(
     parseInt(dateStr.slice(0, 4)),
     parseInt(dateStr.slice(4, 6)) - 1,
-    parseInt(dateStr.slice(6, 8))
+    parseInt(dateStr.slice(6, 8)),
   );
   d.setDate(d.getDate() + 1);
   const y = d.getFullYear();

@@ -7,16 +7,10 @@ function xmlHeader(): string {
 }
 
 function escapeXml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-export function buildPropfindResponse(
-  href: string,
-  props: Record<string, string>,
-): string {
+export function buildPropfindResponse(href: string, props: Record<string, string>): string {
   const propLines: string[] = [];
   for (const [key, value] of Object.entries(props)) {
     switch (key) {
@@ -34,9 +28,7 @@ export function buildPropfindResponse(
         );
         break;
       case "resourcetype-calendar":
-        propLines.push(
-          `<d:resourcetype><d:collection/><cal:calendar/></d:resourcetype>`,
-        );
+        propLines.push(`<d:resourcetype><d:collection/><cal:calendar/></d:resourcetype>`);
         break;
       case "getctag":
         propLines.push(`<cs:getctag>${escapeXml(value)}</cs:getctag>`);
@@ -65,9 +57,7 @@ export function buildPropfindResponse(
 </d:multistatus>`;
 }
 
-export function buildMultistatus(
-  items: { href: string; etag: string }[],
-): string {
+export function buildMultistatus(items: { href: string; etag: string }[]): string {
   const responses = items
     .map(
       (item) => `  <d:response>

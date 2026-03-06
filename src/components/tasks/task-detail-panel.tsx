@@ -3,33 +3,29 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { useState } from "react";
-import { X, Bell, Calendar, Trash2, Plus, Tag, MapPin, Repeat } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { ResponsivePicker } from "@/components/ui/responsive-picker";
-import { DatePickerContent } from "@/components/tasks/date-picker-content";
 import { cn } from "@/lib/utils";
-import { getTagColorClasses } from "@/lib/tag-colors";
 import { useGeocode } from "@/hooks/use-geocode";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { format, parseISO } from "date-fns";
 import { cs } from "date-fns/locale/cs";
 import { enUS } from "date-fns/locale/en-US";
 import { useTranslations } from "@/lib/i18n";
+import { TaskSteps } from "./detail/task-steps";
+import { TaskTags } from "./detail/task-tags";
+import { TaskLocation } from "./detail/task-location";
+import { TaskRecurrence } from "./detail/task-recurrence";
+import { TaskDates } from "./detail/task-dates";
+import { TaskActions } from "./detail/task-actions";
+
+// ---------------------------------------------------------------------------
+// GraphQL operations
+// ---------------------------------------------------------------------------
 
 const GET_TASK = gql`
   query GetTask($id: String!) {
@@ -99,6 +95,8 @@ const TOGGLE_COMPLETED = gql`
       id
       isCompleted
       completedAt
+      dueDate
+      reminderAt
     }
   }
 `;
@@ -207,6 +205,10 @@ const DELETE_LOCATION = gql`
   }
 `;
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
 interface TaskStep {
   id: string;
   taskId: string;
@@ -286,21 +288,34 @@ interface DeleteStepData {
   deleteStep: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export function TaskDetailPanel() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { t, locale: appLocale } = useTranslations();
+  const { t, tArray, locale: appLocale } = useTranslations();
   const dateFnsLocale = appLocale === "cs" ? cs : enUS;
   const taskId = searchParams.get("task");
 
-  const { data, loading } = useQuery<GetTaskData>(GET_TASK, {
+  // ---- Queries ----
+
+  const { data, loading, error } = useQuery<GetTaskData>(GET_TASK, {
     variables: { id: taskId! },
     skip: !taskId,
   });
+  const { data: tagsData } = useQuery<{ tags: TaskTag[] }>(GET_TAGS);
+  const { data: locationsData } = useQuery<{ locations: TaskLocation[] }>(GET_LOCATIONS);
 
-  const [updateTask] = useMutation<UpdateTaskData>(UPDATE_TASK);
-  const [toggleCompleted] = useMutation<ToggleCompletedData>(TOGGLE_COMPLETED);
+  // ---- Mutations ----
 
+  const [updateTask] = useMutation<UpdateTaskData>(UPDATE_TASK, {
+    refetchQueries: "active",
+  });
+  const [toggleCompleted] = useMutation<ToggleCompletedData>(TOGGLE_COMPLETED, {
+    refetchQueries: "active",
+  });
   const [deleteTask] = useMutation<DeleteTaskData>(DELETE_TASK, {
     update(cache) {
       cache.evict({
@@ -310,45 +325,128 @@ export function TaskDetailPanel() {
     },
   });
   const [createStep] = useMutation<CreateStepData>(CREATE_STEP, {
-    refetchQueries: [{ query: GET_TASK, variables: { id: taskId } }],
+    update(cache, { data }) {
+      if (!data?.createStep || !taskId) return;
+      cache.modify({
+        id: cache.identify({ __typename: "Task", id: taskId }),
+        fields: {
+          steps(existing = []) {
+            const newRef = cache.writeFragment({
+              data: data.createStep,
+              fragment: gql`
+                fragment NewStep on Step {
+                  id
+                  taskId
+                  title
+                  isCompleted
+                  sortOrder
+                }
+              `,
+            });
+            return [...existing, newRef];
+          },
+        },
+      });
+    },
   });
   const [toggleStep] = useMutation<ToggleStepData>(TOGGLE_STEP);
+  const [updateStepTitle] = useMutation(UPDATE_STEP);
   const [deleteStep] = useMutation<DeleteStepData>(DELETE_STEP, {
-    refetchQueries: [{ query: GET_TASK, variables: { id: taskId } }],
+    update(cache, _result, { variables }) {
+      if (!variables?.id || !taskId) return;
+      const stepId = variables.id as string;
+      cache.modify({
+        id: cache.identify({ __typename: "Task", id: taskId }),
+        fields: {
+          steps(existing = [], { readField }) {
+            return existing.filter((ref: { __ref: string }) => readField("id", ref) !== stepId);
+          },
+        },
+      });
+      cache.evict({ id: cache.identify({ __typename: "Step", id: stepId }) });
+      cache.gc();
+    },
   });
-  const { data: tagsData } = useQuery<{ tags: TaskTag[] }>(GET_TAGS);
-  const { data: locationsData } = useQuery<{ locations: TaskLocation[] }>(GET_LOCATIONS);
   const [createTag] = useMutation<{ createTag: TaskTag }>(CREATE_TAG, {
     refetchQueries: [{ query: GET_TAGS }],
   });
   const [addTagToTask] = useMutation<{ addTagToTask: boolean }>(ADD_TAG_TO_TASK, {
-    refetchQueries: [{ query: GET_TASK, variables: { id: taskId } }],
+    update(cache, _result, { variables }) {
+      if (!variables?.tagId || !taskId) return;
+      const tagId = variables.tagId as string;
+      const allTags = tagsData?.tags ?? [];
+      const tag = allTags.find((t) => t.id === tagId);
+      if (!tag) return;
+      cache.modify({
+        id: cache.identify({ __typename: "Task", id: taskId }),
+        fields: {
+          tags(existing = []) {
+            const newRef = cache.writeFragment({
+              data: tag,
+              fragment: gql`
+                fragment NewTag on Tag {
+                  id
+                  name
+                  color
+                }
+              `,
+            });
+            return [...existing, newRef];
+          },
+        },
+      });
+    },
   });
   const [removeTagFromTask] = useMutation<{ removeTagFromTask: boolean }>(REMOVE_TAG_FROM_TASK, {
-    refetchQueries: [{ query: GET_TASK, variables: { id: taskId } }],
+    update(cache, _result, { variables }) {
+      if (!variables?.tagId || !taskId) return;
+      const tagId = variables.tagId as string;
+      cache.modify({
+        id: cache.identify({ __typename: "Task", id: taskId }),
+        fields: {
+          tags(existing = [], { readField }) {
+            return existing.filter((ref: { __ref: string }) => readField("id", ref) !== tagId);
+          },
+        },
+      });
+    },
   });
-  const [updateStepTitle] = useMutation(UPDATE_STEP);
   const [createLocation] = useMutation<{ createLocation: TaskLocation }>(CREATE_LOCATION, {
     refetchQueries: [{ query: GET_LOCATIONS }],
   });
   const [deleteLocation] = useMutation<{ deleteLocation: boolean }>(DELETE_LOCATION, {
     refetchQueries: [{ query: GET_LOCATIONS }],
   });
+
+  // ---- Hooks ----
+
   const { isNearby: checkNearby, userLatitude, userLongitude } = useNearby();
   const geocode = useGeocode({ userLatitude, userLongitude, locale: appLocale });
 
-  const [newStepTitle, setNewStepTitle] = useState("");
-  const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
-  const [newTagName, setNewTagName] = useState("");
-  const [dueDateOpen, setDueDateOpen] = useState(false);
-  const [reminderOpen, setReminderOpen] = useState(false);
-  const [locationPopoverOpen, setLocationPopoverOpen] = useState(false);
-  const [locationSearch, setLocationSearch] = useState("");
-  const [recurrenceOpen, setRecurrenceOpen] = useState(false);
+  // ---- Early returns ----
 
   if (!taskId) return null;
 
+  if (loading) {
+    return (
+      <div className="bg-background w-96 border-l p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="bg-muted h-6 w-3/4 rounded" />
+          <div className="bg-muted h-4 w-1/2 rounded" />
+          <div className="bg-muted h-20 rounded" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="p-4 text-red-500">Failed to load task</div>;
+  }
+
   const task = data?.task;
+  if (!task) return null;
+
+  // ---- Handlers ----
 
   function closePanel() {
     const params = new URLSearchParams(searchParams.toString());
@@ -359,9 +457,7 @@ export function TaskDetailPanel() {
   function handleTitleBlur(e: React.FocusEvent<HTMLInputElement>) {
     const newTitle = e.target.value.trim();
     if (task && newTitle && newTitle !== task.title) {
-      updateTask({
-        variables: { id: task.id, input: { title: newTitle } },
-      });
+      updateTask({ variables: { id: task.id, input: { title: newTitle } } });
     } else if (task) {
       e.target.value = task.title;
     }
@@ -370,10 +466,7 @@ export function TaskDetailPanel() {
   function handleNotesBlur(e: React.FocusEvent<HTMLTextAreaElement>) {
     if (task && e.target.value !== (task.notes ?? "")) {
       updateTask({
-        variables: {
-          id: task.id,
-          input: { notes: e.target.value || null },
-        },
+        variables: { id: task.id, input: { notes: e.target.value || null } },
       });
     }
   }
@@ -397,13 +490,14 @@ export function TaskDetailPanel() {
     updateTask({ variables: { id: task.id, input: { dueDate } } });
   }
 
-  async function handleAddStep(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newStepTitle.trim() || !task) return;
-    await createStep({
-      variables: { input: { taskId: task.id, title: newStepTitle.trim() } },
-    });
-    setNewStepTitle("");
+  function handleReminderSelect(date: Date | undefined) {
+    if (!task) return;
+    if (!date) {
+      updateTask({ variables: { id: task.id, input: { reminderAt: null } } });
+      return;
+    }
+    const reminderAt = format(date, "yyyy-MM-dd");
+    updateTask({ variables: { id: task.id, input: { reminderAt } } });
   }
 
   function handleDelete() {
@@ -411,10 +505,20 @@ export function TaskDetailPanel() {
     closePanel();
   }
 
+  // Steps handlers
+
+  async function handleAddStep(title: string) {
+    if (!task) return;
+    await createStep({
+      variables: { input: { taskId: task.id, title } },
+    });
+  }
+
+  // Tags handlers
+
   async function handleAddTag(tagId: string) {
     if (!task) return;
     await addTagToTask({ variables: { taskId: task.id, tagId } });
-    setTagPopoverOpen(false);
   }
 
   async function handleRemoveTag(tagId: string) {
@@ -422,30 +526,30 @@ export function TaskDetailPanel() {
     await removeTagFromTask({ variables: { taskId: task.id, tagId } });
   }
 
-  async function handleCreateAndAddTag() {
-    if (!newTagName.trim() || !task) return;
+  async function handleCreateAndAddTag(name: string) {
+    if (!task) return;
     const result = await createTag({
-      variables: { input: { name: newTagName.trim() } },
+      variables: { input: { name } },
     });
     if (result.data?.createTag) {
       await addTagToTask({ variables: { taskId: task.id, tagId: result.data.createTag.id } });
     }
-    setNewTagName("");
-    setTagPopoverOpen(false);
   }
+
+  // Location handlers
 
   async function handleSelectLocation(locationId: string) {
     if (!task) return;
     await updateTask({
       variables: { id: task.id, input: { locationId } },
-      refetchQueries: [{ query: GET_TASK, variables: { id: task.id } }],
     });
-    setLocationPopoverOpen(false);
-    setLocationSearch("");
-    geocode.clear();
   }
 
-  async function handleSelectGeocodingResult(result: { display_name: string; lat: string; lon: string }) {
+  async function handleSelectGeocodingResult(result: {
+    display_name: string;
+    lat: string;
+    lon: string;
+  }) {
     if (!task) return;
     const locationResult = await createLocation({
       variables: {
@@ -459,22 +563,22 @@ export function TaskDetailPanel() {
     });
     if (locationResult.data?.createLocation) {
       await updateTask({
-        variables: { id: task.id, input: { locationId: locationResult.data.createLocation.id } },
-        refetchQueries: [{ query: GET_TASK, variables: { id: task.id } }],
+        variables: {
+          id: task.id,
+          input: { locationId: locationResult.data.createLocation.id },
+        },
       });
     }
-    setLocationPopoverOpen(false);
-    setLocationSearch("");
-    geocode.clear();
   }
 
   async function handleRemoveLocation() {
     if (!task) return;
     await updateTask({
       variables: { id: task.id, input: { locationId: null } },
-      refetchQueries: [{ query: GET_TASK, variables: { id: task.id } }],
     });
   }
+
+  // Recurrence handlers
 
   function formatRecurrence(recurrence: string | null): string | null {
     if (!recurrence) return null;
@@ -483,7 +587,7 @@ export function TaskDetailPanel() {
     if (recurrence === "YEARLY") return t("recurrence.everyYear");
     if (recurrence.startsWith("WEEKLY:")) {
       const days = recurrence.slice(7).split(",").map(Number);
-      const dayNames = t("recurrence.daysShort") as unknown as string[];
+      const dayNames = tArray("recurrence.daysShort");
       if (days.length === 7) return t("recurrence.everyDay");
       return days.map((d) => dayNames[d]).join(", ");
     }
@@ -493,7 +597,6 @@ export function TaskDetailPanel() {
   function handleSetRecurrence(value: string | null) {
     if (!task) return;
     updateTask({ variables: { id: task.id, input: { recurrence: value } } });
-    if (value === null) setRecurrenceOpen(false);
   }
 
   function handleToggleWeeklyDay(day: number) {
@@ -511,19 +614,7 @@ export function TaskDetailPanel() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="bg-background w-96 border-l p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="bg-muted h-6 w-3/4 rounded" />
-          <div className="bg-muted h-4 w-1/2 rounded" />
-          <div className="bg-muted h-20 rounded" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!task) return null;
+  // ---- Render ----
 
   return (
     <div className="bg-background flex w-96 flex-col border-l">
@@ -553,376 +644,95 @@ export function TaskDetailPanel() {
               }
             }}
             className={cn(
-              "h-auto border-0 bg-transparent p-0 text-lg font-medium leading-tight shadow-none outline-none focus-visible:ring-0 md:text-lg",
+              "h-auto border-0 bg-transparent p-0 text-lg leading-tight font-medium shadow-none outline-none focus-visible:ring-0 md:text-lg",
               task.isCompleted && "text-muted-foreground line-through",
             )}
           />
         </div>
 
         {/* Steps */}
-        <div className="space-y-1">
-          {task.steps?.map((step: { id: string; title: string; isCompleted: boolean }) => (
-            <div key={step.id} className="group flex items-center gap-2">
-              <Checkbox
-                checked={step.isCompleted}
-                onCheckedChange={() => toggleStep({ variables: { id: step.id } })}
-                className="h-4 w-4 rounded-full"
-              />
-              <Input
-                defaultValue={step.title}
-                onBlur={(e) => {
-                  const newTitle = e.target.value.trim();
-                  if (newTitle && newTitle !== step.title) {
-                    updateStepTitle({ variables: { id: step.id, title: newTitle } });
-                  } else {
-                    e.target.value = step.title;
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") e.currentTarget.blur();
-                  if (e.key === "Escape") {
-                    e.currentTarget.value = step.title;
-                    e.currentTarget.blur();
-                  }
-                }}
-                className={cn(
-                  "h-auto flex-1 border-0 bg-transparent p-0 text-sm shadow-none outline-none focus-visible:ring-0 md:text-sm",
-                  step.isCompleted && "text-muted-foreground line-through",
-                )}
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100"
-                onClick={() => deleteStep({ variables: { id: step.id } })}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          ))}
-          <form onSubmit={handleAddStep} className="flex items-center gap-2">
-            <Plus className="text-muted-foreground h-4 w-4" />
-            <Input
-              value={newStepTitle}
-              onChange={(e) => setNewStepTitle(e.target.value)}
-              placeholder={t("tasks.addStep")}
-              className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
-            />
-          </form>
-        </div>
+        <TaskSteps
+          steps={task.steps ?? []}
+          onAddStep={handleAddStep}
+          onToggleStep={(id) => toggleStep({ variables: { id } })}
+          onUpdateStepTitle={(id, title) => updateStepTitle({ variables: { id, title } })}
+          onDeleteStep={(id) => deleteStep({ variables: { id } })}
+          addStepLabel={t("tasks.addStep")}
+        />
 
         <Separator />
 
         {/* Actions */}
         <div className="space-y-1">
-          <ResponsivePicker
-            open={dueDateOpen}
-            onOpenChange={setDueDateOpen}
-            title={t("datePicker.dueDate")}
-            trigger={
-              <Button
-                variant="ghost"
-                className={cn("w-full justify-start gap-2", task.dueDate && "text-blue-500")}
-              >
-                <Calendar className="h-4 w-4" />
-                {task.dueDate
-                  ? t("tasks.dueDate", { date: format(parseISO(task.dueDate), task.dueDate.includes("T") ? "MMM d, yyyy h:mm a" : "MMM d, yyyy", { locale: dateFnsLocale }) })
-                  : t("tasks.addDueDate")}
-              </Button>
+          {/* Due date + Reminder */}
+          <TaskDates
+            dueDate={task.dueDate}
+            reminderAt={task.reminderAt}
+            onDateSelect={handleDateSelect}
+            onTimeChange={handleTimeChange}
+            onClearDueDate={() =>
+              updateTask({ variables: { id: task.id, input: { dueDate: null } } })
             }
-          >
-            <DatePickerContent
-              value={task.dueDate ? parseISO(task.dueDate) : undefined}
-              hasTime={task.dueDate?.includes("T") ?? false}
-              timeValue={task.dueDate?.includes("T") ? task.dueDate.split("T")[1] : ""}
-              onDateSelect={handleDateSelect}
-              onTimeChange={handleTimeChange}
-              onClear={() => updateTask({ variables: { id: task.id, input: { dueDate: null } } })}
-              onClose={() => setDueDateOpen(false)}
-              t={t}
-              dateFnsLocale={dateFnsLocale}
-              showTimeToggle
-            />
-          </ResponsivePicker>
-
-          {/* Reminder */}
-          <ResponsivePicker
-            open={reminderOpen}
-            onOpenChange={setReminderOpen}
-            title={t("datePicker.reminder")}
-            trigger={
-              <Button
-                variant="ghost"
-                className={cn("w-full justify-start gap-2", task.reminderAt && "text-blue-500")}
-              >
-                <Bell className="h-4 w-4" />
-                {task.reminderAt
-                  ? t("tasks.reminder", { date: format(parseISO(task.reminderAt), "MMM d, yyyy", { locale: dateFnsLocale }) })
-                  : t("tasks.addReminder")}
-              </Button>
+            onReminderSelect={handleReminderSelect}
+            onClearReminder={() =>
+              updateTask({ variables: { id: task.id, input: { reminderAt: null } } })
             }
-          >
-            <DatePickerContent
-              value={task.reminderAt ? parseISO(task.reminderAt) : undefined}
-              hasTime={false}
-              timeValue=""
-              onDateSelect={(date) => {
-                if (!date) {
-                  updateTask({ variables: { id: task.id, input: { reminderAt: null } } });
-                  return;
-                }
-                const reminderAt = format(date, "yyyy-MM-dd");
-                updateTask({ variables: { id: task.id, input: { reminderAt } } });
-              }}
-              onClear={() => updateTask({ variables: { id: task.id, input: { reminderAt: null } } })}
-              onClose={() => setReminderOpen(false)}
-              t={t}
-              dateFnsLocale={dateFnsLocale}
-              showTimeToggle={false}
-            />
-          </ResponsivePicker>
+            t={t}
+            dateFnsLocale={dateFnsLocale}
+          />
 
           {/* Recurrence */}
-          <Popover open={recurrenceOpen} onOpenChange={setRecurrenceOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                className={cn("w-full justify-start gap-2", task.recurrence && "text-blue-500")}
-              >
-                <Repeat className="h-4 w-4" />
-                {task.recurrence
-                  ? formatRecurrence(task.recurrence)
-                  : t("recurrence.addRecurrence")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 space-y-2 p-3" align="start">
-              <div className="space-y-1">
-                {(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"] as const).map((type) => (
-                  <Button
-                    key={type}
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "w-full justify-start",
-                      task.recurrence === type && "bg-accent",
-                      type === "WEEKLY" && task.recurrence?.startsWith("WEEKLY:") && "bg-accent",
-                    )}
-                    onClick={() => {
-                      if (type === "WEEKLY") {
-                        const today = new Date().getDay();
-                        handleSetRecurrence(`WEEKLY:${today}`);
-                      } else {
-                        handleSetRecurrence(type);
-                      }
-                    }}
-                  >
-                    {t(`recurrence.${type.toLowerCase() as "daily" | "weekly" | "monthly" | "yearly"}`)}
-                  </Button>
-                ))}
-              </div>
-
-              {task.recurrence?.startsWith("WEEKLY:") && (
-                <>
-                  <Separator />
-                  <div className="flex gap-1">
-                    {(t("recurrence.daysShort") as unknown as string[]).map(
-                      (dayName, index) => {
-                        const isActive = task.recurrence
-                          ?.slice(7)
-                          .split(",")
-                          .map(Number)
-                          .includes(index);
-                        return (
-                          <Button
-                            key={index}
-                            variant={isActive ? "default" : "outline"}
-                            size="sm"
-                            className="h-8 w-8 p-0 text-xs"
-                            onClick={() => handleToggleWeeklyDay(index)}
-                          >
-                            {dayName}
-                          </Button>
-                        );
-                      },
-                    )}
-                  </div>
-                </>
-              )}
-
-              {task.recurrence && (
-                <>
-                  <Separator />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive w-full justify-start"
-                    onClick={() => handleSetRecurrence(null)}
-                  >
-                    {t("recurrence.removeRecurrence")}
-                  </Button>
-                </>
-              )}
-            </PopoverContent>
-          </Popover>
+          <TaskRecurrence
+            recurrence={task.recurrence}
+            onSetRecurrence={handleSetRecurrence}
+            onToggleWeeklyDay={handleToggleWeeklyDay}
+            formatRecurrence={formatRecurrence}
+            daysShort={tArray("recurrence.daysShort")}
+            addRecurrenceLabel={t("recurrence.addRecurrence")}
+            dailyLabel={t("recurrence.daily")}
+            weeklyLabel={t("recurrence.weekly")}
+            monthlyLabel={t("recurrence.monthly")}
+            yearlyLabel={t("recurrence.yearly")}
+            removeRecurrenceLabel={t("recurrence.removeRecurrence")}
+          />
 
           {/* Tags */}
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-1">
-              {task.tags?.map((tag) => {
-                const colors = getTagColorClasses(tag.color);
-                return (
-                  <Badge
-                    key={tag.id}
-                    variant="secondary"
-                    className={cn("gap-1 pr-1", colors.bg, colors.text)}
-                  >
-                    {tag.name}
-                    <button
-                      onClick={() => handleRemoveTag(tag.id)}
-                      className="rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                );
-              })}
-            </div>
-            <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start gap-2">
-                  <Tag className="h-4 w-4" />
-                  {t("tasks.addTag")}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-0" align="start">
-                <Command>
-                  <CommandInput
-                    placeholder={t("tasks.searchOrCreateTag")}
-                    value={newTagName}
-                    onValueChange={setNewTagName}
-                  />
-                  <CommandList>
-                    <CommandEmpty>
-                      {newTagName.trim() && (
-                        <button
-                          onClick={handleCreateAndAddTag}
-                          className="text-primary cursor-pointer text-sm"
-                        >
-                          {t("tasks.createTag", { name: newTagName.trim() })}
-                        </button>
-                      )}
-                    </CommandEmpty>
-                    <CommandGroup>
-                      {(tagsData?.tags ?? [])
-                        .filter((tg) => !task.tags?.some((tt) => tt.id === tg.id))
-                        .map((tag) => {
-                          const colors = getTagColorClasses(tag.color);
-                          return (
-                            <CommandItem key={tag.id} onSelect={() => handleAddTag(tag.id)}>
-                              <span className={cn("h-3 w-3 rounded-full", colors.bg)} />
-                              {tag.name}
-                            </CommandItem>
-                          );
-                        })}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
+          <TaskTags
+            taskTags={task.tags ?? []}
+            allTags={tagsData?.tags ?? []}
+            onAddTag={handleAddTag}
+            onRemoveTag={handleRemoveTag}
+            onCreateAndAddTag={handleCreateAndAddTag}
+            addTagLabel={t("tasks.addTag")}
+            searchOrCreateTagLabel={t("tasks.searchOrCreateTag")}
+            createTagLabel={(name) => t("tasks.createTag", { name })}
+          />
 
           {/* Location */}
-          <div className="space-y-2">
-            {task.location && (
-              <div className="flex items-center gap-1">
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    "gap-1 pr-1",
-                    checkNearby(task.location.latitude, task.location.longitude)
-                      ? "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
-                      : "",
-                  )}
-                >
-                  <MapPin className={cn(
-                    "h-3 w-3",
-                    checkNearby(task.location.latitude, task.location.longitude) && "animate-pulse",
-                  )} />
-                  {task.location.name}
-                  <button
-                    onClick={handleRemoveLocation}
-                    className="rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              </div>
-            )}
-            <Popover
-              open={locationPopoverOpen}
-              onOpenChange={(open) => {
-                setLocationPopoverOpen(open);
-                if (!open) {
-                  setLocationSearch("");
-                  geocode.clear();
-                }
-              }}
-            >
-              <PopoverTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start gap-2">
-                  <MapPin className="h-4 w-4" />
-                  {t("tasks.addLocation")}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-72 p-0" align="start">
-                <Command shouldFilter={false}>
-                  <CommandInput
-                    placeholder={t("tasks.searchLocation")}
-                    value={locationSearch}
-                    onValueChange={(val) => {
-                      setLocationSearch(val);
-                      geocode.search(val);
-                    }}
-                  />
-                  <CommandList>
-                    <CommandEmpty />
-                    {(locationsData?.locations ?? []).length > 0 && (
-                      <CommandGroup heading={t("tasks.savedLocations")}>
-                        {(locationsData?.locations ?? []).map((loc) => (
-                          <CommandItem key={loc.id} onSelect={() => handleSelectLocation(loc.id)} className="group/loc">
-                            <MapPin className="mr-2 h-3 w-3" />
-                            <span className="flex-1 truncate">{loc.name}</span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteLocation({ variables: { id: loc.id } });
-                              }}
-                              className="rounded-full p-0.5 opacity-0 transition-opacity hover:bg-black/10 group-hover/loc:opacity-100 dark:hover:bg-white/10"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    )}
-                    {geocode.results.length > 0 && (
-                      <CommandGroup heading={t("tasks.searchResults")}>
-                        {geocode.results.map((result, i) => (
-                          <CommandItem
-                            key={i}
-                            onSelect={() => handleSelectGeocodingResult(result)}
-                          >
-                            <MapPin className="mr-2 h-3 w-3" />
-                            <span className="truncate">{result.display_name}</span>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    )}
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
+          <TaskLocation
+            location={task.location}
+            savedLocations={
+              (locationsData?.locations ?? []) as Array<{
+                id: string;
+                name: string;
+                latitude: number;
+                longitude: number;
+                address?: string | null;
+              }>
+            }
+            geocodeResults={geocode.results}
+            onSearch={geocode.search}
+            onClearSearch={geocode.clear}
+            onSelectLocation={handleSelectLocation}
+            onSelectGeocodingResult={handleSelectGeocodingResult}
+            onRemoveLocation={handleRemoveLocation}
+            onDeleteSavedLocation={(id) => deleteLocation({ variables: { id } })}
+            checkNearby={checkNearby}
+            addLocationLabel={t("tasks.addLocation")}
+            searchLocationLabel={t("tasks.searchLocation")}
+            savedLocationsLabel={t("tasks.savedLocations")}
+            searchResultsLabel={t("tasks.searchResults")}
+          />
         </div>
 
         <Separator />
@@ -937,14 +747,16 @@ export function TaskDetailPanel() {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t px-4 py-3">
-        <span className="text-muted-foreground text-xs">
-          {t("tasks.created", { date: format(parseISO(task.createdAt), "EEE, MMM d", { locale: dateFnsLocale }) })}
-        </span>
-        <Button variant="ghost" size="icon" onClick={handleDelete}>
-          <Trash2 className="text-muted-foreground h-4 w-4" />
-        </Button>
-      </div>
+      <TaskActions
+        createdLabel={t("tasks.created", {
+          date: format(parseISO(task.createdAt), "EEE, MMM d", { locale: dateFnsLocale }),
+        })}
+        onDelete={handleDelete}
+        deleteConfirmTitle={t("common.deleteConfirmTitle")}
+        deleteConfirmDesc={t("tasks.deleteConfirmDesc")}
+        deleteConfirmCancel={t("common.deleteConfirmCancel")}
+        deleteConfirmAction={t("common.deleteConfirmAction")}
+      />
     </div>
   );
 }

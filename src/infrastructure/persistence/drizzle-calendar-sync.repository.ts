@@ -21,10 +21,7 @@ export class DrizzleCalendarSyncRepository implements ICalendarSyncRepository {
 
   async findByIcalUid(userId: string, icalUid: string): Promise<CalendarSync | undefined> {
     return this.db.query.calendarSync.findFirst({
-      where: and(
-        eq(schema.calendarSync.userId, userId),
-        eq(schema.calendarSync.icalUid, icalUid),
-      ),
+      where: and(eq(schema.calendarSync.userId, userId), eq(schema.calendarSync.icalUid, icalUid)),
     });
   }
 
@@ -43,10 +40,7 @@ export class DrizzleCalendarSyncRepository implements ICalendarSyncRepository {
         .returning();
       return updated;
     }
-    const [created] = await this.db
-      .insert(schema.calendarSync)
-      .values(data)
-      .returning();
+    const [created] = await this.db.insert(schema.calendarSync).values(data).returning();
     return created;
   }
 
@@ -58,19 +52,12 @@ export class DrizzleCalendarSyncRepository implements ICalendarSyncRepository {
   }
 
   async deleteByTaskId(taskId: string): Promise<void> {
-    await this.db
-      .delete(schema.calendarSync)
-      .where(eq(schema.calendarSync.taskId, taskId));
+    await this.db.delete(schema.calendarSync).where(eq(schema.calendarSync.taskId, taskId));
   }
 
   async deleteByIcalUid(userId: string, icalUid: string): Promise<void> {
     await this.db
       .delete(schema.calendarSync)
-      .where(
-        and(
-          eq(schema.calendarSync.userId, userId),
-          eq(schema.calendarSync.icalUid, icalUid),
-        ),
-      );
+      .where(and(eq(schema.calendarSync.userId, userId), eq(schema.calendarSync.icalUid, icalUid)));
   }
 }

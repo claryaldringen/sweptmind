@@ -29,7 +29,14 @@ function makeSyncRepo(overrides: Partial<ICalendarSyncRepository> = {}): ICalend
     findByUserId: vi.fn().mockResolvedValue([]),
     findByTaskId: vi.fn().mockResolvedValue(undefined),
     findByIcalUid: vi.fn().mockResolvedValue(undefined),
-    upsert: vi.fn().mockResolvedValue({ id: "sync-1", userId: "user-1", taskId: "task-1", icalUid: "uid-1", etag: "etag-1", lastSyncedAt: new Date() }),
+    upsert: vi.fn().mockResolvedValue({
+      id: "sync-1",
+      userId: "user-1",
+      taskId: "task-1",
+      icalUid: "uid-1",
+      etag: "etag-1",
+      lastSyncedAt: new Date(),
+    }),
     updateEtag: vi.fn().mockResolvedValue(undefined),
     deleteByTaskId: vi.fn().mockResolvedValue(undefined),
     deleteByIcalUid: vi.fn().mockResolvedValue(undefined),
@@ -126,7 +133,11 @@ describe("CalendarService", () => {
         recurrence: null,
         icalUid: "ext-uid-1",
       });
-      expect(taskRepo.update).toHaveBeenCalledWith("task-1", "user-1", expect.objectContaining({ title: "Updated Event" }));
+      expect(taskRepo.update).toHaveBeenCalledWith(
+        "task-1",
+        "user-1",
+        expect.objectContaining({ title: "Updated Event" }),
+      );
     });
   });
 
