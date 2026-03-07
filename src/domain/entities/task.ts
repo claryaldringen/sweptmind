@@ -1,0 +1,51 @@
+export interface Task {
+  id: string;
+  userId: string;
+  listId: string;
+  locationId: string | null;
+  title: string;
+  notes: string | null;
+  isCompleted: boolean;
+  completedAt: Date | null;
+  dueDate: string | null;
+  reminderAt: string | null;
+  recurrence: string | null;
+  deviceContext: string | null;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Step {
+  id: string;
+  taskId: string;
+  title: string;
+  isCompleted: boolean;
+  sortOrder: number;
+  createdAt: Date;
+}
+
+export interface CreateTaskInput {
+  listId: string;
+  title: string;
+  notes?: string | null;
+  dueDate?: string | null;
+  locationId?: string | null;
+  deviceContext?: string | null;
+}
+
+export interface UpdateTaskInput {
+  title?: string | null;
+  notes?: string | null;
+  dueDate?: string | null;
+  reminderAt?: string | null;
+  recurrence?: string | null;
+  listId?: string | null;
+  locationId?: string | null;
+  deviceContext?: string | null;
+}
+
+export interface ReorderItem {
+  id: string;
+  sortOrder: number;
+}

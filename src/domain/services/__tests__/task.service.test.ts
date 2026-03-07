@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TaskService } from "../task.service";
 import type { ITaskRepository } from "../../repositories/task.repository";
+import type { IListRepository } from "../../repositories/list.repository";
 import type { Task } from "../../entities/task";
+import type { List } from "../../entities/list";
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {
@@ -17,9 +19,44 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     dueDate: null,
     reminderAt: null,
     recurrence: null,
+    deviceContext: null,
     sortOrder: 0,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
+    ...overrides,
+  };
+}
+
+function makeList(overrides: Partial<List> = {}): List {
+  return {
+    id: "list-1",
+    userId: "user-1",
+    groupId: null,
+    locationId: null,
+    deviceContext: null,
+    name: "Tasks",
+    icon: null,
+    themeColor: null,
+    isDefault: true,
+    sortOrder: 0,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    ...overrides,
+  };
+}
+
+function makeListRepo(overrides: Partial<IListRepository> = {}): IListRepository {
+  return {
+    findById: vi.fn(),
+    findByIds: vi.fn().mockResolvedValue([]),
+    findByUser: vi.fn().mockResolvedValue([]),
+    findByGroup: vi.fn().mockResolvedValue([]),
+    findMaxSortOrder: vi.fn().mockResolvedValue(undefined),
+    create: vi.fn(),
+    update: vi.fn(),
+    deleteNonDefault: vi.fn(),
+    updateSortOrder: vi.fn(),
+    ungroupByGroupId: vi.fn(),
     ...overrides,
   };
 }
@@ -29,7 +66,6 @@ function makeRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository {
     findById: vi.fn(),
     findByList: vi.fn().mockResolvedValue([]),
 
-
     findPlanned: vi.fn().mockResolvedValue([]),
     findMaxSortOrder: vi.fn().mockResolvedValue(undefined),
     findMinSortOrder: vi.fn().mockResolvedValue(undefined),
@@ -38,7 +74,9 @@ function makeRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository {
     delete: vi.fn(),
     updateSortOrder: vi.fn(),
     countActiveByList: vi.fn().mockResolvedValue(0),
+    countActiveByListIds: vi.fn().mockResolvedValue(new Map()),
     countVisibleByList: vi.fn().mockResolvedValue(0),
+    countVisibleByListIds: vi.fn().mockResolvedValue(new Map()),
     findByListId: vi.fn().mockResolvedValue([]),
     findByTagId: vi.fn().mockResolvedValue([]),
     findWithLocation: vi.fn().mockResolvedValue([]),
@@ -90,7 +128,11 @@ describe("TaskService", () => {
       vi.mocked(repo.findMinSortOrder).mockResolvedValue(undefined);
       vi.mocked(repo.create).mockResolvedValue(makeTask());
 
-      await service.create("user-1", { listId: "list-1", title: "New", dueDate: "2026-03-07T14:00" });
+      await service.create("user-1", {
+        listId: "list-1",
+        title: "New",
+        dueDate: "2026-03-07T14:00",
+      });
 
       expect(repo.create).toHaveBeenCalledWith(
         expect.objectContaining({ dueDate: "2026-03-07T14:00", reminderAt: "2026-03-06" }),
@@ -113,7 +155,6 @@ describe("TaskService", () => {
       expect(result).toHaveLength(2);
     });
   });
-
 
   describe("toggleCompleted", () => {
     it("nastaví isCompleted na true a completedAt na now", async () => {
@@ -242,7 +283,6 @@ describe("TaskService", () => {
     });
   });
 
-
   describe("update", () => {
     it("uloží reminderAt přímo jako string", async () => {
       vi.mocked(repo.update).mockResolvedValue(makeTask());
@@ -354,13 +394,265 @@ describe("TaskService", () => {
   describe("delegované dotazy", () => {
     it("getByList deleguje na repo", async () => {
       await service.getByList("list-1", "user-1");
-      expect(repo.findByList).toHaveBeenCalledWith("list-1", "user-1");
+      expect(repo.findByList).toHaveBeenCalledWith("list-1", "user-1", undefined);
     });
 
+    it("getByList předává pagination opts do repo", async () => {
+      await service.getByList("list-1", "user-1", { limit: 50, offset: 10 });
+      expect(repo.findByList).toHaveBeenCalledWith("list-1", "user-1", { limit: 50, offset: 10 });
+    });
 
     it("getPlanned deleguje na repo", async () => {
       await service.getPlanned("user-1");
-      expect(repo.findPlanned).toHaveBeenCalledWith("user-1");
+      expect(repo.findPlanned).toHaveBeenCalledWith("user-1", undefined);
+    });
+
+    it("getPlanned předává pagination opts do repo", async () => {
+      await service.getPlanned("user-1", { limit: 100, offset: 20 });
+      expect(repo.findPlanned).toHaveBeenCalledWith("user-1", { limit: 100, offset: 20 });
+    });
+  });
+
+  describe("delete", () => {
+    it("zavolá repo.delete se správnými argumenty", async () => {
+      vi.mocked(repo.delete).mockResolvedValue(undefined);
+
+      const result = await service.delete("task-1", "user-1");
+
+      expect(repo.delete).toHaveBeenCalledWith("task-1", "user-1");
+      expect(result).toBe(true);
+    });
+  });
+
+  describe("importTasks", () => {
+    let listRepo: IListRepository;
+
+    beforeEach(() => {
+      listRepo = makeListRepo();
+      service.setListRepo(listRepo);
+
+      // Default: user has one default list
+      vi.mocked(listRepo.findByUser).mockResolvedValue([
+        makeList({ id: "default-list", name: "Tasks", isDefault: true }),
+      ]);
+      vi.mocked(repo.findMinSortOrder).mockResolvedValue(undefined);
+      vi.mocked(repo.create).mockImplementation(async (values) =>
+        makeTask({ id: `imported-${Math.random()}`, ...values }),
+      );
+      vi.mocked(repo.update).mockImplementation(async (_id, _userId, data) =>
+        makeTask({ ...data }),
+      );
+    });
+
+    it("importuje do existujícího seznamu (case-insensitive match)", async () => {
+      vi.mocked(listRepo.findByUser).mockResolvedValue([
+        makeList({ id: "default-list", name: "Tasks", isDefault: true }),
+        makeList({ id: "work-list", name: "Work", isDefault: false }),
+      ]);
+
+      const result = await service.importTasks("user-1", [
+        { title: "Task 1", listName: "work" },
+        { title: "Task 2", listName: "WORK" },
+      ]);
+
+      expect(result.importedCount).toBe(2);
+      expect(result.createdLists).toEqual([]);
+      expect(listRepo.create).not.toHaveBeenCalled();
+      // Both tasks should be created with the Work list ID
+      expect(repo.create).toHaveBeenCalledTimes(2);
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ listId: "work-list" }));
+    });
+
+    it("vytvoří nový seznam když žádný neexistuje", async () => {
+      vi.mocked(listRepo.findMaxSortOrder).mockResolvedValue(0);
+      vi.mocked(listRepo.create).mockResolvedValue(
+        makeList({ id: "new-list", name: "Shopping", isDefault: false }),
+      );
+
+      const result = await service.importTasks("user-1", [
+        { title: "Buy milk", listName: "Shopping" },
+      ]);
+
+      expect(result.importedCount).toBe(1);
+      expect(result.createdLists).toEqual(["Shopping"]);
+      expect(listRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: "user-1", name: "Shopping", sortOrder: 1 }),
+      );
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ listId: "new-list" }));
+    });
+
+    it("přeskočí úkoly s prázdným title", async () => {
+      const result = await service.importTasks("user-1", [
+        { title: "" },
+        { title: "   " },
+        { title: "Valid task" },
+      ]);
+
+      expect(result.importedCount).toBe(1);
+      expect(repo.create).toHaveBeenCalledTimes(1);
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ title: "Valid task" }));
+    });
+
+    it("importuje dokončené úkoly se správným isCompleted", async () => {
+      const result = await service.importTasks("user-1", [
+        { title: "Done task", isCompleted: true },
+      ]);
+
+      expect(result.importedCount).toBe(1);
+      expect(repo.create).toHaveBeenCalledTimes(1);
+      // After create, update should be called to mark as completed
+      expect(repo.update).toHaveBeenCalledWith(
+        expect.any(String),
+        "user-1",
+        expect.objectContaining({
+          isCompleted: true,
+          completedAt: expect.any(Date),
+        }),
+      );
+    });
+
+    it("vyhodí chybu když výchozí seznam neexistuje", async () => {
+      vi.mocked(listRepo.findByUser).mockResolvedValue([
+        makeList({ id: "list-1", name: "Custom", isDefault: false }),
+      ]);
+
+      await expect(service.importTasks("user-1", [{ title: "Test" }])).rejects.toThrow(
+        "Default list not found",
+      );
+    });
+  });
+
+  describe("toggleCompleted — recurrence edge cases", () => {
+    it("WEEKLY recurrence → posune dueDate na správný další den", async () => {
+      // 2026-03-04 is Wednesday (day 3), WEEKLY:1,3,5 = Mon,Wed,Fri
+      // Next after Wed(3) should be Fri(5), i.e. +2 days = 2026-03-06
+      const task = makeTask({
+        isCompleted: false,
+        dueDate: "2026-03-04",
+        recurrence: "WEEKLY:1,3,5",
+      });
+      vi.mocked(repo.findById).mockResolvedValue(task);
+      vi.mocked(repo.update).mockResolvedValue(makeTask({ dueDate: "2026-03-06" }));
+
+      await service.toggleCompleted("task-1", "user-1");
+
+      expect(repo.update).toHaveBeenCalledWith(
+        "task-1",
+        "user-1",
+        expect.objectContaining({
+          isCompleted: false,
+          dueDate: "2026-03-06",
+          completedAt: null,
+        }),
+      );
+    });
+
+    it("WEEKLY recurrence → přetočí na příští týden když je poslední den v týdnu", async () => {
+      // 2026-03-06 is Friday (day 5), WEEKLY:1,3,5 = Mon,Wed,Fri
+      // No day > 5, so wrap: 7 - 5 + 1(Mon) = 3 days → 2026-03-09 (Monday)
+      const task = makeTask({
+        isCompleted: false,
+        dueDate: "2026-03-06",
+        recurrence: "WEEKLY:1,3,5",
+      });
+      vi.mocked(repo.findById).mockResolvedValue(task);
+      vi.mocked(repo.update).mockResolvedValue(makeTask({ dueDate: "2026-03-09" }));
+
+      await service.toggleCompleted("task-1", "user-1");
+
+      expect(repo.update).toHaveBeenCalledWith(
+        "task-1",
+        "user-1",
+        expect.objectContaining({
+          isCompleted: false,
+          dueDate: "2026-03-09",
+          completedAt: null,
+        }),
+      );
+    });
+
+    it("MONTHLY recurrence → posune dueDate o měsíc", async () => {
+      const task = makeTask({
+        isCompleted: false,
+        dueDate: "2026-03-04",
+        recurrence: "MONTHLY",
+      });
+      vi.mocked(repo.findById).mockResolvedValue(task);
+      vi.mocked(repo.update).mockResolvedValue(makeTask({ dueDate: "2026-04-04" }));
+
+      await service.toggleCompleted("task-1", "user-1");
+
+      expect(repo.update).toHaveBeenCalledWith(
+        "task-1",
+        "user-1",
+        expect.objectContaining({
+          isCompleted: false,
+          dueDate: "2026-04-04",
+          completedAt: null,
+        }),
+      );
+    });
+
+    it("MONTHLY recurrence → zachová čas v dueDate", async () => {
+      const task = makeTask({
+        isCompleted: false,
+        dueDate: "2026-03-04T10:30",
+        recurrence: "MONTHLY",
+      });
+      vi.mocked(repo.findById).mockResolvedValue(task);
+      vi.mocked(repo.update).mockResolvedValue(makeTask({ dueDate: "2026-04-04T10:30" }));
+
+      await service.toggleCompleted("task-1", "user-1");
+
+      expect(repo.update).toHaveBeenCalledWith(
+        "task-1",
+        "user-1",
+        expect.objectContaining({
+          dueDate: "2026-04-04T10:30",
+        }),
+      );
+    });
+
+    it("YEARLY recurrence → posune dueDate o rok", async () => {
+      const task = makeTask({
+        isCompleted: false,
+        dueDate: "2026-03-04",
+        recurrence: "YEARLY",
+      });
+      vi.mocked(repo.findById).mockResolvedValue(task);
+      vi.mocked(repo.update).mockResolvedValue(makeTask({ dueDate: "2027-03-04" }));
+
+      await service.toggleCompleted("task-1", "user-1");
+
+      expect(repo.update).toHaveBeenCalledWith(
+        "task-1",
+        "user-1",
+        expect.objectContaining({
+          isCompleted: false,
+          dueDate: "2027-03-04",
+          completedAt: null,
+        }),
+      );
+    });
+
+    it("YEARLY recurrence → zachová čas v dueDate", async () => {
+      const task = makeTask({
+        isCompleted: false,
+        dueDate: "2026-03-04T08:00",
+        recurrence: "YEARLY",
+      });
+      vi.mocked(repo.findById).mockResolvedValue(task);
+      vi.mocked(repo.update).mockResolvedValue(makeTask({ dueDate: "2027-03-04T08:00" }));
+
+      await service.toggleCompleted("task-1", "user-1");
+
+      expect(repo.update).toHaveBeenCalledWith(
+        "task-1",
+        "user-1",
+        expect.objectContaining({
+          dueDate: "2027-03-04T08:00",
+        }),
+      );
     });
   });
 });
