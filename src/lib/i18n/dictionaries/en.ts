@@ -27,7 +27,7 @@ export const en: Dictionary = {
   sidebar: {
     planned: "Planned",
     nearby: "Nearby",
-    tasks: "Tasks",
+    tasks: "Here & Now",
     newList: "New list",
     settings: "Settings",
   },
@@ -114,6 +114,7 @@ export const en: Dictionary = {
     notFoundTitle: "Page not found",
     notFoundDescription: "The page you're looking for doesn't exist or has been moved.",
     notFoundBackHome: "Back to tasks",
+    offline: "You're offline — changes will sync when you reconnect",
   },
   landing: {
     tagline: "Stay organized, get things done. A GTD-inspired task management app.",
@@ -207,6 +208,13 @@ export const en: Dictionary = {
     dueDate: "Due date",
     reminder: "Reminder",
   },
+  push: {
+    title: "Push Notifications",
+    description: "Get reminders for tasks with a specific time.",
+    enabled: "Notifications enabled",
+    disabled: "Notifications disabled",
+    unsupported: "Push notifications are not supported in this browser.",
+  },
   calendar: {
     title: "Calendar",
     caldavUrl: "CalDAV URL",
@@ -221,6 +229,14 @@ export const en: Dictionary = {
     syncAllDescription:
       "Default: only tasks with an exact time. Enable to also sync date-only tasks.",
     generating: "Generating...",
+  },
+  context: {
+    hereAndNow: "Here & Now",
+    phone: "Phone",
+    computer: "Computer",
+    deviceContext: "Device",
+    noContext: "No context",
+    selectDevice: "Select device context",
   },
   validation: {
     invalidEmail: "Invalid email address",

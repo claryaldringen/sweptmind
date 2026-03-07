@@ -111,6 +111,7 @@ export interface Dictionary {
     notFoundTitle: string;
     notFoundDescription: string;
     notFoundBackHome: string;
+    offline: string;
   };
   landing: {
     tagline: string;
@@ -192,6 +193,13 @@ export interface Dictionary {
     dueDate: string;
     reminder: string;
   };
+  push: {
+    title: string;
+    description: string;
+    enabled: string;
+    disabled: string;
+    unsupported: string;
+  };
   calendar: {
     title: string;
     caldavUrl: string;
@@ -203,6 +211,14 @@ export interface Dictionary {
     syncAllLabel: string;
     syncAllDescription: string;
     generating: string;
+  };
+  context: {
+    hereAndNow: string;
+    phone: string;
+    computer: string;
+    deviceContext: string;
+    noContext: string;
+    selectDevice: string;
   };
   validation: {
     invalidEmail: string;

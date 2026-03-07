@@ -27,7 +27,7 @@ export const cs: Dictionary = {
   sidebar: {
     planned: "Plánované",
     nearby: "V okolí",
-    tasks: "Úkoly",
+    tasks: "Tady & teď",
     newList: "Nový seznam",
     settings: "Nastavení",
   },
@@ -114,6 +114,7 @@ export const cs: Dictionary = {
     notFoundTitle: "Stránka nenalezena",
     notFoundDescription: "Stránka, kterou hledáš, neexistuje nebo byla přesunuta.",
     notFoundBackHome: "Zpět na úkoly",
+    offline: "Jsi offline — změny se synchronizují po připojení",
   },
   landing: {
     tagline: "Organizuj se, zvládej věci. GTD-inspirovaná aplikace na správu úkolů.",
@@ -207,6 +208,13 @@ export const cs: Dictionary = {
     dueDate: "Datum splnění",
     reminder: "Připomenutí",
   },
+  push: {
+    title: "Push notifikace",
+    description: "Dostávej připomínky na úkoly s přesným časem.",
+    enabled: "Notifikace zapnuty",
+    disabled: "Notifikace vypnuty",
+    unsupported: "Tento prohlížeč nepodporuje push notifikace.",
+  },
   calendar: {
     title: "Kalendář",
     caldavUrl: "CalDAV URL",
@@ -221,6 +229,14 @@ export const cs: Dictionary = {
     syncAllDescription:
       "Výchozí: pouze úkoly s přesným časem. Zapnutím se budou synchronizovat i úkoly pouze s datem.",
     generating: "Generuji...",
+  },
+  context: {
+    hereAndNow: "Tady & teď",
+    phone: "Telefon",
+    computer: "Počítač",
+    deviceContext: "Zařízení",
+    noContext: "Bez kontextu",
+    selectDevice: "Vybrat kontext zařízení",
   },
   validation: {
     invalidEmail: "Neplatná e-mailová adresa",
