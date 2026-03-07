@@ -3,7 +3,8 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { X } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +23,7 @@ import { TaskLocation } from "./detail/task-location";
 import { TaskRecurrence } from "./detail/task-recurrence";
 import { TaskDates } from "./detail/task-dates";
 import { TaskActions } from "./detail/task-actions";
+import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 
 // ---------------------------------------------------------------------------
 // GraphQL operations
@@ -40,6 +42,7 @@ const GET_TASK = gql`
       dueDate
       reminderAt
       recurrence
+      deviceContext
       sortOrder
       createdAt
       steps {
@@ -77,6 +80,7 @@ const UPDATE_TASK = gql`
       dueDate
       reminderAt
       recurrence
+      deviceContext
       listId
       locationId
       location {
@@ -242,6 +246,7 @@ interface TaskDetail {
   dueDate: string | null;
   reminderAt: string | null;
   recurrence: string | null;
+  deviceContext: string | null;
   sortOrder: number;
   createdAt: string;
   steps: TaskStep[];
@@ -262,6 +267,7 @@ interface UpdateTaskData {
     dueDate: string | null;
     reminderAt: string | null;
     recurrence: string | null;
+    deviceContext: string | null;
     listId: string;
     locationId: string | null;
     location: TaskLocation | null;
@@ -422,6 +428,7 @@ export function TaskDetailPanel() {
 
   const { isNearby: checkNearby, userLatitude, userLongitude } = useNearby();
   const geocode = useGeocode({ userLatitude, userLongitude, locale: appLocale });
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   // ---- Early returns ----
 
@@ -429,7 +436,9 @@ export function TaskDetailPanel() {
 
   if (loading) {
     return (
-      <div className="bg-background w-96 border-l p-6">
+      <div
+        className={cn("bg-background p-6", isDesktop ? "w-96 border-l" : "absolute inset-0 z-10")}
+      >
         <div className="animate-pulse space-y-4">
           <div className="bg-muted h-6 w-3/4 rounded" />
           <div className="bg-muted h-4 w-1/2 rounded" />
@@ -617,10 +626,15 @@ export function TaskDetailPanel() {
   // ---- Render ----
 
   return (
-    <div className="bg-background flex w-96 flex-col border-l">
+    <div
+      className={cn(
+        "bg-background flex flex-col",
+        isDesktop ? "w-96 border-l" : "absolute inset-0 z-10",
+      )}
+    >
       <div className="flex items-center justify-between p-4">
         <Button variant="ghost" size="icon" onClick={closePanel}>
-          <X className="h-4 w-4" />
+          {isDesktop ? <X className="h-4 w-4" /> : <ArrowLeft className="h-5 w-5" />}
         </Button>
       </div>
 
@@ -732,6 +746,16 @@ export function TaskDetailPanel() {
             searchLocationLabel={t("tasks.searchLocation")}
             savedLocationsLabel={t("tasks.savedLocations")}
             searchResultsLabel={t("tasks.searchResults")}
+          />
+
+          {/* Device Context */}
+          <DeviceContextPicker
+            value={task.deviceContext ?? null}
+            onChange={(val) =>
+              updateTask({
+                variables: { id: task.id, input: { deviceContext: val } },
+              })
+            }
           />
         </div>
 

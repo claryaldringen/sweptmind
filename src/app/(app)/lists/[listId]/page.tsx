@@ -3,7 +3,18 @@
 import { useParams } from "next/navigation";
 import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { List, MapPin, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { ArrowLeft, List, MapPin, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { useSidebarContext } from "@/components/layout/app-shell";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { SortableTaskList } from "@/components/tasks/sortable-task-list";
 import { TaskInput } from "@/components/tasks/task-input";
 import { TaskDetailPanel } from "@/components/tasks/task-detail-panel";
@@ -31,6 +42,7 @@ import { useTranslations } from "@/lib/i18n";
 import { useGeocode } from "@/hooks/use-geocode";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { cn } from "@/lib/utils";
+import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 
 const GET_TASKS_BY_LIST = gql`
   query TasksByList($listId: String!) {
@@ -77,6 +89,7 @@ const GET_LIST = gql`
       themeColor
       isDefault
       locationId
+      deviceContext
       location {
         id
         name
@@ -93,6 +106,7 @@ const UPDATE_LIST = gql`
       id
       name
       locationId
+      deviceContext
       location {
         id
         name
@@ -194,6 +208,7 @@ interface ListDetail {
   themeColor: string | null;
   isDefault: boolean;
   locationId: string | null;
+  deviceContext: string | null;
   location: LocationInfo | null;
 }
 
@@ -216,6 +231,8 @@ export default function ListPage() {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [locationPopoverOpen, setLocationPopoverOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const { open: openSidebar, isDesktop } = useSidebarContext();
   const { isNearby: checkNearby, userLatitude, userLongitude } = useNearby();
   const geocode = useGeocode({ userLatitude, userLongitude, locale: appLocale });
 
@@ -271,7 +288,11 @@ export default function ListPage() {
     geocode.clear();
   }
 
-  async function handleSelectListGeocodingResult(result: { display_name: string; lat: string; lon: string }) {
+  async function handleSelectListGeocodingResult(result: {
+    display_name: string;
+    lat: string;
+    lon: string;
+  }) {
     if (!list) return;
     const locationResult = await createLocation({
       variables: {
@@ -303,10 +324,15 @@ export default function ListPage() {
   }
 
   return (
-    <div className="flex flex-1">
+    <div className="relative flex flex-1">
       <div className="flex flex-1 flex-col">
         <div className="flex items-center justify-between px-6 pt-8 pb-4">
           <div className="flex items-center gap-2">
+            {!isDesktop && (
+              <Button variant="ghost" size="icon" onClick={openSidebar} className="-ml-2">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            )}
             <List className="h-7 w-7 text-blue-500" />
             <Input
               ref={nameInputRef}
@@ -321,7 +347,7 @@ export default function ListPage() {
                   e.currentTarget.blur();
                 }
               }}
-              className="h-auto rounded-none border-0 bg-transparent p-0 text-2xl font-bold leading-tight shadow-none outline-none focus-visible:ring-0 md:text-2xl"
+              className="h-auto rounded-none border-0 bg-transparent p-0 text-2xl leading-tight font-bold shadow-none outline-none focus-visible:ring-0 md:text-2xl"
             />
           </div>
           <div className="flex items-center gap-1">
@@ -335,20 +361,36 @@ export default function ListPage() {
                     : "",
                 )}
               >
-                <MapPin className={cn(
-                  "h-3 w-3",
-                  list.location && checkNearby(list.location.latitude, list.location.longitude) && "animate-pulse",
-                )} />
+                <MapPin
+                  className={cn(
+                    "h-3 w-3",
+                    list.location &&
+                      checkNearby(list.location.latitude, list.location.longitude) &&
+                      "animate-pulse",
+                  )}
+                />
                 {list.location.name}
                 <button
                   onClick={handleRemoveListLocation}
                   className="rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10"
                 >
-                  <span className="sr-only">{t("tasks.removeLocation")}</span>
-                  ×
+                  <span className="sr-only">{t("tasks.removeLocation")}</span>×
                 </button>
               </Badge>
             )}
+            <DeviceContextPicker
+              value={list?.deviceContext ?? null}
+              onChange={(val) => {
+                if (!list) return;
+                updateList({
+                  variables: { id: list.id, input: { deviceContext: val } },
+                  refetchQueries: [
+                    { query: GET_LIST, variables: { id: listId } },
+                    { query: GET_LISTS },
+                  ],
+                });
+              }}
+            />
             <Popover
               open={locationPopoverOpen}
               onOpenChange={(open) => {
@@ -376,23 +418,37 @@ export default function ListPage() {
                   />
                   <CommandList>
                     <CommandEmpty />
-                    {(locationsData?.locations ?? []).length > 0 && (
+                    {(locationsData?.locations ?? []).filter(
+                      (loc) =>
+                        !locationSearch ||
+                        loc.name.toLowerCase().includes(locationSearch.toLowerCase()),
+                    ).length > 0 && (
                       <CommandGroup heading={t("tasks.savedLocations")}>
-                        {(locationsData?.locations ?? []).map((loc) => (
-                          <CommandItem key={loc.id} onSelect={() => handleSelectListLocation(loc.id)} className="group/loc">
-                            <MapPin className="mr-2 h-3 w-3" />
-                            <span className="flex-1 truncate">{loc.name}</span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteLocation({ variables: { id: loc.id } });
-                              }}
-                              className="rounded-full p-0.5 opacity-0 transition-opacity hover:bg-black/10 group-hover/loc:opacity-100 dark:hover:bg-white/10"
+                        {(locationsData?.locations ?? [])
+                          .filter(
+                            (loc) =>
+                              !locationSearch ||
+                              loc.name.toLowerCase().includes(locationSearch.toLowerCase()),
+                          )
+                          .map((loc) => (
+                            <CommandItem
+                              key={loc.id}
+                              onSelect={() => handleSelectListLocation(loc.id)}
+                              className="group/loc"
                             >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </CommandItem>
-                        ))}
+                              <MapPin className="mr-2 h-3 w-3" />
+                              <span className="flex-1 truncate">{loc.name}</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteLocation({ variables: { id: loc.id } });
+                                }}
+                                className="rounded-full p-0.5 opacity-0 transition-opacity group-hover/loc:opacity-100 hover:bg-black/10 dark:hover:bg-white/10"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </CommandItem>
+                          ))}
                       </CommandGroup>
                     )}
                     {geocode.results.length > 0 && (
@@ -412,28 +468,54 @@ export default function ListPage() {
                 </Command>
               </PopoverContent>
             </Popover>
-          {list && !list.isDefault && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreHorizontal className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => {
-                  nameInputRef.current?.focus();
-                  nameInputRef.current?.select();
-                }}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  {t("lists.rename")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {t("lists.delete")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+            {list && !list.isDefault && (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        nameInputRef.current?.focus();
+                        nameInputRef.current?.select();
+                      }}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      {t("lists.rename")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setDeleteDialogOpen(true)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t("lists.delete")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{t("common.deleteConfirmTitle")}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t("lists.deleteConfirmDesc")}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{t("common.deleteConfirmCancel")}</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={handleDelete}
+                      >
+                        {t("common.deleteConfirmAction")}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
           </div>
         </div>
 
