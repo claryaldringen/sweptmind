@@ -10,6 +10,13 @@ export async function GET() {
       status: "ok",
       timestamp: new Date().toISOString(),
       uptime: Math.floor((Date.now() - startTime) / 1000),
+      env: {
+        hasGoogleId: !!process.env.AUTH_GOOGLE_ID,
+        hasGoogleSecret: !!process.env.AUTH_GOOGLE_SECRET,
+        hasAuthSecret: !!process.env.AUTH_SECRET,
+        hasAuthUrl: !!process.env.AUTH_URL,
+        authUrl: process.env.AUTH_URL,
+      },
     });
   } catch {
     return Response.json(
