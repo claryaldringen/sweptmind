@@ -46,6 +46,42 @@ describe("ListService", () => {
     service = new ListService(repo);
   });
 
+  describe("getById", () => {
+    it("deleguje na repo", async () => {
+      const list = makeList();
+      vi.mocked(repo.findById).mockResolvedValue(list);
+
+      const result = await service.getById("list-1", "user-1");
+
+      expect(repo.findById).toHaveBeenCalledWith("list-1", "user-1");
+      expect(result).toBe(list);
+    });
+  });
+
+  describe("getByUser", () => {
+    it("deleguje na repo", async () => {
+      const lists = [makeList(), makeList({ id: "list-2", name: "Second" })];
+      vi.mocked(repo.findByUser).mockResolvedValue(lists);
+
+      const result = await service.getByUser("user-1");
+
+      expect(repo.findByUser).toHaveBeenCalledWith("user-1");
+      expect(result).toBe(lists);
+    });
+  });
+
+  describe("getByGroup", () => {
+    it("deleguje na repo", async () => {
+      const lists = [makeList({ groupId: "group-1" })];
+      vi.mocked(repo.findByGroup).mockResolvedValue(lists);
+
+      const result = await service.getByGroup("group-1");
+
+      expect(repo.findByGroup).toHaveBeenCalledWith("group-1");
+      expect(result).toBe(lists);
+    });
+  });
+
   describe("create", () => {
     it("vypočítá sortOrder z maxima + 1", async () => {
       vi.mocked(repo.findMaxSortOrder).mockResolvedValue(3);

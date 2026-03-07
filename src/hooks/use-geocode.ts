@@ -28,27 +28,55 @@ const MIN_INTERVAL_MS = 1000;
 const FETCH_LIMIT = 15;
 const MAX_RESULTS = 5;
 
+interface IpInfo {
+  latitude: number;
+  longitude: number;
+  countryCode: string | null;
+}
+
 // Module-level: single shared promise so IP is fetched at most once
-let ipInfoPromise: Promise<{ latitude: number; longitude: number } | null> | null = null;
+let ipInfoPromise: Promise<IpInfo | null> | null = null;
+
+async function fetchIpFromIpwho(): Promise<IpInfo | null> {
+  const res = await fetch("https://ipwho.is/");
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (data.success && typeof data.latitude === "number" && typeof data.longitude === "number") {
+    return {
+      latitude: data.latitude,
+      longitude: data.longitude,
+      countryCode: typeof data.country_code === "string" ? data.country_code.toUpperCase() : null,
+    };
+  }
+  return null;
+}
+
+async function fetchIpFromGeojs(): Promise<IpInfo | null> {
+  const res = await fetch("https://get.geojs.io/v1/ip/geo.json");
+  if (!res.ok) return null;
+  const data = await res.json();
+  const lat = parseFloat(data.latitude);
+  const lon = parseFloat(data.longitude);
+  if (!isNaN(lat) && !isNaN(lon)) {
+    return {
+      latitude: lat,
+      longitude: lon,
+      countryCode: typeof data.country_code === "string" ? data.country_code.toUpperCase() : null,
+    };
+  }
+  return null;
+}
 
 function getIpInfo() {
   if (!ipInfoPromise) {
-    ipInfoPromise = fetch("https://ipapi.co/json/")
-      .then(async (res) => {
-        if (!res.ok) return null;
-        const data = await res.json();
-        if (typeof data.latitude === "number" && typeof data.longitude === "number") {
-          return { latitude: data.latitude as number, longitude: data.longitude as number };
-        }
-        return null;
-      })
-      .catch(() => null);
+    ipInfoPromise = fetchIpFromIpwho()
+      .catch(() => null)
+      .then((result) => result ?? fetchIpFromGeojs().catch(() => null));
   }
   return ipInfoPromise;
 }
 
-// Start fetching immediately on module load
-getIpInfo();
+// IP info is fetched lazily on first use via getIpInfo()
 
 interface PhotonFeature {
   geometry: { coordinates: [number, number] };
@@ -56,6 +84,7 @@ interface PhotonFeature {
     osm_type?: string;
     osm_id?: number;
     name?: string;
+    countrycode?: string;
   };
 }
 
@@ -78,10 +107,7 @@ interface NominatimLookupResult {
   };
 }
 
-async function nominatimLookup(
-  osmIds: string[],
-  locale: string,
-): Promise<Map<string, string>> {
+async function nominatimLookup(osmIds: string[], locale: string): Promise<Map<string, string>> {
   if (osmIds.length === 0) return new Map();
   const url = new URL(NOMINATIM_LOOKUP_URL);
   url.searchParams.set("osm_ids", osmIds.join(","));
@@ -135,6 +161,7 @@ export function useGeocode(options?: UseGeocodeOptions): UseGeocodeReturn {
         const ipInfo = await getIpInfo();
         const lat = options?.userLatitude ?? ipInfo?.latitude ?? null;
         const lon = options?.userLongitude ?? ipInfo?.longitude ?? null;
+        const userCountry = ipInfo?.countryCode ?? null;
         const locale = options?.locale ?? "en";
 
         // Step 1: Photon search with proximity bias
@@ -153,7 +180,13 @@ export function useGeocode(options?: UseGeocodeOptions): UseGeocodeReturn {
         const photonData: { features: PhotonFeature[] } = await photonRes.json();
         lastRequestRef.current = Date.now();
 
-        const features = photonData.features;
+        // Sort: same country first, then rest (stable sort preserves Photon's relevance order within each group)
+        const features = photonData.features.toSorted((a, b) => {
+          if (!userCountry) return 0;
+          const aLocal = a.properties.countrycode?.toUpperCase() === userCountry ? 0 : 1;
+          const bLocal = b.properties.countrycode?.toUpperCase() === userCountry ? 0 : 1;
+          return aLocal - bLocal;
+        });
         if (features.length === 0) {
           setResults([]);
           return;

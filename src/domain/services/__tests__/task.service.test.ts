@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TaskService } from "../task.service";
 import type { ITaskRepository } from "../../repositories/task.repository";
 import type { IListRepository } from "../../repositories/list.repository";
-import type { Task } from "../../entities/task";
+import type { IStepRepository } from "../../repositories/step.repository";
+import type { Task, Step } from "../../entities/task";
 import type { List } from "../../entities/list";
 
 function makeTask(overrides: Partial<Task> = {}): Task {
@@ -57,6 +58,31 @@ function makeListRepo(overrides: Partial<IListRepository> = {}): IListRepository
     deleteNonDefault: vi.fn(),
     updateSortOrder: vi.fn(),
     ungroupByGroupId: vi.fn(),
+    ...overrides,
+  };
+}
+
+function makeStep(overrides: Partial<Step> = {}): Step {
+  return {
+    id: "step-1",
+    taskId: "task-1",
+    title: "Step title",
+    isCompleted: false,
+    sortOrder: 0,
+    createdAt: new Date("2024-01-01"),
+    ...overrides,
+  };
+}
+
+function makeStepRepo(overrides: Partial<IStepRepository> = {}): IStepRepository {
+  return {
+    findById: vi.fn().mockResolvedValue(undefined),
+    findByTask: vi.fn().mockResolvedValue([]),
+    findByTaskIds: vi.fn().mockResolvedValue(new Map()),
+    findMaxSortOrder: vi.fn().mockResolvedValue(undefined),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
     ...overrides,
   };
 }
@@ -430,7 +456,7 @@ describe("TaskService", () => {
 
     beforeEach(() => {
       listRepo = makeListRepo();
-      service.setListRepo(listRepo);
+      service = new TaskService(repo, listRepo);
 
       // Default: user has one default list
       vi.mocked(listRepo.findByUser).mockResolvedValue([
@@ -666,6 +692,59 @@ describe("TaskService", () => {
 
       expect(repo.findContextTasks).toHaveBeenCalledWith("user-1", "phone", ["loc1"]);
       expect(result).toEqual(mockTasks);
+    });
+  });
+
+  describe("convertToList", () => {
+    let listRepo: IListRepository;
+    let stepRepo: IStepRepository;
+
+    beforeEach(() => {
+      listRepo = makeListRepo();
+      stepRepo = makeStepRepo();
+      service = new TaskService(repo, listRepo, stepRepo);
+    });
+
+    it("converts task with steps into a new list", async () => {
+      const task = makeTask({ id: "task-1", title: "My Task" });
+      const steps = [
+        makeStep({ id: "s1", taskId: "task-1", title: "Step A", sortOrder: 0 }),
+        makeStep({ id: "s2", taskId: "task-1", title: "Step B", sortOrder: 1 }),
+      ];
+      const newList = makeList({ id: "new-list", name: "My Task", isDefault: false });
+
+      vi.mocked(repo.findById).mockResolvedValue(task);
+      vi.mocked(stepRepo.findByTask).mockResolvedValue(steps);
+      vi.mocked(listRepo.findMaxSortOrder).mockResolvedValue(2);
+      vi.mocked(listRepo.create).mockResolvedValue(newList);
+      vi.mocked(repo.create).mockImplementation(async (values) =>
+        makeTask({ id: `new-${Math.random()}`, ...values }),
+      );
+
+      const result = await service.convertToList("task-1", "user-1");
+
+      expect(repo.findById).toHaveBeenCalledWith("task-1", "user-1");
+      expect(stepRepo.findByTask).toHaveBeenCalledWith("task-1");
+      expect(listRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: "user-1", name: "My Task", sortOrder: 3 }),
+      );
+      expect(repo.create).toHaveBeenCalledTimes(2);
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ listId: "new-list", title: "Step A", sortOrder: 0 }),
+      );
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ listId: "new-list", title: "Step B", sortOrder: 1 }),
+      );
+      expect(repo.delete).toHaveBeenCalledWith("task-1", "user-1");
+      expect(result).toEqual(newList);
+    });
+
+    it("throws if task not found", async () => {
+      vi.mocked(repo.findById).mockResolvedValue(undefined);
+
+      await expect(service.convertToList("nonexistent", "user-1")).rejects.toThrow(
+        "Task not found",
+      );
     });
   });
 });

@@ -11,7 +11,7 @@ Komunikuj se mnou vždy v češtině a tykej mi, jako kdybych byl tvůj kolega. 
 - **Framework:** Next.js 16 (App Router, Turbopack)
 - **UI:** Tailwind CSS v4 + shadcn/ui + Lucide icons
 - **ORM:** Drizzle ORM (PostgreSQL)
-- **Auth:** Auth.js v5 (JWT strategie) — Google, GitHub, Credentials
+- **Auth:** Auth.js v5 (JWT strategie) — Google, Facebook, Credentials
 - **GraphQL:** GraphQL Yoga + Pothos (schema builder) + Apollo Client v4
 - **DnD:** @dnd-kit/core + @dnd-kit/sortable
 - **Validace:** Zod v4
@@ -130,4 +130,4 @@ src/
 
 ## Prostředí
 
-Vyžaduje `.env.local` s: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `AUTH_GOOGLE_ID/SECRET`, `AUTH_GITHUB_ID/SECRET`
+Vyžaduje `.env.local` s: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `AUTH_GOOGLE_ID/SECRET`, `AUTH_FACEBOOK_ID/SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `CRON_SECRET` (Vercel auto)

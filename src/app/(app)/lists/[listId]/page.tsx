@@ -3,7 +3,8 @@
 import { useParams } from "next/navigation";
 import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { ArrowLeft, List, MapPin, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { ArrowLeft, MapPin, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { ListIcon, LIST_ICONS } from "@/lib/list-icons";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import {
   AlertDialog,
@@ -105,6 +106,7 @@ const UPDATE_LIST = gql`
     updateList(id: $id, input: $input) {
       id
       name
+      icon
       locationId
       deviceContext
       location {
@@ -229,6 +231,7 @@ export default function ListPage() {
   const router = useRouter();
   const { t, locale: appLocale } = useTranslations();
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
   const [locationPopoverOpen, setLocationPopoverOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -333,7 +336,43 @@ export default function ListPage() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             )}
-            <List className="h-7 w-7 text-blue-500" />
+            <Popover open={iconPopoverOpen} onOpenChange={setIconPopoverOpen}>
+              <PopoverTrigger asChild>
+                <button className="hover:bg-accent rounded-md p-1 transition-colors">
+                  <ListIcon icon={list?.icon ?? null} className="h-7 w-7 text-blue-500" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-3" align="start">
+                <div className="grid grid-cols-8 gap-1.5">
+                  {Object.entries(LIST_ICONS).map(([key, Icon]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        if (list) {
+                          updateList({
+                            variables: { id: list.id, input: { icon: key } },
+                            refetchQueries: [
+                              { query: GET_LIST, variables: { id: listId } },
+                              { query: GET_LISTS },
+                            ],
+                          });
+                        }
+                        setIconPopoverOpen(false);
+                      }}
+                      className={cn(
+                        "flex h-9 w-9 items-center justify-center rounded-md transition-colors",
+                        list?.icon === key || (!list?.icon && key === "list")
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-accent text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <Icon className="h-4.5 w-4.5" />
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
             <Input
               ref={nameInputRef}
               key={list?.id}

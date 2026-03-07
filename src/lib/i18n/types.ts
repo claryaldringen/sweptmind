@@ -20,7 +20,26 @@ export interface Dictionary {
     alreadyHaveAccount: string;
     signUpSuccessLoginFailed: string;
     continueGoogle: string;
-    continueGithub: string;
+    continueFacebook: string;
+    forgotPassword: string;
+    forgotPasswordTitle: string;
+    forgotPasswordDescription: string;
+    sendResetLink: string;
+    sendingResetLink: string;
+    resetLinkSent: string;
+    resetLinkSentDescription: string;
+    backToLogin: string;
+    resetPasswordTitle: string;
+    resetPasswordDescription: string;
+    newPassword: string;
+    confirmPassword: string;
+    resetPassword: string;
+    resettingPassword: string;
+    passwordsDoNotMatch: string;
+    passwordResetSuccess: string;
+    invalidResetToken: string;
+    showPassword: string;
+    hidePassword: string;
   };
   sidebar: {
     planned: string;
@@ -148,6 +167,7 @@ export interface Dictionary {
     footerRights: string;
     footerContact: string;
     footerPrivacy: string;
+    gtdMethodLink: string;
   };
   pages: {
     planned: string;
@@ -225,6 +245,40 @@ export interface Dictionary {
     passwordRequired: string;
     nameTooShort: string;
     passwordTooShort: string;
+    passwordTooLong: string;
+  };
+  onboarding: {
+    introTitle: string;
+    introDescription: string;
+    introStart: string;
+    introSkip: string;
+    listsTitle: string;
+    listsDescription: string;
+    listsContinue: string;
+    listsSkip: string;
+    homeTitle: string;
+    homeDescription: string;
+    homeSkip: string;
+    homeContinue: string;
+    workTitle: string;
+    workDescription: string;
+    workSkip: string;
+    workContinue: string;
+    doneTitle: string;
+    doneDescription: string;
+    doneCreatedLists: string;
+    doneStart: string;
+    listHome: string;
+    listWork: string;
+    listComputer: string;
+    listPhoneCalls: string;
+    listErrands: string;
+    listWaitingFor: string;
+    listSomedayMaybe: string;
+    listOther: string;
+    searchLocation: string;
+    currentLocation: string;
+    step: string;
   };
 }
 

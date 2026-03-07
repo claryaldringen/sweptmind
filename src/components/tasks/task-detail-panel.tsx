@@ -275,7 +275,14 @@ interface UpdateTaskData {
 }
 
 interface ToggleCompletedData {
-  toggleTaskCompleted: { id: string; isCompleted: boolean; completedAt: string | null };
+  toggleTaskCompleted: {
+    __typename: "Task";
+    id: string;
+    isCompleted: boolean;
+    completedAt: string | null;
+    dueDate: string | null;
+    reminderAt: string | null;
+  };
 }
 
 interface DeleteTaskData {
@@ -311,16 +318,27 @@ export function TaskDetailPanel() {
     variables: { id: taskId! },
     skip: !taskId,
   });
-  const { data: tagsData } = useQuery<{ tags: TaskTag[] }>(GET_TAGS);
-  const { data: locationsData } = useQuery<{ locations: TaskLocation[] }>(GET_LOCATIONS);
+  const { data: tagsData } = useQuery<{ tags: TaskTag[] }>(GET_TAGS, {
+    skip: !taskId,
+  });
+  const { data: locationsData } = useQuery<{ locations: TaskLocation[] }>(GET_LOCATIONS, {
+    skip: !taskId,
+  });
 
   // ---- Mutations ----
 
-  const [updateTask] = useMutation<UpdateTaskData>(UPDATE_TASK, {
-    refetchQueries: "active",
-  });
+  const [updateTask] = useMutation<UpdateTaskData>(UPDATE_TASK);
   const [toggleCompleted] = useMutation<ToggleCompletedData>(TOGGLE_COMPLETED, {
-    refetchQueries: "active",
+    optimisticResponse: {
+      toggleTaskCompleted: {
+        __typename: "Task" as const,
+        id: taskId!,
+        isCompleted: !data?.task?.isCompleted,
+        completedAt: data?.task?.isCompleted ? null : new Date().toISOString(),
+        dueDate: data?.task?.dueDate ?? null,
+        reminderAt: data?.task?.reminderAt ?? null,
+      },
+    },
   });
   const [deleteTask] = useMutation<DeleteTaskData>(DELETE_TASK, {
     update(cache) {
@@ -331,6 +349,16 @@ export function TaskDetailPanel() {
     },
   });
   const [createStep] = useMutation<CreateStepData>(CREATE_STEP, {
+    optimisticResponse: ({ input }) => ({
+      createStep: {
+        __typename: "Step" as const,
+        id: `temp-${Date.now()}`,
+        taskId: input.taskId,
+        title: input.title,
+        isCompleted: false,
+        sortOrder: data?.task?.steps?.length ?? 0,
+      },
+    }),
     update(cache, { data }) {
       if (!data?.createStep || !taskId) return;
       cache.modify({
@@ -355,9 +383,23 @@ export function TaskDetailPanel() {
       });
     },
   });
-  const [toggleStep] = useMutation<ToggleStepData>(TOGGLE_STEP);
+  const [toggleStep] = useMutation<ToggleStepData>(TOGGLE_STEP, {
+    optimisticResponse: ({ id }) => {
+      const step = data?.task?.steps?.find((s) => s.id === id);
+      return {
+        toggleStepCompleted: {
+          __typename: "Step" as const,
+          id,
+          isCompleted: !step?.isCompleted,
+        },
+      };
+    },
+  });
   const [updateStepTitle] = useMutation(UPDATE_STEP);
   const [deleteStep] = useMutation<DeleteStepData>(DELETE_STEP, {
+    optimisticResponse: {
+      deleteStep: true,
+    },
     update(cache, _result, { variables }) {
       if (!variables?.id || !taskId) return;
       const stepId = variables.id as string;

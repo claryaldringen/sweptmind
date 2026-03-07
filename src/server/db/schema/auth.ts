@@ -15,6 +15,7 @@ export const users = pgTable("users", {
     .defaultNow()
     .notNull()
     .$onUpdateFn(() => new Date()),
+  onboardingCompleted: boolean("onboarding_completed").notNull().default(true),
   calendarSyncAll: boolean("calendar_sync_all").notNull().default(false),
   calendarToken: text("calendar_token").unique(),
 });

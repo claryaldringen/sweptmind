@@ -17,11 +17,7 @@ interface RecurrenceYearly {
   type: "YEARLY";
 }
 
-export type Recurrence =
-  | RecurrenceDaily
-  | RecurrenceWeekly
-  | RecurrenceMonthly
-  | RecurrenceYearly;
+export type Recurrence = RecurrenceDaily | RecurrenceWeekly | RecurrenceMonthly | RecurrenceYearly;
 
 export function parseRecurrence(recurrence: string): Recurrence | null {
   if (!recurrence) return null;
@@ -42,10 +38,7 @@ export function parseRecurrence(recurrence: string): Recurrence | null {
   return null;
 }
 
-export function computeNextDueDate(
-  recurrence: string,
-  currentDueDate: string,
-): string | null {
+export function computeNextDueDate(recurrence: string, currentDueDate: string): string | null {
   if (!currentDueDate) return null;
 
   const parsed = parseRecurrence(recurrence);

@@ -1,0 +1,23 @@
+mutation CreateLocation($input: CreateLocationInput!) {
+  createLocation(input: $input) {
+    id
+    name
+    latitude
+    longitude
+    address
+  }
+}
+
+mutation UpdateLocation($id: String!, $input: UpdateLocationInput!) {
+  updateLocation(id: $id, input: $input) {
+    id
+    name
+    latitude
+    longitude
+    address
+  }
+}
+
+mutation DeleteLocation($id: String!) {
+  deleteLocation(id: $id)
+}

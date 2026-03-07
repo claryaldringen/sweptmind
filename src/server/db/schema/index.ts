@@ -4,4 +4,5 @@ export * from "./lists";
 export * from "./tasks";
 export * from "./tags";
 export * from "./calendar-sync";
+export * from "./push-subscriptions";
 export * from "./relations";

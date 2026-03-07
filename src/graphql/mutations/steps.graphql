@@ -1,0 +1,27 @@
+mutation CreateStep($input: CreateStepInput!) {
+  createStep(input: $input) {
+    id
+    taskId
+    title
+    isCompleted
+    sortOrder
+  }
+}
+
+mutation UpdateStep($id: String!, $title: String!) {
+  updateStep(id: $id, title: $title) {
+    id
+    title
+  }
+}
+
+mutation DeleteStep($id: String!) {
+  deleteStep(id: $id)
+}
+
+mutation ToggleStepCompleted($id: String!) {
+  toggleStepCompleted(id: $id) {
+    id
+    isCompleted
+  }
+}

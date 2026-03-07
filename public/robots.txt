@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /onboarding
+Disallow: /planned
+Disallow: /lists/
+Disallow: /settings
+Disallow: /nearby
+Disallow: /context
+Disallow: /tags/
+Disallow: /tasks/
+
+Sitemap: https://sweptmind.com/sitemap.xml

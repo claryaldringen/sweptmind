@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+e2e/.auth/
+/playwright-report/
+/test-results/
 
 # next.js
 /.next/
@@ -39,3 +42,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Serwist generated service worker
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js
+public/swe-worker-*.js.map
+coverage/

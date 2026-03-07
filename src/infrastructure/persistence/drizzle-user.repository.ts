@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and, gt } from "drizzle-orm";
 import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import type { User, CreateUserInput } from "@/domain/entities/user";
@@ -65,5 +65,53 @@ export class DrizzleUserRepository implements IUserRepository {
       columns: { calendarSyncAll: true },
     });
     return user?.calendarSyncAll ?? false;
+  }
+
+  async updateOnboardingCompleted(userId: string, completed: boolean): Promise<void> {
+    await this.db
+      .update(schema.users)
+      .set({ onboardingCompleted: completed })
+      .where(eq(schema.users.id, userId));
+  }
+
+  async updatePassword(userId: string, hashedPassword: string): Promise<void> {
+    await this.db.update(schema.users).set({ hashedPassword }).where(eq(schema.users.id, userId));
+  }
+
+  async createPasswordResetToken(email: string): Promise<string | null> {
+    const user = await this.findByEmail(email);
+    if (!user) return null;
+
+    const token = crypto.randomUUID();
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    // Delete any existing tokens for this email
+    await this.db
+      .delete(schema.verificationTokens)
+      .where(eq(schema.verificationTokens.identifier, email));
+
+    await this.db.insert(schema.verificationTokens).values({
+      identifier: email,
+      token,
+      expires,
+    });
+
+    return token;
+  }
+
+  async validatePasswordResetToken(token: string): Promise<string | null> {
+    const result = await this.db.query.verificationTokens.findFirst({
+      where: and(
+        eq(schema.verificationTokens.token, token),
+        gt(schema.verificationTokens.expires, new Date()),
+      ),
+    });
+    return result?.identifier ?? null;
+  }
+
+  async deletePasswordResetToken(token: string): Promise<void> {
+    await this.db
+      .delete(schema.verificationTokens)
+      .where(eq(schema.verificationTokens.token, token));
   }
 }

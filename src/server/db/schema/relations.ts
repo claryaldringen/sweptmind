@@ -5,6 +5,7 @@ import { tasks, steps } from "./tasks";
 import { tags, taskTags } from "./tags";
 import { locations } from "./locations";
 import { calendarSync } from "./calendar-sync";
+import { pushSubscriptions } from "./push-subscriptions";
 
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
@@ -14,6 +15,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   tags: many(tags),
   locations: many(locations),
   calendarSyncs: many(calendarSync),
+  pushSubscriptions: many(pushSubscriptions),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -97,6 +99,13 @@ export const locationsRelations = relations(locations, ({ one, many }) => ({
   }),
   tasks: many(tasks),
   lists: many(lists),
+}));
+
+export const pushSubscriptionRelations = relations(pushSubscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [pushSubscriptions.userId],
+    references: [users.id],
+  }),
 }));
 
 export const calendarSyncRelations = relations(calendarSync, ({ one }) => ({

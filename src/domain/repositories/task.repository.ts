@@ -22,7 +22,7 @@ export interface ITaskRepository {
   countActiveByListIds(listIds: string[]): Promise<Map<string, number>>;
   countVisibleByList(listId: string, today: string): Promise<number>;
   countVisibleByListIds(listIds: string[], today: string): Promise<Map<string, number>>;
-  findByListId(listId: string): Promise<Task[]>;
+  findByListId(listId: string, userId: string): Promise<Task[]>;
   findByTagId(tagId: string, userId: string): Promise<Task[]>;
   findWithLocation(userId: string, opts?: PaginationOpts): Promise<Task[]>;
   findContextTasks(

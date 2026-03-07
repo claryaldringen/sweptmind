@@ -1,4 +1,4 @@
-import { eq, and, or, isNotNull, asc, desc, inArray } from "drizzle-orm";
+import { eq, and, or, isNotNull, asc, desc, inArray, count } from "drizzle-orm";
 import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import type { Task } from "@/domain/entities/task";
@@ -78,28 +78,31 @@ export class DrizzleTaskRepository implements ITaskRepository {
   }
 
   async countActiveByList(listId: string): Promise<number> {
-    const tasks = await this.db.query.tasks.findMany({
-      where: and(eq(schema.tasks.listId, listId), eq(schema.tasks.isCompleted, false)),
-    });
-    return tasks.length;
+    const [row] = await this.db
+      .select({ count: count() })
+      .from(schema.tasks)
+      .where(and(eq(schema.tasks.listId, listId), eq(schema.tasks.isCompleted, false)));
+    return row?.count ?? 0;
   }
 
   async countVisibleByList(listId: string, today: string): Promise<number> {
     const tasks = await this.db.query.tasks.findMany({
       where: and(eq(schema.tasks.listId, listId), eq(schema.tasks.isCompleted, false)),
+      columns: { dueDate: true, reminderAt: true },
     });
-    return tasks.filter((t) => !isFutureTask(t, today)).length;
+    return tasks.filter((t) => !isFutureTask({ ...t, isCompleted: false }, today)).length;
   }
 
   async countActiveByListIds(listIds: string[]): Promise<Map<string, number>> {
     if (listIds.length === 0) return new Map();
-    const tasks = await this.db.query.tasks.findMany({
-      where: and(inArray(schema.tasks.listId, listIds), eq(schema.tasks.isCompleted, false)),
-      columns: { listId: true },
-    });
+    const rows = await this.db
+      .select({ listId: schema.tasks.listId, count: count() })
+      .from(schema.tasks)
+      .where(and(inArray(schema.tasks.listId, listIds), eq(schema.tasks.isCompleted, false)))
+      .groupBy(schema.tasks.listId);
     const map = new Map<string, number>();
     for (const id of listIds) map.set(id, 0);
-    for (const t of tasks) map.set(t.listId, (map.get(t.listId) ?? 0) + 1);
+    for (const row of rows) map.set(row.listId, row.count);
     return map;
   }
 
@@ -107,20 +110,21 @@ export class DrizzleTaskRepository implements ITaskRepository {
     if (listIds.length === 0) return new Map();
     const tasks = await this.db.query.tasks.findMany({
       where: and(inArray(schema.tasks.listId, listIds), eq(schema.tasks.isCompleted, false)),
+      columns: { listId: true, dueDate: true, reminderAt: true },
     });
     const map = new Map<string, number>();
     for (const id of listIds) map.set(id, 0);
     for (const t of tasks) {
-      if (!isFutureTask(t, today)) {
+      if (!isFutureTask({ ...t, isCompleted: false }, today)) {
         map.set(t.listId, (map.get(t.listId) ?? 0) + 1);
       }
     }
     return map;
   }
 
-  async findByListId(listId: string): Promise<Task[]> {
+  async findByListId(listId: string, userId: string): Promise<Task[]> {
     return this.db.query.tasks.findMany({
-      where: eq(schema.tasks.listId, listId),
+      where: and(eq(schema.tasks.listId, listId), eq(schema.tasks.userId, userId)),
       orderBy: asc(schema.tasks.sortOrder),
     });
   }

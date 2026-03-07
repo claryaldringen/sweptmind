@@ -8,6 +8,7 @@ import "./types/location";
 import "./types/list";
 import "./types/list-group";
 import "./types/register";
+import "./types/onboarding";
 import "./types/calendar";
 
 export const schema = builder.toSchema();

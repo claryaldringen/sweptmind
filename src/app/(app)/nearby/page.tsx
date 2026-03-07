@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
-import { MapPin, MapPinOff } from "lucide-react";
+import { ArrowLeft, MapPin, MapPinOff } from "lucide-react";
+import { useSidebarContext } from "@/components/layout/app-shell";
 import { TaskList } from "@/components/tasks/task-list";
 import { TaskDetailPanel } from "@/components/tasks/task-detail-panel";
 import { useNearby } from "@/components/providers/nearby-provider";
@@ -74,39 +74,36 @@ interface AllTasksWithLocationData {
 
 export default function NearbyPage() {
   const { t } = useTranslations();
-  const { isNearby, isTracking, isSupported, isApproximate, error, startTracking } = useNearby();
+  const { open: openSidebar, isDesktop } = useSidebarContext();
+  const { isNearby, isTracking, isApproximate, error, startTracking } = useNearby();
   const { data, loading } = useQuery<AllTasksWithLocationData>(ALL_TASKS_WITH_LOCATION);
-
-  useEffect(() => {
-    if (isSupported && !isTracking) {
-      startTracking();
-    }
-  }, [isSupported, isTracking, startTracking]);
 
   const allTasks = data?.allTasksWithLocation ?? [];
   const nearbyTasks = isTracking
     ? allTasks.filter(
-        (task) =>
-          task.location && isNearby(task.location.latitude, task.location.longitude),
+        (task) => task.location && isNearby(task.location.latitude, task.location.longitude),
       )
     : [];
 
   const showPermissionDenied = error && !isTracking;
 
   return (
-    <div className="flex flex-1">
+    <div className="relative flex flex-1">
       <div className="flex flex-1 flex-col">
         <div className="px-6 pt-8 pb-4">
           <h1 className="flex items-center gap-2 text-2xl font-bold">
+            {!isDesktop && (
+              <Button variant="ghost" size="icon" onClick={openSidebar} className="-ml-2">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            )}
             <MapPin className="h-7 w-7 text-orange-500" />
             {t("pages.nearby")}
           </h1>
           {isTracking && (
             <p className="text-muted-foreground mt-1 text-sm">
-              {isApproximate
-                ? t("locations.approximateLocation")
-                : t("locations.trackingActive")}{" "}
-              · {t("locations.nearbyRadius")}
+              {isApproximate ? t("locations.approximateLocation") : t("locations.trackingActive")} ·{" "}
+              {t("locations.nearbyRadius")}
             </p>
           )}
         </div>

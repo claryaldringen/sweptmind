@@ -9,4 +9,9 @@ export interface IUserRepository {
   regenerateCalendarToken(userId: string): Promise<string>;
   updateCalendarSyncAll(userId: string, syncAll: boolean): Promise<void>;
   getCalendarSyncAll(userId: string): Promise<boolean>;
+  updateOnboardingCompleted(userId: string, completed: boolean): Promise<void>;
+  updatePassword(userId: string, hashedPassword: string): Promise<void>;
+  createPasswordResetToken(email: string): Promise<string | null>;
+  validatePasswordResetToken(token: string): Promise<string | null>;
+  deletePasswordResetToken(token: string): Promise<void>;
 }

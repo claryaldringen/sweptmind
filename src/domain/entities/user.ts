@@ -7,6 +7,7 @@ export interface User {
   hashedPassword: string | null;
   createdAt: Date;
   updatedAt: Date;
+  onboardingCompleted: boolean;
   calendarSyncAll: boolean;
   calendarToken: string | null;
 }

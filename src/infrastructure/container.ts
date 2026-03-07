@@ -16,6 +16,8 @@ import { TagService } from "@/domain/services/tag.service";
 import { LocationService } from "@/domain/services/location.service";
 import { CalendarService } from "@/domain/services/calendar.service";
 import { AuthService, type IPasswordHasher } from "@/domain/services/auth.service";
+import { UserService } from "@/domain/services/user.service";
+import { OnboardingService } from "@/domain/services/onboarding.service";
 
 const taskRepo = new DrizzleTaskRepository(db);
 const listRepo = new DrizzleListRepository(db);
@@ -31,9 +33,7 @@ const bcryptHasher: IPasswordHasher = {
   compare: (password, hashed) => compare(password, hashed),
 };
 
-const taskService = new TaskService(taskRepo);
-taskService.setListRepo(listRepo);
-taskService.setStepRepo(stepRepo);
+const taskService = new TaskService(taskRepo, listRepo, stepRepo);
 
 export const repos = {
   task: taskRepo,
@@ -57,6 +57,8 @@ export const services = {
   location: new LocationService(locationRepo),
   calendar: new CalendarService(calendarSyncRepo, taskRepo),
   auth: new AuthService(userRepo, bcryptHasher),
+  user: new UserService(userRepo),
+  onboarding: new OnboardingService(listRepo, locationRepo, userRepo),
 };
 
 export type Services = typeof services;

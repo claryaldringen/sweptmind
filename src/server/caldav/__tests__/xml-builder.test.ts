@@ -23,6 +23,36 @@ describe("buildPropfindResponse", () => {
     expect(xml).toContain("calendar-home-set");
     expect(xml).toContain("/api/caldav/tok123/calendars/");
   });
+
+  it("builds resourcetype-calendar response", () => {
+    const xml = buildPropfindResponse("/api/caldav/tok123/calendars/tasks/", {
+      "resourcetype-calendar": "",
+    });
+    expect(xml).toContain("<d:resourcetype><d:collection/><cal:calendar/></d:resourcetype>");
+  });
+
+  it("builds getctag response", () => {
+    const xml = buildPropfindResponse("/api/caldav/tok123/calendars/tasks/", {
+      getctag: "ctag-abc-123",
+    });
+    expect(xml).toContain("<cs:getctag>ctag-abc-123</cs:getctag>");
+  });
+
+  it("builds supported-calendar-component-set response", () => {
+    const xml = buildPropfindResponse("/api/caldav/tok123/calendars/tasks/", {
+      "supported-calendar-component-set": "",
+    });
+    expect(xml).toContain(
+      '<cal:supported-calendar-component-set><cal:comp name="VEVENT"/></cal:supported-calendar-component-set>',
+    );
+  });
+
+  it("builds default prop for unknown key", () => {
+    const xml = buildPropfindResponse("/api/caldav/tok123/", {
+      "custom-prop": "custom-value",
+    });
+    expect(xml).toContain("<d:custom-prop>custom-value</d:custom-prop>");
+  });
 });
 
 describe("buildCalendarMultigetResponse", () => {

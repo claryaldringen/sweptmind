@@ -1,0 +1,42 @@
+query GetLocations {
+  locations {
+    id
+    name
+    latitude
+    longitude
+    address
+  }
+}
+
+query AllTasksWithLocation {
+  allTasksWithLocation {
+    id
+    listId
+    locationId
+    title
+    notes
+    isCompleted
+    completedAt
+    dueDate
+    reminderAt
+    sortOrder
+    createdAt
+    location {
+      id
+      name
+      latitude
+      longitude
+    }
+    list {
+      id
+      name
+    }
+    steps {
+      id
+      taskId
+      title
+      isCompleted
+      sortOrder
+    }
+  }
+}

@@ -1,0 +1,94 @@
+"use client";
+
+import { useState } from "react";
+import { X, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
+
+interface StepItem {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+}
+
+interface TaskStepsProps {
+  steps: StepItem[];
+  onAddStep: (title: string) => Promise<void>;
+  onToggleStep: (id: string) => void;
+  onUpdateStepTitle: (id: string, title: string) => void;
+  onDeleteStep: (id: string) => void;
+  addStepLabel: string;
+}
+
+export function TaskSteps({
+  steps,
+  onAddStep,
+  onToggleStep,
+  onUpdateStepTitle,
+  onDeleteStep,
+  addStepLabel,
+}: TaskStepsProps) {
+  const [newStepTitle, setNewStepTitle] = useState("");
+
+  async function handleAddStep(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newStepTitle.trim()) return;
+    await onAddStep(newStepTitle.trim());
+    setNewStepTitle("");
+  }
+
+  return (
+    <div className="space-y-1">
+      {steps.map((step) => (
+        <div key={step.id} className="group flex items-center gap-2">
+          <Checkbox
+            checked={step.isCompleted}
+            onCheckedChange={() => onToggleStep(step.id)}
+            className="h-4 w-4 rounded-full"
+          />
+          <Input
+            defaultValue={step.title}
+            onBlur={(e) => {
+              const newTitle = e.target.value.trim();
+              if (newTitle && newTitle !== step.title) {
+                onUpdateStepTitle(step.id, newTitle);
+              } else {
+                e.target.value = step.title;
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") {
+                e.currentTarget.value = step.title;
+                e.currentTarget.blur();
+              }
+            }}
+            className={cn(
+              "h-auto flex-1 border-0 bg-transparent p-0 text-sm shadow-none outline-none focus-visible:ring-0 md:text-sm",
+              step.isCompleted && "text-muted-foreground line-through",
+            )}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100"
+            onClick={() => onDeleteStep(step.id)}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      ))}
+      <form onSubmit={handleAddStep} className="flex items-center gap-2">
+        <Plus className="text-muted-foreground h-4 w-4" />
+        <Input
+          value={newStepTitle}
+          onChange={(e) => setNewStepTitle(e.target.value)}
+          placeholder={addStepLabel}
+          className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
+        />
+      </form>
+    </div>
+  );
+}

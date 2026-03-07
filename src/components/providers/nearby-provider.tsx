@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useCallback, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useCallback, useEffect, useMemo, type ReactNode } from "react";
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import { useUserLocation } from "@/hooks/use-user-location";
@@ -34,6 +34,12 @@ const NearbyContext = createContext<NearbyContextValue | null>(null);
 export function NearbyProvider({ children }: { children: ReactNode }) {
   const { position, error, isSupported, isTracking, isApproximate, startTracking, stopTracking } =
     useUserLocation();
+
+  useEffect(() => {
+    if (isSupported && !isTracking) {
+      startTracking();
+    }
+  }, [isSupported, isTracking, startTracking]);
 
   const { data: locationsData } = useQuery<{
     locations: { id: string; latitude: number; longitude: number }[];

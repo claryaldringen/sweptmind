@@ -29,7 +29,7 @@ export const ListType = ListRef.implement({
     }),
     tasks: t.field({
       type: [TaskRef],
-      resolve: async (list, _args, ctx) => ctx.services.task.getByListId(list.id),
+      resolve: async (list, _args, ctx) => ctx.services.task.getByListId(list.id, ctx.userId!),
     }),
     createdAt: t.string({
       resolve: (list) => list.createdAt.toISOString(),

@@ -13,8 +13,7 @@ async function handleRequest(request: NextRequest, context: Params) {
 
   const method = request.method;
   const lastSegment = path[path.length - 1];
-  const pathStr =
-    "/" + path.join("/") + (lastSegment?.includes(".") ? "" : "/");
+  const pathStr = "/" + path.join("/") + (lastSegment?.includes(".") ? "" : "/");
 
   if (method === "PROPFIND") {
     const result = await handler.handlePropfind(token, pathStr);
@@ -45,12 +44,10 @@ async function handleRequest(request: NextRequest, context: Params) {
   // GET individual .ics file
   if (method === "GET") {
     const filename = path[path.length - 1];
-    if (!filename?.endsWith(".ics"))
-      return new NextResponse("Not Found", { status: 404 });
+    if (!filename?.endsWith(".ics")) return new NextResponse("Not Found", { status: 404 });
     const icalUid = filename.replace(".ics", "");
     const result = await handler.handleGet(token, user, icalUid);
-    if (result.status !== 200)
-      return new NextResponse(result.body, { status: result.status });
+    if (result.status !== 200) return new NextResponse(result.body, { status: result.status });
     return new NextResponse(result.body, {
       status: 200,
       headers: {
@@ -63,8 +60,7 @@ async function handleRequest(request: NextRequest, context: Params) {
   // PUT .ics file
   if (method === "PUT") {
     const filename = path[path.length - 1];
-    if (!filename?.endsWith(".ics"))
-      return new NextResponse("Bad Request", { status: 400 });
+    if (!filename?.endsWith(".ics")) return new NextResponse("Bad Request", { status: 400 });
     const icalUid = filename.replace(".ics", "");
     const body = await request.text();
     const ifMatch = request.headers.get("If-Match");
@@ -78,8 +74,7 @@ async function handleRequest(request: NextRequest, context: Params) {
   // DELETE .ics file
   if (method === "DELETE") {
     const filename = path[path.length - 1];
-    if (!filename?.endsWith(".ics"))
-      return new NextResponse("Not Found", { status: 404 });
+    if (!filename?.endsWith(".ics")) return new NextResponse("Not Found", { status: 404 });
     const icalUid = filename.replace(".ics", "");
     const result = await handler.handleDelete(user, icalUid);
     return new NextResponse(null, { status: result.status });

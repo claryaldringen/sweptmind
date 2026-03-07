@@ -7,6 +7,7 @@ import { useSidebarContext } from "@/components/layout/app-shell";
 import { useDeviceContext } from "@/hooks/use-device-context";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { TaskList } from "@/components/tasks/task-list";
+import { isFutureTask } from "@/domain/services/task-visibility";
 import { TaskDetailPanel } from "@/components/tasks/task-detail-panel";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n";
@@ -80,11 +81,12 @@ export default function ContextPage() {
   const { open: openSidebar, isDesktop } = useSidebarContext();
   const deviceContext = useDeviceContext();
   const { nearbyLocationIds } = useNearby();
+
   const { data, loading } = useQuery<ContextTasksData>(CONTEXT_TASKS, {
     variables: { deviceContext, nearbyLocationIds: nearbyLocationIds ?? [] },
   });
 
-  const tasks = data?.contextTasks ?? [];
+  const tasks = (data?.contextTasks ?? []).filter((t) => !isFutureTask(t));
 
   return (
     <div className="relative flex flex-1">

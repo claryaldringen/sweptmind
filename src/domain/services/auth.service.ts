@@ -32,23 +32,20 @@ export class AuthService {
     return user;
   }
 
-  async getById(id: string): Promise<User | undefined> {
-    return this.userRepo.findById(id);
+  async requestPasswordReset(email: string): Promise<string | null> {
+    return this.userRepo.createPasswordResetToken(email);
   }
 
-  async getCalendarToken(userId: string): Promise<string> {
-    return this.userRepo.getCalendarToken(userId);
-  }
+  async resetPassword(token: string, newPassword: string): Promise<boolean> {
+    const email = await this.userRepo.validatePasswordResetToken(token);
+    if (!email) return false;
 
-  async regenerateCalendarToken(userId: string): Promise<string> {
-    return this.userRepo.regenerateCalendarToken(userId);
-  }
+    const hashedPassword = await this.hasher.hash(newPassword);
+    const user = await this.userRepo.findByEmail(email);
+    if (!user) return false;
 
-  async updateCalendarSyncAll(userId: string, syncAll: boolean): Promise<void> {
-    return this.userRepo.updateCalendarSyncAll(userId, syncAll);
-  }
-
-  async getCalendarSyncAll(userId: string): Promise<boolean> {
-    return this.userRepo.getCalendarSyncAll(userId);
+    await this.userRepo.updatePassword(user.id, hashedPassword);
+    await this.userRepo.deletePasswordResetToken(token);
+    return true;
   }
 }

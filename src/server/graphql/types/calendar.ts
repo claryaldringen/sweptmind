@@ -4,7 +4,7 @@ builder.mutationField("getCalendarToken", (t) =>
   t.string({
     authScopes: { authenticated: true },
     resolve: async (_root, _args, ctx) => {
-      return ctx.services.auth.getCalendarToken(ctx.userId!);
+      return ctx.services.user.getCalendarToken(ctx.userId!);
     },
   }),
 );
@@ -13,7 +13,7 @@ builder.mutationField("regenerateCalendarToken", (t) =>
   t.string({
     authScopes: { authenticated: true },
     resolve: async (_root, _args, ctx) => {
-      return ctx.services.auth.regenerateCalendarToken(ctx.userId!);
+      return ctx.services.user.regenerateCalendarToken(ctx.userId!);
     },
   }),
 );
@@ -23,7 +23,7 @@ builder.mutationField("updateCalendarSyncAll", (t) =>
     authScopes: { authenticated: true },
     args: { syncAll: t.arg.boolean({ required: true }) },
     resolve: async (_root, args, ctx) => {
-      await ctx.services.auth.updateCalendarSyncAll(ctx.userId!, args.syncAll);
+      await ctx.services.user.updateCalendarSyncAll(ctx.userId!, args.syncAll);
       return args.syncAll;
     },
   }),
@@ -33,7 +33,7 @@ builder.queryField("calendarSyncAll", (t) =>
   t.boolean({
     authScopes: { authenticated: true },
     resolve: async (_root, _args, ctx) => {
-      return ctx.services.auth.getCalendarSyncAll(ctx.userId!);
+      return ctx.services.user.getCalendarSyncAll(ctx.userId!);
     },
   }),
 );

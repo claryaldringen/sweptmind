@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { gql } from "@apollo/client";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
+  ArrowLeft,
   Settings,
   Moon,
   Sun,
@@ -18,6 +19,7 @@ import {
   Copy,
   RefreshCw,
 } from "lucide-react";
+import { useSidebarContext } from "@/components/layout/app-shell";
 import { useTaskCountMode } from "@/hooks/use-task-count-mode";
 import { useLocale } from "@/hooks/use-locale";
 import { useTranslations } from "@/lib/i18n";
@@ -80,6 +82,7 @@ export default function SettingsPage() {
   const { mode: taskCountMode, setMode: setTaskCountMode } = useTaskCountMode();
   const { locale, setLocale } = useLocale();
   const { t } = useTranslations();
+  const { open: openSidebar, isDesktop } = useSidebarContext();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<MappedTask[] | null>(null);
@@ -99,6 +102,63 @@ export default function SettingsPage() {
   const { data: syncAllData } = useQuery<CalendarSyncAllData>(CALENDAR_SYNC_ALL);
 
   const syncAll = syncAllData?.calendarSyncAll ?? false;
+
+  // Push notification state
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushSupported, setPushSupported] = useState(true);
+  const [pushLoading, setPushLoading] = useState(false);
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setPushSupported(false);
+      return;
+    }
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.pushManager.getSubscription().then((sub) => {
+        setPushEnabled(!!sub);
+      });
+    });
+  }, []);
+
+  const handlePushToggle = useCallback(async (checked: boolean) => {
+    setPushLoading(true);
+    try {
+      if (checked) {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          setPushLoading(false);
+          return;
+        }
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        });
+        await fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sub.toJSON()),
+        });
+        setPushEnabled(true);
+      } else {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await fetch("/api/push/unsubscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ endpoint: sub.endpoint }),
+          });
+          await sub.unsubscribe();
+        }
+        setPushEnabled(false);
+      }
+    } catch {
+      console.error("Push subscription failed");
+    } finally {
+      setPushLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     getToken()
@@ -186,8 +246,13 @@ export default function SettingsPage() {
     : [];
 
   return (
-    <div className="flex flex-1 flex-col p-8">
+    <div className="flex flex-1 flex-col overflow-auto p-8">
       <h1 className="mb-8 flex items-center gap-2 text-2xl font-bold">
+        {!isDesktop && (
+          <Button variant="ghost" size="icon" onClick={openSidebar} className="-ml-2">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        )}
         <Settings className="h-7 w-7" />
         {t("settings.title")}
       </h1>
@@ -377,6 +442,24 @@ export default function SettingsPage() {
                 {t("settings.importButton")}
               </Button>
             </div>
+          )}
+        </div>
+
+        {/* Push Notifications */}
+        <div>
+          <h2 className="mb-3 text-lg font-semibold">{t("push.title")}</h2>
+          <p className="text-muted-foreground mb-3 text-xs">{t("push.description")}</p>
+          {pushSupported ? (
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm">{pushEnabled ? t("push.enabled") : t("push.disabled")}</p>
+              <Switch
+                checked={pushEnabled}
+                onCheckedChange={handlePushToggle}
+                disabled={pushLoading}
+              />
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">{t("push.unsupported")}</p>
           )}
         </div>
 

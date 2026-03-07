@@ -13,6 +13,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     hashedPassword: "hashed_password",
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
+    onboardingCompleted: true,
     calendarSyncAll: false,
     calendarToken: null,
     ...overrides,
@@ -29,6 +30,11 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     regenerateCalendarToken: vi.fn(),
     updateCalendarSyncAll: vi.fn(),
     getCalendarSyncAll: vi.fn(),
+    updateOnboardingCompleted: vi.fn(),
+    updatePassword: vi.fn(),
+    createPasswordResetToken: vi.fn(),
+    validatePasswordResetToken: vi.fn(),
+    deletePasswordResetToken: vi.fn(),
     ...overrides,
   };
 }
@@ -113,15 +119,45 @@ describe("AuthService", () => {
     });
   });
 
-  describe("getById", () => {
-    it("deleguje na repo", async () => {
-      const user = makeUser();
-      vi.mocked(userRepo.findById).mockResolvedValue(user);
+  describe("requestPasswordReset", () => {
+    it("deleguje na repo a vrátí token", async () => {
+      vi.mocked(userRepo.createPasswordResetToken).mockResolvedValue("reset-token");
+      const result = await service.requestPasswordReset("test@example.com");
+      expect(result).toBe("reset-token");
+      expect(userRepo.createPasswordResetToken).toHaveBeenCalledWith("test@example.com");
+    });
 
-      const result = await service.getById("user-1");
+    it("vrátí null pokud email neexistuje", async () => {
+      vi.mocked(userRepo.createPasswordResetToken).mockResolvedValue(null);
+      const result = await service.requestPasswordReset("unknown@example.com");
+      expect(result).toBeNull();
+    });
+  });
 
-      expect(result).toEqual(user);
-      expect(userRepo.findById).toHaveBeenCalledWith("user-1");
+  describe("resetPassword", () => {
+    it("resetuje heslo s platným tokenem", async () => {
+      vi.mocked(userRepo.validatePasswordResetToken).mockResolvedValue("test@example.com");
+      vi.mocked(userRepo.findByEmail).mockResolvedValue(makeUser());
+
+      const result = await service.resetPassword("valid-token", "newPassword123");
+
+      expect(result).toBe(true);
+      expect(hasher.hash).toHaveBeenCalledWith("newPassword123");
+      expect(userRepo.updatePassword).toHaveBeenCalledWith("user-1", "hashed_password");
+      expect(userRepo.deletePasswordResetToken).toHaveBeenCalledWith("valid-token");
+    });
+
+    it("vrátí false pro neplatný token", async () => {
+      vi.mocked(userRepo.validatePasswordResetToken).mockResolvedValue(null);
+      const result = await service.resetPassword("invalid-token", "newPass");
+      expect(result).toBe(false);
+    });
+
+    it("vrátí false pokud uživatel s emailem neexistuje", async () => {
+      vi.mocked(userRepo.validatePasswordResetToken).mockResolvedValue("deleted@example.com");
+      vi.mocked(userRepo.findByEmail).mockResolvedValue(undefined);
+      const result = await service.resetPassword("valid-token", "newPass");
+      expect(result).toBe(false);
     });
   });
 });

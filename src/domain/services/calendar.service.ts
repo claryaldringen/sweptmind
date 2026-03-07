@@ -2,7 +2,7 @@ import type { Task } from "../entities/task";
 import type { CalendarSync } from "../entities/calendar-sync";
 import type { ICalendarSyncRepository } from "../repositories/calendar-sync.repository";
 import type { ITaskRepository } from "../repositories/task.repository";
-import type { VeventTaskData } from "@/server/caldav/ical-converter";
+import type { VeventTaskData } from "../entities/calendar";
 import { computeDefaultReminder } from "./task-visibility";
 
 export class CalendarService {

@@ -19,9 +19,21 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useTaskCountMode } from "@/hooks/use-task-count-mode";
 import { useDeviceContext } from "@/hooks/use-device-context";
 import { useTranslations } from "@/lib/i18n";
-import { CalendarDays, List, MapPin, Pencil, Plus, Tag, Trash2, Zap } from "lucide-react";
+import { isFutureTask } from "@/domain/services/task-visibility";
+import {
+  CalendarDays,
+  MapPin,
+  Monitor,
+  Pencil,
+  Plus,
+  Smartphone,
+  Tag,
+  Trash2,
+  Zap,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getTagColorClasses } from "@/lib/tag-colors";
+import { ListIcon, LIST_ICONS } from "@/lib/list-icons";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -62,6 +74,24 @@ const GET_TAGS = gql`
       color
       taskCount
       deviceContext
+      locationId
+      location {
+        id
+        name
+        latitude
+        longitude
+      }
+    }
+  }
+`;
+
+const CONTEXT_TASKS_COUNT = gql`
+  query ContextTasksCount($deviceContext: String, $nearbyLocationIds: [String!]) {
+    contextTasks(deviceContext: $deviceContext, nearbyLocationIds: $nearbyLocationIds) {
+      id
+      isCompleted
+      dueDate
+      reminderAt
     }
   }
 `;
@@ -90,6 +120,7 @@ const UPDATE_LIST = gql`
     updateList(id: $id, input: $input) {
       id
       name
+      icon
     }
   }
 `;
@@ -121,6 +152,8 @@ interface TagItem {
   color: string;
   taskCount: number;
   deviceContext: string | null;
+  locationId: string | null;
+  location: { id: string; name: string; latitude: number; longitude: number } | null;
 }
 
 interface GetTagsData {
@@ -184,9 +217,16 @@ function SortableListItem({
             )}
           >
             <div className="flex items-center gap-3">
-              <List className="h-5 w-5 text-blue-500" />
+              <ListIcon icon={list.icon} className="h-5 w-5 text-blue-500" />
               <span className="truncate">{list.name}</span>
               {isNearby && <MapPin className="h-3 w-3 animate-pulse text-green-500" />}
+              {isDeviceMatch &&
+                !isNearby &&
+                (list.deviceContext === "phone" ? (
+                  <Smartphone className="h-3 w-3 animate-pulse text-yellow-500" />
+                ) : (
+                  <Monitor className="h-3 w-3 animate-pulse text-yellow-500" />
+                ))}
             </div>
             {count > 0 && <span className="text-muted-foreground text-xs">{count}</span>}
           </Link>
@@ -211,13 +251,13 @@ function SortableListItem({
 function DroppableDefaultList({
   list,
   isActive,
-  taskCountMode,
+  contextCount,
   isDropTarget,
   onNavigate,
 }: {
   list: ListItem;
   isActive: boolean;
-  taskCountMode: "all" | "visible";
+  contextCount: number;
   isDropTarget: boolean;
   onNavigate?: () => void;
 }) {
@@ -226,8 +266,6 @@ function DroppableDefaultList({
     id: list.id,
     data: { type: "list" },
   });
-
-  const count = taskCountMode === "visible" ? list.visibleTaskCount : list.taskCount;
 
   return (
     <div ref={setNodeRef}>
@@ -244,7 +282,7 @@ function DroppableDefaultList({
           <Zap className="h-5 w-5 text-yellow-500" />
           {t("sidebar.tasks")}
         </div>
-        {count > 0 && <span className="text-muted-foreground text-xs">{count}</span>}
+        {contextCount > 0 && <span className="text-muted-foreground text-xs">{contextCount}</span>}
       </Link>
     </div>
   );
@@ -253,6 +291,7 @@ function DroppableDefaultList({
 function SidebarTagItem({
   tag,
   isActive,
+  isNearby,
   isDeviceMatch,
   onRename,
   onDelete,
@@ -260,6 +299,7 @@ function SidebarTagItem({
 }: {
   tag: TagItem;
   isActive: boolean;
+  isNearby: boolean;
   isDeviceMatch: boolean;
   onRename: (tag: TagItem) => void;
   onDelete: (tag: TagItem) => void;
@@ -277,12 +317,21 @@ function SidebarTagItem({
           className={cn(
             "hover:bg-sidebar-accent flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
             isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
-            isDeviceMatch && "bg-yellow-50 dark:bg-yellow-950/30",
+            isNearby && "bg-emerald-50 dark:bg-emerald-950/30",
+            isDeviceMatch && !isNearby && "bg-yellow-50 dark:bg-yellow-950/30",
           )}
         >
           <div className="flex items-center gap-3">
             <Tag className={cn("h-5 w-5", colors.text)} />
             <span className="truncate">{tag.name}</span>
+            {isNearby && <MapPin className="h-3 w-3 animate-pulse text-green-500" />}
+            {isDeviceMatch &&
+              !isNearby &&
+              (tag.deviceContext === "phone" ? (
+                <Smartphone className="h-3 w-3 animate-pulse text-yellow-500" />
+              ) : (
+                <Monitor className="h-3 w-3 animate-pulse text-yellow-500" />
+              ))}
           </div>
           {tag.taskCount > 0 && (
             <span className="text-muted-foreground text-xs">{tag.taskCount}</span>
@@ -316,7 +365,19 @@ export function Sidebar() {
   const [reorderLists] = useMutation(REORDER_LISTS);
   const [createListOpen, setCreateListOpen] = useState(false);
   const [localOrder, setLocalOrder] = useState<ListItem[] | null>(null);
-  const { isNearby: checkNearby, isTracking } = useNearby();
+  const { isNearby: checkNearby, isTracking, nearbyLocationIds } = useNearby();
+  const { data: contextCountData } = useQuery<{
+    contextTasks: {
+      id: string;
+      isCompleted: boolean;
+      dueDate: string | null;
+      reminderAt: string | null;
+    }[];
+  }>(CONTEXT_TASKS_COUNT, {
+    variables: { deviceContext, nearbyLocationIds: nearbyLocationIds ?? [] },
+  });
+  const contextTaskCount =
+    contextCountData?.contextTasks?.filter((t) => !isFutureTask(t)).length ?? 0;
   const { data: nearbyData } = useQuery<{
     allTasksWithLocation: {
       id: string;
@@ -328,6 +389,7 @@ export function Sidebar() {
   // List rename/delete state
   const [renameListTarget, setRenameListTarget] = useState<ListItem | null>(null);
   const [renameListValue, setRenameListValue] = useState("");
+  const [renameListIcon, setRenameListIcon] = useState<string>("list");
   const [deleteListTarget, setDeleteListTarget] = useState<ListItem | null>(null);
   const [updateList] = useMutation(UPDATE_LIST);
   const [deleteList] = useMutation(DELETE_LIST);
@@ -396,7 +458,10 @@ export function Sidebar() {
   function handleRenameList() {
     if (!renameListTarget || !renameListValue.trim()) return;
     updateList({
-      variables: { id: renameListTarget.id, input: { name: renameListValue.trim() } },
+      variables: {
+        id: renameListTarget.id,
+        input: { name: renameListValue.trim(), icon: renameListIcon },
+      },
       refetchQueries: [{ query: GET_LISTS }],
     });
     setRenameListTarget(null);
@@ -476,7 +541,7 @@ export function Sidebar() {
             <DroppableDefaultList
               list={defaultList}
               isActive={pathname === "/context"}
-              taskCountMode={taskCountMode}
+              contextCount={contextTaskCount}
               isDropTarget={activeType === "task" && overListId === defaultList.id}
               onNavigate={closeSidebar}
             />
@@ -505,6 +570,7 @@ export function Sidebar() {
                 isDropTarget={activeType === "task" && overListId === list.id}
                 onRename={(l) => {
                   setRenameListValue(l.name);
+                  setRenameListIcon(l.icon ?? "list");
                   setRenameListTarget(l);
                 }}
                 onDelete={setDeleteListTarget}
@@ -523,6 +589,11 @@ export function Sidebar() {
                   key={tag.id}
                   tag={tag}
                   isActive={pathname === `/tags/${tag.id}`}
+                  isNearby={
+                    tag.location
+                      ? checkNearby(tag.location.latitude, tag.location.longitude)
+                      : false
+                  }
                   isDeviceMatch={tag.deviceContext === deviceContext}
                   onRename={(t) => {
                     setRenameTagValue(t.name);
@@ -563,6 +634,23 @@ export function Sidebar() {
             onKeyDown={(e) => e.key === "Enter" && handleRenameList()}
             autoFocus
           />
+          <div className="grid grid-cols-8 gap-1.5">
+            {Object.entries(LIST_ICONS).map(([key, Icon]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setRenameListIcon(key)}
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-md transition-colors",
+                  renameListIcon === key
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-accent text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon className="h-4.5 w-4.5" />
+              </button>
+            ))}
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRenameListTarget(null)}>
               {t("lists.cancel")}

@@ -1,4 +1,6 @@
 import type { Task } from "@/domain/entities/task";
+import type { VeventTaskData } from "@/domain/entities/calendar";
+export type { VeventTaskData };
 
 const DAY_MAP: Record<number, string> = {
   0: "SU",
@@ -143,15 +145,6 @@ export function taskToVevent(task: Task, icalUid: string): string {
   lines.push("END:VEVENT");
 
   return lines.join("\r\n");
-}
-
-export interface VeventTaskData {
-  title: string;
-  notes: string | null;
-  dueDate: string | null;
-  isCompleted: boolean;
-  recurrence: string | null;
-  icalUid: string;
 }
 
 function getIcalProperty(lines: string[], prop: string): string | null {

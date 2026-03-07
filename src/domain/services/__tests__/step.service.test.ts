@@ -131,10 +131,13 @@ describe("StepService", () => {
   describe("toggleCompleted", () => {
     it("přepne isCompleted", async () => {
       vi.mocked(stepRepo.findById).mockResolvedValue(makeStep({ isCompleted: false }));
+      vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
       vi.mocked(stepRepo.update).mockResolvedValue(makeStep({ isCompleted: true }));
 
-      await service.toggleCompleted("step-1");
+      await service.toggleCompleted("user-1", "step-1");
 
+      expect(stepRepo.findById).toHaveBeenCalledWith("step-1");
+      expect(taskRepo.findById).toHaveBeenCalledWith("task-1", "user-1");
       expect(stepRepo.update).toHaveBeenCalledWith(
         "step-1",
         expect.objectContaining({ isCompleted: true }),
@@ -144,26 +147,72 @@ describe("StepService", () => {
     it("vyhodí chybu pokud step neexistuje", async () => {
       vi.mocked(stepRepo.findById).mockResolvedValue(undefined);
 
-      await expect(service.toggleCompleted("bad")).rejects.toThrow("Step not found");
+      await expect(service.toggleCompleted("user-1", "bad")).rejects.toThrow("Step not found");
+    });
+
+    it("vyhodí chybu pokud task nepatří uživateli", async () => {
+      vi.mocked(stepRepo.findById).mockResolvedValue(makeStep());
+      vi.mocked(taskRepo.findById).mockResolvedValue(undefined);
+
+      await expect(service.toggleCompleted("other-user", "step-1")).rejects.toThrow(
+        "Step not found",
+      );
     });
   });
 
   describe("update", () => {
-    it("aktualizuje title", async () => {
+    it("aktualizuje title po ověření vlastnictví", async () => {
+      vi.mocked(stepRepo.findById).mockResolvedValue(makeStep());
+      vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
       vi.mocked(stepRepo.update).mockResolvedValue(makeStep({ title: "Updated" }));
 
-      await service.update("step-1", "Updated");
+      await service.update("user-1", "step-1", "Updated");
 
+      expect(stepRepo.findById).toHaveBeenCalledWith("step-1");
+      expect(taskRepo.findById).toHaveBeenCalledWith("task-1", "user-1");
       expect(stepRepo.update).toHaveBeenCalledWith("step-1", { title: "Updated" });
+    });
+
+    it("vyhodí chybu pokud step neexistuje", async () => {
+      vi.mocked(stepRepo.findById).mockResolvedValue(undefined);
+
+      await expect(service.update("user-1", "bad", "Updated")).rejects.toThrow("Step not found");
+    });
+
+    it("vyhodí chybu pokud task nepatří uživateli", async () => {
+      vi.mocked(stepRepo.findById).mockResolvedValue(makeStep());
+      vi.mocked(taskRepo.findById).mockResolvedValue(undefined);
+
+      await expect(service.update("other-user", "step-1", "Updated")).rejects.toThrow(
+        "Step not found",
+      );
     });
   });
 
   describe("delete", () => {
-    it("smaže step", async () => {
-      const result = await service.delete("step-1");
+    it("smaže step po ověření vlastnictví", async () => {
+      vi.mocked(stepRepo.findById).mockResolvedValue(makeStep());
+      vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
 
+      const result = await service.delete("user-1", "step-1");
+
+      expect(stepRepo.findById).toHaveBeenCalledWith("step-1");
+      expect(taskRepo.findById).toHaveBeenCalledWith("task-1", "user-1");
       expect(stepRepo.delete).toHaveBeenCalledWith("step-1");
       expect(result).toBe(true);
+    });
+
+    it("vyhodí chybu pokud step neexistuje", async () => {
+      vi.mocked(stepRepo.findById).mockResolvedValue(undefined);
+
+      await expect(service.delete("user-1", "bad")).rejects.toThrow("Step not found");
+    });
+
+    it("vyhodí chybu pokud task nepatří uživateli", async () => {
+      vi.mocked(stepRepo.findById).mockResolvedValue(makeStep());
+      vi.mocked(taskRepo.findById).mockResolvedValue(undefined);
+
+      await expect(service.delete("other-user", "step-1")).rejects.toThrow("Step not found");
     });
   });
 });

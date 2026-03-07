@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import type { Task } from "../entities/task";
 import type { CreateTaskInput, UpdateTaskInput, ReorderItem } from "../entities/task";
 import type { ITaskRepository, PaginationOpts } from "../repositories/task.repository";
@@ -22,18 +21,11 @@ export interface ImportTasksResult {
 }
 
 export class TaskService {
-  private listRepo: IListRepository | null = null;
-  private stepRepo: IStepRepository | null = null;
-
-  constructor(private readonly taskRepo: ITaskRepository) {}
-
-  setListRepo(listRepo: IListRepository) {
-    this.listRepo = listRepo;
-  }
-
-  setStepRepo(stepRepo: IStepRepository) {
-    this.stepRepo = stepRepo;
-  }
+  constructor(
+    private readonly taskRepo: ITaskRepository,
+    private readonly listRepo: IListRepository | null = null,
+    private readonly stepRepo: IStepRepository | null = null,
+  ) {}
 
   async getById(id: string, userId: string): Promise<Task | undefined> {
     return this.taskRepo.findById(id, userId);
@@ -132,17 +124,8 @@ export class TaskService {
     return true;
   }
 
-  async countActiveByList(listId: string): Promise<number> {
-    return this.taskRepo.countActiveByList(listId);
-  }
-
-  async countVisibleByList(listId: string): Promise<number> {
-    const today = format(new Date(), "yyyy-MM-dd");
-    return this.taskRepo.countVisibleByList(listId, today);
-  }
-
-  async getByListId(listId: string): Promise<Task[]> {
-    return this.taskRepo.findByListId(listId);
+  async getByListId(listId: string, userId: string): Promise<Task[]> {
+    return this.taskRepo.findByListId(listId, userId);
   }
 
   async importTasks(userId: string, tasks: ImportTaskInput[]): Promise<ImportTasksResult> {

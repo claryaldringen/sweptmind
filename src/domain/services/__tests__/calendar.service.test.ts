@@ -143,6 +143,44 @@ describe("CalendarService", () => {
     });
   });
 
+  describe("getSyncEntry", () => {
+    it("delegates to syncRepo.findByTaskId", async () => {
+      const syncEntry = {
+        id: "sync-1",
+        userId: "user-1",
+        taskId: "task-1",
+        icalUid: "uid-1",
+        etag: "etag-1",
+        lastSyncedAt: new Date(),
+      };
+      vi.mocked(syncRepo.findByTaskId).mockResolvedValue(syncEntry);
+
+      const result = await service.getSyncEntry("task-1");
+
+      expect(syncRepo.findByTaskId).toHaveBeenCalledWith("task-1");
+      expect(result).toEqual(syncEntry);
+    });
+  });
+
+  describe("getSyncEntryByIcalUid", () => {
+    it("delegates to syncRepo.findByIcalUid", async () => {
+      const syncEntry = {
+        id: "sync-1",
+        userId: "user-1",
+        taskId: "task-1",
+        icalUid: "uid-1",
+        etag: "etag-1",
+        lastSyncedAt: new Date(),
+      };
+      vi.mocked(syncRepo.findByIcalUid).mockResolvedValue(syncEntry);
+
+      const result = await service.getSyncEntryByIcalUid("user-1", "uid-1");
+
+      expect(syncRepo.findByIcalUid).toHaveBeenCalledWith("user-1", "uid-1");
+      expect(result).toEqual(syncEntry);
+    });
+  });
+
   describe("deleteFromIcal", () => {
     it("deletes task and sync entry", async () => {
       vi.mocked(syncRepo.findByIcalUid).mockResolvedValue({
@@ -161,6 +199,74 @@ describe("CalendarService", () => {
     it("does nothing when icalUid not found", async () => {
       await service.deleteFromIcal("user-1", "unknown");
       expect(taskRepo.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("upsertFromIcal — completed new task", () => {
+    it("creates task then updates isCompleted when new task is completed", async () => {
+      const createdTask = makeTask({ id: "new-task-1" });
+      const updatedTask = makeTask({
+        id: "new-task-1",
+        isCompleted: true,
+        completedAt: new Date(),
+      });
+      vi.mocked(taskRepo.create).mockResolvedValue(createdTask);
+      vi.mocked(taskRepo.update).mockResolvedValue(updatedTask);
+
+      await service.upsertFromIcal("user-1", "list-1", {
+        title: "Completed Event",
+        notes: null,
+        dueDate: "2026-03-15T14:30",
+        isCompleted: true,
+        recurrence: null,
+        icalUid: "ext-uid-completed",
+      });
+
+      expect(taskRepo.create).toHaveBeenCalled();
+      expect(taskRepo.update).toHaveBeenCalledWith(
+        "new-task-1",
+        "user-1",
+        expect.objectContaining({
+          isCompleted: true,
+          completedAt: expect.any(Date),
+        }),
+      );
+      expect(syncRepo.upsert).toHaveBeenCalled();
+    });
+  });
+
+  describe("updateEtag", () => {
+    it("calls syncRepo.updateEtag when syncEntry exists", async () => {
+      vi.mocked(syncRepo.findByTaskId).mockResolvedValue({
+        id: "sync-1",
+        userId: "user-1",
+        taskId: "task-1",
+        icalUid: "uid-1",
+        etag: "old-etag",
+        lastSyncedAt: new Date(),
+      });
+
+      await service.updateEtag("task-1", "new-etag");
+
+      expect(syncRepo.findByTaskId).toHaveBeenCalledWith("task-1");
+      expect(syncRepo.updateEtag).toHaveBeenCalledWith("sync-1", "new-etag");
+    });
+
+    it("does nothing when syncEntry does not exist", async () => {
+      vi.mocked(syncRepo.findByTaskId).mockResolvedValue(undefined);
+
+      await service.updateEtag("task-1", "new-etag");
+
+      expect(syncRepo.findByTaskId).toHaveBeenCalledWith("task-1");
+      expect(syncRepo.updateEtag).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("generateEtag", () => {
+    it("returns etag from task.updatedAt", () => {
+      const task = makeTask({ updatedAt: new Date("2026-03-01T12:00:00Z") });
+      const etag = service.generateEtag(task);
+      expect(etag).toBe(`"${new Date("2026-03-01T12:00:00Z").getTime()}"`);
     });
   });
 });
