@@ -80,6 +80,7 @@ function makeRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository {
     findByListId: vi.fn().mockResolvedValue([]),
     findByTagId: vi.fn().mockResolvedValue([]),
     findWithLocation: vi.fn().mockResolvedValue([]),
+    findContextTasks: vi.fn().mockResolvedValue([]),
     ...overrides,
   };
 }
@@ -653,6 +654,18 @@ describe("TaskService", () => {
           dueDate: "2027-03-04T08:00",
         }),
       );
+    });
+  });
+
+  describe("getContextTasks", () => {
+    it("delegates to taskRepo.findContextTasks", async () => {
+      const mockTasks = [makeTask({ id: "t1" })];
+      vi.mocked(repo.findContextTasks).mockResolvedValue(mockTasks);
+
+      const result = await service.getContextTasks("user-1", "phone", ["loc1"]);
+
+      expect(repo.findContextTasks).toHaveBeenCalledWith("user-1", "phone", ["loc1"]);
+      expect(result).toEqual(mockTasks);
     });
   });
 });

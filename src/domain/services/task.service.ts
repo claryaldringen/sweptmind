@@ -51,6 +51,14 @@ export class TaskService {
     return this.taskRepo.findWithLocation(userId, opts);
   }
 
+  async getContextTasks(
+    userId: string,
+    deviceContext: string | null,
+    nearbyLocationIds: string[],
+  ): Promise<Task[]> {
+    return this.taskRepo.findContextTasks(userId, deviceContext, nearbyLocationIds);
+  }
+
   async create(userId: string, input: CreateTaskInput): Promise<Task> {
     const minSort = await this.taskRepo.findMinSortOrder(input.listId);
     const sortOrder = (minSort ?? 1) - 1;
