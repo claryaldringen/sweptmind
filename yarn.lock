@@ -139,7 +139,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@auth/core@npm:0.41.1":
+"@auth/core@npm:0.41.1, @auth/core@npm:^0.41.0":
   version: 0.41.1
   resolution: "@auth/core@npm:0.41.1"
   dependencies:
@@ -12426,6 +12426,7 @@ __metadata:
   dependencies:
     "@apollo/client": "npm:^4.1.6"
     "@apollo/client-integration-nextjs": "npm:^0.14.4"
+    "@auth/core": "npm:^0.41.0"
     "@auth/drizzle-adapter": "npm:^1.11.1"
     "@dnd-kit/core": "npm:^6.3.1"
     "@dnd-kit/sortable": "npm:^10.0.0"

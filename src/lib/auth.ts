@@ -25,7 +25,6 @@ declare module "@auth/core/jwt" {
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  debug: true,
   adapter: DrizzleAdapter(db),
   session: { strategy: "jwt" },
   pages: {
