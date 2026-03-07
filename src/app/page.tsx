@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { auth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle2,
@@ -34,6 +36,11 @@ export const metadata: Metadata = {
 const dictionaries: Record<Locale, Dictionary> = { cs, en };
 
 export default async function HomePage() {
+  const session = await auth();
+  if (session?.user) {
+    redirect("/planned");
+  }
+
   const cookieStore = await cookies();
   const locale = (cookieStore.get("sweptmind-locale")?.value as Locale) || "cs";
   const t = dictionaries[locale];
