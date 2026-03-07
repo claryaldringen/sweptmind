@@ -24,9 +24,8 @@ declare module "@auth/core/jwt" {
   }
 }
 
-console.log("[auth] Google ID present:", !!process.env.AUTH_GOOGLE_ID, "Secret present:", !!process.env.AUTH_GOOGLE_SECRET);
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  basePath: "/api/auth",
   adapter: DrizzleAdapter(db),
   session: { strategy: "jwt" },
   pages: {
