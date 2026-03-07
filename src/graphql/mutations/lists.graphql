@@ -1,0 +1,32 @@
+mutation CreateList($input: CreateListInput!) {
+  createList(input: $input) {
+    id
+    name
+    icon
+    themeColor
+    isDefault
+    sortOrder
+    groupId
+    deviceContext
+    taskCount
+  }
+}
+
+mutation UpdateList($id: String!, $input: UpdateListInput!) {
+  updateList(id: $id, input: $input) {
+    id
+    name
+    icon
+    themeColor
+    groupId
+    deviceContext
+  }
+}
+
+mutation DeleteList($id: String!) {
+  deleteList(id: $id)
+}
+
+mutation ReorderLists($input: [ReorderListInput!]!) {
+  reorderLists(input: $input)
+}

@@ -1,0 +1,37 @@
+query GetLists {
+  lists {
+    id
+    name
+    icon
+    themeColor
+    isDefault
+    sortOrder
+    groupId
+    deviceContext
+    taskCount
+  }
+}
+
+query GetList($id: String!) {
+  list(id: $id) {
+    id
+    name
+    icon
+    themeColor
+    isDefault
+  }
+}
+
+query GetListGroups {
+  listGroups {
+    id
+    name
+    sortOrder
+    isExpanded
+    lists {
+      id
+      name
+      sortOrder
+    }
+  }
+}

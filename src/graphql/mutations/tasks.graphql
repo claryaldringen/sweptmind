@@ -1,0 +1,55 @@
+mutation CreateTask($input: CreateTaskInput!) {
+  createTask(input: $input) {
+    id
+    listId
+    title
+    notes
+    isCompleted
+    dueDate
+    sortOrder
+    createdAt
+    steps {
+      id
+      taskId
+      title
+      isCompleted
+      sortOrder
+    }
+  }
+}
+
+mutation UpdateTask($id: String!, $input: UpdateTaskInput!) {
+  updateTask(id: $id, input: $input) {
+    id
+    title
+    notes
+    dueDate
+    reminderAt
+    recurrence
+    deviceContext
+    listId
+  }
+}
+
+mutation DeleteTask($id: String!) {
+  deleteTask(id: $id)
+}
+
+mutation ToggleTaskCompleted($id: String!) {
+  toggleTaskCompleted(id: $id) {
+    id
+    isCompleted
+    completedAt
+  }
+}
+
+mutation ReorderTasks($input: [ReorderTaskInput!]!) {
+  reorderTasks(input: $input)
+}
+
+mutation ImportTasks($input: [ImportTaskInput!]!) {
+  importTasks(input: $input) {
+    importedCount
+    createdLists
+  }
+}

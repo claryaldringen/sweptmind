@@ -47,14 +47,15 @@ export function NearbyProvider({ children }: { children: ReactNode }) {
     [position],
   );
 
+  const locations = locationsData?.locations;
   const nearbyLocationIds = useMemo(() => {
-    if (!position || !locationsData?.locations) return [];
-    return locationsData.locations
+    if (!position || !locations) return [];
+    return locations
       .filter((loc) =>
         checkNearby(position.latitude, position.longitude, loc.latitude, loc.longitude),
       )
       .map((loc) => loc.id);
-  }, [position, locationsData?.locations]);
+  }, [position, locations]);
 
   return (
     <NearbyContext.Provider

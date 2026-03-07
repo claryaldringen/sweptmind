@@ -1,0 +1,56 @@
+fragment TaskFields on Task {
+  id
+  listId
+  title
+  notes
+  isCompleted
+  completedAt
+  dueDate
+  reminderAt
+  recurrence
+  deviceContext
+  sortOrder
+  createdAt
+  steps {
+    id
+    taskId
+    title
+    isCompleted
+    sortOrder
+  }
+}
+
+query TasksByList($listId: String!) {
+  tasksByList(listId: $listId) {
+    ...TaskFields
+  }
+}
+
+query GetTask($id: String!) {
+  task(id: $id) {
+    ...TaskFields
+    list {
+      id
+      name
+    }
+  }
+}
+
+query PlannedTasks {
+  plannedTasks {
+    ...TaskFields
+    list {
+      id
+      name
+    }
+  }
+}
+
+query GetMe {
+  me {
+    id
+    name
+    email
+    image
+  }
+}

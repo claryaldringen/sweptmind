@@ -19,7 +19,7 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useTaskCountMode } from "@/hooks/use-task-count-mode";
 import { useDeviceContext } from "@/hooks/use-device-context";
 import { useTranslations } from "@/lib/i18n";
-import { CalendarDays, Home, List, MapPin, Pencil, Plus, Tag, Trash2, Zap } from "lucide-react";
+import { CalendarDays, List, MapPin, Pencil, Plus, Tag, Trash2, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getTagColorClasses } from "@/lib/tag-colors";
 import { Button } from "@/components/ui/button";

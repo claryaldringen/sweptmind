@@ -22,11 +22,7 @@ export function DeviceContextPicker({ value, onChange }: DeviceContextPickerProp
   if (value) {
     return (
       <Badge variant="secondary" className="gap-1 pr-1">
-        {value === "phone" ? (
-          <Smartphone className="h-3 w-3" />
-        ) : (
-          <Monitor className="h-3 w-3" />
-        )}
+        {value === "phone" ? <Smartphone className="h-3 w-3" /> : <Monitor className="h-3 w-3" />}
         {value === "phone" ? t("context.phone") : t("context.computer")}
         <button
           onClick={() => onChange(null)}
