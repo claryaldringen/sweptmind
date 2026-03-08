@@ -219,6 +219,8 @@ export const en: Dictionary = {
     everyDay: "Every day",
     everyWeek: "Every week",
     everyMonth: "Every month",
+    monthlyLast: "Last day of month",
+    everyLastDay: "Last day of month",
     everyYear: "Every year",
     daysShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     removeRecurrence: "Remove recurrence",

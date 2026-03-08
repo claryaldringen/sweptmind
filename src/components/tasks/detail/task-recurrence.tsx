@@ -17,6 +17,7 @@ interface TaskRecurrenceProps {
   dailyLabel: string;
   weeklyLabel: string;
   monthlyLabel: string;
+  monthlyLastLabel: string;
   yearlyLabel: string;
   removeRecurrenceLabel: string;
 }
@@ -31,6 +32,7 @@ export function TaskRecurrence({
   dailyLabel,
   weeklyLabel,
   monthlyLabel,
+  monthlyLastLabel,
   yearlyLabel,
   removeRecurrenceLabel,
 }: TaskRecurrenceProps) {
@@ -45,6 +47,7 @@ export function TaskRecurrence({
     { type: "DAILY" as const, label: dailyLabel },
     { type: "WEEKLY" as const, label: weeklyLabel },
     { type: "MONTHLY" as const, label: monthlyLabel },
+    { type: "MONTHLY_LAST" as const, label: monthlyLastLabel },
     { type: "YEARLY" as const, label: yearlyLabel },
   ];
 

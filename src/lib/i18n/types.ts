@@ -203,6 +203,8 @@ export interface Dictionary {
     everyDay: string;
     everyWeek: string;
     everyMonth: string;
+    monthlyLast: string;
+    everyLastDay: string;
     everyYear: string;
     daysShort: string[];
     removeRecurrence: string;

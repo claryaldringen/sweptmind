@@ -640,6 +640,7 @@ export function TaskDetailPanel() {
     if (!recurrence) return null;
     if (recurrence === "DAILY") return t("recurrence.everyDay");
     if (recurrence === "MONTHLY") return t("recurrence.everyMonth");
+    if (recurrence === "MONTHLY_LAST") return t("recurrence.everyLastDay");
     if (recurrence === "YEARLY") return t("recurrence.everyYear");
     if (recurrence.startsWith("WEEKLY:")) {
       const days = recurrence.slice(7).split(",").map(Number);
@@ -753,6 +754,7 @@ export function TaskDetailPanel() {
             dailyLabel={t("recurrence.daily")}
             weeklyLabel={t("recurrence.weekly")}
             monthlyLabel={t("recurrence.monthly")}
+            monthlyLastLabel={t("recurrence.monthlyLast")}
             yearlyLabel={t("recurrence.yearly")}
             removeRecurrenceLabel={t("recurrence.removeRecurrence")}
           />

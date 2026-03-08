@@ -1,4 +1,4 @@
-import { addDays, addMonths, addYears, getDay, format } from "date-fns";
+import { addDays, addMonths, addYears, getDay, format, lastDayOfMonth } from "date-fns";
 
 interface RecurrenceDaily {
   type: "DAILY";
@@ -13,17 +13,27 @@ interface RecurrenceMonthly {
   type: "MONTHLY";
 }
 
+interface RecurrenceMonthlyLast {
+  type: "MONTHLY_LAST";
+}
+
 interface RecurrenceYearly {
   type: "YEARLY";
 }
 
-export type Recurrence = RecurrenceDaily | RecurrenceWeekly | RecurrenceMonthly | RecurrenceYearly;
+export type Recurrence =
+  | RecurrenceDaily
+  | RecurrenceWeekly
+  | RecurrenceMonthly
+  | RecurrenceMonthlyLast
+  | RecurrenceYearly;
 
 export function parseRecurrence(recurrence: string): Recurrence | null {
   if (!recurrence) return null;
 
   if (recurrence === "DAILY") return { type: "DAILY" };
   if (recurrence === "MONTHLY") return { type: "MONTHLY" };
+  if (recurrence === "MONTHLY_LAST") return { type: "MONTHLY_LAST" };
   if (recurrence === "YEARLY") return { type: "YEARLY" };
 
   if (recurrence.startsWith("WEEKLY:")) {
@@ -64,6 +74,12 @@ export function computeFirstOccurrence(recurrence: string): string | null {
 
     case "MONTHLY":
       return todayStr;
+
+    case "MONTHLY_LAST": {
+      const lastDay = lastDayOfMonth(today);
+      if (today.getDate() === lastDay.getDate()) return todayStr;
+      return format(lastDay, "yyyy-MM-dd");
+    }
 
     case "YEARLY":
       return todayStr;
@@ -106,6 +122,10 @@ export function computeNextDueDate(recurrence: string, currentDueDate: string): 
 
     case "MONTHLY":
       next = addMonths(date, 1);
+      break;
+
+    case "MONTHLY_LAST":
+      next = lastDayOfMonth(addMonths(date, 1));
       break;
 
     case "YEARLY":

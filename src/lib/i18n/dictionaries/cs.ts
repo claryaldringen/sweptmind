@@ -219,6 +219,8 @@ export const cs: Dictionary = {
     everyDay: "Každý den",
     everyWeek: "Každý týden",
     everyMonth: "Každý měsíc",
+    monthlyLast: "Poslední den v měsíci",
+    everyLastDay: "Poslední den v měsíci",
     everyYear: "Každý rok",
     daysShort: ["Ne", "Po", "Út", "St", "Čt", "Pá", "So"],
     removeRecurrence: "Zrušit opakování",

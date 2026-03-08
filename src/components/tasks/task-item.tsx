@@ -329,10 +329,12 @@ export const TaskItem = memo(function TaskItem({
                         ? t("recurrence.daily")
                         : task.recurrence === "MONTHLY"
                           ? t("recurrence.monthly")
-                          : task.recurrence === "YEARLY"
-                            ? t("recurrence.yearly")
-                            : task.recurrence?.startsWith("WEEKLY:")
-                              ? (() => {
+                          : task.recurrence === "MONTHLY_LAST"
+                            ? t("recurrence.monthlyLast")
+                            : task.recurrence === "YEARLY"
+                              ? t("recurrence.yearly")
+                              : task.recurrence?.startsWith("WEEKLY:")
+                                ? (() => {
                                   const days = task.recurrence!.slice(7).split(",").map(Number);
                                   const dayNames = tArray("recurrence.daysShort");
                                   return days.length === 7
