@@ -354,7 +354,7 @@ export function TaskDetailPanel() {
     optimisticResponse: ({ input }) => ({
       createStep: {
         __typename: "Step" as const,
-        id: `temp-${Date.now()}`,
+        id: input.id,
         taskId: input.taskId,
         title: input.title,
         isCompleted: false,
@@ -566,7 +566,7 @@ export function TaskDetailPanel() {
   async function handleAddStep(title: string) {
     if (!task) return;
     await createStep({
-      variables: { input: { taskId: task.id, title } },
+      variables: { input: { id: crypto.randomUUID(), taskId: task.id, title } },
     });
   }
 
@@ -677,16 +677,18 @@ export function TaskDetailPanel() {
     <div
       className={cn(
         "bg-background flex flex-col",
-        isDesktop ? "w-96 border-l" : "absolute inset-0 z-10",
+        isDesktop ? "h-full" : "absolute inset-0 z-10",
       )}
     >
-      <div className="flex items-center justify-between p-4">
-        <Button variant="ghost" size="icon" onClick={closePanel}>
-          {isDesktop ? <X className="h-4 w-4" /> : <ArrowLeft className="h-5 w-5" />}
-        </Button>
-      </div>
+      {!isDesktop && (
+        <div className="flex items-center justify-between p-4">
+          <Button variant="ghost" size="icon" onClick={closePanel}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
 
-      <div className="flex-1 space-y-4 overflow-auto px-4 pb-4">
+      <div className="flex-1 space-y-4 overflow-auto px-4 pb-4 pt-4">
         {/* Title + Checkbox */}
         <div className="flex items-start gap-3">
           <Checkbox
@@ -821,9 +823,10 @@ export function TaskDetailPanel() {
 
       {/* Footer */}
       <TaskActions
-        createdLabel={t("tasks.created", {
+        onClose={isDesktop ? closePanel : undefined}
+        createdLabel={task.createdAt ? t("tasks.created", {
           date: format(parseISO(task.createdAt), "EEE, MMM d", { locale: dateFnsLocale }),
-        })}
+        }) : ""}
         onDelete={handleDelete}
         deleteConfirmTitle={t("common.deleteConfirmTitle")}
         deleteConfirmDesc={t("tasks.deleteConfirmDesc")}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { gql, type Reference, type StoreObject } from "@apollo/client";
+import { gql } from "@apollo/client";
 import { useMutation, useApolloClient } from "@apollo/client/react";
 import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -101,13 +101,13 @@ export function TaskInput({ listId, refetchQueries = [], placeholder }: TaskInpu
 
     setTitle("");
 
-    const tempId = `temp-${Date.now()}`;
+    const id = crypto.randomUUID();
 
-    // Write temp task directly to cache (no optimistic layer = no rollback flicker)
-    const tempRef = client.cache.writeFragment({
+    // Write task to cache immediately (optimistic, same ID as server will use)
+    client.cache.writeFragment({
       data: {
         __typename: "Task",
-        id: tempId,
+        id,
         listId,
         locationId: null,
         title: trimmed,
@@ -129,46 +129,25 @@ export function TaskInput({ listId, refetchQueries = [], placeholder }: TaskInpu
       fields: {
         tasksByList(existing = [], { storeFieldName }) {
           if (!storeFieldName.includes(listId)) return existing;
-          return position === "top" ? [tempRef, ...existing] : [...existing, tempRef];
+          const newRef = { __ref: `Task:${id}` };
+          return position === "top" ? [newRef, ...existing] : [...existing, newRef];
         },
       },
     });
 
-    // Fire mutation — on success, swap temp for real; on error, remove temp
+    // Fire mutation — same ID means Apollo auto-merges server response
     createTask({
-      variables: { input: { listId, title: trimmed } },
-      update(cache, { data }) {
-        if (!data?.createTask) return;
-        const newRef = cache.writeFragment({
-          data: data.createTask,
-          fragment: TASK_FRAGMENT,
-        });
-        cache.modify({
-          fields: {
-            tasksByList(existing = [], { storeFieldName, readField }) {
-              if (!storeFieldName.includes(listId)) return existing;
-              return existing.map((ref: Reference | StoreObject | undefined) =>
-                readField("id", ref) === tempId ? newRef : ref,
-              );
-            },
-          },
-        });
-        cache.evict({ id: cache.identify({ __typename: "Task", id: tempId }) });
-        cache.gc();
-      },
+      variables: { input: { id, listId, title: trimmed } },
       onError() {
+        client.cache.evict({ id: client.cache.identify({ __typename: "Task", id }) });
         client.cache.modify({
           fields: {
-            tasksByList(existing = [], { storeFieldName, readField }) {
-              if (!storeFieldName.includes(listId)) return existing;
+            tasksByList(existing = [], { readField }) {
               return existing.filter(
-                (ref: Reference | StoreObject | undefined) => readField("id", ref) !== tempId,
+                (ref: { __ref: string }) => readField("id", ref) !== id,
               );
             },
           },
-        });
-        client.cache.evict({
-          id: client.cache.identify({ __typename: "Task", id: tempId }),
         });
         client.cache.gc();
       },
