@@ -19,6 +19,7 @@ export class LocationService {
       name: input.name,
       latitude: input.latitude,
       longitude: input.longitude,
+      radius: input.radius ?? 5,
       address: input.address ?? null,
     });
   }
@@ -28,6 +29,7 @@ export class LocationService {
     if (input.name != null) updates.name = input.name;
     if (input.latitude != null) updates.latitude = input.latitude;
     if (input.longitude != null) updates.longitude = input.longitude;
+    if (input.radius != null) updates.radius = input.radius;
     if (input.address !== undefined) updates.address = input.address ?? null;
     return this.locationRepo.update(id, userId, updates);
   }

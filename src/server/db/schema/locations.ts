@@ -13,6 +13,7 @@ export const locations = pgTable(
     name: text("name").notNull(),
     latitude: doublePrecision("latitude").notNull(),
     longitude: doublePrecision("longitude").notNull(),
+    radius: doublePrecision("radius").notNull().default(5),
     address: text("address"),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })

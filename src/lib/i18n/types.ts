@@ -195,6 +195,9 @@ export interface Dictionary {
     nearbyRadius: string;
     permissionDenied: string;
     approximateLocation: string;
+    myLocation: string;
+    detectingLocation: string;
+    radiusKm: string;
   };
   recurrence: {
     addRecurrence: string;

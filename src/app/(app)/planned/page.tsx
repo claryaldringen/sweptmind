@@ -7,7 +7,7 @@ import { ArrowLeft, CalendarDays } from "lucide-react";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { DraggableTaskItem } from "@/components/tasks/draggable-task-item";
-import { TaskDetailPanel } from "@/components/tasks/task-detail-panel";
+import { ResizableTaskLayout } from "@/components/layout/resizable-task-layout";
 import { useTranslations } from "@/lib/i18n";
 
 const PLANNED_TASKS = gql`
@@ -19,9 +19,11 @@ const PLANNED_TASKS = gql`
       title
       notes
       isCompleted
+      completedAt
       dueDate
       reminderAt
       recurrence
+      deviceContext
       sortOrder
       createdAt
       steps {
@@ -41,6 +43,7 @@ const PLANNED_TASKS = gql`
         name
         latitude
         longitude
+        radius
       }
       list {
         id
@@ -154,8 +157,8 @@ export default function PlannedPage() {
   };
 
   return (
-    <div className="relative flex flex-1">
-      <div className="flex flex-1 flex-col">
+    <ResizableTaskLayout>
+      <div className="flex flex-1 flex-col h-full">
         <div className="px-6 pt-8 pb-4">
           <h1 className="flex items-center gap-2 text-2xl font-bold">
             {!isDesktop && (
@@ -199,7 +202,6 @@ export default function PlannedPage() {
           </div>
         )}
       </div>
-      <TaskDetailPanel />
-    </div>
+    </ResizableTaskLayout>
   );
 }

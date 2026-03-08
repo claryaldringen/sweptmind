@@ -11,8 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { useGeocode } from "@/hooks/use-geocode";
-import { useNearby } from "@/components/providers/nearby-provider";
 import { format, parseISO } from "date-fns";
 import { cs } from "date-fns/locale/cs";
 import { enUS } from "date-fns/locale/en-US";
@@ -24,6 +22,7 @@ import { TaskRecurrence } from "./detail/task-recurrence";
 import { TaskDates } from "./detail/task-dates";
 import { TaskActions } from "./detail/task-actions";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
+import { computeFirstOccurrence } from "@/domain/services/recurrence";
 
 // ---------------------------------------------------------------------------
 // GraphQL operations
@@ -62,6 +61,7 @@ const GET_TASK = gql`
         name
         latitude
         longitude
+        radius
       }
       list {
         id
@@ -88,6 +88,7 @@ const UPDATE_TASK = gql`
         name
         latitude
         longitude
+        radius
       }
     }
   }
@@ -186,6 +187,7 @@ const GET_LOCATIONS = gql`
       name
       latitude
       longitude
+      radius
       address
     }
   }
@@ -198,7 +200,17 @@ const CREATE_LOCATION = gql`
       name
       latitude
       longitude
+      radius
       address
+    }
+  }
+`;
+
+const UPDATE_LOCATION = gql`
+  mutation UpdateLocation($id: String!, $input: UpdateLocationInput!) {
+    updateLocation(id: $id, input: $input) {
+      id
+      radius
     }
   }
 `;
@@ -232,6 +244,7 @@ interface TaskLocation {
   name: string;
   latitude: number;
   longitude: number;
+  radius: number;
   address?: string | null;
 }
 
@@ -494,6 +507,7 @@ export function TaskDetailPanel() {
                   name
                   latitude
                   longitude
+                  radius
                   address
                 }
               `,
@@ -511,11 +525,10 @@ export function TaskDetailPanel() {
       cache.gc();
     },
   });
+  const [updateLocation] = useMutation(UPDATE_LOCATION);
 
   // ---- Hooks ----
 
-  const { isNearby: checkNearby, userLatitude, userLongitude } = useNearby();
-  const geocode = useGeocode({ userLatitude, userLongitude, locale: appLocale });
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const apolloClient = useApolloClient();
 
@@ -654,25 +667,24 @@ export function TaskDetailPanel() {
     optimisticUpdate({ locationId });
   }
 
-  async function handleSelectGeocodingResult(result: {
-    display_name: string;
-    lat: string;
-    lon: string;
+  async function handleCreateLocation(loc: {
+    name: string;
+    latitude: number;
+    longitude: number;
+    radius?: number;
+    address?: string | null;
   }) {
     if (!task) return;
     const locationResult = await createLocation({
-      variables: {
-        input: {
-          name: result.display_name.split(",")[0],
-          latitude: parseFloat(result.lat),
-          longitude: parseFloat(result.lon),
-          address: result.display_name,
-        },
-      },
+      variables: { input: loc },
     });
     if (locationResult.data?.createLocation) {
       optimisticUpdate({ locationId: locationResult.data.createLocation.id });
     }
+  }
+
+  function handleUpdateLocationRadius(id: string, radius: number) {
+    updateLocation({ variables: { id, input: { radius } } });
   }
 
   async function handleRemoveLocation() {
@@ -699,7 +711,12 @@ export function TaskDetailPanel() {
 
   function handleSetRecurrence(value: string | null) {
     if (!task) return;
-    optimisticUpdate({ recurrence: value });
+    if (value) {
+      const dueDate = computeFirstOccurrence(value);
+      optimisticUpdate({ recurrence: value, dueDate });
+    } else {
+      optimisticUpdate({ recurrence: value });
+    }
   }
 
   function handleToggleWeeklyDay(day: number) {
@@ -824,21 +841,15 @@ export function TaskDetailPanel() {
                 name: string;
                 latitude: number;
                 longitude: number;
+                radius: number;
                 address?: string | null;
               }>
             }
-            geocodeResults={geocode.results}
-            onSearch={geocode.search}
-            onClearSearch={geocode.clear}
             onSelectLocation={handleSelectLocation}
-            onSelectGeocodingResult={handleSelectGeocodingResult}
+            onCreateLocation={handleCreateLocation}
             onRemoveLocation={handleRemoveLocation}
             onDeleteSavedLocation={(id) => deleteLocation({ variables: { id } })}
-            checkNearby={checkNearby}
-            addLocationLabel={t("tasks.addLocation")}
-            searchLocationLabel={t("tasks.searchLocation")}
-            savedLocationsLabel={t("tasks.savedLocations")}
-            searchResultsLabel={t("tasks.searchResults")}
+            onUpdateLocationRadius={handleUpdateLocationRadius}
           />
 
           {/* Device Context */}

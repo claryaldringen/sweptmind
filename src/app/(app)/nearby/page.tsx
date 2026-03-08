@@ -5,7 +5,7 @@ import { useQuery } from "@apollo/client/react";
 import { ArrowLeft, MapPin, MapPinOff } from "lucide-react";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { TaskList } from "@/components/tasks/task-list";
-import { TaskDetailPanel } from "@/components/tasks/task-detail-panel";
+import { ResizableTaskLayout } from "@/components/layout/resizable-task-layout";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n";
@@ -23,6 +23,7 @@ const ALL_TASKS_WITH_LOCATION = gql`
       dueDate
       reminderAt
       recurrence
+      deviceContext
       sortOrder
       createdAt
       location {
@@ -30,6 +31,7 @@ const ALL_TASKS_WITH_LOCATION = gql`
         name
         latitude
         longitude
+        radius
       }
       list {
         id
@@ -62,7 +64,7 @@ interface NearbyTask {
   reminderAt: string | null;
   sortOrder: number;
   createdAt: string;
-  location: { id: string; name: string; latitude: number; longitude: number } | null;
+  location: { id: string; name: string; latitude: number; longitude: number; radius: number } | null;
   list: { id: string; name: string } | null;
   steps: { id: string; taskId: string; title: string; isCompleted: boolean; sortOrder: number }[];
   tags?: { id: string; name: string; color: string }[];
@@ -81,15 +83,15 @@ export default function NearbyPage() {
   const allTasks = data?.allTasksWithLocation ?? [];
   const nearbyTasks = isTracking
     ? allTasks.filter(
-        (task) => task.location && isNearby(task.location.latitude, task.location.longitude),
+        (task) => task.location && isNearby(task.location.latitude, task.location.longitude, task.location.radius),
       )
     : [];
 
   const showPermissionDenied = error && !isTracking;
 
   return (
-    <div className="relative flex flex-1">
-      <div className="flex flex-1 flex-col">
+    <ResizableTaskLayout>
+      <div className="flex flex-1 flex-col h-full">
         <div className="px-6 pt-8 pb-4">
           <h1 className="flex items-center gap-2 text-2xl font-bold">
             {!isDesktop && (
@@ -134,7 +136,6 @@ export default function NearbyPage() {
           <TaskList tasks={nearbyTasks} showListName />
         )}
       </div>
-      <TaskDetailPanel />
-    </div>
+    </ResizableTaskLayout>
   );
 }

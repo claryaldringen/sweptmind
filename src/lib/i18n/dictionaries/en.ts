@@ -211,6 +211,9 @@ export const en: Dictionary = {
     nearbyRadius: "5 km radius",
     permissionDenied: "Location access was denied",
     approximateLocation: "Approximate location (IP-based)",
+    myLocation: "My location",
+    detectingLocation: "Detecting location…",
+    radiusKm: "{radius} km",
   },
   recurrence: {
     addRecurrence: "Add recurrence",

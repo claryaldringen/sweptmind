@@ -1,4 +1,4 @@
-export const NEARBY_RADIUS_KM = 5;
+export const DEFAULT_RADIUS_KM = 5;
 
 const DEG_TO_RAD = Math.PI / 180;
 const EARTH_RADIUS_KM = 6371;
@@ -21,6 +21,7 @@ export function isNearby(
   userLon: number,
   targetLat: number,
   targetLon: number,
+  radiusKm: number = DEFAULT_RADIUS_KM,
 ): boolean {
-  return haversineDistance(userLat, userLon, targetLat, targetLon) <= NEARBY_RADIUS_KM;
+  return haversineDistance(userLat, userLon, targetLat, targetLon) <= radiusKm;
 }

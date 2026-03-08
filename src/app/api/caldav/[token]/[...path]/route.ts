@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CalDavHandler } from "@/server/caldav/caldav-handler";
 import { services, repos } from "@/infrastructure/container";
+import { rateLimit } from "@/lib/rate-limit";
 
 const handler = new CalDavHandler(services.calendar, repos.user, repos.list);
 
 type Params = { params: Promise<{ token: string; path: string[] }> };
 
 async function handleRequest(request: NextRequest, context: Params) {
+  const rateLimited = rateLimit(request, { maxRequests: 120 });
+  if (rateLimited) return rateLimited;
+
   const { token, path } = await context.params;
   const user = await handler.authenticate(token);
   if (!user) return new NextResponse("Unauthorized", { status: 401 });

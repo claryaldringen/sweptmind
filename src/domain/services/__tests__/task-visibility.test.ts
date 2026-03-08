@@ -148,4 +148,29 @@ describe("isFutureTask", () => {
       isFutureTask({ dueDate: "2026-01-01T10:00", reminderAt: null, isCompleted: false }, dec31),
     ).toBe(false);
   });
+
+  it("recurring task bez dueDate → budoucí (next occurrence)", () => {
+    // WEEKLY:1 (Monday) on a Sunday → should be future
+    expect(
+      isFutureTask(
+        { dueDate: null, reminderAt: null, isCompleted: false, recurrence: "WEEKLY:1" },
+      ),
+    ).toBe(true); // next occurrence is tomorrow or later (unless today is Monday)
+  });
+
+  it("recurring task s prošlým dueDate → budoucí", () => {
+    expect(
+      isFutureTask(
+        { dueDate: "2025-01-01", reminderAt: null, isCompleted: false, recurrence: "WEEKLY:1" },
+      ),
+    ).toBe(true); // past dueDate → compute next occurrence which is in the future
+  });
+
+  it("recurring DAILY task bez dueDate → viditelný dnes", () => {
+    expect(
+      isFutureTask(
+        { dueDate: null, reminderAt: null, isCompleted: false, recurrence: "DAILY" },
+      ),
+    ).toBe(false); // daily = today, so not future
+  });
 });

@@ -92,7 +92,7 @@ export function TaskRecurrence({
         {recurrence?.startsWith("WEEKLY:") && (
           <>
             <Separator />
-            <div className="flex gap-1">
+            <div className="flex gap-0.5">
               {daysShort.map((dayName, index) => {
                 const isActive = recurrence.slice(7).split(",").map(Number).includes(index);
                 return (
@@ -100,7 +100,7 @@ export function TaskRecurrence({
                     key={index}
                     variant={isActive ? "default" : "outline"}
                     size="sm"
-                    className="h-8 w-8 p-0 text-xs"
+                    className="h-7 w-7 p-0 text-xs"
                     onClick={() => onToggleWeeklyDay(index)}
                   >
                     {dayName}

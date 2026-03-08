@@ -389,18 +389,20 @@ function StepLocation({
   const [search, setSearch] = useState("");
   const [geoLoading, setGeoLoading] = useState(false);
 
-  // Pre-select current location for home
+  // Pre-select current location for home — reverse geocode to get place name
   useEffect(() => {
     if (!preSelectCurrent || location) return;
     if (!("geolocation" in navigator)) return;
 
     setGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const result = await geocode.reverseGeocode(latitude, longitude);
         onSelect({
-          name: t("onboarding.currentLocation"),
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
+          name: result?.display_name ?? t("onboarding.currentLocation"),
+          latitude,
+          longitude,
           address: null,
         });
         setGeoLoading(false);

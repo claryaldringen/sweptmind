@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
 import { SortableTaskItem } from "./sortable-task-item";
-import { isFutureTask } from "@/domain/services/task-visibility";
+import { TaskItem } from "./task-item";
 import { useTranslations } from "@/lib/i18n";
 import { useTaskDnd } from "@/components/providers/task-dnd-provider";
+import { useDepartureAnimation } from "@/hooks/use-departure-animation";
 
 const REORDER_TASKS = gql`
   mutation ReorderTasks($input: [ReorderTaskInput!]!) {
@@ -40,26 +41,38 @@ export function SortableTaskList({
 }: SortableTaskListProps) {
   const { t } = useTranslations();
   const { registerTaskReorder } = useTaskDnd();
-  const activeTasks = tasks.filter((t) => !t.isCompleted && !isFutureTask(t));
-  const futureTasks = tasks
-    .filter((t) => isFutureTask(t))
-    .sort((a, b) => a.dueDate!.localeCompare(b.dueDate!));
-  const completedTasks = tasks.filter((t) => t.isCompleted);
+  const {
+    activeTasks,
+    futureTasks,
+    completedTasks,
+    departingIds,
+    activeWithDeparting,
+    listRef,
+    futureSectionRef,
+  } = useDepartureAnimation(tasks);
+
   const [orderedIds, setOrderedIds] = useState(() => activeTasks.map((t) => t.id));
   const [futureOpen, setFutureOpen] = useState(false);
   const [completedOpen, setCompletedOpen] = useState(false);
 
-  // Keep ordered IDs in sync with prop changes (new/removed tasks)
-  const activeIds = activeTasks.map((t) => t.id);
-  if (orderedIds.length !== activeIds.length || orderedIds.some((id, i) => id !== activeIds[i])) {
+  // Keep ordered IDs in sync — but not while tasks are departing (preserve position)
+  const activeIds = useMemo(() => activeWithDeparting.map((t) => t.id), [activeWithDeparting]);
+  const newDeparturesDetected = useRef(false);
+  if (departingIds.size > 0) newDeparturesDetected.current = true;
+  if (departingIds.size === 0 && newDeparturesDetected.current) newDeparturesDetected.current = false;
+
+  if (departingIds.size === 0 && (orderedIds.length !== activeIds.length || orderedIds.some((id, i) => id !== activeIds[i]))) {
     setOrderedIds(activeIds);
   }
 
-  // Build render list: order from orderedIds, data from activeTasks (latest from cache)
-  const activeTaskMap = new Map(activeTasks.map((t) => [t.id, t]));
+  const activeTaskMap = useMemo(
+    () => new Map(activeWithDeparting.map((t) => [t.id, t])),
+    [activeWithDeparting],
+  );
   const items = orderedIds
     .map((id) => activeTaskMap.get(id))
     .filter((t): t is Task => t != null);
+  const sortableIds = orderedIds.filter((id) => !departingIds.has(id));
 
   const [reorderTasks] = useMutation(REORDER_TASKS);
 
@@ -82,17 +95,25 @@ export function SortableTaskList({
   }, [registerTaskReorder, handleTaskReorder]);
 
   return (
-    <div className="flex-1 overflow-auto">
-      <SortableContext items={orderedIds} strategy={verticalListSortingStrategy}>
-        <div className="space-y-0.5">
-          {items.map((task) => (
-            <SortableTaskItem key={task.id} task={task} showListName={showListName} />
-          ))}
-        </div>
+    <div ref={listRef} className="flex-1 overflow-auto">
+      <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+        <ul className="space-y-0.5">
+          {items.map((task) =>
+            departingIds.has(task.id) ? (
+              <li key={task.id} data-departing={task.id} className="animate-fly-to-future">
+                <TaskItem task={task} showListName={showListName} />
+              </li>
+            ) : (
+              <li key={task.id}>
+                <SortableTaskItem key={task.id} task={task} showListName={showListName} />
+              </li>
+            ),
+          )}
+        </ul>
       </SortableContext>
 
       {futureTasks.length > 0 && (
-        <div className="mt-4">
+        <div ref={futureSectionRef} className="mt-4">
           <button
             onClick={() => setFutureOpen(!futureOpen)}
             className="text-muted-foreground flex w-full items-center gap-1 px-4 py-2 text-xs font-medium"
@@ -105,11 +126,13 @@ export function SortableTaskList({
             {t("tasks.future", { count: futureTasks.length })}
           </button>
           {futureOpen && (
-            <div className="space-y-0.5">
+            <ul className="space-y-0.5">
               {futureTasks.map((task) => (
-                <SortableTaskItem key={task.id} task={task} showListName={showListName} />
+                <li key={task.id}>
+                  <SortableTaskItem task={task} showListName={showListName} />
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       )}
@@ -128,11 +151,13 @@ export function SortableTaskList({
             {t("tasks.completed", { count: completedTasks.length })}
           </button>
           {completedOpen && (
-            <div className="space-y-0.5">
+            <ul className="space-y-0.5">
               {completedTasks.map((task) => (
-                <SortableTaskItem key={task.id} task={task} showListName={showListName} />
+                <li key={task.id}>
+                  <SortableTaskItem task={task} showListName={showListName} />
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       )}

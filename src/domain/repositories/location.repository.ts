@@ -10,6 +10,7 @@ export interface ILocationRepository {
     name: string;
     latitude: number;
     longitude: number;
+    radius?: number;
     address?: string | null;
   }): Promise<Location>;
   update(id: string, userId: string, data: Partial<Location>): Promise<Location>;

@@ -8,6 +8,7 @@ export const LocationType = LocationRef.implement({
     name: t.exposeString("name"),
     latitude: t.exposeFloat("latitude"),
     longitude: t.exposeFloat("longitude"),
+    radius: t.exposeFloat("radius"),
     address: t.exposeString("address", { nullable: true }),
     createdAt: t.string({
       resolve: (location) => location.createdAt.toISOString(),
@@ -41,6 +42,7 @@ const CreateLocationInput = builder.inputType("CreateLocationInput", {
     name: t.string({ required: true }),
     latitude: t.float({ required: true }),
     longitude: t.float({ required: true }),
+    radius: t.float({ required: false }),
     address: t.string(),
   }),
 });
@@ -50,6 +52,7 @@ const UpdateLocationInput = builder.inputType("UpdateLocationInput", {
     name: t.string(),
     latitude: t.float(),
     longitude: t.float(),
+    radius: t.float(),
     address: t.string(),
   }),
 });
@@ -67,6 +70,7 @@ builder.mutationField("createLocation", (t) =>
         name: input.name,
         latitude: input.latitude,
         longitude: input.longitude,
+        radius: input.radius ?? undefined,
         address: input.address ?? undefined,
       });
     },
@@ -87,6 +91,7 @@ builder.mutationField("updateLocation", (t) =>
         name: input.name ?? undefined,
         latitude: input.latitude ?? undefined,
         longitude: input.longitude ?? undefined,
+        radius: input.radius ?? undefined,
         address: input.address !== undefined ? input.address : undefined,
       });
     },

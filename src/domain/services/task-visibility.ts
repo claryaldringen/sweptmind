@@ -6,18 +6,31 @@
  * 2. dueDate date-only (YYYY-MM-DD) → visible on that day
  * 3. dueDate with time (YYYY-MM-DDTHH:mm) → visible the day before
  * 4. reminderAt set → overrides rules 2+3, visible from that date
+ * 5. recurrence set + dueDate null/past → visible from next occurrence
  */
+
+import { computeFirstOccurrence } from "./recurrence";
 
 interface VisibilityTask {
   dueDate: string | null;
   reminderAt: string | null;
   isCompleted: boolean;
+  recurrence?: string | null;
 }
 
 /** Returns the YYYY-MM-DD date when the task should become visible, or null (always visible). */
 export function getVisibleDate(task: VisibilityTask): string | null {
   if (task.reminderAt) {
     return task.reminderAt;
+  }
+
+  // For recurring tasks with null or past dueDate, compute effective visible date
+  if (task.recurrence) {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    if (!task.dueDate || task.dueDate.slice(0, 10) < todayStr) {
+      const nextOccurrence = computeFirstOccurrence(task.recurrence);
+      if (nextOccurrence) return nextOccurrence;
+    }
   }
 
   if (!task.dueDate) {

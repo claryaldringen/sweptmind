@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { parseRecurrence, computeNextDueDate } from "../recurrence";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { parseRecurrence, computeNextDueDate, computeFirstOccurrence } from "../recurrence";
 
 describe("parseRecurrence", () => {
   it("parses DAILY", () => {
@@ -89,5 +89,57 @@ describe("computeNextDueDate", () => {
 
   it("returns null when dueDate is null-ish", () => {
     expect(computeNextDueDate("DAILY", "")).toBeNull();
+  });
+});
+
+describe("computeFirstOccurrence", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("DAILY: returns today", () => {
+    vi.useFakeTimers({ now: new Date(2026, 2, 8) }); // 2026-03-08
+    expect(computeFirstOccurrence("DAILY")).toBe("2026-03-08");
+  });
+
+  it("WEEKLY: returns today if today matches a selected day", () => {
+    vi.useFakeTimers({ now: new Date(2026, 2, 8) }); // Sunday = day 0
+    expect(computeFirstOccurrence("WEEKLY:0")).toBe("2026-03-08");
+  });
+
+  it("WEEKLY: returns next matching day this week", () => {
+    vi.useFakeTimers({ now: new Date(2026, 2, 9) }); // Monday = day 1
+    // Wednesday is day 3, 2 days ahead
+    expect(computeFirstOccurrence("WEEKLY:3,5")).toBe("2026-03-11");
+  });
+
+  it("WEEKLY: wraps to next week if no remaining days", () => {
+    vi.useFakeTimers({ now: new Date(2026, 2, 13) }); // Friday = day 5
+    // Only Monday (day 1) selected, next Monday is 2026-03-16
+    expect(computeFirstOccurrence("WEEKLY:1")).toBe("2026-03-16");
+  });
+
+  it("MONTHLY: returns today", () => {
+    vi.useFakeTimers({ now: new Date(2026, 2, 15) });
+    expect(computeFirstOccurrence("MONTHLY")).toBe("2026-03-15");
+  });
+
+  it("MONTHLY_LAST: returns last day of current month", () => {
+    vi.useFakeTimers({ now: new Date(2026, 1, 15) }); // Feb 15
+    expect(computeFirstOccurrence("MONTHLY_LAST")).toBe("2026-02-28");
+  });
+
+  it("MONTHLY_LAST: returns today if today is the last day", () => {
+    vi.useFakeTimers({ now: new Date(2026, 1, 28) }); // Feb 28 (last day)
+    expect(computeFirstOccurrence("MONTHLY_LAST")).toBe("2026-02-28");
+  });
+
+  it("YEARLY: returns today", () => {
+    vi.useFakeTimers({ now: new Date(2026, 5, 1) });
+    expect(computeFirstOccurrence("YEARLY")).toBe("2026-06-01");
+  });
+
+  it("returns null for invalid recurrence", () => {
+    expect(computeFirstOccurrence("INVALID")).toBeNull();
   });
 });

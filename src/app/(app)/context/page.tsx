@@ -8,7 +8,7 @@ import { useDeviceContext } from "@/hooks/use-device-context";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { TaskList } from "@/components/tasks/task-list";
 import { isFutureTask } from "@/domain/services/task-visibility";
-import { TaskDetailPanel } from "@/components/tasks/task-detail-panel";
+import { ResizableTaskLayout } from "@/components/layout/resizable-task-layout";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n";
 
@@ -21,6 +21,7 @@ const CONTEXT_TASKS = gql`
       title
       notes
       isCompleted
+      completedAt
       dueDate
       reminderAt
       recurrence
@@ -48,6 +49,7 @@ const CONTEXT_TASKS = gql`
         name
         latitude
         longitude
+        radius
       }
     }
   }
@@ -89,8 +91,8 @@ export default function ContextPage() {
   const tasks = (data?.contextTasks ?? []).filter((t) => !isFutureTask(t));
 
   return (
-    <div className="relative flex flex-1">
-      <div className="flex flex-1 flex-col">
+    <ResizableTaskLayout>
+      <div className="flex flex-1 flex-col h-full">
         <div className="px-6 pt-8 pb-4">
           <h1 className="flex items-center gap-2 text-2xl font-bold">
             {!isDesktop && (
@@ -115,7 +117,6 @@ export default function ContextPage() {
           <TaskList tasks={tasks} showListName />
         )}
       </div>
-      <TaskDetailPanel />
-    </div>
+    </ResizableTaskLayout>
   );
 }

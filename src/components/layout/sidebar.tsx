@@ -506,7 +506,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="bg-sidebar flex h-full w-full flex-col border-r md:w-72">
+    <aside className="bg-sidebar flex h-full w-full flex-col">
       <div className="flex items-center gap-2 p-4">
         <UserMenu />
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, type MouseEvent } from "react";
+import { memo, useState, useEffect, useRef, type MouseEvent } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
@@ -75,6 +75,7 @@ const UPDATE_TASK = gql`
         name
         latitude
         longitude
+        radius
       }
     }
   }
@@ -106,6 +107,7 @@ interface TaskLocationInfo {
   name: string;
   latitude: number;
   longitude: number;
+  radius: number;
 }
 
 interface Task {
@@ -126,12 +128,14 @@ interface TaskItemProps {
   task: Task;
   showListName?: boolean;
   onDelete?: () => void;
+  fadingOut?: boolean;
 }
 
 export const TaskItem = memo(function TaskItem({
   task,
   showListName = false,
   onDelete,
+  fadingOut: externalFadingOut = false,
 }: TaskItemProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -145,6 +149,13 @@ export const TaskItem = memo(function TaskItem({
   const [localChecked, setLocalChecked] = useState<boolean | null>(null);
   const [prevIsCompleted, setPrevIsCompleted] = useState(task.isCompleted);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [fadingOut, setFadingOut] = useState(false);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const completionTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    return () => completionTimersRef.current.forEach(clearTimeout);
+  }, []);
 
   if (prevIsCompleted !== task.isCompleted) {
     setPrevIsCompleted(task.isCompleted);
@@ -218,6 +229,7 @@ export const TaskItem = memo(function TaskItem({
                       name
                       latitude
                       longitude
+                      radius
                     }
                     deviceContext
                   }
@@ -241,7 +253,7 @@ export const TaskItem = memo(function TaskItem({
   const hasRecurrence = !!task.recurrence;
   const hasLocation = !!task.location;
   const locationNearby = task.location
-    ? checkNearby(task.location.latitude, task.location.longitude)
+    ? checkNearby(task.location.latitude, task.location.longitude, task.location.radius)
     : false;
   const taskList = task.list ? lists.find((l) => l.id === task.list!.id) : undefined;
   const deviceMatch = !locationNearby && taskList?.deviceContext === deviceContext;
@@ -274,19 +286,32 @@ export const TaskItem = memo(function TaskItem({
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div
+            ref={rowRef}
             className={cn(
-              "group hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-4 py-2.5 transition-colors",
+              "group hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-4 py-2.5 transition-all duration-500",
               selectedTaskId === task.id && "bg-accent",
               locationNearby && "bg-emerald-50 dark:bg-emerald-950/30",
               deviceMatch && "bg-yellow-50 dark:bg-yellow-950/30",
+              (fadingOut || externalFadingOut) && "opacity-0",
             )}
             onClick={handleClick}
           >
             <Checkbox
               checked={visuallyCompleted}
               onCheckedChange={() => {
-                setLocalChecked(!visuallyCompleted);
-                toggleCompleted({ variables: { id: task.id } });
+                const completing = !visuallyCompleted;
+                setLocalChecked(completing);
+                if (completing) {
+                  // Show checkmark, then fade out, then fire mutation
+                  completionTimersRef.current = [
+                    setTimeout(() => setFadingOut(true), 400),
+                    setTimeout(() => {
+                      toggleCompleted({ variables: { id: task.id } });
+                    }, 900),
+                  ];
+                } else {
+                  toggleCompleted({ variables: { id: task.id } });
+                }
               }}
               onClick={(e) => e.stopPropagation()}
               className="rounded-full"

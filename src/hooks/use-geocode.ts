@@ -20,6 +20,7 @@ interface UseGeocodeReturn {
   isLoading: boolean;
   search: (query: string) => void;
   clear: () => void;
+  reverseGeocode: (lat: number, lon: number) => Promise<GeocodingResult | null>;
 }
 
 const PHOTON_URL = "https://photon.komoot.io/api/";
@@ -102,6 +103,10 @@ interface NominatimLookupResult {
   name: string;
   address?: {
     name?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
     state?: string;
     country?: string;
   };
@@ -123,10 +128,11 @@ async function nominatimLookup(osmIds: string[], locale: string): Promise<Map<st
   for (const r of data) {
     const prefix = r.osm_type === "node" ? "N" : r.osm_type === "way" ? "W" : "R";
     const key = `${prefix}${r.osm_id}`;
+    const city = r.address?.city || r.address?.town || r.address?.village || r.address?.municipality;
     const displayName = r.address
       ? formatLocationName({
           name: r.name,
-          state: r.address.state,
+          city: city ?? undefined,
           country: r.address.country,
         })
       : r.name;
@@ -248,5 +254,31 @@ export function useGeocode(options?: UseGeocodeOptions): UseGeocodeReturn {
     [doSearch],
   );
 
-  return { results, isLoading, search, clear };
+  const reverseGeocode = useCallback(
+    async (lat: number, lon: number): Promise<GeocodingResult | null> => {
+      const locale = options?.locale ?? "en";
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=${locale}`,
+          { headers: { "User-Agent": "SweptMind/1.0" } },
+        );
+        if (!res.ok) return null;
+        const data = await res.json();
+        const addr = data.address ?? {};
+        const name =
+          addr.city || addr.town || addr.village || addr.suburb || data.display_name?.split(",")[0];
+        if (!name) return null;
+        return {
+          display_name: name,
+          lat: String(lat),
+          lon: String(lon),
+        };
+      } catch {
+        return null;
+      }
+    },
+    [options?.locale],
+  );
+
+  return { results, isLoading, search, clear, reverseGeocode };
 }

@@ -288,14 +288,14 @@ describe("TaskService", () => {
       );
     });
 
-    it("opakující se úkol bez dueDate: normální toggle", async () => {
+    it("opakující se úkol bez dueDate: posune na další výskyt místo dokončení", async () => {
       const task = makeTask({
         isCompleted: false,
         dueDate: null,
         recurrence: "DAILY",
       });
       vi.mocked(repo.findById).mockResolvedValue(task);
-      vi.mocked(repo.update).mockResolvedValue(makeTask({ isCompleted: true }));
+      vi.mocked(repo.update).mockResolvedValue(makeTask({ isCompleted: false }));
 
       await service.toggleCompleted("task-1", "user-1");
 
@@ -303,8 +303,9 @@ describe("TaskService", () => {
         "task-1",
         "user-1",
         expect.objectContaining({
-          isCompleted: true,
-          completedAt: expect.any(Date),
+          isCompleted: false,
+          completedAt: null,
+          dueDate: expect.any(String),
         }),
       );
     });

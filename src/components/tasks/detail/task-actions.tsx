@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 interface TaskActionsProps {
   createdLabel: string;
   onDelete: () => void;
+  onClose?: () => void;
   deleteConfirmTitle: string;
   deleteConfirmDesc: string;
   deleteConfirmCancel: string;
@@ -26,6 +27,7 @@ interface TaskActionsProps {
 export function TaskActions({
   createdLabel,
   onDelete,
+  onClose,
   deleteConfirmTitle,
   deleteConfirmDesc,
   deleteConfirmCancel,
@@ -33,7 +35,14 @@ export function TaskActions({
 }: TaskActionsProps) {
   return (
     <div className="flex items-center justify-between border-t px-4 py-3">
-      <span className="text-muted-foreground text-xs">{createdLabel}</span>
+      <div className="flex items-center gap-2">
+        {onClose && (
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        )}
+        <span className="text-muted-foreground text-xs">{createdLabel}</span>
+      </div>
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="ghost" size="icon">

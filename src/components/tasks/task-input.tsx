@@ -52,9 +52,11 @@ const TASK_FRAGMENT = gql`
     title
     notes
     isCompleted
+    completedAt
     dueDate
     reminderAt
     recurrence
+    deviceContext
     sortOrder
     createdAt
     steps {
@@ -74,6 +76,10 @@ const TASK_FRAGMENT = gql`
       name
       latitude
       longitude
+    }
+    list {
+      id
+      name
     }
   }
 `;
@@ -110,14 +116,17 @@ export function TaskInput({ listId, placeholder }: TaskInputProps) {
         title: trimmed,
         notes: null,
         isCompleted: false,
+        completedAt: null,
         dueDate: null,
         reminderAt: null,
         recurrence: null,
+        deviceContext: null,
         sortOrder: 0,
         createdAt: new Date().toISOString(),
         steps: [],
         tags: [],
         location: null,
+        list: { __typename: "List", id: listId, name: "" },
       },
       fragment: TASK_FRAGMENT,
     });

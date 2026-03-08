@@ -124,3 +124,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes fly-to-future {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  60% {
+    transform: translateY(var(--fly-distance, 2.5rem)) scale(0.97);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(var(--fly-distance, 2.5rem)) scale(0.97);
+    opacity: 0;
+    max-height: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+  }
+}
+
+.animate-fly-to-future {
+  animation: fly-to-future 700ms ease-in-out forwards;
+  pointer-events: none;
+}

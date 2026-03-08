@@ -10,6 +10,7 @@ function makeLocation(overrides: Partial<Location> = {}): Location {
     name: "Beroun",
     latitude: 49.9637,
     longitude: 14.0722,
+    radius: 5,
     address: "Beroun, Czech Republic",
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
@@ -61,6 +62,7 @@ describe("LocationService", () => {
         name: "Beroun",
         latitude: 49.9637,
         longitude: 14.0722,
+        radius: 5,
         address: "Beroun, CZ",
       });
     });

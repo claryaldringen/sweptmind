@@ -33,6 +33,7 @@ export class DrizzleLocationRepository implements ILocationRepository {
     name: string;
     latitude: number;
     longitude: number;
+    radius?: number;
     address?: string | null;
   }): Promise<Location> {
     const [location] = await this.db.insert(schema.locations).values(values).returning();

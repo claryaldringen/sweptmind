@@ -1,8 +1,9 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { Panel, Group, Separator, useDefaultLayout } from "react-resizable-panels";
+import { ResizeHandle } from "@/components/layout/resize-handle";
 import { TaskDetailPanel } from "@/components/tasks/task-detail-panel";
 import type { ReactNode } from "react";
 
@@ -14,11 +15,16 @@ export function ResizableTaskLayout({ children }: ResizableTaskLayoutProps) {
   const searchParams = useSearchParams();
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const taskId = searchParams.get("task");
-
-  const layoutProps = useDefaultLayout({
-    id: "detail-panel-layout",
-    storage: typeof window !== "undefined" ? localStorage : undefined,
+  const [detailWidth, setDetailWidth] = useState(() => {
+    if (typeof window === "undefined") return 400;
+    const saved = localStorage.getItem("sweptmind-detail-width");
+    return saved ? Number(saved) : 400;
   });
+
+  const handleDetailResize = useCallback((w: number) => {
+    setDetailWidth(w);
+    localStorage.setItem("sweptmind-detail-width", String(w));
+  }, []);
 
   if (!isDesktop) {
     return (
@@ -34,20 +40,14 @@ export function ResizableTaskLayout({ children }: ResizableTaskLayoutProps) {
   }
 
   return (
-    <Group
-      orientation="horizontal"
-      defaultLayout={layoutProps.defaultLayout ?? { content: 65, detail: 35 }}
-      onLayoutChanged={layoutProps.onLayoutChanged}
-    >
-      <Panel id="content" minSize={40}>
+    <div className="flex flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden">
         {children}
-      </Panel>
-      <Separator className="hover:bg-primary/10 active:bg-primary/20 w-1.5 cursor-col-resize transition-colors">
-        <div className="bg-border mx-auto h-8 w-0.5 rounded-full" />
-      </Separator>
-      <Panel id="detail" minSize={20} maxSize={50}>
+      </div>
+      <ResizeHandle side="right" width={detailWidth} onWidthChange={handleDetailResize} minWidth={280} maxWidth={600} />
+      <div className="h-full shrink-0 overflow-hidden" style={{ width: detailWidth }}>
         <TaskDetailPanel />
-      </Panel>
-    </Group>
+      </div>
+    </div>
   );
 }

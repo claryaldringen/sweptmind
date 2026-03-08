@@ -32,6 +32,7 @@ interface LocationInfo {
   name: string;
   latitude: number;
   longitude: number;
+  radius: number;
   address?: string | null;
 }
 
@@ -57,6 +58,7 @@ const GET_TAGS = gql`
         name
         latitude
         longitude
+        radius
       }
     }
   }
@@ -74,6 +76,7 @@ const UPDATE_TAG = gql`
         name
         latitude
         longitude
+        radius
       }
     }
   }
@@ -86,6 +89,7 @@ const GET_LOCATIONS = gql`
       name
       latitude
       longitude
+      radius
       address
     }
   }
@@ -142,6 +146,7 @@ const TASKS_BY_TAG = gql`
         name
         latitude
         longitude
+        radius
       }
       list {
         id
@@ -325,7 +330,7 @@ export default function TagPage() {
                 variant="secondary"
                 className={cn(
                   "gap-1 pr-1",
-                  checkNearby(tag.location.latitude, tag.location.longitude)
+                  checkNearby(tag.location.latitude, tag.location.longitude, tag.location.radius)
                     ? "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
                     : "",
                 )}
@@ -334,7 +339,7 @@ export default function TagPage() {
                   className={cn(
                     "h-3 w-3",
                     tag.location &&
-                      checkNearby(tag.location.latitude, tag.location.longitude) &&
+                      checkNearby(tag.location.latitude, tag.location.longitude, tag.location.radius) &&
                       "animate-pulse",
                   )}
                 />

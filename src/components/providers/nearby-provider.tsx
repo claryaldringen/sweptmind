@@ -12,6 +12,7 @@ const GET_LOCATIONS = gql`
       id
       latitude
       longitude
+      radius
     }
   }
 `;
@@ -25,7 +26,7 @@ interface NearbyContextValue {
   error: string | null;
   startTracking: () => void;
   stopTracking: () => void;
-  isNearby: (lat: number, lon: number) => boolean;
+  isNearby: (lat: number, lon: number, radiusKm?: number) => boolean;
   nearbyLocationIds: string[];
 }
 
@@ -42,13 +43,13 @@ export function NearbyProvider({ children }: { children: ReactNode }) {
   }, [isSupported, isTracking, startTracking]);
 
   const { data: locationsData } = useQuery<{
-    locations: { id: string; latitude: number; longitude: number }[];
+    locations: { id: string; latitude: number; longitude: number; radius: number }[];
   }>(GET_LOCATIONS, { skip: !isTracking });
 
   const isNearby = useCallback(
-    (lat: number, lon: number) => {
+    (lat: number, lon: number, radiusKm?: number) => {
       if (!position) return false;
-      return checkNearby(position.latitude, position.longitude, lat, lon);
+      return checkNearby(position.latitude, position.longitude, lat, lon, radiusKm);
     },
     [position],
   );
@@ -58,7 +59,7 @@ export function NearbyProvider({ children }: { children: ReactNode }) {
     if (!position || !locations) return [];
     return locations
       .filter((loc) =>
-        checkNearby(position.latitude, position.longitude, loc.latitude, loc.longitude),
+        checkNearby(position.latitude, position.longitude, loc.latitude, loc.longitude, loc.radius),
       )
       .map((loc) => loc.id);
   }, [position, locations]);

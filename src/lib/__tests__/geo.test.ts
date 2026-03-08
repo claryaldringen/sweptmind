@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { haversineDistance, isNearby, NEARBY_RADIUS_KM } from "../geo";
+import { haversineDistance, isNearby, DEFAULT_RADIUS_KM } from "../geo";
 
 describe("haversineDistance", () => {
   it("vrátí 0 pro stejný bod", () => {
@@ -79,8 +79,22 @@ describe("isNearby", () => {
   });
 });
 
-describe("NEARBY_RADIUS_KM", () => {
+describe("DEFAULT_RADIUS_KM", () => {
   it("je 5 km", () => {
-    expect(NEARBY_RADIUS_KM).toBe(5);
+    expect(DEFAULT_RADIUS_KM).toBe(5);
+  });
+});
+
+describe("isNearby s vlastním radiusem", () => {
+  it("vrátí true pro bod v okruhu 10 km", () => {
+    // Praha - bod ~8 km daleko
+    const offsetLat = (8 / 6371) * (180 / Math.PI);
+    expect(isNearby(50.0, 14.0, 50.0 + offsetLat, 14.0, 10)).toBe(true);
+  });
+
+  it("vrátí false pro bod mimo vlastní radius 2 km", () => {
+    // Dva body ~3 km od sebe
+    const offsetLat = (3 / 6371) * (180 / Math.PI);
+    expect(isNearby(50.0, 14.0, 50.0 + offsetLat, 14.0, 2)).toBe(false);
   });
 });

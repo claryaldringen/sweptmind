@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { TaskItem } from "./task-item";
-import { isFutureTask } from "@/domain/services/task-visibility";
 import { useTranslations } from "@/lib/i18n";
+import { useDepartureAnimation } from "@/hooks/use-departure-animation";
 
 interface Task {
   id: string;
@@ -24,23 +24,34 @@ interface TaskListProps {
 
 export function TaskList({ tasks, showListName = false, showCompleted = true }: TaskListProps) {
   const { t } = useTranslations();
-  const activeTasks = tasks.filter((t) => !t.isCompleted && !isFutureTask(t));
-  const futureTasks = tasks
-    .filter((t) => isFutureTask(t))
-    .sort((a, b) => a.dueDate!.localeCompare(b.dueDate!));
-  const completedTasks = tasks.filter((t) => t.isCompleted);
+  const {
+    futureTasks,
+    completedTasks,
+    departingIds,
+    activeWithDeparting,
+    listRef,
+    futureSectionRef,
+  } = useDepartureAnimation(tasks);
   const [futureOpen, setFutureOpen] = useState(false);
   const [completedOpen, setCompletedOpen] = useState(false);
 
   return (
-    <div className="flex-1 overflow-auto">
-      <div className="space-y-0.5">
-        {activeTasks.map((task) => (
-          <TaskItem key={task.id} task={task} showListName={showListName} />
-        ))}
-      </div>
+    <div ref={listRef} className="flex-1 overflow-auto">
+      <ul className="space-y-0.5">
+        {activeWithDeparting.map((task) =>
+          departingIds.has(task.id) ? (
+            <li key={task.id} data-departing={task.id} className="animate-fly-to-future">
+              <TaskItem task={task} showListName={showListName} />
+            </li>
+          ) : (
+            <li key={task.id}>
+              <TaskItem task={task} showListName={showListName} />
+            </li>
+          ),
+        )}
+      </ul>
       {futureTasks.length > 0 && (
-        <div className="mt-4">
+        <div ref={futureSectionRef} className="mt-4">
           <button
             onClick={() => setFutureOpen(!futureOpen)}
             className="text-muted-foreground flex w-full items-center gap-1 px-4 py-2 text-xs font-medium"
@@ -53,11 +64,13 @@ export function TaskList({ tasks, showListName = false, showCompleted = true }: 
             {t("tasks.future", { count: futureTasks.length })}
           </button>
           {futureOpen && (
-            <div className="space-y-0.5">
+            <ul className="space-y-0.5">
               {futureTasks.map((task) => (
-                <TaskItem key={task.id} task={task} showListName={showListName} />
+                <li key={task.id}>
+                  <TaskItem task={task} showListName={showListName} />
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       )}
@@ -75,11 +88,13 @@ export function TaskList({ tasks, showListName = false, showCompleted = true }: 
             {t("tasks.completed", { count: completedTasks.length })}
           </button>
           {completedOpen && (
-            <div className="space-y-0.5">
+            <ul className="space-y-0.5">
               {completedTasks.map((task) => (
-                <TaskItem key={task.id} task={task} showListName={showListName} />
+                <li key={task.id}>
+                  <TaskItem task={task} showListName={showListName} />
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       )}

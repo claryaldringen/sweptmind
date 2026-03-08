@@ -211,6 +211,9 @@ export const cs: Dictionary = {
     nearbyRadius: "Okruh 5 km",
     permissionDenied: "Přístup k poloze byl zamítnut",
     approximateLocation: "Přibližná poloha (dle IP)",
+    myLocation: "Moje poloha",
+    detectingLocation: "Zjišťuji polohu…",
+    radiusKm: "{radius} km",
   },
   recurrence: {
     addRecurrence: "Přidat opakování",

@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { ArrowLeft, MapPin, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, MapPin, MoreHorizontal, Navigation, Pencil, Trash2, X } from "lucide-react";
 import { ListIcon, LIST_ICONS } from "@/lib/list-icons";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import {
@@ -36,6 +36,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
@@ -44,6 +45,7 @@ import { useGeocode } from "@/hooks/use-geocode";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { cn } from "@/lib/utils";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
+import { RADIUS_OPTIONS } from "@/lib/constants";
 
 const GET_TASKS_BY_LIST = gql`
   query TasksByList($listId: String!) {
@@ -78,6 +80,7 @@ const GET_TASKS_BY_LIST = gql`
         name
         latitude
         longitude
+        radius
       }
       list {
         id
@@ -102,6 +105,7 @@ const GET_LIST = gql`
         name
         latitude
         longitude
+        radius
       }
     }
   }
@@ -120,6 +124,7 @@ const UPDATE_LIST = gql`
         name
         latitude
         longitude
+        radius
       }
     }
   }
@@ -132,6 +137,7 @@ const GET_LOCATIONS = gql`
       name
       latitude
       longitude
+      radius
       address
     }
   }
@@ -144,7 +150,17 @@ const CREATE_LOCATION = gql`
       name
       latitude
       longitude
+      radius
       address
+    }
+  }
+`;
+
+const UPDATE_LOCATION = gql`
+  mutation UpdateLocation($id: String!, $input: UpdateLocationInput!) {
+    updateLocation(id: $id, input: $input) {
+      id
+      radius
     }
   }
 `;
@@ -191,6 +207,7 @@ interface LocationInfo {
   name: string;
   latitude: number;
   longitude: number;
+  radius: number;
   address?: string | null;
 }
 
@@ -226,6 +243,8 @@ export default function ListPage() {
   const [locationPopoverOpen, setLocationPopoverOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
+  const [radiusPopoverOpen, setRadiusPopoverOpen] = useState(false);
   const { open: openSidebar, isDesktop } = useSidebarContext();
   const { isNearby: checkNearby, userLatitude, userLongitude } = useNearby();
   const geocode = useGeocode({ userLatitude, userLongitude, locale: appLocale });
@@ -262,6 +281,7 @@ export default function ListPage() {
                   name
                   latitude
                   longitude
+                  radius
                   address
                 }
               `,
@@ -279,6 +299,7 @@ export default function ListPage() {
       cache.gc();
     },
   });
+  const [updateLocation] = useMutation(UPDATE_LOCATION);
 
   const list = listData?.list;
   const tasks = tasksData?.tasksByList ?? [];
@@ -339,6 +360,50 @@ export default function ListPage() {
     await updateList({
       variables: { id: list.id, input: { locationId: null } },
     });
+  }
+
+  async function handleUseCurrentLocation() {
+    if (!list) return;
+
+    async function saveLocation(latitude: number, longitude: number) {
+      const result = await geocode.reverseGeocode(latitude, longitude);
+      const locationResult = await createLocation({
+        variables: {
+          input: {
+            name: result?.display_name ?? t("locations.myLocation"),
+            latitude,
+            longitude,
+          },
+        },
+      });
+      if (locationResult.data?.createLocation) {
+        await updateList({
+          variables: { id: list!.id, input: { locationId: locationResult.data.createLocation.id } },
+        });
+      }
+      setDetectingLocation(false);
+      setLocationPopoverOpen(false);
+    }
+
+    // Use already-known position if available
+    if (userLatitude != null && userLongitude != null) {
+      setDetectingLocation(true);
+      await saveLocation(userLatitude, userLongitude);
+      return;
+    }
+
+    // Fallback to getCurrentPosition
+    if (!("geolocation" in navigator)) return;
+    setDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => saveLocation(pos.coords.latitude, pos.coords.longitude),
+      () => setDetectingLocation(false),
+      { timeout: 5000 },
+    );
+  }
+
+  function handleUpdateLocationRadius(id: string, radius: number) {
+    updateLocation({ variables: { id, input: { radius } } });
   }
 
   return (
@@ -402,31 +467,61 @@ export default function ListPage() {
           </div>
           <div className="flex items-center gap-1">
             {list?.location && (
-              <Badge
-                variant="secondary"
-                className={cn(
-                  "gap-1 pr-1",
-                  checkNearby(list.location.latitude, list.location.longitude)
-                    ? "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
-                    : "",
-                )}
-              >
-                <MapPin
+              <div className="flex items-center gap-1">
+                <Badge
+                  variant="secondary"
                   className={cn(
-                    "h-3 w-3",
-                    list.location &&
-                      checkNearby(list.location.latitude, list.location.longitude) &&
-                      "animate-pulse",
+                    "gap-1 pr-1",
+                    checkNearby(list.location.latitude, list.location.longitude, list.location.radius)
+                      ? "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
+                      : "",
                   )}
-                />
-                {list.location.name}
-                <button
-                  onClick={handleRemoveListLocation}
-                  className="rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10"
                 >
-                  <span className="sr-only">{t("tasks.removeLocation")}</span>×
-                </button>
-              </Badge>
+                  <MapPin
+                    className={cn(
+                      "h-3 w-3",
+                      checkNearby(list.location.latitude, list.location.longitude, list.location.radius) &&
+                        "animate-pulse",
+                    )}
+                  />
+                  {list.location.name}
+                  <button
+                    onClick={handleRemoveListLocation}
+                    className="rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10"
+                  >
+                    <span className="sr-only">{t("tasks.removeLocation")}</span>×
+                  </button>
+                </Badge>
+                <Popover open={radiusPopoverOpen} onOpenChange={setRadiusPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <button className="text-muted-foreground hover:text-foreground flex items-center gap-0.5 text-xs transition-colors">
+                      {t("locations.radiusKm", { radius: String(list.location.radius) })}
+                      <ChevronDown className="h-3 w-3" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-2" align="start">
+                    <div className="flex flex-wrap gap-1">
+                      {RADIUS_OPTIONS.map((r) => (
+                        <button
+                          key={r}
+                          onClick={() => {
+                            handleUpdateLocationRadius(list.location!.id, r);
+                            setRadiusPopoverOpen(false);
+                          }}
+                          className={cn(
+                            "rounded-md px-2 py-1 text-xs transition-colors",
+                            list.location!.radius === r
+                              ? "bg-primary text-primary-foreground"
+                              : "hover:bg-accent text-muted-foreground hover:text-foreground",
+                          )}
+                        >
+                          {t("locations.radiusKm", { radius: String(r) })}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             )}
             <DeviceContextPicker
               value={list?.deviceContext ?? null}
@@ -464,6 +559,14 @@ export default function ListPage() {
                   />
                   <CommandList>
                     <CommandEmpty />
+                    <CommandGroup>
+                      <CommandItem onSelect={handleUseCurrentLocation} disabled={detectingLocation}>
+                        <Navigation className="mr-2 h-3 w-3" />
+                        {detectingLocation
+                          ? t("locations.detectingLocation")
+                          : t("locations.myLocation")}
+                      </CommandItem>
+                    </CommandGroup>
                     {(locationsData?.locations ?? []).filter(
                       (loc) =>
                         !locationSearch ||
@@ -484,6 +587,9 @@ export default function ListPage() {
                             >
                               <MapPin className="mr-2 h-3 w-3" />
                               <span className="flex-1 truncate">{loc.name}</span>
+                              <span className="text-muted-foreground text-xs">
+                                {t("locations.radiusKm", { radius: String(loc.radius) })}
+                              </span>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();

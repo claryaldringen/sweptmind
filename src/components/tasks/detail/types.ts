@@ -17,6 +17,7 @@ export interface TaskLocation {
   name: string;
   latitude: number;
   longitude: number;
+  radius: number;
   address?: string | null;
 }
 
