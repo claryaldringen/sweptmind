@@ -45,19 +45,20 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(self)",
           },
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.googleusercontent.com https://*.fbcdn.net https://platform-lookaside.fbsbx.com",
-              "connect-src 'self' https://photon.komoot.io https://nominatim.openstreetmap.org https://ipwho.is https://get.geojs.io",
-              "font-src 'self'",
-              "worker-src 'self'",
-              "frame-ancestors 'none'",
-            ].join("; "),
-          },
+          // CSP temporarily disabled for OAuth debugging
+          // {
+          //   key: "Content-Security-Policy",
+          //   value: [
+          //     "default-src 'self'",
+          //     "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+          //     "style-src 'self' 'unsafe-inline'",
+          //     "img-src 'self' data: blob: https://*.googleusercontent.com https://*.fbcdn.net https://platform-lookaside.fbsbx.com",
+          //     "connect-src 'self' https://photon.komoot.io https://nominatim.openstreetmap.org https://ipwho.is https://get.geojs.io",
+          //     "font-src 'self'",
+          //     "worker-src 'self'",
+          //     "frame-ancestors 'none'",
+          //   ].join("; "),
+          // },
         ],
       },
     ];
