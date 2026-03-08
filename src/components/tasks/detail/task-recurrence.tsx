@@ -40,7 +40,8 @@ export function TaskRecurrence({
 
   function handleSetRecurrence(value: string | null) {
     onSetRecurrence(value);
-    if (value === null) setRecurrenceOpen(false);
+    // Keep open only for WEEKLY (user needs to pick days)
+    if (!value?.startsWith("WEEKLY:")) setRecurrenceOpen(false);
   }
 
   const recurrenceTypes = [
