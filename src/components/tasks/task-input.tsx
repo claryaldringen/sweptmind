@@ -38,6 +38,7 @@ interface Step {
 }
 
 interface CreatedTask {
+  __typename?: string;
   id: string;
   listId: string;
   title: string;
@@ -101,18 +102,33 @@ export function TaskInput({ listId, refetchQueries = [], placeholder }: TaskInpu
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
+    const trimmed = title.trim();
+    if (!trimmed) return;
 
-    await createTask({
+    setTitle("");
+
+    createTask({
       variables: {
         input: {
           listId,
-          title: title.trim(),
+          title: trimmed,
+        },
+      },
+      optimisticResponse: {
+        createTask: {
+          __typename: "Task",
+          id: `temp-${Date.now()}`,
+          listId,
+          title: trimmed,
+          notes: null,
+          isCompleted: false,
+          dueDate: null,
+          sortOrder: 0,
+          createdAt: new Date().toISOString(),
+          steps: [],
         },
       },
     });
-
-    setTitle("");
   }
 
   return (
