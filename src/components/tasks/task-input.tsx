@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { gql } from "@apollo/client";
-import { useMutation } from "@apollo/client/react";
+import { gql, type Reference, type StoreObject } from "@apollo/client";
+import { useMutation, useApolloClient } from "@apollo/client/react";
 import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useTranslations } from "@/lib/i18n";
@@ -12,10 +12,13 @@ const CREATE_TASK = gql`
     createTask(input: $input) {
       id
       listId
+      locationId
       title
       notes
       isCompleted
       dueDate
+      reminderAt
+      recurrence
       sortOrder
       createdAt
       steps {
@@ -25,34 +28,54 @@ const CREATE_TASK = gql`
         isCompleted
         sortOrder
       }
+      tags {
+        id
+        name
+        color
+      }
+      location {
+        id
+        name
+        latitude
+        longitude
+      }
     }
   }
 `;
 
-interface Step {
-  id: string;
-  taskId: string;
-  title: string;
-  isCompleted: boolean;
-  sortOrder: number;
-}
-
-interface CreatedTask {
-  __typename?: string;
-  id: string;
-  listId: string;
-  title: string;
-  notes: string | null;
-  isCompleted: boolean;
-  dueDate: string | null;
-  sortOrder: number;
-  createdAt: string;
-  steps: Step[];
-}
-
-interface CreateTaskData {
-  createTask: CreatedTask;
-}
+const TASK_FRAGMENT = gql`
+  fragment TaskFields on Task {
+    id
+    listId
+    locationId
+    title
+    notes
+    isCompleted
+    dueDate
+    reminderAt
+    recurrence
+    sortOrder
+    createdAt
+    steps {
+      id
+      taskId
+      title
+      isCompleted
+      sortOrder
+    }
+    tags {
+      id
+      name
+      color
+    }
+    location {
+      id
+      name
+      latitude
+      longitude
+    }
+  }
+`;
 
 interface TaskInputProps {
   listId: string;
@@ -63,70 +86,89 @@ interface TaskInputProps {
 export function TaskInput({ listId, refetchQueries = [], placeholder }: TaskInputProps) {
   const { t } = useTranslations();
   const [title, setTitle] = useState("");
-  const [createTask] = useMutation<CreateTaskData>(CREATE_TASK, {
+  const client = useApolloClient();
+
+  const [createTask] = useMutation<{ createTask: Record<string, unknown> }>(CREATE_TASK, {
     refetchQueries: refetchQueries.map((q) => ({ query: gql`query { ${q} { id } }` })),
-    update(cache, { data }) {
-      if (!data?.createTask) return;
-      cache.modify({
-        fields: {
-          tasksByList(existing = [], { storeFieldName }) {
-            if (!storeFieldName.includes(listId)) return existing;
-            const newRef = cache.writeFragment({
-              data: data.createTask,
-              fragment: gql`
-                fragment NewTask on Task {
-                  id
-                  listId
-                  title
-                  notes
-                  isCompleted
-                  dueDate
-                  sortOrder
-                  createdAt
-                  steps {
-                    id
-                    taskId
-                    title
-                    isCompleted
-                    sortOrder
-                  }
-                }
-              `,
-            });
-            return [newRef, ...existing];
-          },
-        },
-      });
-    },
   });
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = title.trim();
     if (!trimmed) return;
 
     setTitle("");
 
-    createTask({
-      variables: {
-        input: {
-          listId,
-          title: trimmed,
+    const tempId = `temp-${Date.now()}`;
+
+    // Write temp task directly to cache (no optimistic layer = no rollback flicker)
+    const tempRef = client.cache.writeFragment({
+      data: {
+        __typename: "Task",
+        id: tempId,
+        listId,
+        locationId: null,
+        title: trimmed,
+        notes: null,
+        isCompleted: false,
+        dueDate: null,
+        reminderAt: null,
+        recurrence: null,
+        sortOrder: 0,
+        createdAt: new Date().toISOString(),
+        steps: [],
+        tags: [],
+        location: null,
+      },
+      fragment: TASK_FRAGMENT,
+    });
+
+    client.cache.modify({
+      fields: {
+        tasksByList(existing = [], { storeFieldName }) {
+          if (!storeFieldName.includes(listId)) return existing;
+          return [tempRef, ...existing];
         },
       },
-      optimisticResponse: {
-        createTask: {
-          __typename: "Task",
-          id: `temp-${Date.now()}`,
-          listId,
-          title: trimmed,
-          notes: null,
-          isCompleted: false,
-          dueDate: null,
-          sortOrder: 0,
-          createdAt: new Date().toISOString(),
-          steps: [],
-        },
+    });
+
+    // Fire mutation — on success, swap temp for real; on error, remove temp
+    createTask({
+      variables: { input: { listId, title: trimmed } },
+      update(cache, { data }) {
+        if (!data?.createTask) return;
+        const newRef = cache.writeFragment({
+          data: data.createTask,
+          fragment: TASK_FRAGMENT,
+        });
+        cache.modify({
+          fields: {
+            tasksByList(existing = [], { storeFieldName, readField }) {
+              if (!storeFieldName.includes(listId)) return existing;
+              return existing.map((ref: Reference | StoreObject | undefined) =>
+                readField("id", ref) === tempId ? newRef : ref,
+              );
+            },
+          },
+        });
+        cache.evict({ id: cache.identify({ __typename: "Task", id: tempId }) });
+        cache.gc();
+      },
+      onError() {
+        client.cache.modify({
+          fields: {
+            tasksByList(existing = [], { storeFieldName, readField }) {
+              if (!storeFieldName.includes(listId)) return existing;
+              return existing.filter(
+                (ref: Reference | StoreObject | undefined) => readField("id", ref) !== tempId,
+              );
+            },
+          },
+        });
+        client.cache.evict({
+          id: client.cache.identify({ __typename: "Task", id: tempId }),
+        });
+        client.cache.gc();
       },
     });
   }
