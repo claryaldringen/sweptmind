@@ -33,8 +33,9 @@ type ReorderCallback = (activeId: string, overId: string) => void;
 interface TaskDndContextValue {
   registerTaskReorder: (cb: ReorderCallback) => void;
   registerListReorder: (cb: ReorderCallback) => void;
+  registerSmartListReorder: (cb: ReorderCallback) => void;
   overListId: string | null;
-  activeType: "task" | "list" | null;
+  activeType: "task" | "list" | "smart-list" | null;
 }
 
 const TaskDndContext = createContext<TaskDndContextValue | null>(null);
@@ -61,6 +62,7 @@ const collisionDetection: CollisionDetection = (args) => {
 export function TaskDndProvider({ children }: { children: ReactNode }) {
   const taskReorderRef = useRef<ReorderCallback | null>(null);
   const listReorderRef = useRef<ReorderCallback | null>(null);
+  const smartListReorderRef = useRef<ReorderCallback | null>(null);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
   const [overListId, setOverListId] = useState<string | null>(null);
   const [updateTask] = useMutation(UPDATE_TASK);
@@ -76,6 +78,10 @@ export function TaskDndProvider({ children }: { children: ReactNode }) {
 
   const registerListReorder = useCallback((cb: ReorderCallback) => {
     listReorderRef.current = cb;
+  }, []);
+
+  const registerSmartListReorder = useCallback((cb: ReorderCallback) => {
+    smartListReorderRef.current = cb;
   }, []);
 
   function handleDragStart(event: DragStartEvent) {
@@ -150,6 +156,9 @@ export function TaskDndProvider({ children }: { children: ReactNode }) {
     } else if (over && activeType === "list" && overType === "list" && active.id !== over.id) {
       // List dropped on another list — reorder
       listReorderRef.current?.(String(active.id), String(over.id));
+    } else if (over && activeType === "smart-list" && overType === "smart-list" && active.id !== over.id) {
+      // Smart list dropped on another smart list — reorder
+      smartListReorderRef.current?.(String(active.id), String(over.id));
     }
 
     setActiveDrag(null);
@@ -164,6 +173,7 @@ export function TaskDndProvider({ children }: { children: ReactNode }) {
   const contextValue: TaskDndContextValue = {
     registerTaskReorder,
     registerListReorder,
+    registerSmartListReorder,
     overListId,
     activeType: activeDrag?.type ?? null,
   };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { gql } from "@apollo/client";
@@ -352,6 +352,45 @@ function SidebarTagItem({
   );
 }
 
+const SMART_LIST_ORDER_KEY = "sweptmind-smart-list-order";
+const DEFAULT_SMART_ORDER = ["planned", "nearby", "context"];
+
+function getStoredSmartOrder(): string[] {
+  if (typeof window === "undefined") return DEFAULT_SMART_ORDER;
+  try {
+    const stored = localStorage.getItem(SMART_LIST_ORDER_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as string[];
+      if (Array.isArray(parsed) && parsed.length === DEFAULT_SMART_ORDER.length) return parsed;
+    }
+  } catch { /* ignore */ }
+  return DEFAULT_SMART_ORDER;
+}
+
+function SortableSmartItem({
+  id,
+  children,
+}: {
+  id: string;
+  children: ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+    data: { type: "smart-list" },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className={cn(isDragging && "z-10 opacity-50")} {...attributes} {...listeners}>
+      {children}
+    </div>
+  );
+}
+
 export function Sidebar() {
   const { close: closeSidebar } = useSidebarContext();
   useKeyboardShortcuts();
@@ -366,6 +405,7 @@ export function Sidebar() {
   const [createListOpen, setCreateListOpen] = useState(false);
   const [localOrder, setLocalOrder] = useState<ListItem[] | null>(null);
   const { isNearby: checkNearby, isTracking, nearbyLocationIds } = useNearby();
+  const [smartOrder, setSmartOrder] = useState(getStoredSmartOrder);
   const { data: contextCountData } = useQuery<{
     contextTasks: {
       id: string;
@@ -384,7 +424,7 @@ export function Sidebar() {
       location: { id: string; latitude: number; longitude: number } | null;
     }[];
   }>(ALL_TASKS_WITH_LOCATION, { skip: !isTracking });
-  const { registerListReorder, overListId, activeType } = useTaskDnd();
+  const { registerListReorder, registerSmartListReorder, overListId, activeType } = useTaskDnd();
 
   // List rename/delete state
   const [renameListTarget, setRenameListTarget] = useState<ListItem | null>(null);
@@ -414,20 +454,11 @@ export function Sidebar() {
   const defaultList = allLists.find((l: ListItem) => l.isDefault);
   const allTags: TagItem[] = tagsData?.tags ?? [];
 
-  const smartLists = [
-    {
-      href: "/planned",
-      label: t("sidebar.planned"),
-      icon: CalendarDays,
-      color: "text-green-500",
-    },
-    {
-      href: "/nearby",
-      label: t("sidebar.nearby"),
-      icon: MapPin,
-      color: "text-orange-500",
-    },
-  ];
+  const smartListDefs: Record<string, { href: string; label: string; icon: typeof CalendarDays; color: string }> = useMemo(() => ({
+    planned: { href: "/planned", label: t("sidebar.planned"), icon: CalendarDays, color: "text-green-500" },
+    nearby: { href: "/nearby", label: t("sidebar.nearby"), icon: MapPin, color: "text-orange-500" },
+    context: { href: "/context", label: t("sidebar.tasks"), icon: Zap, color: "text-yellow-500" },
+  }), [t]);
 
   // Register list reorder callback with the shared DnD provider
   const handleListReorder = useCallback(
@@ -453,6 +484,22 @@ export function Sidebar() {
   useEffect(() => {
     registerListReorder(handleListReorder);
   }, [registerListReorder, handleListReorder]);
+
+  const handleSmartListReorder = useCallback(
+    (activeId: string, overId: string) => {
+      const oldIndex = smartOrder.indexOf(activeId);
+      const newIndex = smartOrder.indexOf(overId);
+      if (oldIndex === -1 || newIndex === -1) return;
+      const reordered = arrayMove(smartOrder, oldIndex, newIndex);
+      setSmartOrder(reordered);
+      localStorage.setItem(SMART_LIST_ORDER_KEY, JSON.stringify(reordered));
+    },
+    [smartOrder],
+  );
+
+  useEffect(() => {
+    registerSmartListReorder(handleSmartListReorder);
+  }, [registerSmartListReorder, handleSmartListReorder]);
 
   function handleRenameList() {
     if (!renameListTarget || !renameListValue.trim()) return;
@@ -511,39 +558,48 @@ export function Sidebar() {
         <UserMenu />
       </div>
       <ScrollArea className="min-h-0 flex-1 px-2">
-        <nav className="space-y-1">
-          {smartLists.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={closeSidebar}
-                className={cn(
-                  "hover:bg-sidebar-accent flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <item.icon className={cn("h-5 w-5", item.color)} />
-                  {item.label}
-                </div>
-                {item.href === "/nearby" && nearbyCount > 0 && (
-                  <span className="text-muted-foreground text-xs">{nearbyCount}</span>
-                )}
-              </Link>
-            );
-          })}
-          {defaultList && (
-            <DroppableDefaultList
-              list={defaultList}
-              isActive={pathname === "/context"}
-              contextCount={contextTaskCount}
-              isDropTarget={activeType === "task" && overListId === defaultList.id}
-              onNavigate={closeSidebar}
-            />
-          )}
-        </nav>
+        <SortableContext items={smartOrder} strategy={verticalListSortingStrategy}>
+          <nav className="space-y-1">
+            {smartOrder.map((id) => {
+              const def = smartListDefs[id];
+              if (!def) return null;
+              if (id === "context" && defaultList) {
+                return (
+                  <SortableSmartItem key={id} id={id}>
+                    <DroppableDefaultList
+                      list={defaultList}
+                      isActive={pathname === "/context"}
+                      contextCount={contextTaskCount}
+                      isDropTarget={activeType === "task" && overListId === defaultList.id}
+                      onNavigate={closeSidebar}
+                    />
+                  </SortableSmartItem>
+                );
+              }
+              const isActive = pathname === def.href;
+              return (
+                <SortableSmartItem key={id} id={id}>
+                  <Link
+                    href={def.href}
+                    onClick={closeSidebar}
+                    className={cn(
+                      "hover:bg-sidebar-accent flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <def.icon className={cn("h-5 w-5", def.color)} />
+                      {def.label}
+                    </div>
+                    {id === "nearby" && nearbyCount > 0 && (
+                      <span className="text-muted-foreground text-xs">{nearbyCount}</span>
+                    )}
+                  </Link>
+                </SortableSmartItem>
+              );
+            })}
+          </nav>
+        </SortableContext>
 
         <Separator className="my-3" />
 
