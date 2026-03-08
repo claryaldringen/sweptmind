@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { getTagColorClasses } from "@/lib/tag-colors";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { TaskList } from "@/components/tasks/task-list";
-import { TaskDetailPanel } from "@/components/tasks/task-detail-panel";
+import { ResizableTaskLayout } from "@/components/layout/resizable-task-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -114,12 +114,15 @@ const TASKS_BY_TAG = gql`
     tasksByTag(tagId: $tagId) {
       id
       listId
+      locationId
       title
       notes
       isCompleted
+      completedAt
       dueDate
       reminderAt
       recurrence
+      deviceContext
       sortOrder
       createdAt
       steps {
@@ -133,6 +136,12 @@ const TASKS_BY_TAG = gql`
         id
         name
         color
+      }
+      location {
+        id
+        name
+        latitude
+        longitude
       }
       list {
         id
@@ -195,14 +204,37 @@ export default function TagPage() {
   });
   const { data: locationsData } = useQuery<{ locations: LocationInfo[] }>(GET_LOCATIONS);
 
-  const [updateTag] = useMutation(UPDATE_TAG, {
-    refetchQueries: [{ query: GET_TAGS }],
-  });
+  const [updateTag] = useMutation(UPDATE_TAG);
   const [createLocation] = useMutation<{ createLocation: LocationInfo }>(CREATE_LOCATION, {
-    refetchQueries: [{ query: GET_LOCATIONS }],
+    update(cache, { data }) {
+      if (!data?.createLocation) return;
+      cache.modify({
+        fields: {
+          locations(existing = []) {
+            const newRef = cache.writeFragment({
+              data: data.createLocation,
+              fragment: gql`
+                fragment NewLocation on Location {
+                  id
+                  name
+                  latitude
+                  longitude
+                  address
+                }
+              `,
+            });
+            return [...existing, newRef];
+          },
+        },
+      });
+    },
   });
   const [deleteLocation] = useMutation<{ deleteLocation: boolean }>(DELETE_LOCATION, {
-    refetchQueries: [{ query: GET_LOCATIONS }],
+    update(cache, _result, { variables }) {
+      if (!variables?.id) return;
+      cache.evict({ id: cache.identify({ __typename: "Location", id: variables.id }) });
+      cache.gc();
+    },
   });
 
   const tag = tagsData?.tags?.find((t) => t.id === tagId);
@@ -222,7 +254,6 @@ export default function TagPage() {
     if (!tag) return;
     await updateTag({
       variables: { id: tag.id, input: { locationId } },
-      refetchQueries: [{ query: GET_TAGS }],
     });
     setLocationPopoverOpen(false);
     setLocationSearch("");
@@ -248,7 +279,6 @@ export default function TagPage() {
     if (locationResult.data?.createLocation) {
       await updateTag({
         variables: { id: tag.id, input: { locationId: locationResult.data.createLocation.id } },
-        refetchQueries: [{ query: GET_TAGS }],
       });
     }
     setLocationPopoverOpen(false);
@@ -260,13 +290,12 @@ export default function TagPage() {
     if (!tag) return;
     await updateTag({
       variables: { id: tag.id, input: { locationId: null } },
-      refetchQueries: [{ query: GET_TAGS }],
     });
   }
 
   return (
-    <div className="relative flex flex-1">
-      <div className="flex flex-1 flex-col">
+    <ResizableTaskLayout>
+      <div className="flex flex-1 flex-col h-full">
         <div className="flex items-center justify-between px-6 pt-8 pb-4">
           <div className="flex items-center gap-2">
             {!isDesktop && (
@@ -324,7 +353,6 @@ export default function TagPage() {
                 if (!tag) return;
                 updateTag({
                   variables: { id: tag.id, input: { deviceContext: val } },
-                  refetchQueries: [{ query: GET_TAGS }],
                 });
               }}
             />
@@ -415,7 +443,6 @@ export default function TagPage() {
           <TaskList tasks={tasks} showListName />
         )}
       </div>
-      <TaskDetailPanel />
-    </div>
+    </ResizableTaskLayout>
   );
 }

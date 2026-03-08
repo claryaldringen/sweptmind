@@ -53,7 +53,31 @@ export function CreateListDialog({ open, onOpenChange }: CreateListDialogProps) 
   const { t } = useTranslations();
   const router = useRouter();
   const [createList, { loading }] = useMutation<CreateListData>(CREATE_LIST, {
-    refetchQueries: [{ query: GET_LISTS }],
+    update(cache, { data }) {
+      if (!data?.createList) return;
+      cache.modify({
+        fields: {
+          lists(existing = []) {
+            const newRef = cache.writeFragment({
+              data: data.createList,
+              fragment: gql`
+                fragment NewList on List {
+                  id
+                  name
+                  icon
+                  themeColor
+                  isDefault
+                  sortOrder
+                  groupId
+                  taskCount
+                }
+              `,
+            });
+            return [...existing, newRef];
+          },
+        },
+      });
+    },
   });
 
   async function handleSubmit(e: React.FormEvent) {

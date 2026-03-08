@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { useLists, GET_LISTS, type ListItem } from "@/components/providers/lists-provider";
+import { useLists, type ListItem } from "@/components/providers/lists-provider";
 import { useDroppable } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -443,7 +443,6 @@ export function Sidebar() {
       const input = reordered.map((l, i) => ({ id: l.id, sortOrder: i }));
       reorderLists({
         variables: { input },
-        refetchQueries: [{ query: GET_LISTS }],
         onCompleted: () => setLocalOrder(null),
         onError: () => setLocalOrder(null),
       });
@@ -462,7 +461,6 @@ export function Sidebar() {
         id: renameListTarget.id,
         input: { name: renameListValue.trim(), icon: renameListIcon },
       },
-      refetchQueries: [{ query: GET_LISTS }],
     });
     setRenameListTarget(null);
   }
@@ -487,7 +485,6 @@ export function Sidebar() {
     if (!renameTagTarget || !renameTagValue.trim()) return;
     updateTag({
       variables: { id: renameTagTarget.id, input: { name: renameTagValue.trim() } },
-      refetchQueries: [{ query: GET_TAGS }],
     });
     setRenameTagTarget(null);
   }

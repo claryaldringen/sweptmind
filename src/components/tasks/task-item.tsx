@@ -4,7 +4,7 @@ import { memo, useState, type MouseEvent } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
-import { useLists, GET_LISTS } from "@/components/providers/lists-provider";
+import { useLists } from "@/components/providers/lists-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Bell,
@@ -42,7 +42,7 @@ import { cn } from "@/lib/utils";
 import { getTagColorClasses } from "@/lib/tag-colors";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { format, isPast, parseISO, startOfDay, addDays } from "date-fns";
+import { format, isPast, isToday, parseISO, startOfDay, addDays } from "date-fns";
 import { cs } from "date-fns/locale/cs";
 import { enUS } from "date-fns/locale/en-US";
 import { useTranslations } from "@/lib/i18n";
@@ -179,18 +179,64 @@ export const TaskItem = memo(function TaskItem({
   const [convertTaskToList] = useMutation<{ convertTaskToList: { id: string; name: string } }>(
     CONVERT_TASK_TO_LIST,
     {
-      update(cache) {
+      update(cache, { data }) {
         cache.evict({ id: cache.identify({ __typename: "Task", id: task.id }) });
         cache.gc();
+        if (!data?.convertTaskToList) return;
+        cache.modify({
+          fields: {
+            lists(existing = []) {
+              const newRef = cache.writeFragment({
+                data: {
+                  __typename: "List",
+                  ...data.convertTaskToList,
+                  icon: null,
+                  themeColor: null,
+                  isDefault: false,
+                  sortOrder: 0,
+                  groupId: null,
+                  taskCount: 0,
+                  visibleTaskCount: 0,
+                  locationId: null,
+                  location: null,
+                  deviceContext: null,
+                },
+                fragment: gql`
+                  fragment NewList on List {
+                    id
+                    name
+                    icon
+                    themeColor
+                    isDefault
+                    sortOrder
+                    groupId
+                    taskCount
+                    visibleTaskCount
+                    locationId
+                    location {
+                      id
+                      name
+                      latitude
+                      longitude
+                    }
+                    deviceContext
+                  }
+                `,
+              });
+              return [...existing, newRef];
+            },
+          },
+        });
       },
-      refetchQueries: [{ query: GET_LISTS }],
     },
   );
 
   const completedSteps = task.steps?.filter((s) => s.isCompleted).length ?? 0;
   const totalSteps = task.steps?.length ?? 0;
   const hasTags = (task.tags?.length ?? 0) > 0;
-  const isOverdue = task.dueDate && !task.isCompleted && isPast(startOfDay(parseISO(task.dueDate)));
+  const dueDateParsed = task.dueDate ? parseISO(task.dueDate) : null;
+  const isDueToday = dueDateParsed && isToday(dueDateParsed);
+  const isOverdue = dueDateParsed && !task.isCompleted && !isDueToday && isPast(startOfDay(dueDateParsed));
   const hasReminder = !!task.reminderAt;
   const hasRecurrence = !!task.recurrence;
   const hasLocation = !!task.location;
@@ -246,7 +292,7 @@ export const TaskItem = memo(function TaskItem({
               className="rounded-full"
             />
             <div className="min-w-0 flex-1">
-              {isDesktop ? (
+              {isDesktop && selectedTaskId === task.id ? (
                 <input
                   key={task.id + task.title}
                   defaultValue={task.title}
@@ -299,15 +345,21 @@ export const TaskItem = memo(function TaskItem({
                     <span
                       className={cn(
                         "flex items-center gap-0.5",
-                        isOverdue ? "text-red-500" : "text-muted-foreground",
+                        isOverdue
+                          ? "text-red-500"
+                          : isDueToday
+                            ? "text-blue-500"
+                            : "text-muted-foreground",
                       )}
                     >
                       <CalendarDays className="h-3 w-3" />
-                      {format(
-                        parseISO(task.dueDate),
-                        task.dueDate.includes("T") ? "MMM d, h:mm a" : "MMM d",
-                        { locale: dateFnsLocale },
-                      )}
+                      {isDueToday
+                        ? t("tasks.today")
+                        : format(
+                            dueDateParsed!,
+                            task.dueDate.includes("T") ? "MMM d, h:mm a" : "MMM d",
+                            { locale: dateFnsLocale },
+                          )}
                     </span>
                   )}
                   {task.dueDate && (hasReminder || totalSteps > 0) && (

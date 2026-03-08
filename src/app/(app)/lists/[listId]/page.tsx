@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { SortableTaskList } from "@/components/tasks/sortable-task-list";
 import { TaskInput } from "@/components/tasks/task-input";
-import { TaskDetailPanel } from "@/components/tasks/task-detail-panel";
+import { ResizableTaskLayout } from "@/components/layout/resizable-task-layout";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -54,9 +54,11 @@ const GET_TASKS_BY_LIST = gql`
       title
       notes
       isCompleted
+      completedAt
       dueDate
       reminderAt
       recurrence
+      deviceContext
       sortOrder
       createdAt
       steps {
@@ -76,6 +78,10 @@ const GET_TASKS_BY_LIST = gql`
         name
         latitude
         longitude
+      }
+      list {
+        id
+        name
       }
     }
   }
@@ -152,21 +158,6 @@ const DELETE_LOCATION = gql`
 const DELETE_LIST = gql`
   mutation DeleteList($id: String!) {
     deleteList(id: $id)
-  }
-`;
-
-const GET_LISTS = gql`
-  query GetLists {
-    lists {
-      id
-      name
-      icon
-      themeColor
-      isDefault
-      sortOrder
-      groupId
-      taskCount
-    }
   }
 `;
 
@@ -247,19 +238,46 @@ export default function ListPage() {
   });
   const { data: locationsData } = useQuery<{ locations: LocationInfo[] }>(GET_LOCATIONS);
 
-  const [updateList] = useMutation<UpdateListData>(UPDATE_LIST, {
-    refetchQueries: [{ query: GET_LISTS }],
-  });
+  const [updateList] = useMutation<UpdateListData>(UPDATE_LIST);
 
   const [deleteList] = useMutation<DeleteListData>(DELETE_LIST, {
-    refetchQueries: [{ query: GET_LISTS }],
+    update(cache, _result, { variables }) {
+      if (!variables?.id) return;
+      cache.evict({ id: cache.identify({ __typename: "List", id: variables.id }) });
+      cache.gc();
+    },
   });
 
   const [createLocation] = useMutation<{ createLocation: LocationInfo }>(CREATE_LOCATION, {
-    refetchQueries: [{ query: GET_LOCATIONS }],
+    update(cache, { data }) {
+      if (!data?.createLocation) return;
+      cache.modify({
+        fields: {
+          locations(existing = []) {
+            const newRef = cache.writeFragment({
+              data: data.createLocation,
+              fragment: gql`
+                fragment NewLocation on Location {
+                  id
+                  name
+                  latitude
+                  longitude
+                  address
+                }
+              `,
+            });
+            return [...existing, newRef];
+          },
+        },
+      });
+    },
   });
   const [deleteLocation] = useMutation<{ deleteLocation: boolean }>(DELETE_LOCATION, {
-    refetchQueries: [{ query: GET_LOCATIONS }],
+    update(cache, _result, { variables }) {
+      if (!variables?.id) return;
+      cache.evict({ id: cache.identify({ __typename: "Location", id: variables.id }) });
+      cache.gc();
+    },
   });
 
   const list = listData?.list;
@@ -284,7 +302,6 @@ export default function ListPage() {
     if (!list) return;
     await updateList({
       variables: { id: list.id, input: { locationId } },
-      refetchQueries: [{ query: GET_LIST, variables: { id: listId } }, { query: GET_LISTS }],
     });
     setLocationPopoverOpen(false);
     setLocationSearch("");
@@ -310,7 +327,6 @@ export default function ListPage() {
     if (locationResult.data?.createLocation) {
       await updateList({
         variables: { id: list.id, input: { locationId: locationResult.data.createLocation.id } },
-        refetchQueries: [{ query: GET_LIST, variables: { id: listId } }, { query: GET_LISTS }],
       });
     }
     setLocationPopoverOpen(false);
@@ -322,13 +338,12 @@ export default function ListPage() {
     if (!list) return;
     await updateList({
       variables: { id: list.id, input: { locationId: null } },
-      refetchQueries: [{ query: GET_LIST, variables: { id: listId } }, { query: GET_LISTS }],
     });
   }
 
   return (
-    <div className="relative flex flex-1">
-      <div className="flex flex-1 flex-col">
+    <ResizableTaskLayout>
+      <div className="flex flex-1 flex-col h-full">
         <div className="flex items-center justify-between px-6 pt-8 pb-4">
           <div className="flex items-center gap-2">
             {!isDesktop && (
@@ -352,10 +367,6 @@ export default function ListPage() {
                         if (list) {
                           updateList({
                             variables: { id: list.id, input: { icon: key } },
-                            refetchQueries: [
-                              { query: GET_LIST, variables: { id: listId } },
-                              { query: GET_LISTS },
-                            ],
                           });
                         }
                         setIconPopoverOpen(false);
@@ -423,10 +434,6 @@ export default function ListPage() {
                 if (!list) return;
                 updateList({
                   variables: { id: list.id, input: { deviceContext: val } },
-                  refetchQueries: [
-                    { query: GET_LIST, variables: { id: listId } },
-                    { query: GET_LISTS },
-                  ],
                 });
               }}
             />
@@ -568,7 +575,6 @@ export default function ListPage() {
 
         <TaskInput listId={listId} />
       </div>
-      <TaskDetailPanel />
-    </div>
+    </ResizableTaskLayout>
   );
 }

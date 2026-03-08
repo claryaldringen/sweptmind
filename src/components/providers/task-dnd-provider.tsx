@@ -111,9 +111,38 @@ export function TaskDndProvider({ children }: { children: ReactNode }) {
 
     if (over && activeType === "task" && overType === "list") {
       // Task dropped on a list — move it
+      const taskId = String(active.id);
+      const newListId = String(over.id);
+      const oldListId = activeData?.listId as string | undefined;
       updateTask({
-        variables: { id: String(active.id), input: { listId: String(over.id) } },
-        refetchQueries: ["TasksByList", "PlannedTasks", "GetLists"],
+        variables: { id: taskId, input: { listId: newListId } },
+        update(cache) {
+          // Remove from old list's tasksByList query
+          if (oldListId) {
+            cache.modify({
+              fields: {
+                tasksByList(existing = [], { storeFieldName, readField }) {
+                  if (!storeFieldName.includes(oldListId)) return existing;
+                  return existing.filter(
+                    (ref: { __ref: string }) => readField("id", ref) !== taskId,
+                  );
+                },
+              },
+            });
+          }
+          // Add to new list's tasksByList query
+          cache.modify({
+            fields: {
+              tasksByList(existing = [], { storeFieldName }) {
+                if (!storeFieldName.includes(newListId)) return existing;
+                const newRef = { __ref: `Task:${taskId}` };
+                if (existing.some((ref: { __ref: string }) => ref.__ref === newRef.__ref))
+                  return existing;
+                return [...existing, newRef];
+              },
+            },
+          });
+        },
       });
     } else if (over && activeType === "task" && overType === "task" && active.id !== over.id) {
       // Task dropped on another task — reorder

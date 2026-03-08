@@ -418,7 +418,26 @@ export function TaskDetailPanel() {
     },
   });
   const [createTag] = useMutation<{ createTag: TaskTag }>(CREATE_TAG, {
-    refetchQueries: [{ query: GET_TAGS }],
+    update(cache, { data }) {
+      if (!data?.createTag) return;
+      cache.modify({
+        fields: {
+          tags(existing = []) {
+            const newRef = cache.writeFragment({
+              data: data.createTag,
+              fragment: gql`
+                fragment NewTag on Tag {
+                  id
+                  name
+                  color
+                }
+              `,
+            });
+            return [...existing, newRef];
+          },
+        },
+      });
+    },
   });
   const [addTagToTask] = useMutation<{ addTagToTask: boolean }>(ADD_TAG_TO_TASK, {
     update(cache, _result, { variables }) {
@@ -462,10 +481,35 @@ export function TaskDetailPanel() {
     },
   });
   const [createLocation] = useMutation<{ createLocation: TaskLocation }>(CREATE_LOCATION, {
-    refetchQueries: [{ query: GET_LOCATIONS }],
+    update(cache, { data }) {
+      if (!data?.createLocation) return;
+      cache.modify({
+        fields: {
+          locations(existing = []) {
+            const newRef = cache.writeFragment({
+              data: data.createLocation,
+              fragment: gql`
+                fragment NewLocation on Location {
+                  id
+                  name
+                  latitude
+                  longitude
+                  address
+                }
+              `,
+            });
+            return [...existing, newRef];
+          },
+        },
+      });
+    },
   });
   const [deleteLocation] = useMutation<{ deleteLocation: boolean }>(DELETE_LOCATION, {
-    refetchQueries: [{ query: GET_LOCATIONS }],
+    update(cache, _result, { variables }) {
+      if (!variables?.id) return;
+      cache.evict({ id: cache.identify({ __typename: "Location", id: variables.id }) });
+      cache.gc();
+    },
   });
 
   // ---- Hooks ----

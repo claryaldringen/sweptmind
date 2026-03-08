@@ -80,19 +80,16 @@ const TASK_FRAGMENT = gql`
 
 interface TaskInputProps {
   listId: string;
-  refetchQueries?: string[];
   placeholder?: string;
 }
 
-export function TaskInput({ listId, refetchQueries = [], placeholder }: TaskInputProps) {
+export function TaskInput({ listId, placeholder }: TaskInputProps) {
   const { t } = useTranslations();
   const [title, setTitle] = useState("");
   const client = useApolloClient();
   const { position } = useNewTaskPosition();
 
-  const [createTask] = useMutation<{ createTask: Record<string, unknown> }>(CREATE_TASK, {
-    refetchQueries: refetchQueries.map((q) => ({ query: gql`query { ${q} { id } }` })),
-  });
+  const [createTask] = useMutation<{ createTask: Record<string, unknown> }>(CREATE_TASK);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

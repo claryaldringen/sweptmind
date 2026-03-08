@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { gql } from "@apollo/client";
-import { useMutation, useQuery } from "@apollo/client/react";
+import { useMutation, useQuery, useApolloClient } from "@apollo/client/react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -85,6 +85,7 @@ export default function SettingsPage() {
   const { locale, setLocale } = useLocale();
   const { t } = useTranslations();
   const { open: openSidebar, isDesktop } = useSidebarContext();
+  const apolloClient = useApolloClient();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<MappedTask[] | null>(null);
@@ -228,8 +229,9 @@ export default function SettingsPage() {
             listName: t.listName,
           })),
         },
-        refetchQueries: ["GetLists"],
       });
+      // Bulk import creates many tasks/lists — refetch all active queries
+      await apolloClient.refetchQueries({ include: "active" });
 
       if (data) {
         setImportResult({
