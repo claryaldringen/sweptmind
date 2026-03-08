@@ -21,8 +21,10 @@ import { TaskLocation } from "./detail/task-location";
 import { TaskRecurrence } from "./detail/task-recurrence";
 import { TaskDates } from "./detail/task-dates";
 import { TaskActions } from "./detail/task-actions";
+import { TaskDependency } from "./detail/task-dependency";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 import { computeFirstOccurrence } from "@/domain/services/recurrence";
+import { pickNextTagColor } from "@/lib/tag-colors";
 
 // ---------------------------------------------------------------------------
 // GraphQL operations
@@ -67,6 +69,12 @@ const GET_TASK = gql`
         id
         name
       }
+      blockedByTaskId
+      blockedByTask {
+        id
+        title
+      }
+      blockedByTaskIsCompleted
     }
   }
 `;
@@ -89,6 +97,11 @@ const UPDATE_TASK = gql`
         latitude
         longitude
         radius
+      }
+      blockedByTaskId
+      blockedByTask {
+        id
+        title
       }
     }
   }
@@ -266,6 +279,9 @@ interface TaskDetail {
   tags: TaskTag[];
   location: TaskLocation | null;
   list: { id: string; name: string } | null;
+  blockedByTaskId: string | null;
+  blockedByTask: { id: string; title: string } | null;
+  blockedByTaskIsCompleted: boolean | null;
 }
 
 interface GetTaskData {
@@ -284,6 +300,8 @@ interface UpdateTaskData {
     listId: string;
     locationId: string | null;
     location: TaskLocation | null;
+    blockedByTaskId: string | null;
+    blockedByTask: { id: string; title: string } | null;
   };
 }
 
@@ -573,9 +591,7 @@ export function TaskDetailPanel() {
     // Write to cache immediately (instant UI) then fire mutation (network)
     apolloClient.cache.modify({
       id: apolloClient.cache.identify({ __typename: "Task", id: task.id }),
-      fields: Object.fromEntries(
-        Object.entries(input).map(([key, value]) => [key, () => value]),
-      ),
+      fields: Object.fromEntries(Object.entries(input).map(([key, value]) => [key, () => value])),
     });
     updateTask({ variables: { id: task.id, input } });
   }
@@ -652,8 +668,10 @@ export function TaskDetailPanel() {
 
   async function handleCreateAndAddTag(name: string) {
     if (!task) return;
+    const existingColors = (tagsData?.tags ?? []).map((t) => t.color);
+    const color = pickNextTagColor(existingColors);
     const result = await createTag({
-      variables: { input: { name } },
+      variables: { input: { name, color } },
     });
     if (result.data?.createTag) {
       await addTagToTask({ variables: { taskId: task.id, tagId: result.data.createTag.id } });
@@ -690,6 +708,13 @@ export function TaskDetailPanel() {
   async function handleRemoveLocation() {
     if (!task) return;
     optimisticUpdate({ locationId: null });
+  }
+
+  // Dependency handler
+
+  function handleSetDependency(blockedByTaskId: string | null) {
+    if (!task) return;
+    optimisticUpdate({ blockedByTaskId });
   }
 
   // Recurrence handlers
@@ -743,10 +768,7 @@ export function TaskDetailPanel() {
 
   return (
     <div
-      className={cn(
-        "bg-background flex flex-col",
-        isDesktop ? "h-full" : "absolute inset-0 z-10",
-      )}
+      className={cn("bg-background flex flex-col", isDesktop ? "h-full" : "absolute inset-0 z-10")}
     >
       {!isDesktop && (
         <div className="flex items-center justify-between p-4">
@@ -756,7 +778,7 @@ export function TaskDetailPanel() {
         </div>
       )}
 
-      <div className="flex-1 space-y-4 overflow-auto px-4 pb-4 pt-4">
+      <div className="flex-1 space-y-4 overflow-auto px-4 pt-4 pb-4">
         {/* Title + Checkbox */}
         <div className="flex items-start gap-3">
           <Checkbox
@@ -862,6 +884,19 @@ export function TaskDetailPanel() {
             value={task.deviceContext ?? null}
             onChange={(val) => optimisticUpdate({ deviceContext: val })}
           />
+
+          {/* Dependency */}
+          <TaskDependency
+            taskId={task.id}
+            blockedByTask={task.blockedByTask ?? null}
+            tagIds={(task.tags ?? []).map((t) => t.id)}
+            onSetDependency={handleSetDependency}
+            onNavigateToTask={(id) => {
+              const params = new URLSearchParams(searchParams.toString());
+              params.set("task", id);
+              router.push(`?${params.toString()}`, { scroll: false });
+            }}
+          />
         </div>
 
         <Separator />
@@ -878,9 +913,13 @@ export function TaskDetailPanel() {
       {/* Footer */}
       <TaskActions
         onClose={isDesktop ? closePanel : undefined}
-        createdLabel={task.createdAt ? t("tasks.created", {
-          date: format(parseISO(task.createdAt), "EEE, MMM d", { locale: dateFnsLocale }),
-        }) : ""}
+        createdLabel={
+          task.createdAt
+            ? t("tasks.created", {
+                date: format(parseISO(task.createdAt), "EEE, MMM d", { locale: dateFnsLocale }),
+              })
+            : ""
+        }
         onDelete={handleDelete}
         deleteConfirmTitle={t("common.deleteConfirmTitle")}
         deleteConfirmDesc={t("tasks.deleteConfirmDesc")}

@@ -16,6 +16,8 @@ interface VisibilityTask {
   reminderAt: string | null;
   isCompleted: boolean;
   recurrence?: string | null;
+  blockedByTaskId?: string | null;
+  blockedByTaskIsCompleted?: boolean | null;
 }
 
 /** Returns the YYYY-MM-DD date when the task should become visible, or null (always visible). */
@@ -72,6 +74,9 @@ export function computeDefaultReminder(dueDate: string | null): string | null {
 /** Returns true if the task should NOT be visible yet (it's a future task). */
 export function isFutureTask(task: VisibilityTask, today?: string): boolean {
   if (task.isCompleted) return false;
+
+  // Blocked by an incomplete task → future
+  if (task.blockedByTaskId && task.blockedByTaskIsCompleted === false) return true;
 
   const visibleDate = getVisibleDate(task);
   if (!visibleDate) return false;

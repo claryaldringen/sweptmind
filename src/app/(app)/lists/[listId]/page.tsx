@@ -3,7 +3,16 @@
 import { useParams } from "next/navigation";
 import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { ArrowLeft, ChevronDown, MapPin, MoreHorizontal, Navigation, Pencil, Trash2, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  MapPin,
+  MoreHorizontal,
+  Navigation,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
 import { ListIcon, LIST_ICONS } from "@/lib/list-icons";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import {
@@ -86,6 +95,9 @@ const GET_TASKS_BY_LIST = gql`
         id
         name
       }
+      blockedByTaskId
+      blockedByTaskIsCompleted
+      dependentTaskCount
     }
   }
 `;
@@ -196,6 +208,9 @@ interface TasksByListTask {
   sortOrder: number;
   createdAt: string;
   steps: Step[];
+  blockedByTaskId: string | null;
+  blockedByTaskIsCompleted: boolean | null;
+  dependentTaskCount: number;
 }
 
 interface TasksByListData {
@@ -408,7 +423,7 @@ export default function ListPage() {
 
   return (
     <ResizableTaskLayout>
-      <div className="flex flex-1 flex-col h-full">
+      <div className="flex h-full flex-1 flex-col">
         <div className="flex items-center justify-between px-6 pt-8 pb-4">
           <div className="flex items-center gap-2">
             {!isDesktop && (
@@ -472,7 +487,11 @@ export default function ListPage() {
                   variant="secondary"
                   className={cn(
                     "gap-1 pr-1",
-                    checkNearby(list.location.latitude, list.location.longitude, list.location.radius)
+                    checkNearby(
+                      list.location.latitude,
+                      list.location.longitude,
+                      list.location.radius,
+                    )
                       ? "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
                       : "",
                   )}
@@ -480,8 +499,11 @@ export default function ListPage() {
                   <MapPin
                     className={cn(
                       "h-3 w-3",
-                      checkNearby(list.location.latitude, list.location.longitude, list.location.radius) &&
-                        "animate-pulse",
+                      checkNearby(
+                        list.location.latitude,
+                        list.location.longitude,
+                        list.location.radius,
+                      ) && "animate-pulse",
                     )}
                   />
                   {list.location.name}

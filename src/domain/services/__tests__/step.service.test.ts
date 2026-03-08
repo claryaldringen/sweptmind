@@ -30,6 +30,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     reminderAt: null,
     recurrence: null,
     deviceContext: null,
+    blockedByTaskId: null,
     sortOrder: 0,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
@@ -70,6 +71,8 @@ function makeTaskRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository
     findByTagId: vi.fn().mockResolvedValue([]),
     findWithLocation: vi.fn().mockResolvedValue([]),
     findContextTasks: vi.fn().mockResolvedValue([]),
+    findDependentTaskIds: vi.fn().mockResolvedValue([]),
+    searchTasks: vi.fn().mockResolvedValue([]),
     ...overrides,
   };
 }

@@ -6,7 +6,7 @@ import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { ArrowLeft, MapPin, Tag, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getTagColorClasses } from "@/lib/tag-colors";
+import { getTagColorClasses, TAG_COLORS } from "@/lib/tag-colors";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { TaskList } from "@/components/tasks/task-list";
 import { ResizableTaskLayout } from "@/components/layout/resizable-task-layout";
@@ -69,6 +69,7 @@ const UPDATE_TAG = gql`
     updateTag(id: $id, input: $input) {
       id
       name
+      color
       deviceContext
       locationId
       location {
@@ -152,6 +153,9 @@ const TASKS_BY_TAG = gql`
         id
         name
       }
+      blockedByTaskId
+      blockedByTaskIsCompleted
+      dependentTaskCount
     }
   }
 `;
@@ -183,6 +187,9 @@ interface TagTask {
   steps: Step[];
   tags: TaskTag[];
   list: { id: string; name: string } | null;
+  blockedByTaskId: string | null;
+  blockedByTaskIsCompleted: boolean | null;
+  dependentTaskCount: number;
 }
 
 interface TasksByTagData {
@@ -300,7 +307,7 @@ export default function TagPage() {
 
   return (
     <ResizableTaskLayout>
-      <div className="flex flex-1 flex-col h-full">
+      <div className="flex h-full flex-1 flex-col">
         <div className="flex items-center justify-between px-6 pt-8 pb-4">
           <div className="flex items-center gap-2">
             {!isDesktop && (
@@ -308,7 +315,41 @@ export default function TagPage() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             )}
-            <Tag className={cn("h-7 w-7", colors.text)} />
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="group relative flex-shrink-0">
+                  <Tag className={cn("h-7 w-7", colors.text)} />
+                  <span
+                    className={cn(
+                      "absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-gray-950",
+                      colors.bg,
+                    )}
+                  />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-2" align="start">
+                <div className="grid grid-cols-4 gap-1.5">
+                  {Object.entries(TAG_COLORS).map(([key, c]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        if (tag && key !== tag.color) {
+                          updateTag({ variables: { id: tag.id, input: { color: key } } });
+                        }
+                      }}
+                      className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-full transition-transform hover:scale-110",
+                        c.bg,
+                        tag?.color === key && "ring-2 ring-offset-2 ring-current",
+                      )}
+                    >
+                      <span className={cn("h-4 w-4 rounded-full", c.bg)} />
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
             <Input
               ref={nameInputRef}
               key={tag?.id}
@@ -339,7 +380,11 @@ export default function TagPage() {
                   className={cn(
                     "h-3 w-3",
                     tag.location &&
-                      checkNearby(tag.location.latitude, tag.location.longitude, tag.location.radius) &&
+                      checkNearby(
+                        tag.location.latitude,
+                        tag.location.longitude,
+                        tag.location.radius,
+                      ) &&
                       "animate-pulse",
                   )}
                 />

@@ -51,6 +51,9 @@ const CONTEXT_TASKS = gql`
         longitude
         radius
       }
+      blockedByTaskId
+      blockedByTaskIsCompleted
+      dependentTaskCount
     }
   }
 `;
@@ -72,6 +75,9 @@ interface ContextTask {
   tags: { id: string; name: string; color: string }[];
   list: { id: string; name: string } | null;
   location: { id: string; name: string; latitude: number; longitude: number } | null;
+  blockedByTaskId: string | null;
+  blockedByTaskIsCompleted: boolean | null;
+  dependentTaskCount: number;
 }
 
 interface ContextTasksData {
@@ -92,7 +98,7 @@ export default function ContextPage() {
 
   return (
     <ResizableTaskLayout>
-      <div className="flex flex-1 flex-col h-full">
+      <div className="flex h-full flex-1 flex-col">
         <div className="px-6 pt-8 pb-4">
           <h1 className="flex items-center gap-2 text-2xl font-bold">
             {!isDesktop && (

@@ -7,6 +7,8 @@ interface VisibilityTask {
   dueDate: string | null;
   reminderAt: string | null;
   recurrence?: string | null;
+  blockedByTaskId?: string | null;
+  blockedByTaskIsCompleted?: boolean | null;
 }
 
 interface DepartureAnimationResult<T extends VisibilityTask> {
@@ -20,7 +22,9 @@ interface DepartureAnimationResult<T extends VisibilityTask> {
   futureSectionRef: React.RefObject<HTMLDivElement | null>;
 }
 
-export function useDepartureAnimation<T extends VisibilityTask>(tasks: T[]): DepartureAnimationResult<T> {
+export function useDepartureAnimation<T extends VisibilityTask>(
+  tasks: T[],
+): DepartureAnimationResult<T> {
   const { activeTasks, futureTasks, completedTasks } = useMemo(() => {
     const active: T[] = [];
     const future: T[] = [];

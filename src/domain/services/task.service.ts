@@ -106,6 +106,8 @@ export class TaskService {
     if (input.listId != null) updates.listId = input.listId;
     if (input.locationId !== undefined) updates.locationId = input.locationId ?? null;
     if (input.deviceContext !== undefined) updates.deviceContext = input.deviceContext ?? null;
+    if (input.blockedByTaskId !== undefined)
+      updates.blockedByTaskId = input.blockedByTaskId ?? null;
 
     return this.taskRepo.update(id, userId, updates);
   }
@@ -214,6 +216,35 @@ export class TaskService {
     }
 
     return { importedCount, createdLists };
+  }
+
+  async setDependency(
+    taskId: string,
+    userId: string,
+    blockedByTaskId: string | null,
+  ): Promise<Task> {
+    if (blockedByTaskId === null) {
+      return this.taskRepo.update(taskId, userId, { blockedByTaskId: null });
+    }
+
+    const task = await this.taskRepo.findById(taskId, userId);
+    if (!task) throw new Error("Task not found");
+
+    // Check for circular dependency: follow chain from blocker
+    let currentId: string | null = blockedByTaskId;
+    const visited = new Set<string>([taskId]);
+    while (currentId) {
+      if (visited.has(currentId)) throw new Error("Circular dependency");
+      visited.add(currentId);
+      const current = await this.taskRepo.findById(currentId, userId);
+      currentId = current?.blockedByTaskId ?? null;
+    }
+
+    return this.taskRepo.update(taskId, userId, { blockedByTaskId });
+  }
+
+  async searchTasks(userId: string, query: string, tagIds?: string[]): Promise<Task[]> {
+    return this.taskRepo.searchTasks(userId, query, tagIds);
   }
 
   async convertToList(taskId: string, userId: string): Promise<List> {

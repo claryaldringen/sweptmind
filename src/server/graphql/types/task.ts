@@ -56,6 +56,28 @@ export const TaskType = TaskRef.implement({
         return ctx.loaders.tagsByTaskId.load(task.id);
       },
     }),
+    blockedByTaskId: t.exposeString("blockedByTaskId", { nullable: true }),
+    blockedByTask: t.field({
+      type: TaskRef,
+      nullable: true,
+      resolve: async (task, _args, ctx) => {
+        if (!task.blockedByTaskId) return null;
+        return ctx.services.task.getById(task.blockedByTaskId, ctx.userId!);
+      },
+    }),
+    blockedByTaskIsCompleted: t.boolean({
+      nullable: true,
+      resolve: async (task, _args, ctx) => {
+        if (!task.blockedByTaskId) return null;
+        const blocker = await ctx.services.task.getById(task.blockedByTaskId, ctx.userId!);
+        return blocker?.isCompleted ?? null;
+      },
+    }),
+    dependentTaskCount: t.int({
+      resolve: async (task, _args, ctx) => {
+        return ctx.loaders.dependentTaskCountByTaskId.load(task.id);
+      },
+    }),
   }),
 });
 
@@ -136,6 +158,22 @@ builder.queryField("contextTasks", (t) =>
   }),
 );
 
+builder.queryField("searchTasks", (t) =>
+  t.field({
+    type: [TaskType],
+    authScopes: { authenticated: true },
+    args: {
+      query: t.arg.string({ required: true }),
+      tagIds: t.arg.stringList({ required: false }),
+    },
+    resolve: async (_root, args, ctx) => {
+      const query = args.query.trim();
+      if (query.length < 1) return [];
+      return ctx.services.task.searchTasks(ctx.userId!, query, args.tagIds ?? undefined);
+    },
+  }),
+);
+
 // Input types
 const CreateTaskInput = builder.inputType("CreateTaskInput", {
   fields: (t) => ({
@@ -159,6 +197,7 @@ const UpdateTaskInput = builder.inputType("UpdateTaskInput", {
     listId: t.string(),
     locationId: t.string(),
     deviceContext: t.string(),
+    blockedByTaskId: t.string(),
   }),
 });
 

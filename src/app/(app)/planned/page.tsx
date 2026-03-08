@@ -49,6 +49,9 @@ const PLANNED_TASKS = gql`
         id
         name
       }
+      blockedByTaskId
+      blockedByTaskIsCompleted
+      dependentTaskCount
     }
   }
 `;
@@ -68,6 +71,9 @@ interface PlannedTask {
   tags: { id: string; name: string; color: string }[];
   location: { id: string; name: string; latitude: number; longitude: number } | null;
   list: { id: string; name: string } | null;
+  blockedByTaskId: string | null;
+  blockedByTaskIsCompleted: boolean | null;
+  dependentTaskCount: number;
 }
 
 interface PlannedTasksData {
@@ -158,7 +164,7 @@ export default function PlannedPage() {
 
   return (
     <ResizableTaskLayout>
-      <div className="flex flex-1 flex-col h-full">
+      <div className="flex h-full flex-1 flex-col">
         <div className="px-6 pt-8 pb-4">
           <h1 className="flex items-center gap-2 text-2xl font-bold">
             {!isDesktop && (

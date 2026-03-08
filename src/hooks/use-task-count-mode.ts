@@ -7,12 +7,12 @@ const STORAGE_KEY = "sweptmind-task-count-mode";
 export type TaskCountMode = "all" | "visible";
 
 function getSnapshot(): TaskCountMode {
-  if (typeof window === "undefined") return "all";
-  return (localStorage.getItem(STORAGE_KEY) as TaskCountMode) || "all";
+  if (typeof window === "undefined") return "visible";
+  return (localStorage.getItem(STORAGE_KEY) as TaskCountMode) || "visible";
 }
 
 function getServerSnapshot(): TaskCountMode {
-  return "all";
+  return "visible";
 }
 
 const listeners = new Set<() => void>();

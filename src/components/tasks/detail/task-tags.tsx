@@ -88,6 +88,23 @@ export function TaskTags({
               placeholder={searchOrCreateTagLabel}
               value={newTagName}
               onValueChange={setNewTagName}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const trimmed = newTagName.trim();
+                  if (!trimmed) return;
+                  const existingMatch = allTags.find(
+                    (tg) =>
+                      tg.name.toLowerCase() === trimmed.toLowerCase() &&
+                      !taskTags.some((tt) => tt.id === tg.id),
+                  );
+                  if (existingMatch) {
+                    handleAddTag(existingMatch.id);
+                  } else if (!allTags.some((tg) => tg.name.toLowerCase() === trimmed.toLowerCase())) {
+                    handleCreateAndAddTag();
+                  }
+                  e.preventDefault();
+                }
+              }}
             />
             <CommandList>
               <CommandEmpty>

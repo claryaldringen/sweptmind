@@ -21,6 +21,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     reminderAt: null,
     recurrence: null,
     deviceContext: null,
+    blockedByTaskId: null,
     sortOrder: 0,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
@@ -107,6 +108,8 @@ function makeRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository {
     findByTagId: vi.fn().mockResolvedValue([]),
     findWithLocation: vi.fn().mockResolvedValue([]),
     findContextTasks: vi.fn().mockResolvedValue([]),
+    findDependentTaskIds: vi.fn().mockResolvedValue([]),
+    searchTasks: vi.fn().mockResolvedValue([]),
     ...overrides,
   };
 }
@@ -746,6 +749,58 @@ describe("TaskService", () => {
       await expect(service.convertToList("nonexistent", "user-1")).rejects.toThrow(
         "Task not found",
       );
+    });
+  });
+
+  describe("setDependency", () => {
+    it("sets blockedByTaskId on task", async () => {
+      vi.mocked(repo.findById).mockResolvedValue(makeTask({ id: "task-a", blockedByTaskId: null }));
+      vi.mocked(repo.update).mockResolvedValue(
+        makeTask({ id: "task-a", blockedByTaskId: "task-b" }),
+      );
+
+      await service.setDependency("task-a", "user-1", "task-b");
+
+      expect(repo.update).toHaveBeenCalledWith("task-a", "user-1", { blockedByTaskId: "task-b" });
+    });
+
+    it("removes dependency when blockedByTaskId is null", async () => {
+      vi.mocked(repo.update).mockResolvedValue(makeTask({ id: "task-a", blockedByTaskId: null }));
+
+      await service.setDependency("task-a", "user-1", null);
+
+      expect(repo.update).toHaveBeenCalledWith("task-a", "user-1", { blockedByTaskId: null });
+    });
+
+    it("throws on circular dependency (A → B → A)", async () => {
+      vi.mocked(repo.findById)
+        .mockResolvedValueOnce(makeTask({ id: "task-a" }))
+        .mockResolvedValueOnce(makeTask({ id: "task-b", blockedByTaskId: "task-a" }));
+
+      await expect(service.setDependency("task-a", "user-1", "task-b")).rejects.toThrow(
+        "Circular dependency",
+      );
+    });
+
+    it("throws when task not found", async () => {
+      vi.mocked(repo.findById).mockResolvedValue(undefined);
+
+      await expect(service.setDependency("x", "user-1", "task-b")).rejects.toThrow(
+        "Task not found",
+      );
+    });
+
+    it("allows A → B when B has no dependency", async () => {
+      vi.mocked(repo.findById)
+        .mockResolvedValueOnce(makeTask({ id: "task-a" }))
+        .mockResolvedValueOnce(makeTask({ id: "task-b", blockedByTaskId: null }));
+      vi.mocked(repo.update).mockResolvedValue(
+        makeTask({ id: "task-a", blockedByTaskId: "task-b" }),
+      );
+
+      await service.setDependency("task-a", "user-1", "task-b");
+
+      expect(repo.update).toHaveBeenCalledWith("task-a", "user-1", { blockedByTaskId: "task-b" });
     });
   });
 });

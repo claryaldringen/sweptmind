@@ -13,6 +13,7 @@ export interface DataLoaders {
   taskCountByListId: DataLoader<string, number>;
   taskCountByTagId: DataLoader<string, number>;
   visibleTaskCountByListId: DataLoader<string, number>;
+  dependentTaskCountByTaskId: DataLoader<string, number>;
 }
 
 export function createDataLoaders(repos: Repos, userId: string): DataLoaders {
@@ -53,6 +54,16 @@ export function createDataLoaders(repos: Repos, userId: string): DataLoaders {
       const today = new Date().toISOString().slice(0, 10);
       const map = await repos.task.countVisibleByListIds([...listIds], today);
       return listIds.map((id) => map.get(id) ?? 0);
+    }),
+
+    dependentTaskCountByTaskId: new DataLoader(async (taskIds) => {
+      const counts = await Promise.all(
+        [...taskIds].map(async (id) => {
+          const deps = await repos.task.findDependentTaskIds(id);
+          return deps.length;
+        }),
+      );
+      return taskIds.map((_, i) => counts[i]);
     }),
   };
 }

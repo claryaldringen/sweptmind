@@ -10,7 +10,9 @@ import {
   Bell,
   CalendarDays,
   FolderOutput,
+  Link2,
   List,
+  Lock,
   MapPin,
   Monitor,
   Repeat,
@@ -122,6 +124,9 @@ interface Task {
   list?: { id: string; name: string } | null;
   steps?: { id: string; isCompleted: boolean }[];
   tags?: TaskTag[];
+  blockedByTaskId?: string | null;
+  blockedByTaskIsCompleted?: boolean | null;
+  dependentTaskCount?: number;
 }
 
 interface TaskItemProps {
@@ -248,7 +253,8 @@ export const TaskItem = memo(function TaskItem({
   const hasTags = (task.tags?.length ?? 0) > 0;
   const dueDateParsed = task.dueDate ? parseISO(task.dueDate) : null;
   const isDueToday = dueDateParsed && isToday(dueDateParsed);
-  const isOverdue = dueDateParsed && !task.isCompleted && !isDueToday && isPast(startOfDay(dueDateParsed));
+  const isOverdue =
+    dueDateParsed && !task.isCompleted && !isDueToday && isPast(startOfDay(dueDateParsed));
   const hasReminder = !!task.reminderAt;
   const hasRecurrence = !!task.recurrence;
   const hasLocation = !!task.location;
@@ -257,7 +263,11 @@ export const TaskItem = memo(function TaskItem({
     : false;
   const taskList = task.list ? lists.find((l) => l.id === task.list!.id) : undefined;
   const deviceMatch = !locationNearby && taskList?.deviceContext === deviceContext;
+  const isBlocked = !!task.blockedByTaskId && task.blockedByTaskIsCompleted === false;
+  const dependentCount = task.dependentTaskCount ?? 0;
   const hasMetadata =
+    isBlocked ||
+    dependentCount > 0 ||
     (showListName && task.list) ||
     task.dueDate ||
     totalSteps > 0 ||
@@ -412,13 +422,13 @@ export const TaskItem = memo(function TaskItem({
                               ? t("recurrence.yearly")
                               : task.recurrence?.startsWith("WEEKLY:")
                                 ? (() => {
-                                  const days = task.recurrence!.slice(7).split(",").map(Number);
-                                  const dayNames = tArray("recurrence.daysShort");
-                                  return days.length === 7
-                                    ? t("recurrence.daily")
-                                    : days.map((d) => dayNames[d]).join(", ");
-                                })()
-                              : t("recurrence.weekly")}
+                                    const days = task.recurrence!.slice(7).split(",").map(Number);
+                                    const dayNames = tArray("recurrence.daysShort");
+                                    return days.length === 7
+                                      ? t("recurrence.daily")
+                                      : days.map((d) => dayNames[d]).join(", ");
+                                  })()
+                                : t("recurrence.weekly")}
                     </span>
                   )}
                   {hasRecurrence && totalSteps > 0 && (
@@ -488,6 +498,38 @@ export const TaskItem = memo(function TaskItem({
                       ) : (
                         <Monitor className="h-3 w-3 animate-pulse" />
                       )}
+                    </span>
+                  )}
+                  {isBlocked &&
+                    (deviceMatch ||
+                      hasLocation ||
+                      hasTags ||
+                      totalSteps > 0 ||
+                      task.dueDate ||
+                      hasReminder ||
+                      (showListName && task.list)) && (
+                      <span className="text-muted-foreground">·</span>
+                    )}
+                  {isBlocked && (
+                    <span className="text-muted-foreground flex items-center gap-0.5">
+                      <Lock className="h-3 w-3" />
+                    </span>
+                  )}
+                  {dependentCount > 0 &&
+                    (isBlocked ||
+                      deviceMatch ||
+                      hasLocation ||
+                      hasTags ||
+                      totalSteps > 0 ||
+                      task.dueDate ||
+                      hasReminder ||
+                      (showListName && task.list)) && (
+                      <span className="text-muted-foreground">·</span>
+                    )}
+                  {dependentCount > 0 && (
+                    <span className="text-muted-foreground flex items-center gap-0.5">
+                      <Link2 className="h-3 w-3" />
+                      {dependentCount}
                     </span>
                   )}
                 </div>

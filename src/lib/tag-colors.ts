@@ -14,3 +14,19 @@ export const TAG_COLOR_OPTIONS = Object.keys(TAG_COLORS);
 export function getTagColorClasses(color: string) {
   return TAG_COLORS[color] ?? TAG_COLORS.blue;
 }
+
+/** Pick a color that isn't used by any existing tag (or least-used). */
+export function pickNextTagColor(existingColors: string[]): string {
+  const counts = new Map<string, number>();
+  for (const c of TAG_COLOR_OPTIONS) counts.set(c, 0);
+  for (const c of existingColors) counts.set(c, (counts.get(c) ?? 0) + 1);
+  let best = TAG_COLOR_OPTIONS[0];
+  let bestCount = Infinity;
+  for (const [color, count] of counts) {
+    if (count < bestCount) {
+      best = color;
+      bestCount = count;
+    }
+  }
+  return best;
+}

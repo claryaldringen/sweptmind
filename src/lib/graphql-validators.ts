@@ -26,6 +26,7 @@ export const updateTaskSchema = z.object({
   listId: z.string().uuid().nullish(),
   locationId: z.string().uuid().nullish(),
   deviceContext: deviceContextEnum,
+  blockedByTaskId: z.string().uuid().nullish(),
 });
 
 export const importTaskSchema = z.object({

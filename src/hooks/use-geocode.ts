@@ -128,7 +128,8 @@ async function nominatimLookup(osmIds: string[], locale: string): Promise<Map<st
   for (const r of data) {
     const prefix = r.osm_type === "node" ? "N" : r.osm_type === "way" ? "W" : "R";
     const key = `${prefix}${r.osm_id}`;
-    const city = r.address?.city || r.address?.town || r.address?.village || r.address?.municipality;
+    const city =
+      r.address?.city || r.address?.town || r.address?.village || r.address?.municipality;
     const displayName = r.address
       ? formatLocationName({
           name: r.name,

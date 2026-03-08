@@ -26,6 +26,9 @@ interface Task {
   sortOrder: number;
   list?: { id: string; name: string } | null;
   steps?: { id: string; isCompleted: boolean }[];
+  blockedByTaskId?: string | null;
+  blockedByTaskIsCompleted?: boolean | null;
+  dependentTaskCount?: number;
 }
 
 interface SortableTaskListProps {
@@ -59,9 +62,13 @@ export function SortableTaskList({
   const activeIds = useMemo(() => activeWithDeparting.map((t) => t.id), [activeWithDeparting]);
   const newDeparturesDetected = useRef(false);
   if (departingIds.size > 0) newDeparturesDetected.current = true;
-  if (departingIds.size === 0 && newDeparturesDetected.current) newDeparturesDetected.current = false;
+  if (departingIds.size === 0 && newDeparturesDetected.current)
+    newDeparturesDetected.current = false;
 
-  if (departingIds.size === 0 && (orderedIds.length !== activeIds.length || orderedIds.some((id, i) => id !== activeIds[i]))) {
+  if (
+    departingIds.size === 0 &&
+    (orderedIds.length !== activeIds.length || orderedIds.some((id, i) => id !== activeIds[i]))
+  ) {
     setOrderedIds(activeIds);
   }
 
@@ -69,9 +76,7 @@ export function SortableTaskList({
     () => new Map(activeWithDeparting.map((t) => [t.id, t])),
     [activeWithDeparting],
   );
-  const items = orderedIds
-    .map((id) => activeTaskMap.get(id))
-    .filter((t): t is Task => t != null);
+  const items = orderedIds.map((id) => activeTaskMap.get(id)).filter((t): t is Task => t != null);
   const sortableIds = orderedIds.filter((id) => !departingIds.has(id));
 
   const [reorderTasks] = useMutation(REORDER_TASKS);

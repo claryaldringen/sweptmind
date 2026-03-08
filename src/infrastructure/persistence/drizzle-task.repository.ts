@@ -1,4 +1,4 @@
-import { eq, and, or, isNotNull, asc, desc, inArray, count } from "drizzle-orm";
+import { eq, and, or, isNotNull, asc, desc, inArray, count, ilike } from "drizzle-orm";
 import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import type { Task } from "@/domain/entities/task";
@@ -258,6 +258,41 @@ export class DrizzleTaskRepository implements ITaskRepository {
         or(...taskConditions),
       ),
       orderBy: asc(schema.tasks.sortOrder),
+    });
+  }
+
+  async findDependentTaskIds(taskId: string): Promise<string[]> {
+    const rows = await this.db.query.tasks.findMany({
+      where: eq(schema.tasks.blockedByTaskId, taskId),
+      columns: { id: true },
+    });
+    return rows.map((r) => r.id);
+  }
+
+  async searchTasks(userId: string, query: string, tagIds?: string[]): Promise<Task[]> {
+    const results = await this.db.query.tasks.findMany({
+      where: and(
+        eq(schema.tasks.userId, userId),
+        eq(schema.tasks.isCompleted, false),
+        ilike(schema.tasks.title, `%${query}%`),
+      ),
+      orderBy: asc(schema.tasks.sortOrder),
+      limit: 20,
+    });
+
+    if (!tagIds || tagIds.length === 0) return results as Task[];
+
+    // Prioritize tasks that share tags
+    const tagTaskRows = await this.db.query.taskTags.findMany({
+      where: inArray(schema.taskTags.tagId, tagIds),
+      columns: { taskId: true },
+    });
+    const tagTaskIdSet = new Set(tagTaskRows.map((r) => r.taskId));
+
+    return (results as Task[]).sort((a, b) => {
+      const aHasTag = tagTaskIdSet.has(a.id) ? 0 : 1;
+      const bHasTag = tagTaskIdSet.has(b.id) ? 0 : 1;
+      return aHasTag - bHasTag;
     });
   }
 }

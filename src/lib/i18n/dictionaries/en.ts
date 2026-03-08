@@ -271,6 +271,14 @@ export const en: Dictionary = {
     noContext: "No context",
     selectDevice: "Select device context",
   },
+  dependency: {
+    title: "Dependency",
+    addDependency: "Add dependency",
+    dependsOn: "Depends on",
+    blocksCount: "Blocks {count}",
+    circularError: "Circular dependency not allowed",
+    searchPlaceholder: "Search task...",
+  },
   validation: {
     invalidEmail: "Invalid email address",
     passwordRequired: "Password is required",

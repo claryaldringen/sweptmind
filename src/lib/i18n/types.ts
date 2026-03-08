@@ -252,6 +252,14 @@ export interface Dictionary {
     noContext: string;
     selectDevice: string;
   };
+  dependency: {
+    title: string;
+    addDependency: string;
+    dependsOn: string;
+    blocksCount: string;
+    circularError: string;
+    searchPlaceholder: string;
+  };
   validation: {
     invalidEmail: string;
     passwordRequired: string;

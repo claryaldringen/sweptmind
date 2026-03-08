@@ -40,7 +40,12 @@ export class DrizzleStepRepository implements IStepRepository {
     return row?.sortOrder;
   }
 
-  async create(values: { id?: string; taskId: string; title: string; sortOrder: number }): Promise<Step> {
+  async create(values: {
+    id?: string;
+    taskId: string;
+    title: string;
+    sortOrder: number;
+  }): Promise<Step> {
     const [step] = await this.db.insert(schema.steps).values(values).returning();
     return step;
   }

@@ -12,6 +12,9 @@ interface Task {
   reminderAt: string | null;
   list?: { id: string; name: string } | null;
   steps?: { id: string; isCompleted: boolean }[];
+  blockedByTaskId?: string | null;
+  blockedByTaskIsCompleted?: boolean | null;
+  dependentTaskCount?: number;
 }
 
 interface SortableTaskItemProps {

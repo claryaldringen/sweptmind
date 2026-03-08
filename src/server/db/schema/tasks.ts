@@ -27,6 +27,7 @@ export const tasks = pgTable(
     recurrence: text("recurrence"), // iCal RRULE
     deviceContext: text("device_context"), // 'phone' | 'computer' | null
     notifiedAt: timestamp("notified_at", { mode: "date" }),
+    blockedByTaskId: text("blocked_by_task_id"),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
@@ -41,6 +42,7 @@ export const tasks = pgTable(
     index("tasks_user_completed_idx").on(table.userId, table.isCompleted),
     index("tasks_location_id_idx").on(table.locationId),
     index("tasks_reminder_at_idx").on(table.reminderAt),
+    index("tasks_blocked_by_task_id_idx").on(table.blockedByTaskId),
   ],
 );
 

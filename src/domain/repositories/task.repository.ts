@@ -30,4 +30,6 @@ export interface ITaskRepository {
     deviceContext: string | null,
     locationIds: string[],
   ): Promise<Task[]>;
+  findDependentTaskIds(taskId: string): Promise<string[]>;
+  searchTasks(userId: string, query: string, tagIds?: string[]): Promise<Task[]>;
 }

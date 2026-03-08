@@ -92,6 +92,8 @@ const CONTEXT_TASKS_COUNT = gql`
       isCompleted
       dueDate
       reminderAt
+      blockedByTaskId
+      blockedByTaskIsCompleted
     }
   }
 `;
@@ -363,17 +365,13 @@ function getStoredSmartOrder(): string[] {
       const parsed = JSON.parse(stored) as string[];
       if (Array.isArray(parsed) && parsed.length === DEFAULT_SMART_ORDER.length) return parsed;
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return DEFAULT_SMART_ORDER;
 }
 
-function SortableSmartItem({
-  id,
-  children,
-}: {
-  id: string;
-  children: ReactNode;
-}) {
+function SortableSmartItem({ id, children }: { id: string; children: ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
     data: { type: "smart-list" },
@@ -385,7 +383,13 @@ function SortableSmartItem({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className={cn(isDragging && "z-10 opacity-50")} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(isDragging && "z-10 opacity-50")}
+      {...attributes}
+      {...listeners}
+    >
       {children}
     </div>
   );
@@ -454,11 +458,27 @@ export function Sidebar() {
   const defaultList = allLists.find((l: ListItem) => l.isDefault);
   const allTags: TagItem[] = tagsData?.tags ?? [];
 
-  const smartListDefs: Record<string, { href: string; label: string; icon: typeof CalendarDays; color: string }> = useMemo(() => ({
-    planned: { href: "/planned", label: t("sidebar.planned"), icon: CalendarDays, color: "text-green-500" },
-    nearby: { href: "/nearby", label: t("sidebar.nearby"), icon: MapPin, color: "text-orange-500" },
-    context: { href: "/context", label: t("sidebar.tasks"), icon: Zap, color: "text-yellow-500" },
-  }), [t]);
+  const smartListDefs: Record<
+    string,
+    { href: string; label: string; icon: typeof CalendarDays; color: string }
+  > = useMemo(
+    () => ({
+      planned: {
+        href: "/planned",
+        label: t("sidebar.planned"),
+        icon: CalendarDays,
+        color: "text-green-500",
+      },
+      nearby: {
+        href: "/nearby",
+        label: t("sidebar.nearby"),
+        icon: MapPin,
+        color: "text-orange-500",
+      },
+      context: { href: "/context", label: t("sidebar.tasks"), icon: Zap, color: "text-yellow-500" },
+    }),
+    [t],
+  );
 
   // Register list reorder callback with the shared DnD provider
   const handleListReorder = useCallback(

@@ -152,25 +152,61 @@ describe("isFutureTask", () => {
   it("recurring task bez dueDate → budoucí (next occurrence)", () => {
     // WEEKLY:1 (Monday) on a Sunday → should be future
     expect(
-      isFutureTask(
-        { dueDate: null, reminderAt: null, isCompleted: false, recurrence: "WEEKLY:1" },
-      ),
+      isFutureTask({ dueDate: null, reminderAt: null, isCompleted: false, recurrence: "WEEKLY:1" }),
     ).toBe(true); // next occurrence is tomorrow or later (unless today is Monday)
   });
 
   it("recurring task s prošlým dueDate → budoucí", () => {
     expect(
-      isFutureTask(
-        { dueDate: "2025-01-01", reminderAt: null, isCompleted: false, recurrence: "WEEKLY:1" },
-      ),
+      isFutureTask({
+        dueDate: "2025-01-01",
+        reminderAt: null,
+        isCompleted: false,
+        recurrence: "WEEKLY:1",
+      }),
     ).toBe(true); // past dueDate → compute next occurrence which is in the future
   });
 
   it("recurring DAILY task bez dueDate → viditelný dnes", () => {
     expect(
-      isFutureTask(
-        { dueDate: null, reminderAt: null, isCompleted: false, recurrence: "DAILY" },
-      ),
+      isFutureTask({ dueDate: null, reminderAt: null, isCompleted: false, recurrence: "DAILY" }),
     ).toBe(false); // daily = today, so not future
+  });
+});
+
+describe("isFutureTask — dependency blocking", () => {
+  it("returns true when task is blocked by incomplete task", () => {
+    expect(
+      isFutureTask({
+        dueDate: null,
+        reminderAt: null,
+        isCompleted: false,
+        blockedByTaskId: "blocker-1",
+        blockedByTaskIsCompleted: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("returns false when blocking task is completed", () => {
+    expect(
+      isFutureTask({
+        dueDate: null,
+        reminderAt: null,
+        isCompleted: false,
+        blockedByTaskId: "blocker-1",
+        blockedByTaskIsCompleted: true,
+      }),
+    ).toBe(false);
+  });
+
+  it("returns false when no dependency", () => {
+    expect(
+      isFutureTask({
+        dueDate: null,
+        reminderAt: null,
+        isCompleted: false,
+        blockedByTaskId: null,
+      }),
+    ).toBe(false);
   });
 });

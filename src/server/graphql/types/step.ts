@@ -32,7 +32,12 @@ builder.mutationField("createStep", (t) =>
     },
     resolve: async (_root, args, ctx) => {
       const input = createStepSchema.parse(args.input);
-      return ctx.services.step.create(ctx.userId!, input.taskId, input.title, input.id ?? undefined);
+      return ctx.services.step.create(
+        ctx.userId!,
+        input.taskId,
+        input.title,
+        input.id ?? undefined,
+      );
     },
   }),
 );

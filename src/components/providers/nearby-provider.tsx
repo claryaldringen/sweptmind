@@ -48,21 +48,21 @@ export function NearbyProvider({ children }: { children: ReactNode }) {
 
   const isNearby = useCallback(
     (lat: number, lon: number, radiusKm?: number) => {
-      if (!position) return false;
+      if (!position || isApproximate) return false;
       return checkNearby(position.latitude, position.longitude, lat, lon, radiusKm);
     },
-    [position],
+    [position, isApproximate],
   );
 
   const locations = locationsData?.locations;
   const nearbyLocationIds = useMemo(() => {
-    if (!position || !locations) return [];
+    if (!position || !locations || isApproximate) return [];
     return locations
       .filter((loc) =>
         checkNearby(position.latitude, position.longitude, loc.latitude, loc.longitude, loc.radius),
       )
       .map((loc) => loc.id);
-  }, [position, locations]);
+  }, [position, locations, isApproximate]);
 
   return (
     <NearbyContext.Provider

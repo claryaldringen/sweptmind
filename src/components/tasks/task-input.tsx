@@ -40,6 +40,9 @@ const CREATE_TASK = gql`
         latitude
         longitude
       }
+      blockedByTaskId
+      blockedByTaskIsCompleted
+      dependentTaskCount
     }
   }
 `;
@@ -81,6 +84,9 @@ const TASK_FRAGMENT = gql`
       id
       name
     }
+    blockedByTaskId
+    blockedByTaskIsCompleted
+    dependentTaskCount
   }
 `;
 
@@ -149,9 +155,7 @@ export function TaskInput({ listId, placeholder }: TaskInputProps) {
         client.cache.modify({
           fields: {
             tasksByList(existing = [], { readField }) {
-              return existing.filter(
-                (ref: { __ref: string }) => readField("id", ref) !== id,
-              );
+              return existing.filter((ref: { __ref: string }) => readField("id", ref) !== id);
             },
           },
         });

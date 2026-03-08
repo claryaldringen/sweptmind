@@ -40,7 +40,14 @@ export class DrizzleTagRepository implements ITagRepository {
     });
   }
 
-  async create(values: { id?: string; userId: string; name: string; color: string; deviceContext?: string | null; locationId?: string | null }): Promise<Tag> {
+  async create(values: {
+    id?: string;
+    userId: string;
+    name: string;
+    color: string;
+    deviceContext?: string | null;
+    locationId?: string | null;
+  }): Promise<Tag> {
     const [tag] = await this.db.insert(schema.tags).values(values).returning();
     return tag;
   }

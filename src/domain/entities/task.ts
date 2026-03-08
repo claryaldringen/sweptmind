@@ -11,6 +11,7 @@ export interface Task {
   reminderAt: string | null;
   recurrence: string | null;
   deviceContext: string | null;
+  blockedByTaskId: string | null;
   sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
@@ -44,6 +45,7 @@ export interface UpdateTaskInput {
   listId?: string | null;
   locationId?: string | null;
   deviceContext?: string | null;
+  blockedByTaskId?: string | null;
 }
 
 export interface ReorderItem {

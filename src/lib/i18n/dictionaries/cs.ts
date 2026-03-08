@@ -271,6 +271,14 @@ export const cs: Dictionary = {
     noContext: "Bez kontextu",
     selectDevice: "Vybrat kontext zařízení",
   },
+  dependency: {
+    title: "Závislost",
+    addDependency: "Přidat závislost",
+    dependsOn: "Závisí na",
+    blocksCount: "Blokuje {count}",
+    circularError: "Cyklická závislost není povolena",
+    searchPlaceholder: "Hledat úkol...",
+  },
   validation: {
     invalidEmail: "Neplatná e-mailová adresa",
     passwordRequired: "Heslo je povinné",
