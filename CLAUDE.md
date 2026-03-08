@@ -101,7 +101,13 @@ src/
 
 ## Workflow pravidla
 
-- Po jakékoliv změně DB schématu (`src/server/db/schema/`) vždy automaticky spusť `yarn db:push` pro aplikaci změn do databáze.
+- Po jakékoliv změně DB schématu (`src/server/db/schema/`) vždy automaticky spusť `yarn db:push` pro aplikaci změn do lokální databáze.
+- **Po deployi na produkci (push na main):** Pokud se změnilo DB schéma, musíš pushout schéma i na produkční DB:
+  ```bash
+  vercel env pull .env.production.local
+  set -a && source .env.production.local && set +a && yarn db:push
+  rm .env.production.local
+  ```
 
 ## Deployment
 
