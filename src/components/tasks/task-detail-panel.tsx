@@ -317,6 +317,8 @@ export function TaskDetailPanel() {
   const { data, loading, error } = useQuery<GetTaskData>(GET_TASK, {
     variables: { id: taskId! },
     skip: !taskId,
+    fetchPolicy: "cache-and-network",
+    returnPartialData: true,
   });
   const { data: tagsData } = useQuery<{ tags: TaskTag[] }>(GET_TAGS, {
     skip: !taskId,
@@ -476,7 +478,11 @@ export function TaskDetailPanel() {
 
   if (!taskId) return null;
 
-  if (loading) {
+  // returnPartialData makes types DeepPartial — cast after null check since
+  // core fields are always present from the list query cache
+  const task = data?.task as TaskDetail | null | undefined;
+
+  if (loading && !task) {
     return (
       <div
         className={cn("bg-background p-6", isDesktop ? "w-96 border-l" : "absolute inset-0 z-10")}
@@ -490,11 +496,10 @@ export function TaskDetailPanel() {
     );
   }
 
-  if (error) {
+  if (error && !task) {
     return <div className="p-4 text-red-500">Failed to load task</div>;
   }
 
-  const task = data?.task;
   if (!task) return null;
 
   // ---- Handlers ----

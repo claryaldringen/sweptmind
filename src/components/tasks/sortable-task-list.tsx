@@ -45,29 +45,36 @@ export function SortableTaskList({
     .filter((t) => isFutureTask(t))
     .sort((a, b) => a.dueDate!.localeCompare(b.dueDate!));
   const completedTasks = tasks.filter((t) => t.isCompleted);
-  const [items, setItems] = useState(activeTasks);
+  const [orderedIds, setOrderedIds] = useState(() => activeTasks.map((t) => t.id));
   const [futureOpen, setFutureOpen] = useState(false);
   const [completedOpen, setCompletedOpen] = useState(false);
 
-  // Keep items in sync with prop changes
-  if (activeTasks.length !== items.length || activeTasks.some((t, i) => t.id !== items[i]?.id)) {
-    setItems(activeTasks);
+  // Keep ordered IDs in sync with prop changes (new/removed tasks)
+  const activeIds = activeTasks.map((t) => t.id);
+  if (orderedIds.length !== activeIds.length || orderedIds.some((id, i) => id !== activeIds[i])) {
+    setOrderedIds(activeIds);
   }
+
+  // Build render list: order from orderedIds, data from activeTasks (latest from cache)
+  const activeTaskMap = new Map(activeTasks.map((t) => [t.id, t]));
+  const items = orderedIds
+    .map((id) => activeTaskMap.get(id))
+    .filter((t): t is Task => t != null);
 
   const [reorderTasks] = useMutation(REORDER_TASKS);
 
   const handleTaskReorder = useCallback(
     (activeId: string, overId: string) => {
-      const oldIndex = items.findIndex((t) => t.id === activeId);
-      const newIndex = items.findIndex((t) => t.id === overId);
+      const oldIndex = orderedIds.indexOf(activeId);
+      const newIndex = orderedIds.indexOf(overId);
       if (oldIndex === -1 || newIndex === -1) return;
-      const newItems = arrayMove(items, oldIndex, newIndex);
-      setItems(newItems);
+      const newIds = arrayMove(orderedIds, oldIndex, newIndex);
+      setOrderedIds(newIds);
 
-      const input = newItems.map((t, i) => ({ id: t.id, sortOrder: i }));
+      const input = newIds.map((id, i) => ({ id, sortOrder: i }));
       reorderTasks({ variables: { input } });
     },
-    [items, reorderTasks],
+    [orderedIds, reorderTasks],
   );
 
   useEffect(() => {
@@ -76,7 +83,7 @@ export function SortableTaskList({
 
   return (
     <div className="flex-1 overflow-auto">
-      <SortableContext items={items.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={orderedIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-0.5">
           {items.map((task) => (
             <SortableTaskItem key={task.id} task={task} showListName={showListName} />

@@ -135,7 +135,7 @@ export const TaskItem = memo(function TaskItem({
 }: TaskItemProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t, locale: appLocale } = useTranslations();
+  const { t, tArray, locale: appLocale } = useTranslations();
   const dateFnsLocale = appLocale === "cs" ? cs : enUS;
   const selectedTaskId = searchParams.get("task");
   const { isNearby: checkNearby } = useNearby();
@@ -325,6 +325,21 @@ export const TaskItem = memo(function TaskItem({
                   {hasRecurrence && (
                     <span className="text-muted-foreground flex items-center gap-0.5">
                       <Repeat className="h-3 w-3" />
+                      {task.recurrence === "DAILY"
+                        ? t("recurrence.daily")
+                        : task.recurrence === "MONTHLY"
+                          ? t("recurrence.monthly")
+                          : task.recurrence === "YEARLY"
+                            ? t("recurrence.yearly")
+                            : task.recurrence?.startsWith("WEEKLY:")
+                              ? (() => {
+                                  const days = task.recurrence!.slice(7).split(",").map(Number);
+                                  const dayNames = tArray("recurrence.daysShort");
+                                  return days.length === 7
+                                    ? t("recurrence.daily")
+                                    : days.map((d) => dayNames[d]).join(", ");
+                                })()
+                              : t("recurrence.weekly")}
                     </span>
                   )}
                   {hasRecurrence && totalSteps > 0 && (
