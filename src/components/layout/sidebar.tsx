@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { gql } from "@apollo/client";
-import { useQuery, useMutation } from "@apollo/client/react";
-import { useLists, type ListItem } from "@/components/providers/lists-provider";
+import { useMutation } from "@apollo/client/react";
+import { useLists, useAppData, type ListItem, type TagItem } from "@/components/providers/app-data-provider";
 import { useDroppable } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -66,51 +66,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 
-const GET_TAGS = gql`
-  query GetTags {
-    tags {
-      id
-      name
-      color
-      taskCount
-      deviceContext
-      locationId
-      location {
-        id
-        name
-        latitude
-        longitude
-      }
-    }
-  }
-`;
-
-const CONTEXT_TASKS_COUNT = gql`
-  query ContextTasksCount($deviceContext: String, $nearbyLocationIds: [String!]) {
-    contextTasks(deviceContext: $deviceContext, nearbyLocationIds: $nearbyLocationIds) {
-      id
-      isCompleted
-      dueDate
-      reminderAt
-      blockedByTaskId
-      blockedByTaskIsCompleted
-    }
-  }
-`;
-
-const ALL_TASKS_WITH_LOCATION = gql`
-  query AllTasksWithLocation {
-    allTasksWithLocation {
-      id
-      location {
-        id
-        latitude
-        longitude
-      }
-    }
-  }
-`;
-
 const REORDER_LISTS = gql`
   mutation ReorderLists($input: [ReorderListInput!]!) {
     reorderLists(input: $input)
@@ -148,19 +103,7 @@ const DELETE_TAG = gql`
   }
 `;
 
-interface TagItem {
-  id: string;
-  name: string;
-  color: string;
-  taskCount: number;
-  deviceContext: string | null;
-  locationId: string | null;
-  location: { id: string; name: string; latitude: number; longitude: number } | null;
-}
-
-interface GetTagsData {
-  tags: TagItem[];
-}
+type ListItemWithCounts = ListItem & { taskCount: number; visibleTaskCount: number };
 
 function SortableListItem({
   list,
@@ -173,14 +116,14 @@ function SortableListItem({
   onDelete,
   onNavigate,
 }: {
-  list: ListItem;
+  list: ListItemWithCounts;
   isActive: boolean;
   taskCountMode: "all" | "visible";
   isNearby: boolean;
   isDeviceMatch: boolean;
   isDropTarget: boolean;
-  onRename: (list: ListItem) => void;
-  onDelete: (list: ListItem) => void;
+  onRename: (list: ListItemWithCounts) => void;
+  onDelete: (list: ListItemWithCounts) => void;
   onNavigate?: () => void;
 }) {
   const { t } = useTranslations();
@@ -295,6 +238,7 @@ function SidebarTagItem({
   isActive,
   isNearby,
   isDeviceMatch,
+  taskCount,
   onRename,
   onDelete,
   onNavigate,
@@ -303,6 +247,7 @@ function SidebarTagItem({
   isActive: boolean;
   isNearby: boolean;
   isDeviceMatch: boolean;
+  taskCount: number;
   onRename: (tag: TagItem) => void;
   onDelete: (tag: TagItem) => void;
   onNavigate?: () => void;
@@ -335,8 +280,8 @@ function SidebarTagItem({
                 <Monitor className="h-3 w-3 animate-pulse text-yellow-500" />
               ))}
           </div>
-          {tag.taskCount > 0 && (
-            <span className="text-muted-foreground text-xs">{tag.taskCount}</span>
+          {taskCount > 0 && (
+            <span className="text-muted-foreground text-xs">{taskCount}</span>
           )}
         </Link>
       </ContextMenuTrigger>
@@ -404,37 +349,83 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { lists: allLists } = useLists();
-  const { data: tagsData } = useQuery<GetTagsData>(GET_TAGS);
+  const { allTasks, tags: allTags } = useAppData();
   const [reorderLists] = useMutation(REORDER_LISTS);
   const [createListOpen, setCreateListOpen] = useState(false);
-  const [localOrder, setLocalOrder] = useState<ListItem[] | null>(null);
+  const [localOrder, setLocalOrder] = useState<ListItemWithCounts[] | null>(null);
   const { isNearby: checkNearby, isTracking, nearbyLocationIds } = useNearby();
   const [smartOrder, setSmartOrder] = useState(getStoredSmartOrder);
-  const { data: contextCountData } = useQuery<{
-    contextTasks: {
-      id: string;
-      isCompleted: boolean;
-      dueDate: string | null;
-      reminderAt: string | null;
-    }[];
-  }>(CONTEXT_TASKS_COUNT, {
-    variables: { deviceContext, nearbyLocationIds: nearbyLocationIds ?? [] },
-  });
-  const contextTaskCount =
-    contextCountData?.contextTasks?.filter((t) => !isFutureTask(t)).length ?? 0;
-  const { data: nearbyData } = useQuery<{
-    allTasksWithLocation: {
-      id: string;
-      location: { id: string; latitude: number; longitude: number } | null;
-    }[];
-  }>(ALL_TASKS_WITH_LOCATION, { skip: !isTracking });
+
+  // Compute context task count from allTasks
+  const contextTaskCount = useMemo(() => {
+    const contextListIds = new Set(
+      allLists
+        .filter(
+          (l) =>
+            (deviceContext && l.deviceContext === deviceContext) ||
+            (nearbyLocationIds.length > 0 &&
+              l.locationId &&
+              nearbyLocationIds.includes(l.locationId)),
+        )
+        .map((l) => l.id),
+    );
+    const contextTagIds = new Set(
+      allTags
+        .filter(
+          (t) =>
+            (deviceContext && t.deviceContext === deviceContext) ||
+            (nearbyLocationIds.length > 0 &&
+              t.locationId &&
+              nearbyLocationIds.includes(t.locationId)),
+        )
+        .map((t) => t.id),
+    );
+    return allTasks.filter((task) => {
+      if (task.isCompleted) return false;
+      if (isFutureTask(task)) return false;
+      if (deviceContext && task.deviceContext === deviceContext) return true;
+      if (
+        nearbyLocationIds.length > 0 &&
+        task.locationId &&
+        nearbyLocationIds.includes(task.locationId)
+      )
+        return true;
+      if (contextListIds.has(task.listId)) return true;
+      if (task.tags?.some((t) => contextTagIds.has(t.id))) return true;
+      return false;
+    }).length;
+  }, [allTasks, allLists, allTags, deviceContext, nearbyLocationIds]);
+
+  // Compute nearby count from allTasks
+  const nearbyCount = useMemo(() => {
+    if (!isTracking) return 0;
+    return allTasks.filter(
+      (task) =>
+        !task.isCompleted &&
+        task.location &&
+        checkNearby(task.location.latitude, task.location.longitude, task.location.radius),
+    ).length;
+  }, [allTasks, isTracking, checkNearby]);
+
+  // Compute tag task counts from allTasks
+  const tagTaskCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const task of allTasks) {
+      if (task.isCompleted) continue;
+      for (const tag of task.tags ?? []) {
+        counts.set(tag.id, (counts.get(tag.id) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [allTasks]);
+
   const { registerListReorder, registerSmartListReorder, overListId, activeType } = useTaskDnd();
 
   // List rename/delete state
-  const [renameListTarget, setRenameListTarget] = useState<ListItem | null>(null);
+  const [renameListTarget, setRenameListTarget] = useState<ListItemWithCounts | null>(null);
   const [renameListValue, setRenameListValue] = useState("");
   const [renameListIcon, setRenameListIcon] = useState<string>("list");
-  const [deleteListTarget, setDeleteListTarget] = useState<ListItem | null>(null);
+  const [deleteListTarget, setDeleteListTarget] = useState<ListItemWithCounts | null>(null);
   const [updateList] = useMutation(UPDATE_LIST);
   const [deleteList] = useMutation(DELETE_LIST);
 
@@ -445,18 +436,11 @@ export function Sidebar() {
   const [updateTag] = useMutation(UPDATE_TAG);
   const [deleteTag] = useMutation(DELETE_TAG);
 
-  const nearbyCount = isTracking
-    ? (nearbyData?.allTasksWithLocation ?? []).filter(
-        (task) => task.location && checkNearby(task.location.latitude, task.location.longitude),
-      ).length
-    : 0;
-
   const serverCustomLists = allLists
-    .filter((l: ListItem) => !l.isDefault)
+    .filter((l) => !l.isDefault)
     .sort((a, b) => a.sortOrder - b.sortOrder);
   const customLists = localOrder ?? serverCustomLists;
-  const defaultList = allLists.find((l: ListItem) => l.isDefault);
-  const allTags: TagItem[] = tagsData?.tags ?? [];
+  const defaultList = allLists.find((l) => l.isDefault);
 
   const smartListDefs: Record<
     string,
@@ -628,7 +612,7 @@ export function Sidebar() {
           strategy={verticalListSortingStrategy}
         >
           <nav className="space-y-1">
-            {customLists.map((list: ListItem) => (
+            {customLists.map((list) => (
               <SortableListItem
                 key={list.id}
                 list={list}
@@ -668,6 +652,7 @@ export function Sidebar() {
                       : false
                   }
                   isDeviceMatch={tag.deviceContext === deviceContext}
+                  taskCount={tagTaskCounts.get(tag.id) ?? 0}
                   onRename={(t) => {
                     setRenameTagValue(t.name);
                     setRenameTagTarget(t);

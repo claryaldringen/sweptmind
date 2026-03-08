@@ -1,21 +1,9 @@
 "use client";
 
 import { createContext, useContext, useCallback, useEffect, useMemo, type ReactNode } from "react";
-import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
 import { useUserLocation } from "@/hooks/use-user-location";
+import { useAppData } from "@/components/providers/app-data-provider";
 import { isNearby as checkNearby } from "@/lib/geo";
-
-const GET_LOCATIONS = gql`
-  query GetLocationsForContext {
-    locations {
-      id
-      latitude
-      longitude
-      radius
-    }
-  }
-`;
 
 interface NearbyContextValue {
   userLatitude: number | null;
@@ -42,9 +30,7 @@ export function NearbyProvider({ children }: { children: ReactNode }) {
     }
   }, [isSupported, isTracking, startTracking]);
 
-  const { data: locationsData } = useQuery<{
-    locations: { id: string; latitude: number; longitude: number; radius: number }[];
-  }>(GET_LOCATIONS, { skip: !isTracking });
+  const { locations } = useAppData();
 
   const isNearby = useCallback(
     (lat: number, lon: number, radiusKm?: number) => {
@@ -54,7 +40,6 @@ export function NearbyProvider({ children }: { children: ReactNode }) {
     [position, isApproximate],
   );
 
-  const locations = locationsData?.locations;
   const nearbyLocationIds = useMemo(() => {
     if (!position || !locations || isApproximate) return [];
     return locations

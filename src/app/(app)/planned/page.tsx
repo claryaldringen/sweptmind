@@ -1,89 +1,18 @@
 "use client";
 
 import { useMemo } from "react";
-import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
 import { ArrowLeft, CalendarDays } from "lucide-react";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { DraggableTaskItem } from "@/components/tasks/draggable-task-item";
 import { ResizableTaskLayout } from "@/components/layout/resizable-task-layout";
 import { useTranslations } from "@/lib/i18n";
-
-const PLANNED_TASKS = gql`
-  query PlannedTasks {
-    plannedTasks {
-      id
-      listId
-      locationId
-      title
-      notes
-      isCompleted
-      completedAt
-      dueDate
-      reminderAt
-      recurrence
-      deviceContext
-      sortOrder
-      createdAt
-      steps {
-        id
-        taskId
-        title
-        isCompleted
-        sortOrder
-      }
-      tags {
-        id
-        name
-        color
-      }
-      location {
-        id
-        name
-        latitude
-        longitude
-        radius
-      }
-      list {
-        id
-        name
-      }
-      blockedByTaskId
-      blockedByTaskIsCompleted
-      dependentTaskCount
-    }
-  }
-`;
-
-interface PlannedTask {
-  id: string;
-  listId: string;
-  title: string;
-  notes: string | null;
-  isCompleted: boolean;
-  dueDate: string | null;
-  reminderAt: string | null;
-  recurrence: string | null;
-  sortOrder: number;
-  createdAt: string;
-  steps: { id: string; taskId: string; title: string; isCompleted: boolean; sortOrder: number }[];
-  tags: { id: string; name: string; color: string }[];
-  location: { id: string; name: string; latitude: number; longitude: number } | null;
-  list: { id: string; name: string } | null;
-  blockedByTaskId: string | null;
-  blockedByTaskIsCompleted: boolean | null;
-  dependentTaskCount: number;
-}
-
-interface PlannedTasksData {
-  plannedTasks: PlannedTask[];
-}
+import { useAppData, type AppTask } from "@/components/providers/app-data-provider";
 
 type GroupKey = "overdue" | "today" | "tomorrow" | "thisWeek" | "later";
 
 function getGroupKey(
-  task: PlannedTask,
+  task: AppTask,
   todayStr: string,
   tomorrowStr: string,
   endOfWeekStr: string,
@@ -119,9 +48,10 @@ const GROUP_COLORS: Record<GroupKey, string> = {
 export default function PlannedPage() {
   const { t } = useTranslations();
   const { open: openSidebar, isDesktop } = useSidebarContext();
-  const { data, loading } = useQuery<PlannedTasksData>(PLANNED_TASKS);
+  const { allTasks, loading } = useAppData();
+
   const groups = useMemo(() => {
-    const allTasks = data?.plannedTasks ?? [];
+    const plannedTasks = allTasks.filter((t) => t.dueDate != null);
     const now = new Date();
     const todayStr = now.toISOString().slice(0, 10);
     const tomorrow = new Date(now);
@@ -129,9 +59,9 @@ export default function PlannedPage() {
     const tomorrowStr = tomorrow.toISOString().slice(0, 10);
     const endOfWeekStr = getEndOfWeek(now);
 
-    const visible = allTasks.filter((t) => !t.isCompleted);
+    const visible = plannedTasks.filter((t) => !t.isCompleted);
 
-    const grouped = new Map<GroupKey, PlannedTask[]>();
+    const grouped = new Map<GroupKey, AppTask[]>();
     for (const key of GROUP_ORDER) {
       grouped.set(key, []);
     }
@@ -152,7 +82,7 @@ export default function PlannedPage() {
     }
 
     return grouped;
-  }, [data?.plannedTasks]);
+  }, [allTasks]);
 
   const groupLabels: Record<GroupKey, string> = {
     overdue: t("planned.overdue"),

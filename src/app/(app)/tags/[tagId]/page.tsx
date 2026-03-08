@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { gql } from "@apollo/client";
-import { useQuery, useMutation } from "@apollo/client/react";
+import { useMutation } from "@apollo/client/react";
 import { ArrowLeft, MapPin, Tag, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getTagColorClasses, TAG_COLORS } from "@/lib/tag-colors";
@@ -26,43 +26,7 @@ import { useTranslations } from "@/lib/i18n";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 import { useGeocode } from "@/hooks/use-geocode";
 import { useNearby } from "@/components/providers/nearby-provider";
-
-interface LocationInfo {
-  id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  radius: number;
-  address?: string | null;
-}
-
-interface TagDetail {
-  id: string;
-  name: string;
-  color: string;
-  deviceContext: string | null;
-  locationId: string | null;
-  location: LocationInfo | null;
-}
-
-const GET_TAGS = gql`
-  query GetTags {
-    tags {
-      id
-      name
-      color
-      deviceContext
-      locationId
-      location {
-        id
-        name
-        latitude
-        longitude
-        radius
-      }
-    }
-  }
-`;
+import { useAppData } from "@/components/providers/app-data-provider";
 
 const UPDATE_TAG = gql`
   mutation UpdateTag($id: String!, $input: UpdateTagInput!) {
@@ -79,19 +43,6 @@ const UPDATE_TAG = gql`
         longitude
         radius
       }
-    }
-  }
-`;
-
-const GET_LOCATIONS = gql`
-  query GetLocations {
-    locations {
-      id
-      name
-      latitude
-      longitude
-      radius
-      address
     }
   }
 `;
@@ -114,92 +65,6 @@ const DELETE_LOCATION = gql`
   }
 `;
 
-const TASKS_BY_TAG = gql`
-  query TasksByTag($tagId: String!) {
-    tasksByTag(tagId: $tagId) {
-      id
-      listId
-      locationId
-      title
-      notes
-      isCompleted
-      completedAt
-      dueDate
-      reminderAt
-      recurrence
-      deviceContext
-      sortOrder
-      createdAt
-      steps {
-        id
-        taskId
-        title
-        isCompleted
-        sortOrder
-      }
-      tags {
-        id
-        name
-        color
-      }
-      location {
-        id
-        name
-        latitude
-        longitude
-        radius
-      }
-      list {
-        id
-        name
-      }
-      blockedByTaskId
-      blockedByTaskIsCompleted
-      dependentTaskCount
-    }
-  }
-`;
-
-interface Step {
-  id: string;
-  taskId: string;
-  title: string;
-  isCompleted: boolean;
-  sortOrder: number;
-}
-
-interface TaskTag {
-  id: string;
-  name: string;
-  color: string;
-}
-
-interface TagTask {
-  id: string;
-  listId: string;
-  title: string;
-  notes: string | null;
-  isCompleted: boolean;
-  dueDate: string | null;
-  reminderAt: string | null;
-  sortOrder: number;
-  createdAt: string;
-  steps: Step[];
-  tags: TaskTag[];
-  list: { id: string; name: string } | null;
-  blockedByTaskId: string | null;
-  blockedByTaskIsCompleted: boolean | null;
-  dependentTaskCount: number;
-}
-
-interface TasksByTagData {
-  tasksByTag: TagTask[];
-}
-
-interface GetTagsData {
-  tags: TagDetail[];
-}
-
 export default function TagPage() {
   const { tagId } = useParams<{ tagId: string }>();
   const { t, locale: appLocale } = useTranslations();
@@ -209,15 +74,12 @@ export default function TagPage() {
   const [locationSearch, setLocationSearch] = useState("");
   const { isNearby: checkNearby, userLatitude, userLongitude } = useNearby();
   const geocode = useGeocode({ userLatitude, userLongitude, locale: appLocale });
-
-  const { data: tagsData } = useQuery<GetTagsData>(GET_TAGS);
-  const { data, loading } = useQuery<TasksByTagData>(TASKS_BY_TAG, {
-    variables: { tagId },
-  });
-  const { data: locationsData } = useQuery<{ locations: LocationInfo[] }>(GET_LOCATIONS);
+  const { tags, allTasks, locations: allLocations, loading } = useAppData();
 
   const [updateTag] = useMutation(UPDATE_TAG);
-  const [createLocation] = useMutation<{ createLocation: LocationInfo }>(CREATE_LOCATION, {
+  const [createLocation] = useMutation<{
+    createLocation: { id: string; name: string; latitude: number; longitude: number };
+  }>(CREATE_LOCATION, {
     update(cache, { data }) {
       if (!data?.createLocation) return;
       cache.modify({
@@ -249,8 +111,12 @@ export default function TagPage() {
     },
   });
 
-  const tag = tagsData?.tags?.find((t) => t.id === tagId);
-  const tasks = data?.tasksByTag ?? [];
+  const tag = tags.find((t) => t.id === tagId);
+  const tasks = useMemo(
+    () =>
+      allTasks.filter((task) => task.tags?.some((t) => t.id === tagId)),
+    [allTasks, tagId],
+  );
   const colors = tag ? getTagColorClasses(tag.color) : getTagColorClasses("blue");
 
   function handleRename(e: React.FocusEvent<HTMLInputElement>) {
@@ -393,7 +259,7 @@ export default function TagPage() {
                   onClick={handleRemoveLocation}
                   className="rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10"
                 >
-                  <span className="sr-only">{t("tasks.removeLocation")}</span>×
+                  <span className="sr-only">{t("tasks.removeLocation")}</span>
                 </button>
               </Badge>
             )}
@@ -433,13 +299,13 @@ export default function TagPage() {
                   />
                   <CommandList>
                     <CommandEmpty />
-                    {(locationsData?.locations ?? []).filter(
+                    {allLocations.filter(
                       (loc) =>
                         !locationSearch ||
                         loc.name.toLowerCase().includes(locationSearch.toLowerCase()),
                     ).length > 0 && (
                       <CommandGroup heading={t("tasks.savedLocations")}>
-                        {(locationsData?.locations ?? [])
+                        {allLocations
                           .filter(
                             (loc) =>
                               !locationSearch ||

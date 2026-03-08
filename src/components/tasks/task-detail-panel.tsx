@@ -25,6 +25,7 @@ import { TaskDependency } from "./detail/task-dependency";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 import { computeFirstOccurrence } from "@/domain/services/recurrence";
 import { pickNextTagColor } from "@/lib/tag-colors";
+import { useAppData } from "@/components/providers/app-data-provider";
 
 // ---------------------------------------------------------------------------
 // GraphQL operations
@@ -161,15 +162,7 @@ const DELETE_STEP = gql`
   }
 `;
 
-const GET_TAGS = gql`
-  query GetTags {
-    tags {
-      id
-      name
-      color
-    }
-  }
-`;
+// Tags and locations come from useAppData()
 
 const CREATE_TAG = gql`
   mutation CreateTag($input: CreateTagInput!) {
@@ -193,18 +186,6 @@ const REMOVE_TAG_FROM_TASK = gql`
   }
 `;
 
-const GET_LOCATIONS = gql`
-  query GetLocations {
-    locations {
-      id
-      name
-      latitude
-      longitude
-      radius
-      address
-    }
-  }
-`;
 
 const CREATE_LOCATION = gql`
   mutation CreateLocation($input: CreateLocationInput!) {
@@ -351,12 +332,7 @@ export function TaskDetailPanel() {
     fetchPolicy: "cache-and-network",
     returnPartialData: true,
   });
-  const { data: tagsData } = useQuery<{ tags: TaskTag[] }>(GET_TAGS, {
-    skip: !taskId,
-  });
-  const { data: locationsData } = useQuery<{ locations: TaskLocation[] }>(GET_LOCATIONS, {
-    skip: !taskId,
-  });
+  const { tags: allTagsFromProvider, locations: allLocationsFromProvider } = useAppData();
 
   // ---- Mutations ----
 
@@ -474,7 +450,7 @@ export function TaskDetailPanel() {
     update(cache, _result, { variables }) {
       if (!variables?.tagId || !taskId) return;
       const tagId = variables.tagId as string;
-      const allTags = tagsData?.tags ?? [];
+      const allTags = allTagsFromProvider;
       const tag = allTags.find((t) => t.id === tagId);
       if (!tag) return;
       cache.modify({
@@ -668,7 +644,7 @@ export function TaskDetailPanel() {
 
   async function handleCreateAndAddTag(name: string) {
     if (!task) return;
-    const existingColors = (tagsData?.tags ?? []).map((t) => t.color);
+    const existingColors = (allTagsFromProvider).map((t) => t.color);
     const color = pickNextTagColor(existingColors);
     const result = await createTag({
       variables: { input: { name, color } },
@@ -850,7 +826,7 @@ export function TaskDetailPanel() {
           {/* Tags */}
           <TaskTags
             taskTags={task.tags ?? []}
-            allTags={tagsData?.tags ?? []}
+            allTags={allTagsFromProvider}
             onAddTag={handleAddTag}
             onRemoveTag={handleRemoveTag}
             onCreateAndAddTag={handleCreateAndAddTag}
@@ -863,7 +839,7 @@ export function TaskDetailPanel() {
           <TaskLocation
             location={task.location}
             savedLocations={
-              (locationsData?.locations ?? []) as Array<{
+              (allLocationsFromProvider) as Array<{
                 id: string;
                 name: string;
                 latitude: number;

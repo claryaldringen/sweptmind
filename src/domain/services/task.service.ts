@@ -28,6 +28,10 @@ export class TaskService {
     private readonly stepRepo: IStepRepository | null = null,
   ) {}
 
+  async getByUser(userId: string): Promise<Task[]> {
+    return this.taskRepo.findByUser(userId);
+  }
+
   async getById(id: string, userId: string): Promise<Task | undefined> {
     return this.taskRepo.findById(id, userId);
   }

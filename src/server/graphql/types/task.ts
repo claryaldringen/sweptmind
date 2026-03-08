@@ -158,6 +158,14 @@ builder.queryField("contextTasks", (t) =>
   }),
 );
 
+builder.queryField("allTasks", (t) =>
+  t.field({
+    type: [TaskType],
+    authScopes: { authenticated: true },
+    resolve: async (_root, _args, ctx) => ctx.services.task.getByUser(ctx.userId!),
+  }),
+);
+
 builder.queryField("searchTasks", (t) =>
   t.field({
     type: [TaskType],

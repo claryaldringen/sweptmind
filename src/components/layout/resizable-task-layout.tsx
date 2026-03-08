@@ -41,10 +41,14 @@ export function ResizableTaskLayout({ children }: ResizableTaskLayoutProps) {
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      <div className="flex-1 overflow-hidden">
-        {children}
-      </div>
-      <ResizeHandle side="right" width={detailWidth} onWidthChange={handleDetailResize} minWidth={280} maxWidth={600} />
+      <div className="flex-1 overflow-hidden">{children}</div>
+      <ResizeHandle
+        side="right"
+        width={detailWidth}
+        onWidthChange={handleDetailResize}
+        minWidth={280}
+        maxWidth={600}
+      />
       <div className="h-full shrink-0 overflow-hidden" style={{ width: detailWidth }}>
         <TaskDetailPanel />
       </div>

@@ -42,9 +42,8 @@ export function ResizeHandle({
     (e: React.PointerEvent) => {
       if (!isDragging) return;
       const delta = e.clientX - startXRef.current;
-      const newWidth = side === "left"
-        ? startWidthRef.current + delta
-        : startWidthRef.current - delta;
+      const newWidth =
+        side === "left" ? startWidthRef.current + delta : startWidthRef.current - delta;
       onWidthChange(Math.min(maxWidth, Math.max(minWidth, newWidth)));
     },
     [isDragging, side, onWidthChange, minWidth, maxWidth],
@@ -71,7 +70,7 @@ export function ResizeHandle({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      className="relative w-0 shrink-0 cursor-col-resize before:absolute before:inset-y-0 before:-left-[3px] before:w-[7px] before:z-10 after:absolute after:inset-y-0 after:left-0 after:w-px after:bg-border hover:after:bg-primary/30 active:after:bg-primary/40 after:transition-colors"
+      className="after:bg-border hover:after:bg-primary/30 active:after:bg-primary/40 relative w-0 shrink-0 cursor-col-resize before:absolute before:inset-y-0 before:-left-[3px] before:z-10 before:w-[7px] after:absolute after:inset-y-0 after:left-0 after:w-px after:transition-colors"
     />
   );
 }

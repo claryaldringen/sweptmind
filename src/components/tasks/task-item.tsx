@@ -4,7 +4,7 @@ import { memo, useState, useEffect, useRef, type MouseEvent } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
-import { useLists } from "@/components/providers/lists-provider";
+import { useLists } from "@/components/providers/app-data-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Bell,

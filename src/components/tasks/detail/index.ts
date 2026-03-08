@@ -4,4 +4,5 @@ export { TaskLocation } from "./task-location";
 export { TaskRecurrence } from "./task-recurrence";
 export { TaskDates } from "./task-dates";
 export { TaskActions } from "./task-actions";
+export { TaskDependency } from "./task-dependency";
 export type { TaskStep, TaskTag, TaskLocation as TaskLocationType, TaskDetail } from "./types";

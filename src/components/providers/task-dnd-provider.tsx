@@ -120,35 +120,10 @@ export function TaskDndProvider({ children }: { children: ReactNode }) {
       const taskId = String(active.id);
       const newListId = String(over.id);
       const oldListId = activeData?.listId as string | undefined;
+      // Apollo auto-merges the listId change into the Task entity;
+      // pages filter allTasks by listId so the task moves automatically
       updateTask({
         variables: { id: taskId, input: { listId: newListId } },
-        update(cache) {
-          // Remove from old list's tasksByList query
-          if (oldListId) {
-            cache.modify({
-              fields: {
-                tasksByList(existing = [], { storeFieldName, readField }) {
-                  if (!storeFieldName.includes(oldListId)) return existing;
-                  return existing.filter(
-                    (ref: { __ref: string }) => readField("id", ref) !== taskId,
-                  );
-                },
-              },
-            });
-          }
-          // Add to new list's tasksByList query
-          cache.modify({
-            fields: {
-              tasksByList(existing = [], { storeFieldName }) {
-                if (!storeFieldName.includes(newListId)) return existing;
-                const newRef = { __ref: `Task:${taskId}` };
-                if (existing.some((ref: { __ref: string }) => ref.__ref === newRef.__ref))
-                  return existing;
-                return [...existing, newRef];
-              },
-            },
-          });
-        },
       });
     } else if (over && activeType === "task" && overType === "task" && active.id !== over.id) {
       // Task dropped on another task — reorder
@@ -156,7 +131,12 @@ export function TaskDndProvider({ children }: { children: ReactNode }) {
     } else if (over && activeType === "list" && overType === "list" && active.id !== over.id) {
       // List dropped on another list — reorder
       listReorderRef.current?.(String(active.id), String(over.id));
-    } else if (over && activeType === "smart-list" && overType === "smart-list" && active.id !== over.id) {
+    } else if (
+      over &&
+      activeType === "smart-list" &&
+      overType === "smart-list" &&
+      active.id !== over.id
+    ) {
       // Smart list dropped on another smart list — reorder
       smartListReorderRef.current?.(String(active.id), String(over.id));
     }

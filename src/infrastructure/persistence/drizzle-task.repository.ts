@@ -269,6 +269,13 @@ export class DrizzleTaskRepository implements ITaskRepository {
     return rows.map((r) => r.id);
   }
 
+  async findByUser(userId: string): Promise<Task[]> {
+    return this.db.query.tasks.findMany({
+      where: eq(schema.tasks.userId, userId),
+      orderBy: asc(schema.tasks.sortOrder),
+    });
+  }
+
   async searchTasks(userId: string, query: string, tagIds?: string[]): Promise<Task[]> {
     const results = await this.db.query.tasks.findMany({
       where: and(

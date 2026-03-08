@@ -20,6 +20,7 @@ const CREATE_TASK = gql`
       dueDate
       reminderAt
       recurrence
+      deviceContext
       sortOrder
       createdAt
       steps {
@@ -40,7 +41,15 @@ const CREATE_TASK = gql`
         latitude
         longitude
       }
+      list {
+        id
+        name
+      }
       blockedByTaskId
+      blockedByTask {
+        id
+        title
+      }
       blockedByTaskIsCompleted
       dependentTaskCount
     }
@@ -85,6 +94,10 @@ const TASK_FRAGMENT = gql`
       name
     }
     blockedByTaskId
+    blockedByTask {
+      id
+      title
+    }
     blockedByTaskIsCompleted
     dependentTaskCount
   }
@@ -133,14 +146,18 @@ export function TaskInput({ listId, placeholder }: TaskInputProps) {
         tags: [],
         location: null,
         list: { __typename: "List", id: listId, name: "" },
+        blockedByTaskId: null,
+        blockedByTask: null,
+        blockedByTaskIsCompleted: null,
+        dependentTaskCount: 0,
       },
       fragment: TASK_FRAGMENT,
     });
 
+    // Add to allTasks cache (used by AppDataProvider)
     client.cache.modify({
       fields: {
-        tasksByList(existing = [], { storeFieldName }) {
-          if (!storeFieldName.includes(listId)) return existing;
+        allTasks(existing = []) {
           const newRef = { __ref: `Task:${id}` };
           return position === "top" ? [newRef, ...existing] : [...existing, newRef];
         },
@@ -154,7 +171,7 @@ export function TaskInput({ listId, placeholder }: TaskInputProps) {
         client.cache.evict({ id: client.cache.identify({ __typename: "Task", id }) });
         client.cache.modify({
           fields: {
-            tasksByList(existing = [], { readField }) {
+            allTasks(existing = [], { readField }) {
               return existing.filter((ref: { __ref: string }) => readField("id", ref) !== id);
             },
           },

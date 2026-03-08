@@ -204,9 +204,7 @@ export function TaskLocation({
               <CommandGroup>
                 <CommandItem onSelect={handleUseCurrentLocation} disabled={detectingLocation}>
                   <Navigation className="mr-2 h-3 w-3" />
-                  {detectingLocation
-                    ? t("locations.detectingLocation")
-                    : t("locations.myLocation")}
+                  {detectingLocation ? t("locations.detectingLocation") : t("locations.myLocation")}
                 </CommandItem>
               </CommandGroup>
               {filteredSaved.length > 0 && (

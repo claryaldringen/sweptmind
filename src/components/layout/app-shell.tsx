@@ -4,7 +4,7 @@ import { useState, useCallback, createContext, useContext, type ReactNode } from
 import { Sidebar } from "@/components/layout/sidebar";
 import { ResizeHandle } from "@/components/layout/resize-handle";
 import { TaskDndProvider } from "@/components/providers/task-dnd-provider";
-import { ListsProvider } from "@/components/providers/lists-provider";
+import { AppDataProvider } from "@/components/providers/app-data-provider";
 import { NearbyProvider } from "@/components/providers/nearby-provider";
 import { ErrorBoundary } from "@/components/providers/error-boundary";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -41,7 +41,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <TaskDndProvider>
-      <ListsProvider>
+      <AppDataProvider>
         <NearbyProvider>
           <SidebarContext.Provider value={{ close, open, isDesktop }}>
             <div className="flex h-dvh overflow-hidden">
@@ -50,7 +50,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <div className="h-full shrink-0 overflow-hidden" style={{ width: sidebarWidth }}>
                     <Sidebar />
                   </div>
-                  <ResizeHandle side="left" width={sidebarWidth} onWidthChange={handleSidebarResize} minWidth={200} maxWidth={400} />
+                  <ResizeHandle
+                    side="left"
+                    width={sidebarWidth}
+                    onWidthChange={handleSidebarResize}
+                    minWidth={200}
+                    maxWidth={400}
+                  />
                   <div className="flex flex-1 flex-col overflow-hidden">
                     <OfflineIndicator />
                     <main className="flex flex-1 overflow-hidden">
@@ -74,7 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </SidebarContext.Provider>
         </NearbyProvider>
-      </ListsProvider>
+      </AppDataProvider>
     </TaskDndProvider>
   );
 }

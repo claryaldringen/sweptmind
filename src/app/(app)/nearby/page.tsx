@@ -1,7 +1,6 @@
 "use client";
 
-import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
+import { useMemo } from "react";
 import { ArrowLeft, MapPin, MapPinOff } from "lucide-react";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { TaskList } from "@/components/tasks/task-list";
@@ -9,97 +8,23 @@ import { ResizableTaskLayout } from "@/components/layout/resizable-task-layout";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n";
-
-const ALL_TASKS_WITH_LOCATION = gql`
-  query AllTasksWithLocation {
-    allTasksWithLocation {
-      id
-      listId
-      locationId
-      title
-      notes
-      isCompleted
-      completedAt
-      dueDate
-      reminderAt
-      recurrence
-      deviceContext
-      sortOrder
-      createdAt
-      location {
-        id
-        name
-        latitude
-        longitude
-        radius
-      }
-      list {
-        id
-        name
-      }
-      steps {
-        id
-        taskId
-        title
-        isCompleted
-        sortOrder
-      }
-      tags {
-        id
-        name
-        color
-      }
-      blockedByTaskId
-      blockedByTaskIsCompleted
-      dependentTaskCount
-    }
-  }
-`;
-
-interface NearbyTask {
-  id: string;
-  listId: string;
-  locationId: string | null;
-  title: string;
-  notes: string | null;
-  isCompleted: boolean;
-  dueDate: string | null;
-  reminderAt: string | null;
-  sortOrder: number;
-  createdAt: string;
-  location: {
-    id: string;
-    name: string;
-    latitude: number;
-    longitude: number;
-    radius: number;
-  } | null;
-  list: { id: string; name: string } | null;
-  steps: { id: string; taskId: string; title: string; isCompleted: boolean; sortOrder: number }[];
-  tags?: { id: string; name: string; color: string }[];
-  blockedByTaskId: string | null;
-  blockedByTaskIsCompleted: boolean | null;
-  dependentTaskCount: number;
-}
-
-interface AllTasksWithLocationData {
-  allTasksWithLocation: NearbyTask[];
-}
+import { useAppData } from "@/components/providers/app-data-provider";
 
 export default function NearbyPage() {
   const { t } = useTranslations();
   const { open: openSidebar, isDesktop } = useSidebarContext();
   const { isNearby, isTracking, isApproximate, error, startTracking } = useNearby();
-  const { data, loading } = useQuery<AllTasksWithLocationData>(ALL_TASKS_WITH_LOCATION);
+  const { allTasks, loading } = useAppData();
 
-  const allTasks = data?.allTasksWithLocation ?? [];
-  const nearbyTasks = isTracking
-    ? allTasks.filter(
-        (task) =>
-          task.location &&
-          isNearby(task.location.latitude, task.location.longitude, task.location.radius),
-      )
-    : [];
+  const nearbyTasks = useMemo(() => {
+    if (!isTracking) return [];
+    return allTasks.filter(
+      (task) =>
+        !task.isCompleted &&
+        task.location &&
+        isNearby(task.location.latitude, task.location.longitude, task.location.radius),
+    );
+  }, [allTasks, isTracking, isNearby]);
 
   const showPermissionDenied = error && !isTracking;
 

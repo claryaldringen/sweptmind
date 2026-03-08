@@ -1,8 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { gql } from "@apollo/client";
-import { useQuery, useMutation } from "@apollo/client/react";
+import { useMutation } from "@apollo/client/react";
+import { useAppData } from "@/components/providers/app-data-provider";
 import {
   ArrowLeft,
   ChevronDown,
@@ -56,72 +58,7 @@ import { cn } from "@/lib/utils";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 import { RADIUS_OPTIONS } from "@/lib/constants";
 
-const GET_TASKS_BY_LIST = gql`
-  query TasksByList($listId: String!) {
-    tasksByList(listId: $listId) {
-      id
-      listId
-      locationId
-      title
-      notes
-      isCompleted
-      completedAt
-      dueDate
-      reminderAt
-      recurrence
-      deviceContext
-      sortOrder
-      createdAt
-      steps {
-        id
-        taskId
-        title
-        isCompleted
-        sortOrder
-      }
-      tags {
-        id
-        name
-        color
-      }
-      location {
-        id
-        name
-        latitude
-        longitude
-        radius
-      }
-      list {
-        id
-        name
-      }
-      blockedByTaskId
-      blockedByTaskIsCompleted
-      dependentTaskCount
-    }
-  }
-`;
-
-const GET_LIST = gql`
-  query GetList($id: String!) {
-    list(id: $id) {
-      id
-      name
-      icon
-      themeColor
-      isDefault
-      locationId
-      deviceContext
-      location {
-        id
-        name
-        latitude
-        longitude
-        radius
-      }
-    }
-  }
-`;
+// Queries removed — data comes from useAppData()
 
 const UPDATE_LIST = gql`
   mutation UpdateList($id: String!, $input: UpdateListInput!) {
@@ -142,18 +79,6 @@ const UPDATE_LIST = gql`
   }
 `;
 
-const GET_LOCATIONS = gql`
-  query GetLocations {
-    locations {
-      id
-      name
-      latitude
-      longitude
-      radius
-      address
-    }
-  }
-`;
 
 const CREATE_LOCATION = gql`
   mutation CreateLocation($input: CreateLocationInput!) {
@@ -189,58 +114,6 @@ const DELETE_LIST = gql`
   }
 `;
 
-interface Step {
-  id: string;
-  taskId: string;
-  title: string;
-  isCompleted: boolean;
-  sortOrder: number;
-}
-
-interface TasksByListTask {
-  id: string;
-  listId: string;
-  title: string;
-  notes: string | null;
-  isCompleted: boolean;
-  dueDate: string | null;
-  reminderAt: string | null;
-  sortOrder: number;
-  createdAt: string;
-  steps: Step[];
-  blockedByTaskId: string | null;
-  blockedByTaskIsCompleted: boolean | null;
-  dependentTaskCount: number;
-}
-
-interface TasksByListData {
-  tasksByList: TasksByListTask[];
-}
-
-interface LocationInfo {
-  id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  radius: number;
-  address?: string | null;
-}
-
-interface ListDetail {
-  id: string;
-  name: string;
-  icon: string | null;
-  themeColor: string | null;
-  isDefault: boolean;
-  locationId: string | null;
-  deviceContext: string | null;
-  location: LocationInfo | null;
-}
-
-interface GetListData {
-  list: ListDetail | null;
-}
-
 interface UpdateListData {
   updateList: { id: string; name: string };
 }
@@ -263,14 +136,7 @@ export default function ListPage() {
   const { open: openSidebar, isDesktop } = useSidebarContext();
   const { isNearby: checkNearby, userLatitude, userLongitude } = useNearby();
   const geocode = useGeocode({ userLatitude, userLongitude, locale: appLocale });
-
-  const { data: listData } = useQuery<GetListData>(GET_LIST, {
-    variables: { id: listId },
-  });
-  const { data: tasksData, loading } = useQuery<TasksByListData>(GET_TASKS_BY_LIST, {
-    variables: { listId },
-  });
-  const { data: locationsData } = useQuery<{ locations: LocationInfo[] }>(GET_LOCATIONS);
+  const { lists, allTasks, locations: allLocations, loading } = useAppData();
 
   const [updateList] = useMutation<UpdateListData>(UPDATE_LIST);
 
@@ -282,7 +148,7 @@ export default function ListPage() {
     },
   });
 
-  const [createLocation] = useMutation<{ createLocation: LocationInfo }>(CREATE_LOCATION, {
+  const [createLocation] = useMutation<{ createLocation: { id: string; name: string; latitude: number; longitude: number } }>(CREATE_LOCATION, {
     update(cache, { data }) {
       if (!data?.createLocation) return;
       cache.modify({
@@ -316,8 +182,14 @@ export default function ListPage() {
   });
   const [updateLocation] = useMutation(UPDATE_LOCATION);
 
-  const list = listData?.list;
-  const tasks = tasksData?.tasksByList ?? [];
+  const list = lists.find((l) => l.id === listId) ?? null;
+  const tasks = useMemo(
+    () =>
+      allTasks
+        .filter((t) => t.listId === listId)
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+    [allTasks, listId],
+  );
 
   function handleRename(e: React.FocusEvent<HTMLInputElement>) {
     const newName = e.target.value.trim();
@@ -589,13 +461,13 @@ export default function ListPage() {
                           : t("locations.myLocation")}
                       </CommandItem>
                     </CommandGroup>
-                    {(locationsData?.locations ?? []).filter(
+                    {(allLocations ?? []).filter(
                       (loc) =>
                         !locationSearch ||
                         loc.name.toLowerCase().includes(locationSearch.toLowerCase()),
                     ).length > 0 && (
                       <CommandGroup heading={t("tasks.savedLocations")}>
-                        {(locationsData?.locations ?? [])
+                        {(allLocations ?? [])
                           .filter(
                             (loc) =>
                               !locationSearch ||

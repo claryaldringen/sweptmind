@@ -1,7 +1,6 @@
 "use client";
 
-import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
+import { useMemo } from "react";
 import { ArrowLeft, Zap } from "lucide-react";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { useDeviceContext } from "@/hooks/use-device-context";
@@ -11,90 +10,54 @@ import { isFutureTask } from "@/domain/services/task-visibility";
 import { ResizableTaskLayout } from "@/components/layout/resizable-task-layout";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n";
-
-const CONTEXT_TASKS = gql`
-  query ContextTasks($deviceContext: String, $nearbyLocationIds: [String!]) {
-    contextTasks(deviceContext: $deviceContext, nearbyLocationIds: $nearbyLocationIds) {
-      id
-      listId
-      locationId
-      title
-      notes
-      isCompleted
-      completedAt
-      dueDate
-      reminderAt
-      recurrence
-      deviceContext
-      sortOrder
-      createdAt
-      steps {
-        id
-        taskId
-        title
-        isCompleted
-        sortOrder
-      }
-      tags {
-        id
-        name
-        color
-      }
-      list {
-        id
-        name
-      }
-      location {
-        id
-        name
-        latitude
-        longitude
-        radius
-      }
-      blockedByTaskId
-      blockedByTaskIsCompleted
-      dependentTaskCount
-    }
-  }
-`;
-
-interface ContextTask {
-  id: string;
-  listId: string;
-  locationId: string | null;
-  title: string;
-  notes: string | null;
-  isCompleted: boolean;
-  dueDate: string | null;
-  reminderAt: string | null;
-  recurrence: string | null;
-  deviceContext: string | null;
-  sortOrder: number;
-  createdAt: string;
-  steps: { id: string; taskId: string; title: string; isCompleted: boolean; sortOrder: number }[];
-  tags: { id: string; name: string; color: string }[];
-  list: { id: string; name: string } | null;
-  location: { id: string; name: string; latitude: number; longitude: number } | null;
-  blockedByTaskId: string | null;
-  blockedByTaskIsCompleted: boolean | null;
-  dependentTaskCount: number;
-}
-
-interface ContextTasksData {
-  contextTasks: ContextTask[];
-}
+import { useAppData } from "@/components/providers/app-data-provider";
 
 export default function ContextPage() {
   const { t } = useTranslations();
   const { open: openSidebar, isDesktop } = useSidebarContext();
   const deviceContext = useDeviceContext();
   const { nearbyLocationIds } = useNearby();
+  const { allTasks, lists, tags, loading } = useAppData();
 
-  const { data, loading } = useQuery<ContextTasksData>(CONTEXT_TASKS, {
-    variables: { deviceContext, nearbyLocationIds: nearbyLocationIds ?? [] },
-  });
+  const tasks = useMemo(() => {
+    const contextListIds = new Set(
+      lists
+        .filter(
+          (l) =>
+            (deviceContext && l.deviceContext === deviceContext) ||
+            (nearbyLocationIds.length > 0 &&
+              l.locationId &&
+              nearbyLocationIds.includes(l.locationId)),
+        )
+        .map((l) => l.id),
+    );
+    const contextTagIds = new Set(
+      tags
+        .filter(
+          (t) =>
+            (deviceContext && t.deviceContext === deviceContext) ||
+            (nearbyLocationIds.length > 0 &&
+              t.locationId &&
+              nearbyLocationIds.includes(t.locationId)),
+        )
+        .map((t) => t.id),
+    );
 
-  const tasks = (data?.contextTasks ?? []).filter((t) => !isFutureTask(t));
+    return allTasks.filter((task) => {
+      if (task.isCompleted) return false;
+      if (isFutureTask(task)) return false;
+      if (deviceContext && task.deviceContext === deviceContext) return true;
+      if (
+        nearbyLocationIds.length > 0 &&
+        task.locationId &&
+        nearbyLocationIds.includes(task.locationId)
+      )
+        return true;
+      if (contextListIds.has(task.listId)) return true;
+      if (task.tags?.some((t) => contextTagIds.has(t.id))) return true;
+      return false;
+    });
+  }, [allTasks, lists, tags, deviceContext, nearbyLocationIds]);
 
   return (
     <ResizableTaskLayout>
