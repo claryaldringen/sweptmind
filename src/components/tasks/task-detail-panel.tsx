@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { gql } from "@apollo/client";
-import { useQuery, useMutation } from "@apollo/client/react";
+import { useQuery, useMutation, useApolloClient } from "@apollo/client/react";
 import { ArrowLeft, X } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Button } from "@/components/ui/button";
@@ -517,6 +517,7 @@ export function TaskDetailPanel() {
   const { isNearby: checkNearby, userLatitude, userLongitude } = useNearby();
   const geocode = useGeocode({ userLatitude, userLongitude, locale: appLocale });
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const apolloClient = useApolloClient();
 
   // ---- Early returns ----
 
@@ -554,10 +555,22 @@ export function TaskDetailPanel() {
     router.push(`?${params.toString()}`, { scroll: false });
   }
 
+  function optimisticUpdate(input: Record<string, unknown>) {
+    if (!task) return;
+    // Write to cache immediately (instant UI) then fire mutation (network)
+    apolloClient.cache.modify({
+      id: apolloClient.cache.identify({ __typename: "Task", id: task.id }),
+      fields: Object.fromEntries(
+        Object.entries(input).map(([key, value]) => [key, () => value]),
+      ),
+    });
+    updateTask({ variables: { id: task.id, input } });
+  }
+
   function handleTitleBlur(e: React.FocusEvent<HTMLInputElement>) {
     const newTitle = e.target.value.trim();
     if (task && newTitle && newTitle !== task.title) {
-      updateTask({ variables: { id: task.id, input: { title: newTitle } } });
+      optimisticUpdate({ title: newTitle });
     } else if (task) {
       e.target.value = task.title;
     }
@@ -565,39 +578,37 @@ export function TaskDetailPanel() {
 
   function handleNotesBlur(e: React.FocusEvent<HTMLTextAreaElement>) {
     if (task && e.target.value !== (task.notes ?? "")) {
-      updateTask({
-        variables: { id: task.id, input: { notes: e.target.value || null } },
-      });
+      optimisticUpdate({ notes: e.target.value || null });
     }
   }
 
   function handleDateSelect(date: Date | undefined) {
     if (!task) return;
     if (!date) {
-      updateTask({ variables: { id: task.id, input: { dueDate: null } } });
+      optimisticUpdate({ dueDate: null });
       return;
     }
     const existingTime = task.dueDate?.includes("T") ? task.dueDate.split("T")[1] : null;
     const dateStr = format(date, "yyyy-MM-dd");
     const dueDate = existingTime ? `${dateStr}T${existingTime}` : dateStr;
-    updateTask({ variables: { id: task.id, input: { dueDate } } });
+    optimisticUpdate({ dueDate });
   }
 
   function handleTimeChange(time: string) {
     if (!task || !task.dueDate) return;
     const dateStr = task.dueDate.split("T")[0];
     const dueDate = time ? `${dateStr}T${time}` : dateStr;
-    updateTask({ variables: { id: task.id, input: { dueDate } } });
+    optimisticUpdate({ dueDate });
   }
 
   function handleReminderSelect(date: Date | undefined) {
     if (!task) return;
     if (!date) {
-      updateTask({ variables: { id: task.id, input: { reminderAt: null } } });
+      optimisticUpdate({ reminderAt: null });
       return;
     }
     const reminderAt = format(date, "yyyy-MM-dd");
-    updateTask({ variables: { id: task.id, input: { reminderAt } } });
+    optimisticUpdate({ reminderAt });
   }
 
   function handleDelete() {
@@ -640,9 +651,7 @@ export function TaskDetailPanel() {
 
   async function handleSelectLocation(locationId: string) {
     if (!task) return;
-    await updateTask({
-      variables: { id: task.id, input: { locationId } },
-    });
+    optimisticUpdate({ locationId });
   }
 
   async function handleSelectGeocodingResult(result: {
@@ -662,20 +671,13 @@ export function TaskDetailPanel() {
       },
     });
     if (locationResult.data?.createLocation) {
-      await updateTask({
-        variables: {
-          id: task.id,
-          input: { locationId: locationResult.data.createLocation.id },
-        },
-      });
+      optimisticUpdate({ locationId: locationResult.data.createLocation.id });
     }
   }
 
   async function handleRemoveLocation() {
     if (!task) return;
-    await updateTask({
-      variables: { id: task.id, input: { locationId: null } },
-    });
+    optimisticUpdate({ locationId: null });
   }
 
   // Recurrence handlers
@@ -697,7 +699,7 @@ export function TaskDetailPanel() {
 
   function handleSetRecurrence(value: string | null) {
     if (!task) return;
-    updateTask({ variables: { id: task.id, input: { recurrence: value } } });
+    optimisticUpdate({ recurrence: value });
   }
 
   function handleToggleWeeklyDay(day: number) {
@@ -778,13 +780,9 @@ export function TaskDetailPanel() {
             reminderAt={task.reminderAt}
             onDateSelect={handleDateSelect}
             onTimeChange={handleTimeChange}
-            onClearDueDate={() =>
-              updateTask({ variables: { id: task.id, input: { dueDate: null } } })
-            }
+            onClearDueDate={() => optimisticUpdate({ dueDate: null })}
             onReminderSelect={handleReminderSelect}
-            onClearReminder={() =>
-              updateTask({ variables: { id: task.id, input: { reminderAt: null } } })
-            }
+            onClearReminder={() => optimisticUpdate({ reminderAt: null })}
             t={t}
             dateFnsLocale={dateFnsLocale}
           />
@@ -846,11 +844,7 @@ export function TaskDetailPanel() {
           {/* Device Context */}
           <DeviceContextPicker
             value={task.deviceContext ?? null}
-            onChange={(val) =>
-              updateTask({
-                variables: { id: task.id, input: { deviceContext: val } },
-              })
-            }
+            onChange={(val) => optimisticUpdate({ deviceContext: val })}
           />
         </div>
 
