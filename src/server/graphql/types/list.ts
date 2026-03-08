@@ -59,6 +59,7 @@ builder.queryField("list", (t) =>
 // Input types
 const CreateListInput = builder.inputType("CreateListInput", {
   fields: (t) => ({
+    id: t.string({ required: false }),
     name: t.string({ required: true }),
     icon: t.string(),
     themeColor: t.string(),

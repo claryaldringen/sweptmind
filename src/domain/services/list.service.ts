@@ -22,6 +22,7 @@ export class ListService {
     const sortOrder = (maxSort ?? -1) + 1;
 
     return this.listRepo.create({
+      ...(input.id ? { id: input.id } : {}),
       userId,
       name: input.name,
       icon: input.icon ?? null,

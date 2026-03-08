@@ -23,6 +23,7 @@ export interface ListGroup {
 }
 
 export interface CreateListInput {
+  id?: string | null;
   name: string;
   icon?: string | null;
   themeColor?: string | null;

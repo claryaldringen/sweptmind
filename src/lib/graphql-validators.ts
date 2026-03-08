@@ -8,6 +8,7 @@ const dateString = z
 const deviceContextEnum = z.enum(["phone", "computer"]).nullish();
 
 export const createTaskSchema = z.object({
+  id: z.string().uuid().nullish(),
   listId: z.string().uuid(),
   title: z.string().min(1).max(500),
   notes: z.string().max(10000).nullish(),
@@ -36,6 +37,7 @@ export const importTaskSchema = z.object({
 });
 
 export const createListSchema = z.object({
+  id: z.string().uuid().nullish(),
   name: z.string().min(1).max(200),
   icon: z.string().max(50).nullish(),
   themeColor: z.string().max(50).nullish(),
@@ -52,6 +54,7 @@ export const updateListSchema = z.object({
 });
 
 export const createStepSchema = z.object({
+  id: z.string().uuid().nullish(),
   taskId: z.string().uuid(),
   title: z.string().min(1).max(500),
 });
@@ -63,6 +66,7 @@ export const registerInputSchema = z.object({
 });
 
 export const createTagSchema = z.object({
+  id: z.string().uuid().nullish(),
   name: z.string().min(1).max(100),
   color: z.string().max(50).nullish(),
   deviceContext: deviceContextEnum,
@@ -77,6 +81,7 @@ export const updateTagSchema = z.object({
 });
 
 export const createLocationSchema = z.object({
+  id: z.string().uuid().nullish(),
   name: z.string().min(1).max(200),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),

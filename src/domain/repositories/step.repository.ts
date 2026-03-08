@@ -5,7 +5,7 @@ export interface IStepRepository {
   findByTask(taskId: string): Promise<Step[]>;
   findByTaskIds(taskIds: string[]): Promise<Map<string, Step[]>>;
   findMaxSortOrder(taskId: string): Promise<number | undefined>;
-  create(values: { taskId: string; title: string; sortOrder: number }): Promise<Step>;
+  create(values: { id?: string; taskId: string; title: string; sortOrder: number }): Promise<Step>;
   update(id: string, data: Partial<Step>): Promise<Step>;
   delete(id: string): Promise<void>;
 }

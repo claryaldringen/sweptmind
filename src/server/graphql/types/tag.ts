@@ -50,6 +50,7 @@ builder.queryField("tasksByTag", (t) =>
 // Input types
 const CreateTagInput = builder.inputType("CreateTagInput", {
   fields: (t) => ({
+    id: t.string({ required: false }),
     name: t.string({ required: true }),
     color: t.string(),
     deviceContext: t.string(),
@@ -75,6 +76,7 @@ builder.mutationField("createTag", (t) =>
     resolve: async (_root, args, ctx) => {
       const input = createTagSchema.parse(args.input);
       return ctx.services.tag.create(ctx.userId!, {
+        id: input.id ?? undefined,
         name: input.name,
         color: input.color ?? undefined,
         deviceContext: input.deviceContext ?? undefined,

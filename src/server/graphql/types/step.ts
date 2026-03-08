@@ -17,6 +17,7 @@ export const StepType = StepRef.implement({
 
 const CreateStepInput = builder.inputType("CreateStepInput", {
   fields: (t) => ({
+    id: t.string({ required: false }),
     taskId: t.string({ required: true }),
     title: t.string({ required: true }),
   }),
@@ -31,7 +32,7 @@ builder.mutationField("createStep", (t) =>
     },
     resolve: async (_root, args, ctx) => {
       const input = createStepSchema.parse(args.input);
-      return ctx.services.step.create(ctx.userId!, input.taskId, input.title);
+      return ctx.services.step.create(ctx.userId!, input.taskId, input.title, input.id ?? undefined);
     },
   }),
 );

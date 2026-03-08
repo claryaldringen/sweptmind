@@ -37,6 +37,7 @@ builder.queryField("location", (t) =>
 // Input types
 const CreateLocationInput = builder.inputType("CreateLocationInput", {
   fields: (t) => ({
+    id: t.string({ required: false }),
     name: t.string({ required: true }),
     latitude: t.float({ required: true }),
     longitude: t.float({ required: true }),
@@ -62,6 +63,7 @@ builder.mutationField("createLocation", (t) =>
     resolve: async (_root, args, ctx) => {
       const input = createLocationSchema.parse(args.input);
       return ctx.services.location.create(ctx.userId!, {
+        id: input.id ?? undefined,
         name: input.name,
         latitude: input.latitude,
         longitude: input.longitude,

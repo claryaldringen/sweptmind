@@ -26,6 +26,7 @@ export interface Step {
 }
 
 export interface CreateTaskInput {
+  id?: string | null;
   listId: string;
   title: string;
   notes?: string | null;

@@ -6,6 +6,7 @@ import type { IStepRepository } from "../repositories/step.repository";
 import type { List } from "../entities/list";
 import { computeNextDueDate, computeFirstOccurrence } from "./recurrence";
 import { computeDefaultReminder } from "./task-visibility";
+import { format } from "date-fns";
 
 export interface ImportTaskInput {
   title: string;
@@ -57,6 +58,7 @@ export class TaskService {
 
     const dueDate = input.dueDate ?? null;
     return this.taskRepo.create({
+      ...(input.id ? { id: input.id } : {}),
       userId,
       listId: input.listId,
       title: input.title,
@@ -118,13 +120,14 @@ export class TaskService {
     if (!task) throw new Error("Task not found");
 
     // Recurring task being completed → reset with next dueDate
-    if (!task.isCompleted && task.recurrence && task.dueDate) {
-      const nextDueDate = computeNextDueDate(task.recurrence, task.dueDate);
+    if (!task.isCompleted && task.recurrence) {
+      const baseDueDate = task.dueDate ?? format(new Date(), "yyyy-MM-dd");
+      const nextDueDate = computeNextDueDate(task.recurrence, baseDueDate);
       return this.taskRepo.update(id, userId, {
         isCompleted: false,
         completedAt: null,
-        dueDate: nextDueDate ?? task.dueDate,
-        reminderAt: computeDefaultReminder(nextDueDate ?? task.dueDate),
+        dueDate: nextDueDate ?? baseDueDate,
+        reminderAt: computeDefaultReminder(nextDueDate ?? baseDueDate),
       });
     }
 

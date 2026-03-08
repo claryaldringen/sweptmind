@@ -28,6 +28,7 @@ export class DrizzleLocationRepository implements ILocationRepository {
   }
 
   async create(values: {
+    id?: string;
     userId: string;
     name: string;
     latitude: number;

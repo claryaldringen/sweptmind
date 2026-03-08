@@ -6,6 +6,7 @@ export interface ITagRepository {
   findByTaskIds(taskIds: string[]): Promise<Map<string, Tag[]>>;
   findById(id: string, userId: string): Promise<Tag | undefined>;
   create(values: {
+    id?: string;
     userId: string;
     name: string;
     color: string;

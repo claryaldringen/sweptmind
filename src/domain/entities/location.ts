@@ -10,6 +10,7 @@ export interface Location {
 }
 
 export interface CreateLocationInput {
+  id?: string | null;
   name: string;
   latitude: number;
   longitude: number;

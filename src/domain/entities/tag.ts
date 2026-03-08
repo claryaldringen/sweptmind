@@ -10,6 +10,7 @@ export interface Tag {
 }
 
 export interface CreateTagInput {
+  id?: string | null;
   name: string;
   color?: string;
   deviceContext?: string | null;

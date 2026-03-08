@@ -12,14 +12,14 @@ export class StepService {
     return this.stepRepo.findByTask(taskId);
   }
 
-  async create(userId: string, taskId: string, title: string): Promise<Step> {
+  async create(userId: string, taskId: string, title: string, id?: string): Promise<Step> {
     const task = await this.taskRepo.findById(taskId, userId);
     if (!task) throw new Error("Task not found");
 
     const maxSort = await this.stepRepo.findMaxSortOrder(taskId);
     const sortOrder = (maxSort ?? -1) + 1;
 
-    return this.stepRepo.create({ taskId, title, sortOrder });
+    return this.stepRepo.create({ ...(id ? { id } : {}), taskId, title, sortOrder });
   }
 
   async update(userId: string, id: string, title: string): Promise<Step> {

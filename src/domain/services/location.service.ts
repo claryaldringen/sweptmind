@@ -14,6 +14,7 @@ export class LocationService {
 
   async create(userId: string, input: CreateLocationInput): Promise<Location> {
     return this.locationRepo.create({
+      ...(input.id ? { id: input.id } : {}),
       userId,
       name: input.name,
       latitude: input.latitude,

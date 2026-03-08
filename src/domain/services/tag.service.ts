@@ -22,6 +22,7 @@ export class TagService {
 
   async create(userId: string, input: CreateTagInput): Promise<Tag> {
     return this.tagRepo.create({
+      ...(input.id ? { id: input.id } : {}),
       userId,
       name: input.name,
       color: input.color ?? "blue",

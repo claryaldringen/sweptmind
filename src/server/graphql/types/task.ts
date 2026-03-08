@@ -139,6 +139,7 @@ builder.queryField("contextTasks", (t) =>
 // Input types
 const CreateTaskInput = builder.inputType("CreateTaskInput", {
   fields: (t) => ({
+    id: t.string({ required: false }),
     listId: t.string({ required: true }),
     title: t.string({ required: true }),
     notes: t.string(),
