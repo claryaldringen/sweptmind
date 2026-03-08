@@ -3,6 +3,19 @@ import { CombinedGraphQLErrors } from "@apollo/client/errors";
 import { ErrorLink } from "@apollo/client/link/error";
 import { RetryLink } from "@apollo/client/link/retry";
 import { ApolloClient, InMemoryCache } from "@apollo/client-integration-nextjs";
+import { get, set, del } from "idb-keyval";
+
+class IdbStorageAdapter {
+  async getItem(key: string) {
+    return (await get(key)) ?? null;
+  }
+  async setItem(key: string, value: string) {
+    await set(key, value);
+  }
+  async removeItem(key: string) {
+    await del(key);
+  }
+}
 
 export function makeClient() {
   const errorLink = new ErrorLink(({ error }) => {
@@ -45,14 +58,14 @@ export function makeClient() {
     },
   });
 
-  // Best-effort cache persistence to localStorage (client-side only)
+  // Best-effort cache persistence to IndexedDB (client-side only)
   if (typeof window !== "undefined") {
     import("apollo3-cache-persist")
-      .then(({ persistCache, LocalStorageWrapper }) =>
+      .then(({ persistCache }) =>
         persistCache({
           cache,
-          storage: new LocalStorageWrapper(window.localStorage),
-          maxSize: 1048576 * 5, // 5 MB
+          storage: new IdbStorageAdapter(),
+          maxSize: false, // no size limit for IndexedDB
         }),
       )
       .catch(() => {
