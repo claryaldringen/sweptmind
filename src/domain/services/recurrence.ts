@@ -38,6 +38,38 @@ export function parseRecurrence(recurrence: string): Recurrence | null {
   return null;
 }
 
+/**
+ * Compute the first occurrence date from today (including today if it matches).
+ * Used when recurrence is set and dueDate is missing or past.
+ */
+export function computeFirstOccurrence(recurrence: string): string | null {
+  const parsed = parseRecurrence(recurrence);
+  if (!parsed) return null;
+
+  const today = new Date();
+  const todayStr = format(today, "yyyy-MM-dd");
+
+  switch (parsed.type) {
+    case "DAILY":
+      return todayStr;
+
+    case "WEEKLY": {
+      const currentDay = getDay(today);
+      const todayOrLater = parsed.days.find((d) => d >= currentDay);
+      if (todayOrLater !== undefined) {
+        return format(addDays(today, todayOrLater - currentDay), "yyyy-MM-dd");
+      }
+      return format(addDays(today, 7 - currentDay + parsed.days[0]), "yyyy-MM-dd");
+    }
+
+    case "MONTHLY":
+      return todayStr;
+
+    case "YEARLY":
+      return todayStr;
+  }
+}
+
 export function computeNextDueDate(recurrence: string, currentDueDate: string): string | null {
   if (!currentDueDate) return null;
 

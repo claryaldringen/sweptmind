@@ -4,7 +4,7 @@ import type { ITaskRepository, PaginationOpts } from "../repositories/task.repos
 import type { IListRepository } from "../repositories/list.repository";
 import type { IStepRepository } from "../repositories/step.repository";
 import type { List } from "../entities/list";
-import { computeNextDueDate } from "./recurrence";
+import { computeNextDueDate, computeFirstOccurrence } from "./recurrence";
 import { computeDefaultReminder } from "./task-visibility";
 
 export interface ImportTaskInput {
@@ -83,7 +83,24 @@ export class TaskService {
     if (input.reminderAt !== undefined) {
       updates.reminderAt = input.reminderAt || null;
     }
-    if (input.recurrence !== undefined) updates.recurrence = input.recurrence ?? null;
+    if (input.recurrence !== undefined) {
+      updates.recurrence = input.recurrence ?? null;
+
+      // Auto-set dueDate when recurrence is configured and dueDate is missing or past
+      if (input.recurrence && input.dueDate === undefined) {
+        const currentTask = await this.taskRepo.findById(id, userId);
+        if (currentTask) {
+          const today = new Date().toISOString().slice(0, 10);
+          if (!currentTask.dueDate || currentTask.dueDate.slice(0, 10) < today) {
+            const nextDue = computeFirstOccurrence(input.recurrence);
+            if (nextDue) {
+              updates.dueDate = nextDue;
+              updates.reminderAt = computeDefaultReminder(nextDue);
+            }
+          }
+        }
+      }
+    }
     if (input.listId != null) updates.listId = input.listId;
     if (input.locationId !== undefined) updates.locationId = input.locationId ?? null;
     if (input.deviceContext !== undefined) updates.deviceContext = input.deviceContext ?? null;
