@@ -120,6 +120,10 @@ export const cs: Dictionary = {
     importListCount: "{count} seznamů",
     importConfirm: "Importovat",
     importing: "Importování...",
+    newTaskPosition: "Pozice nového úkolu",
+    newTaskPositionDesc: "Kam se přidá nový úkol v seznamu.",
+    newTaskTop: "Na začátek",
+    newTaskBottom: "Na konec",
   },
   common: {
     loading: "Načítání...",

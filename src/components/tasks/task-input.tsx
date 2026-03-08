@@ -6,6 +6,7 @@ import { useMutation, useApolloClient } from "@apollo/client/react";
 import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useTranslations } from "@/lib/i18n";
+import { useNewTaskPosition } from "@/hooks/use-new-task-position";
 
 const CREATE_TASK = gql`
   mutation CreateTask($input: CreateTaskInput!) {
@@ -87,6 +88,7 @@ export function TaskInput({ listId, refetchQueries = [], placeholder }: TaskInpu
   const { t } = useTranslations();
   const [title, setTitle] = useState("");
   const client = useApolloClient();
+  const { position } = useNewTaskPosition();
 
   const [createTask] = useMutation<{ createTask: Record<string, unknown> }>(CREATE_TASK, {
     refetchQueries: refetchQueries.map((q) => ({ query: gql`query { ${q} { id } }` })),
@@ -127,7 +129,7 @@ export function TaskInput({ listId, refetchQueries = [], placeholder }: TaskInpu
       fields: {
         tasksByList(existing = [], { storeFieldName }) {
           if (!storeFieldName.includes(listId)) return existing;
-          return [tempRef, ...existing];
+          return position === "top" ? [tempRef, ...existing] : [...existing, tempRef];
         },
       },
     });

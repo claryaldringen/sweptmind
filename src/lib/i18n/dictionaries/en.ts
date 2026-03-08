@@ -120,6 +120,10 @@ export const en: Dictionary = {
     importListCount: "{count} lists",
     importConfirm: "Import",
     importing: "Importing...",
+    newTaskPosition: "New task position",
+    newTaskPositionDesc: "Where new tasks are added in the list.",
+    newTaskTop: "Top",
+    newTaskBottom: "Bottom",
   },
   common: {
     loading: "Loading...",

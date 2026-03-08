@@ -116,6 +116,10 @@ export interface Dictionary {
     importListCount: string;
     importConfirm: string;
     importing: string;
+    newTaskPosition: string;
+    newTaskPositionDesc: string;
+    newTaskTop: string;
+    newTaskBottom: string;
   };
   common: {
     loading: string;

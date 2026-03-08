@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { useTaskCountMode } from "@/hooks/use-task-count-mode";
+import { useNewTaskPosition } from "@/hooks/use-new-task-position";
 import { useLocale } from "@/hooks/use-locale";
 import { useTranslations } from "@/lib/i18n";
 import { parseCSV, mapOutlookTaskRow, type MappedTask } from "@/lib/csv-import";
@@ -80,6 +81,7 @@ interface CalendarSyncAllData {
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { mode: taskCountMode, setMode: setTaskCountMode } = useTaskCountMode();
+  const { position: newTaskPosition, setPosition: setNewTaskPosition } = useNewTaskPosition();
   const { locale, setLocale } = useLocale();
   const { t } = useTranslations();
   const { open: openSidebar, isDesktop } = useSidebarContext();
@@ -303,6 +305,25 @@ export default function SettingsPage() {
               onClick={() => setTaskCountMode("visible")}
             >
               {t("settings.onlyVisible")}
+            </Button>
+          </div>
+        </div>
+
+        <div>
+          <h2 className="mb-3 text-lg font-semibold">{t("settings.newTaskPosition")}</h2>
+          <p className="text-muted-foreground mb-3 text-sm">{t("settings.newTaskPositionDesc")}</p>
+          <div className="flex gap-2">
+            <Button
+              variant={newTaskPosition === "top" ? "default" : "outline"}
+              onClick={() => setNewTaskPosition("top")}
+            >
+              {t("settings.newTaskTop")}
+            </Button>
+            <Button
+              variant={newTaskPosition === "bottom" ? "default" : "outline"}
+              onClick={() => setNewTaskPosition("bottom")}
+            >
+              {t("settings.newTaskBottom")}
             </Button>
           </div>
         </div>
