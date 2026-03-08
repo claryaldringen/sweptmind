@@ -139,6 +139,9 @@ export const cs: Dictionary = {
     notFoundDescription: "Stránka, kterou hledáš, neexistuje nebo byla přesunuta.",
     notFoundBackHome: "Zpět na úkoly",
     offline: "Jsi offline — změny se synchronizují po připojení",
+    syncing: "Synchronizuji… ({count})",
+    syncError: "Synchronizace selhala",
+    pendingChanges: "{count} neuložených změn",
   },
   landing: {
     tagline: "Organizuj se, zvládej věci. GTD-inspirovaná aplikace na správu úkolů.",

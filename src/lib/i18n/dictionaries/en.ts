@@ -139,6 +139,9 @@ export const en: Dictionary = {
     notFoundDescription: "The page you're looking for doesn't exist or has been moved.",
     notFoundBackHome: "Back to tasks",
     offline: "You're offline — changes will sync when you reconnect",
+    syncing: "Syncing… ({count})",
+    syncError: "Sync failed",
+    pendingChanges: "{count} pending changes",
   },
   landing: {
     tagline: "Stay organized, get things done. A GTD-inspired task management app.",

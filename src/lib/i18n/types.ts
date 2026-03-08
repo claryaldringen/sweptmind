@@ -135,6 +135,9 @@ export interface Dictionary {
     notFoundDescription: string;
     notFoundBackHome: string;
     offline: string;
+    syncing: string;
+    syncError: string;
+    pendingChanges: string;
   };
   landing: {
     tagline: string;
