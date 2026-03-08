@@ -1,9 +1,11 @@
-import { HttpLink } from "@apollo/client";
+import { ApolloLink, HttpLink, Observable } from "@apollo/client";
 import { CombinedGraphQLErrors } from "@apollo/client/errors";
 import { ErrorLink } from "@apollo/client/link/error";
 import { RetryLink } from "@apollo/client/link/retry";
 import { ApolloClient, InMemoryCache } from "@apollo/client-integration-nextjs";
+import { print } from "graphql";
 import { get, set, del } from "idb-keyval";
+import { syncManager } from "./sync-manager";
 
 class IdbStorageAdapter {
   async getItem(key: string) {
@@ -46,17 +48,45 @@ export function makeClient() {
     fetchOptions: { cache: "default" },
   });
 
+  // Offline-aware link: queues mutations when offline
+  const offlineLink = new ApolloLink((operation, forward) => {
+    const definition = operation.query.definitions[0];
+    const isMutation =
+      definition.kind === "OperationDefinition" && definition.operation === "mutation";
+
+    if (!isMutation) return forward(operation);
+
+    if (!syncManager.online) {
+      // Offline: queue mutation for later replay
+      const documentStr = print(operation.query);
+      const operationName = operation.operationName || "UnknownMutation";
+      syncManager.enqueue(operationName, documentStr, operation.variables);
+
+      // Return empty success — optimistic cache updates already happened
+      return new Observable((observer) => {
+        observer.next({ data: null });
+        observer.complete();
+      });
+    }
+
+    // Online: forward normally
+    return forward(operation);
+  });
+
   const cache = new InMemoryCache();
 
   const client = new ApolloClient({
     cache,
-    link: errorLink.concat(retryLink).concat(httpLink),
+    link: errorLink.concat(offlineLink).concat(retryLink).concat(httpLink),
     defaultOptions: {
       watchQuery: {
         fetchPolicy: "cache-first",
       },
     },
   });
+
+  // Attach client to sync manager for replay
+  syncManager.attach(client);
 
   // Best-effort cache persistence to IndexedDB (client-side only)
   if (typeof window !== "undefined") {
