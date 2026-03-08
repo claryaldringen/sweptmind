@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { gql } from "@apollo/client";
 import { useQuery, useMutation, useApolloClient } from "@apollo/client/react";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
