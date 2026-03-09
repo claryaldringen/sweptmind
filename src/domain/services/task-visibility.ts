@@ -21,16 +21,16 @@ interface VisibilityTask {
 }
 
 /** Returns the YYYY-MM-DD date when the task should become visible, or null (always visible). */
-export function getVisibleDate(task: VisibilityTask): string | null {
+export function getVisibleDate(task: VisibilityTask, today?: string): string | null {
   if (task.reminderAt) {
     return task.reminderAt;
   }
 
   // For recurring tasks with null or past dueDate, compute effective visible date
   if (task.recurrence) {
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = today ?? new Date().toISOString().slice(0, 10);
     if (!task.dueDate || task.dueDate.slice(0, 10) < todayStr) {
-      const nextOccurrence = computeFirstOccurrence(task.recurrence);
+      const nextOccurrence = computeFirstOccurrence(task.recurrence, todayStr);
       if (nextOccurrence) return nextOccurrence;
     }
   }
@@ -78,9 +78,8 @@ export function isFutureTask(task: VisibilityTask, today?: string): boolean {
   // Blocked by an incomplete task → future
   if (task.blockedByTaskId && task.blockedByTaskIsCompleted === false) return true;
 
-  const visibleDate = getVisibleDate(task);
-  if (!visibleDate) return false;
-
   const todayStr = today ?? new Date().toISOString().slice(0, 10);
+  const visibleDate = getVisibleDate(task, todayStr);
+  if (!visibleDate) return false;
   return visibleDate > todayStr;
 }

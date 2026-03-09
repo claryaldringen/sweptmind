@@ -52,11 +52,13 @@ export function parseRecurrence(recurrence: string): Recurrence | null {
  * Compute the first occurrence date from today (including today if it matches).
  * Used when recurrence is set and dueDate is missing or past.
  */
-export function computeFirstOccurrence(recurrence: string): string | null {
+export function computeFirstOccurrence(recurrence: string, todayOverride?: string): string | null {
   const parsed = parseRecurrence(recurrence);
   if (!parsed) return null;
 
-  const today = new Date();
+  const today = todayOverride
+    ? (() => { const [y, m, d] = todayOverride.split("-").map(Number); return new Date(y, m - 1, d); })()
+    : new Date();
   const todayStr = format(today, "yyyy-MM-dd");
 
   switch (parsed.type) {
