@@ -214,6 +214,18 @@ export interface Dictionary {
     everyYear: string;
     daysShort: string[];
     removeRecurrence: string;
+    custom: string;
+    back: string;
+    done: string;
+    every: string;
+    unitDays: string[];
+    unitWeeks: string[];
+    unitMonths: string[];
+    unitYears: string[];
+    everyNDays: string;
+    everyNWeeks: string;
+    everyNMonths: string;
+    everyNYears: string;
   };
   datePicker: {
     today: string;
