@@ -237,4 +237,24 @@ describe("computeFirstOccurrence", () => {
   it("returns null for invalid recurrence", () => {
     expect(computeFirstOccurrence("INVALID")).toBeNull();
   });
+
+  it("DAILY:3 still returns today", () => {
+    vi.useFakeTimers({ now: new Date(2026, 2, 8) });
+    expect(computeFirstOccurrence("DAILY:3")).toBe("2026-03-08");
+  });
+
+  it("WEEKLY:2 still returns next matching day from today", () => {
+    vi.useFakeTimers({ now: new Date(2026, 2, 9) }); // Monday = day 1
+    expect(computeFirstOccurrence("WEEKLY:2:3,5")).toBe("2026-03-11");
+  });
+
+  it("MONTHLY:4 still returns today", () => {
+    vi.useFakeTimers({ now: new Date(2026, 2, 15) });
+    expect(computeFirstOccurrence("MONTHLY:4")).toBe("2026-03-15");
+  });
+
+  it("YEARLY:2 still returns today", () => {
+    vi.useFakeTimers({ now: new Date(2026, 5, 1) });
+    expect(computeFirstOccurrence("YEARLY:2")).toBe("2026-06-01");
+  });
 });
