@@ -3,27 +3,29 @@ import { parseRecurrence, computeNextDueDate, computeFirstOccurrence } from "../
 
 describe("parseRecurrence", () => {
   it("parses DAILY", () => {
-    expect(parseRecurrence("DAILY")).toEqual({ type: "DAILY" });
+    expect(parseRecurrence("DAILY")).toEqual({ type: "DAILY", interval: 1 });
   });
 
   it("parses WEEKLY with days", () => {
     expect(parseRecurrence("WEEKLY:1,3,5")).toEqual({
       type: "WEEKLY",
+      interval: 1,
       days: [1, 3, 5],
     });
   });
 
   it("parses MONTHLY", () => {
-    expect(parseRecurrence("MONTHLY")).toEqual({ type: "MONTHLY" });
+    expect(parseRecurrence("MONTHLY")).toEqual({ type: "MONTHLY", interval: 1 });
   });
 
   it("parses YEARLY", () => {
-    expect(parseRecurrence("YEARLY")).toEqual({ type: "YEARLY" });
+    expect(parseRecurrence("YEARLY")).toEqual({ type: "YEARLY", interval: 1 });
   });
 
   it("deduplicates WEEKLY days", () => {
     expect(parseRecurrence("WEEKLY:1,1,3")).toEqual({
       type: "WEEKLY",
+      interval: 1,
       days: [1, 3],
     });
   });
@@ -33,6 +35,58 @@ describe("parseRecurrence", () => {
     expect(parseRecurrence("")).toBeNull();
     expect(parseRecurrence("WEEKLY:")).toBeNull();
     expect(parseRecurrence("WEEKLY:8")).toBeNull();
+  });
+
+  it("parses DAILY with interval", () => {
+    expect(parseRecurrence("DAILY:3")).toEqual({ type: "DAILY", interval: 3 });
+  });
+
+  it("parses DAILY without interval as interval 1", () => {
+    expect(parseRecurrence("DAILY")).toEqual({ type: "DAILY", interval: 1 });
+  });
+
+  it("parses WEEKLY with interval", () => {
+    expect(parseRecurrence("WEEKLY:2:1,3,5")).toEqual({
+      type: "WEEKLY",
+      interval: 2,
+      days: [1, 3, 5],
+    });
+  });
+
+  it("parses WEEKLY without interval as interval 1", () => {
+    expect(parseRecurrence("WEEKLY:1,3,5")).toEqual({
+      type: "WEEKLY",
+      interval: 1,
+      days: [1, 3, 5],
+    });
+  });
+
+  it("parses MONTHLY with interval", () => {
+    expect(parseRecurrence("MONTHLY:4")).toEqual({ type: "MONTHLY", interval: 4 });
+  });
+
+  it("parses MONTHLY without interval as interval 1", () => {
+    expect(parseRecurrence("MONTHLY")).toEqual({ type: "MONTHLY", interval: 1 });
+  });
+
+  it("parses MONTHLY_LAST with interval", () => {
+    expect(parseRecurrence("MONTHLY_LAST:2")).toEqual({ type: "MONTHLY_LAST", interval: 2 });
+  });
+
+  it("parses YEARLY with interval", () => {
+    expect(parseRecurrence("YEARLY:2")).toEqual({ type: "YEARLY", interval: 2 });
+  });
+
+  it("rejects interval 0", () => {
+    expect(parseRecurrence("DAILY:0")).toBeNull();
+  });
+
+  it("rejects negative interval", () => {
+    expect(parseRecurrence("DAILY:-1")).toBeNull();
+  });
+
+  it("rejects non-numeric interval", () => {
+    expect(parseRecurrence("DAILY:abc")).toBeNull();
   });
 });
 
