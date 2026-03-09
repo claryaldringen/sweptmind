@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { gql } from "@apollo/client";
-import { useQuery, useMutation, useApolloClient } from "@apollo/client/react";
+import { useMutation, useApolloClient } from "@apollo/client/react";
 import { ArrowLeft } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Button } from "@/components/ui/button";
@@ -30,55 +30,6 @@ import { useAppData } from "@/components/providers/app-data-provider";
 // ---------------------------------------------------------------------------
 // GraphQL operations
 // ---------------------------------------------------------------------------
-
-const GET_TASK = gql`
-  query GetTask($id: String!) {
-    task(id: $id) {
-      id
-      listId
-      locationId
-      title
-      notes
-      isCompleted
-      completedAt
-      dueDate
-      reminderAt
-      recurrence
-      deviceContext
-      sortOrder
-      createdAt
-      steps {
-        id
-        taskId
-        title
-        isCompleted
-        sortOrder
-      }
-      tags {
-        id
-        name
-        color
-      }
-      location {
-        id
-        name
-        latitude
-        longitude
-        radius
-      }
-      list {
-        id
-        name
-      }
-      blockedByTaskId
-      blockedByTask {
-        id
-        title
-      }
-      blockedByTaskIsCompleted
-    }
-  }
-`;
 
 const UPDATE_TASK = gql`
   mutation UpdateTask($id: String!, $input: UpdateTaskInput!) {
@@ -265,10 +216,6 @@ interface TaskDetail {
   blockedByTaskIsCompleted: boolean | null;
 }
 
-interface GetTaskData {
-  task: TaskDetail | null;
-}
-
 interface UpdateTaskData {
   updateTask: {
     id: string;
@@ -324,15 +271,10 @@ export function TaskDetailPanel() {
   const dateFnsLocale = appLocale === "cs" ? cs : enUS;
   const taskId = searchParams.get("task");
 
-  // ---- Queries ----
+  // ---- Data ----
 
-  const { data, loading, error } = useQuery<GetTaskData>(GET_TASK, {
-    variables: { id: taskId! },
-    skip: !taskId,
-    fetchPolicy: "cache-and-network",
-    returnPartialData: true,
-  });
-  const { tags: allTagsFromProvider, locations: allLocationsFromProvider } = useAppData();
+  const { allTasks, tags: allTagsFromProvider, locations: allLocationsFromProvider, loading } = useAppData();
+  const task = taskId ? (allTasks.find((t) => t.id === taskId) as TaskDetail | undefined) ?? null : null;
 
   // ---- Mutations ----
 
@@ -342,10 +284,10 @@ export function TaskDetailPanel() {
       toggleTaskCompleted: {
         __typename: "Task" as const,
         id: taskId!,
-        isCompleted: !data?.task?.isCompleted,
-        completedAt: data?.task?.isCompleted ? null : new Date().toISOString(),
-        dueDate: data?.task?.dueDate ?? null,
-        reminderAt: data?.task?.reminderAt ?? null,
+        isCompleted: !task?.isCompleted,
+        completedAt: task?.isCompleted ? null : new Date().toISOString(),
+        dueDate: task?.dueDate ?? null,
+        reminderAt: task?.reminderAt ?? null,
       },
     },
   });
@@ -365,7 +307,7 @@ export function TaskDetailPanel() {
         taskId: input.taskId,
         title: input.title,
         isCompleted: false,
-        sortOrder: data?.task?.steps?.length ?? 0,
+        sortOrder: task?.steps?.length ?? 0,
       },
     }),
     update(cache, { data }) {
@@ -394,7 +336,7 @@ export function TaskDetailPanel() {
   });
   const [toggleStep] = useMutation<ToggleStepData>(TOGGLE_STEP, {
     optimisticResponse: ({ id }) => {
-      const step = data?.task?.steps?.find((s) => s.id === id);
+      const step = task?.steps?.find((s) => s.id === id);
       return {
         toggleStepCompleted: {
           __typename: "Step" as const,
@@ -530,10 +472,6 @@ export function TaskDetailPanel() {
 
   if (!taskId) return null;
 
-  // returnPartialData makes types DeepPartial — cast after null check since
-  // core fields are always present from the list query cache
-  const task = data?.task as TaskDetail | null | undefined;
-
   if (loading && !task) {
     return (
       <div
@@ -546,10 +484,6 @@ export function TaskDetailPanel() {
         </div>
       </div>
     );
-  }
-
-  if (error && !task) {
-    return <div className="p-4 text-red-500">Failed to load task</div>;
   }
 
   if (!task) return null;
