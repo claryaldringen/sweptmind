@@ -2,23 +2,28 @@ import { addDays, addMonths, addYears, getDay, format, lastDayOfMonth } from "da
 
 interface RecurrenceDaily {
   type: "DAILY";
+  interval: number;
 }
 
 interface RecurrenceWeekly {
   type: "WEEKLY";
+  interval: number;
   days: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
 }
 
 interface RecurrenceMonthly {
   type: "MONTHLY";
+  interval: number;
 }
 
 interface RecurrenceMonthlyLast {
   type: "MONTHLY_LAST";
+  interval: number;
 }
 
 interface RecurrenceYearly {
   type: "YEARLY";
+  interval: number;
 }
 
 export type Recurrence =
@@ -31,18 +36,61 @@ export type Recurrence =
 export function parseRecurrence(recurrence: string): Recurrence | null {
   if (!recurrence) return null;
 
-  if (recurrence === "DAILY") return { type: "DAILY" };
-  if (recurrence === "MONTHLY") return { type: "MONTHLY" };
-  if (recurrence === "MONTHLY_LAST") return { type: "MONTHLY_LAST" };
-  if (recurrence === "YEARLY") return { type: "YEARLY" };
+  // DAILY or DAILY:N
+  if (recurrence === "DAILY") return { type: "DAILY", interval: 1 };
+  if (recurrence.startsWith("DAILY:")) {
+    const n = Number(recurrence.slice(6));
+    if (!Number.isInteger(n) || n < 1) return null;
+    return { type: "DAILY", interval: n };
+  }
 
+  // MONTHLY_LAST or MONTHLY_LAST:N (check before MONTHLY to avoid prefix collision)
+  if (recurrence === "MONTHLY_LAST") return { type: "MONTHLY_LAST", interval: 1 };
+  if (recurrence.startsWith("MONTHLY_LAST:")) {
+    const n = Number(recurrence.slice(13));
+    if (!Number.isInteger(n) || n < 1) return null;
+    return { type: "MONTHLY_LAST", interval: n };
+  }
+
+  // MONTHLY or MONTHLY:N
+  if (recurrence === "MONTHLY") return { type: "MONTHLY", interval: 1 };
+  if (recurrence.startsWith("MONTHLY:")) {
+    const n = Number(recurrence.slice(8));
+    if (!Number.isInteger(n) || n < 1) return null;
+    return { type: "MONTHLY", interval: n };
+  }
+
+  // YEARLY or YEARLY:N
+  if (recurrence === "YEARLY") return { type: "YEARLY", interval: 1 };
+  if (recurrence.startsWith("YEARLY:")) {
+    const n = Number(recurrence.slice(7));
+    if (!Number.isInteger(n) || n < 1) return null;
+    return { type: "YEARLY", interval: n };
+  }
+
+  // WEEKLY:days or WEEKLY:N:days
   if (recurrence.startsWith("WEEKLY:")) {
-    const daysStr = recurrence.slice(7);
+    const rest = recurrence.slice(7);
+    if (!rest) return null;
+
+    // Check for WEEKLY:N:days format (two colon-separated segments)
+    const colonIndex = rest.indexOf(":");
+    let interval = 1;
+    let daysStr = rest;
+
+    if (colonIndex !== -1) {
+      const maybeInterval = Number(rest.slice(0, colonIndex));
+      if (Number.isInteger(maybeInterval) && maybeInterval >= 1) {
+        interval = maybeInterval;
+        daysStr = rest.slice(colonIndex + 1);
+      }
+    }
+
     if (!daysStr) return null;
     const days = daysStr.split(",").map(Number);
     if (days.some((d) => isNaN(d) || d < 0 || d > 6)) return null;
     if (days.length === 0) return null;
-    return { type: "WEEKLY", days: [...new Set(days)].sort((a, b) => a - b) };
+    return { type: "WEEKLY", interval, days: [...new Set(days)].sort((a, b) => a - b) };
   }
 
   return null;
