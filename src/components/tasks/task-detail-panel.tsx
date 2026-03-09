@@ -23,7 +23,7 @@ import { TaskDates } from "./detail/task-dates";
 import { TaskActions } from "./detail/task-actions";
 import { TaskDependency } from "./detail/task-dependency";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
-import { computeFirstOccurrence } from "@/domain/services/recurrence";
+import { computeFirstOccurrence, parseRecurrence } from "@/domain/services/recurrence";
 import { pickNextTagColor } from "@/lib/tag-colors";
 import { useAppData } from "@/components/providers/app-data-provider";
 
@@ -631,17 +631,40 @@ export function TaskDetailPanel() {
 
   function formatRecurrence(recurrence: string | null): string | null {
     if (!recurrence) return null;
-    if (recurrence === "DAILY") return t("recurrence.everyDay");
-    if (recurrence === "MONTHLY") return t("recurrence.everyMonth");
-    if (recurrence === "MONTHLY_LAST") return t("recurrence.everyLastDay");
-    if (recurrence === "YEARLY") return t("recurrence.everyYear");
-    if (recurrence.startsWith("WEEKLY:")) {
-      const days = recurrence.slice(7).split(",").map(Number);
-      const dayNames = tArray("recurrence.daysShort");
-      if (days.length === 7) return t("recurrence.everyDay");
-      return days.map((d) => dayNames[d]).join(", ");
+    const parsed = parseRecurrence(recurrence);
+    if (!parsed) return null;
+
+    const dayNames = tArray("recurrence.daysShort");
+
+    switch (parsed.type) {
+      case "DAILY":
+        return parsed.interval === 1
+          ? t("recurrence.everyDay")
+          : t("recurrence.everyNDays", { n: parsed.interval });
+
+      case "WEEKLY": {
+        const daysLabel = parsed.days.length === 7
+          ? t("recurrence.everyDay")
+          : parsed.days.map((d) => dayNames[d]).join(", ");
+        if (parsed.interval === 1) return daysLabel;
+        return `${t("recurrence.everyNWeeks", { n: parsed.interval })}: ${daysLabel}`;
+      }
+
+      case "MONTHLY":
+        return parsed.interval === 1
+          ? t("recurrence.everyMonth")
+          : t("recurrence.everyNMonths", { n: parsed.interval });
+
+      case "MONTHLY_LAST":
+        return parsed.interval === 1
+          ? t("recurrence.everyLastDay")
+          : `${t("recurrence.everyNMonths", { n: parsed.interval })}, ${t("recurrence.everyLastDay").toLowerCase()}`;
+
+      case "YEARLY":
+        return parsed.interval === 1
+          ? t("recurrence.everyYear")
+          : t("recurrence.everyNYears", { n: parsed.interval });
     }
-    return null;
   }
 
   function handleSetRecurrence(value: string | null) {
@@ -657,16 +680,17 @@ export function TaskDetailPanel() {
 
   function handleToggleWeeklyDay(day: number) {
     if (!task) return;
-    const current = task.recurrence?.startsWith("WEEKLY:")
-      ? task.recurrence.slice(7).split(",").map(Number)
-      : [];
+    const parsed = task.recurrence ? parseRecurrence(task.recurrence) : null;
+    const current = parsed?.type === "WEEKLY" ? parsed.days : [];
+    const interval = parsed?.type === "WEEKLY" ? parsed.interval : 1;
     const updated = current.includes(day)
       ? current.filter((d) => d !== day)
       : [...current, day].sort((a, b) => a - b);
     if (updated.length === 0) {
       handleSetRecurrence(null);
     } else {
-      handleSetRecurrence(`WEEKLY:${updated.join(",")}`);
+      const prefix = interval > 1 ? `WEEKLY:${interval}:` : "WEEKLY:";
+      handleSetRecurrence(`${prefix}${updated.join(",")}`);
     }
   }
 
