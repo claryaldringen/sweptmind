@@ -21,24 +21,38 @@ const CREATE_LIST = gql`
       isDefault
       sortOrder
       groupId
-      taskCount
+      locationId
+      deviceContext
+      location {
+        id
+        name
+        latitude
+        longitude
+        radius
+      }
     }
   }
 `;
 
-interface CreateListResult {
-  id: string;
-  name: string;
-  icon: string | null;
-  themeColor: string | null;
-  isDefault: boolean;
-  sortOrder: number;
-  groupId: string | null;
-  taskCount: number;
-}
-
 interface CreateListData {
-  createList: CreateListResult;
+  createList: {
+    id: string;
+    name: string;
+    icon: string | null;
+    themeColor: string | null;
+    isDefault: boolean;
+    sortOrder: number;
+    groupId: string | null;
+    locationId: string | null;
+    deviceContext: string | null;
+    location: {
+      id: string;
+      name: string;
+      latitude: number;
+      longitude: number;
+      radius: number;
+    } | null;
+  };
 }
 
 interface CreateListDialogProps {
@@ -68,7 +82,15 @@ export function CreateListDialog({ open, onOpenChange }: CreateListDialogProps) 
                   isDefault
                   sortOrder
                   groupId
-                  taskCount
+                  locationId
+                  deviceContext
+                  location {
+                    id
+                    name
+                    latitude
+                    longitude
+                    radius
+                  }
                 }
               `,
             });

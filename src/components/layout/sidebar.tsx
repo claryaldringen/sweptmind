@@ -478,6 +478,14 @@ export function Sidebar() {
       const input = reordered.map((l, i) => ({ id: l.id, sortOrder: i }));
       reorderLists({
         variables: { input },
+        update(cache) {
+          for (const { id, sortOrder } of input) {
+            cache.modify({
+              id: cache.identify({ __typename: "List", id }),
+              fields: { sortOrder: () => sortOrder },
+            });
+          }
+        },
         onCompleted: () => setLocalOrder(null),
         onError: () => setLocalOrder(null),
       });

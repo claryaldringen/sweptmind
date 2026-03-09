@@ -90,7 +90,17 @@ export function SortableTaskList({
       setOrderedIds(newIds);
 
       const input = newIds.map((id, i) => ({ id, sortOrder: i }));
-      reorderTasks({ variables: { input } });
+      reorderTasks({
+        variables: { input },
+        update(cache) {
+          for (const { id, sortOrder } of input) {
+            cache.modify({
+              id: cache.identify({ __typename: "Task", id }),
+              fields: { sortOrder: () => sortOrder },
+            });
+          }
+        },
+      });
     },
     [orderedIds, reorderTasks],
   );
