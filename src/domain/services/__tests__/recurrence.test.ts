@@ -144,6 +144,47 @@ describe("computeNextDueDate", () => {
   it("returns null when dueDate is null-ish", () => {
     expect(computeNextDueDate("DAILY", "")).toBeNull();
   });
+
+  it("DAILY:3 advances by 3 days", () => {
+    expect(computeNextDueDate("DAILY:3", "2026-03-04")).toBe("2026-03-07");
+  });
+
+  it("DAILY:3 preserves time component", () => {
+    expect(computeNextDueDate("DAILY:3", "2026-03-04T14:00")).toBe("2026-03-07T14:00");
+  });
+
+  it("WEEKLY:2 advances to next matching day this week first", () => {
+    // 2026-03-04 is Wednesday (day 3). WEEKLY:2:1,5 = every 2 weeks Mon, Fri.
+    // Still within the same week cycle: next is Friday 2026-03-06
+    expect(computeNextDueDate("WEEKLY:2:1,5", "2026-03-04")).toBe("2026-03-06");
+  });
+
+  it("WEEKLY:2 skips extra week when wrapping", () => {
+    // 2026-03-06 is Friday (day 5). WEEKLY:2:1,5.
+    // No more days this week. Next cycle = skip 1 extra week.
+    // Next Monday: 2026-03-06 + (7 - 5 + 1) = +3 days = Mon Mar 9 (that's interval=1)
+    // With interval=2: +3 + 7 = +10 days = Mon Mar 16
+    expect(computeNextDueDate("WEEKLY:2:1,5", "2026-03-06")).toBe("2026-03-16");
+  });
+
+  it("WEEKLY:3 single day skips 2 extra weeks", () => {
+    // 2026-03-04 is Wednesday (day 3). WEEKLY:3:3.
+    // Next Wednesday with interval=1 would be 2026-03-11.
+    // With interval=3: 2026-03-11 + 14 days = 2026-03-25
+    expect(computeNextDueDate("WEEKLY:3:3", "2026-03-04")).toBe("2026-03-25");
+  });
+
+  it("MONTHLY:4 advances by 4 months", () => {
+    expect(computeNextDueDate("MONTHLY:4", "2026-03-15")).toBe("2026-07-15");
+  });
+
+  it("MONTHLY_LAST:2 advances by 2 months to last day", () => {
+    expect(computeNextDueDate("MONTHLY_LAST:2", "2026-03-31")).toBe("2026-05-31");
+  });
+
+  it("YEARLY:2 advances by 2 years", () => {
+    expect(computeNextDueDate("YEARLY:2", "2026-03-04")).toBe("2028-03-04");
+  });
 });
 
 describe("computeFirstOccurrence", () => {
