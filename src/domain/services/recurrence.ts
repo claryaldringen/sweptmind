@@ -105,7 +105,10 @@ export function computeFirstOccurrence(recurrence: string, todayOverride?: strin
   if (!parsed) return null;
 
   const today = todayOverride
-    ? (() => { const [y, m, d] = todayOverride.split("-").map(Number); return new Date(y, m - 1, d); })()
+    ? (() => {
+        const [y, m, d] = todayOverride.split("-").map(Number);
+        return new Date(y, m - 1, d);
+      })()
     : new Date();
   const todayStr = format(today, "yyyy-MM-dd");
 

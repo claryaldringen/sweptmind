@@ -137,7 +137,6 @@ const REMOVE_TAG_FROM_TASK = gql`
   }
 `;
 
-
 const CREATE_LOCATION = gql`
   mutation CreateLocation($input: CreateLocationInput!) {
     createLocation(input: $input) {
@@ -273,8 +272,15 @@ export function TaskDetailPanel() {
 
   // ---- Data ----
 
-  const { allTasks, tags: allTagsFromProvider, locations: allLocationsFromProvider, loading } = useAppData();
-  const task = taskId ? (allTasks.find((t) => t.id === taskId) as TaskDetail | undefined) ?? null : null;
+  const {
+    allTasks,
+    tags: allTagsFromProvider,
+    locations: allLocationsFromProvider,
+    loading,
+  } = useAppData();
+  const task = taskId
+    ? ((allTasks.find((t) => t.id === taskId) as TaskDetail | undefined) ?? null)
+    : null;
 
   // ---- Mutations ----
 
@@ -578,7 +584,7 @@ export function TaskDetailPanel() {
 
   async function handleCreateAndAddTag(name: string) {
     if (!task) return;
-    const existingColors = (allTagsFromProvider).map((t) => t.color);
+    const existingColors = allTagsFromProvider.map((t) => t.color);
     const color = pickNextTagColor(existingColors);
     const result = await createTag({
       variables: { input: { name, color } },
@@ -643,9 +649,10 @@ export function TaskDetailPanel() {
           : t("recurrence.everyNDays", { n: parsed.interval });
 
       case "WEEKLY": {
-        const daysLabel = parsed.days.length === 7
-          ? t("recurrence.everyDay")
-          : parsed.days.map((d) => dayNames[d]).join(", ");
+        const daysLabel =
+          parsed.days.length === 7
+            ? t("recurrence.everyDay")
+            : parsed.days.map((d) => dayNames[d]).join(", ");
         if (parsed.interval === 1) return daysLabel;
         return `${t("recurrence.everyNWeeks", { n: parsed.interval })}: ${daysLabel}`;
       }
@@ -803,7 +810,7 @@ export function TaskDetailPanel() {
           <TaskLocation
             location={task.location}
             savedLocations={
-              (allLocationsFromProvider) as Array<{
+              allLocationsFromProvider as Array<{
                 id: string;
                 name: string;
                 latitude: number;

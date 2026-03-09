@@ -72,9 +72,10 @@ export function TaskRecurrence({
         break;
       case "weeks":
         if (customDays.length === 0) return;
-        value = customInterval === 1
-          ? `WEEKLY:${customDays.join(",")}`
-          : `WEEKLY:${customInterval}:${customDays.join(",")}`;
+        value =
+          customInterval === 1
+            ? `WEEKLY:${customDays.join(",")}`
+            : `WEEKLY:${customInterval}:${customDays.join(",")}`;
         break;
       case "months":
         value = customInterval === 1 ? "MONTHLY" : `MONTHLY:${customInterval}`;
@@ -90,9 +91,7 @@ export function TaskRecurrence({
 
   function toggleCustomDay(day: number) {
     setCustomDays((prev) =>
-      prev.includes(day)
-        ? prev.filter((d) => d !== day)
-        : [...prev, day].sort((a, b) => a - b),
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort((a, b) => a - b),
     );
   }
 
