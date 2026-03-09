@@ -1,6 +1,8 @@
+/// <reference no-default-lib="true" />
+/// <reference lib="esnext" />
 /// <reference lib="webworker" />
 
-import { defaultCache } from "@serwist/next/worker";
+import { defaultCache } from "@serwist/turbopack/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import { Serwist } from "serwist";
 
@@ -10,33 +12,7 @@ declare global {
   }
 }
 
-declare const self: ServiceWorkerGlobalScope & typeof globalThis;
-
-const OFFLINE_HTML = `<!DOCTYPE html>
-<html lang="cs">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SweptMind — Offline</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#fafafa;color:#18181b}
-    @media(prefers-color-scheme:dark){body{background:#09090b;color:#fafaf9}}
-    .c{max-width:20rem;text-align:center;padding:1rem}
-    h1{font-size:1.25rem;font-weight:600;margin-bottom:.5rem}
-    p{font-size:.875rem;color:#71717a;line-height:1.5}
-    svg{margin:0 auto 1rem;color:#a1a1aa}
-  </style>
-</head>
-<body>
-  <div class="c">
-    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M13.83 10.17A10 10 0 0 1 19 12.859"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5a15 15 0 0 1 11.34 3.82"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
-    <h1>Jsi offline</h1>
-    <p>Tuto stránku nemáme v mezipaměti. Jakmile se připojíš k internetu, aplikace se automaticky obnoví.</p>
-  </div>
-  <script>window.addEventListener("online",()=>location.reload())</script>
-</body>
-</html>`;
+declare const self: ServiceWorkerGlobalScope;
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
@@ -46,7 +22,7 @@ const serwist = new Serwist({
   runtimeCaching: defaultCache,
 });
 
-// Handle navigation requests ourselves with guaranteed offline fallback.
+// Handle navigation requests with guaranteed offline fallback.
 // Registered BEFORE serwist.addEventListeners() so we intercept navigations first.
 // Serwist still handles all non-navigation requests (JS, CSS, images, API, RSC payloads).
 self.addEventListener("fetch", (event) => {
@@ -60,12 +36,15 @@ self.addEventListener("fetch", (event) => {
           cache.put(event.request, response.clone());
           return response;
         } catch {
-          // Network failed — try cache, then offline page
+          // Network failed — try cache, then precached offline page
           const cached = await caches.match(event.request);
+          if (cached) return cached;
+          const offlinePage = await caches.match("/~offline");
           return (
-            cached ||
-            new Response(OFFLINE_HTML, {
-              headers: { "Content-Type": "text/html; charset=utf-8" },
+            offlinePage ??
+            new Response("Offline", {
+              status: 503,
+              headers: { "Content-Type": "text/plain" },
             })
           );
         }

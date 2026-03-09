@@ -43,9 +43,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Serwist generated service worker
-public/sw.js
-public/sw.js.map
-public/swe-worker-*.js
-public/swe-worker-*.js.map
+# Serwist — SW is now generated via route handler at /serwist/sw.js
 coverage/

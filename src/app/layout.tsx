@@ -7,6 +7,7 @@ import { SessionProvider } from "@/components/providers/session-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LocaleProvider } from "@/components/providers/locale-provider";
+import { SwProvider } from "@/components/providers/sw-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -83,6 +84,7 @@ export default async function RootLayout({
                 <TooltipProvider>
                   {children}
                   <Toaster />
+                  <SwProvider />
                 </TooltipProvider>
               </LocaleProvider>
             </ApolloProvider>
