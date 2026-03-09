@@ -775,6 +775,16 @@ export function TaskDetailPanel() {
             monthlyLastLabel={t("recurrence.monthlyLast")}
             yearlyLabel={t("recurrence.yearly")}
             removeRecurrenceLabel={t("recurrence.removeRecurrence")}
+            customLabel={t("recurrence.custom")}
+            backLabel={t("recurrence.back")}
+            doneLabel={t("recurrence.done")}
+            everyLabel={t("recurrence.every")}
+            unitLabels={{
+              days: tArray("recurrence.unitDays"),
+              weeks: tArray("recurrence.unitWeeks"),
+              months: tArray("recurrence.unitMonths"),
+              years: tArray("recurrence.unitYears"),
+            }}
           />
 
           {/* Tags */}
