@@ -153,7 +153,7 @@ export function computeNextDueDate(recurrence: string, currentDueDate: string): 
 
   switch (parsed.type) {
     case "DAILY":
-      next = addDays(date, 1);
+      next = addDays(date, parsed.interval);
       break;
 
     case "WEEKLY": {
@@ -161,25 +161,27 @@ export function computeNextDueDate(recurrence: string, currentDueDate: string): 
       const sorted = parsed.days;
       const laterThisWeek = sorted.find((d) => d > currentDay);
       if (laterThisWeek !== undefined) {
-        const diff = laterThisWeek - currentDay;
-        next = addDays(date, diff);
+        // Still within same week cycle — no interval skip
+        next = addDays(date, laterThisWeek - currentDay);
       } else {
-        const diff = 7 - currentDay + sorted[0];
-        next = addDays(date, diff);
+        // Wrap to first day of next cycle — skip (interval - 1) extra weeks
+        const daysToNextWeek = 7 - currentDay + sorted[0];
+        const extraWeeks = (parsed.interval - 1) * 7;
+        next = addDays(date, daysToNextWeek + extraWeeks);
       }
       break;
     }
 
     case "MONTHLY":
-      next = addMonths(date, 1);
+      next = addMonths(date, parsed.interval);
       break;
 
     case "MONTHLY_LAST":
-      next = lastDayOfMonth(addMonths(date, 1));
+      next = lastDayOfMonth(addMonths(date, parsed.interval));
       break;
 
     case "YEARLY":
-      next = addYears(date, 1);
+      next = addYears(date, parsed.interval);
       break;
   }
 
