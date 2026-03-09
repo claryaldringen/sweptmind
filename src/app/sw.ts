@@ -12,14 +12,6 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope & typeof globalThis;
 
-const serwist = new Serwist({
-  precacheEntries: self.__SW_MANIFEST,
-  skipWaiting: true,
-  clientsClaim: true,
-  navigationPreload: true,
-  runtimeCaching: defaultCache,
-});
-
 const OFFLINE_HTML = `<!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -46,14 +38,44 @@ const OFFLINE_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-serwist.setCatchHandler(async ({ request }) => {
-  if (request.destination === "document") {
-    return new Response(OFFLINE_HTML, {
-      headers: { "Content-Type": "text/html; charset=utf-8" },
-    });
-  }
-  return Response.error();
+const serwist = new Serwist({
+  precacheEntries: self.__SW_MANIFEST,
+  skipWaiting: true,
+  clientsClaim: true,
+  navigationPreload: false,
+  runtimeCaching: defaultCache,
 });
+
+// Handle navigation requests ourselves with guaranteed offline fallback.
+// Registered BEFORE serwist.addEventListeners() so we intercept navigations first.
+// Serwist still handles all non-navigation requests (JS, CSS, images, API, RSC payloads).
+self.addEventListener("fetch", (event) => {
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      (async () => {
+        try {
+          const response = await fetch(event.request);
+          // Cache successful navigation for offline use
+          const cache = await caches.open("pages");
+          cache.put(event.request, response.clone());
+          return response;
+        } catch {
+          // Network failed — try cache, then offline page
+          const cached = await caches.match(event.request);
+          return (
+            cached ||
+            new Response(OFFLINE_HTML, {
+              headers: { "Content-Type": "text/html; charset=utf-8" },
+            })
+          );
+        }
+      })(),
+    );
+  }
+});
+
+// Serwist handles everything else (static assets, API calls, RSC payloads, etc.)
+serwist.addEventListeners();
 
 self.addEventListener("push", (event) => {
   if (!event.data) return;
@@ -86,5 +108,3 @@ self.addEventListener("notificationclick", (event) => {
     }),
   );
 });
-
-serwist.addEventListeners();
