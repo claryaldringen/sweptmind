@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useId, useRef, useState, type ReactNode } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -60,6 +60,7 @@ const collisionDetection: CollisionDetection = (args) => {
 };
 
 export function TaskDndProvider({ children }: { children: ReactNode }) {
+  const dndId = useId();
   const taskReorderRef = useRef<ReorderCallback | null>(null);
   const listReorderRef = useRef<ReorderCallback | null>(null);
   const smartListReorderRef = useRef<ReorderCallback | null>(null);
@@ -161,6 +162,7 @@ export function TaskDndProvider({ children }: { children: ReactNode }) {
   return (
     <TaskDndContext.Provider value={contextValue}>
       <DndContext
+        id={dndId}
         sensors={sensors}
         collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
