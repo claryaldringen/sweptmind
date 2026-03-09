@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useTranslations } from "@/lib/i18n";
 import { useNewTaskPosition } from "@/hooks/use-new-task-position";
+import { useAppData } from "@/components/providers/app-data-provider";
 
 const CREATE_TASK = gql`
   mutation CreateTask($input: CreateTaskInput!) {
@@ -113,6 +114,7 @@ export function TaskInput({ listId, placeholder }: TaskInputProps) {
   const [title, setTitle] = useState("");
   const client = useApolloClient();
   const { position } = useNewTaskPosition();
+  const { allTasks } = useAppData();
 
   const [createTask] = useMutation<{ createTask: Record<string, unknown> }>(CREATE_TASK);
 
@@ -124,6 +126,11 @@ export function TaskInput({ listId, placeholder }: TaskInputProps) {
     setTitle("");
 
     const id = crypto.randomUUID();
+
+    // Match server logic: sortOrder = minSort - 1 (puts task at top)
+    const listTasks = allTasks.filter((t) => t.listId === listId);
+    const minSort = listTasks.length > 0 ? Math.min(...listTasks.map((t) => t.sortOrder)) : 1;
+    const sortOrder = minSort - 1;
 
     // Write task to cache immediately (optimistic, same ID as server will use)
     client.cache.writeFragment({
@@ -140,7 +147,7 @@ export function TaskInput({ listId, placeholder }: TaskInputProps) {
         reminderAt: null,
         recurrence: null,
         deviceContext: null,
-        sortOrder: 0,
+        sortOrder,
         createdAt: new Date().toISOString(),
         steps: [],
         tags: [],

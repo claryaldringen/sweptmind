@@ -647,13 +647,9 @@ export function TaskDetailPanel() {
   function handleSetRecurrence(value: string | null) {
     if (!task) return;
     if (value) {
-      // Only set dueDate if the task doesn't already have one
-      if (task.dueDate) {
-        optimisticUpdate({ recurrence: value });
-      } else {
-        const dueDate = computeFirstOccurrence(value);
-        optimisticUpdate({ recurrence: value, dueDate });
-      }
+      // Always recompute dueDate to match the new recurrence pattern
+      const dueDate = computeFirstOccurrence(value);
+      optimisticUpdate({ recurrence: value, dueDate });
     } else {
       optimisticUpdate({ recurrence: value });
     }
