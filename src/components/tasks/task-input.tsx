@@ -162,10 +162,10 @@ export function TaskInput({ listId, placeholder, onTaskCreated }: TaskInputProps
       fragment: TASK_FRAGMENT,
     });
 
-    // Add to allTasks cache (used by AppDataProvider)
+    // Add to visibleTasks cache (used by AppDataProvider)
     client.cache.modify({
       fields: {
-        allTasks(existing = []) {
+        visibleTasks(existing = []) {
           const newRef = { __ref: `Task:${id}` };
           return position === "top" ? [newRef, ...existing] : [...existing, newRef];
         },
@@ -181,7 +181,7 @@ export function TaskInput({ listId, placeholder, onTaskCreated }: TaskInputProps
         client.cache.evict({ id: client.cache.identify({ __typename: "Task", id }) });
         client.cache.modify({
           fields: {
-            allTasks(existing = [], { readField }) {
+            visibleTasks(existing = [], { readField }) {
               return existing.filter((ref: { __ref: string }) => readField("id", ref) !== id);
             },
           },

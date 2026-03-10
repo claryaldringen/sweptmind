@@ -167,6 +167,54 @@ builder.queryField("allTasks", (t) =>
   }),
 );
 
+builder.queryField("visibleTasks", (t) =>
+  t.field({
+    type: [TaskType],
+    authScopes: { authenticated: true },
+    args: {
+      listId: t.arg.string({ required: false }),
+    },
+    resolve: async (_root, args, ctx) =>
+      ctx.services.task.getVisibleByUser(ctx.userId!, args.listId),
+  }),
+);
+
+builder.queryField("futureTasks", (t) =>
+  t.field({
+    type: [TaskType],
+    authScopes: { authenticated: true },
+    resolve: async (_root, _args, ctx) => ctx.services.task.getFutureByUser(ctx.userId!),
+  }),
+);
+
+const CompletedTasksConnectionType = builder.objectType(
+  builder.objectRef<{ tasks: import("@/domain/entities/task").Task[]; hasMore: boolean }>(
+    "CompletedTasksConnection",
+  ),
+  {
+    fields: (t) => ({
+      tasks: t.field({
+        type: [TaskType],
+        resolve: (parent) => parent.tasks,
+      }),
+      hasMore: t.exposeBoolean("hasMore"),
+    }),
+  },
+);
+
+builder.queryField("completedTasks", (t) =>
+  t.field({
+    type: CompletedTasksConnectionType,
+    authScopes: { authenticated: true },
+    args: {
+      limit: t.arg.int({ required: true }),
+      offset: t.arg.int({ required: false }),
+    },
+    resolve: async (_root, args, ctx) =>
+      ctx.services.task.getCompletedByUser(ctx.userId!, args.limit, args.offset ?? 0),
+  }),
+);
+
 builder.queryField("searchTasks", (t) =>
   t.field({
     type: [TaskType],

@@ -5,7 +5,7 @@ import type { IListRepository } from "../repositories/list.repository";
 import type { IStepRepository } from "../repositories/step.repository";
 import type { List } from "../entities/list";
 import { computeNextDueDate, computeFirstOccurrence } from "./recurrence";
-import { computeDefaultReminder } from "./task-visibility";
+import { computeDefaultReminder, isFutureTask } from "./task-visibility";
 import { format } from "date-fns";
 
 export interface ImportTaskInput {
@@ -30,6 +30,30 @@ export class TaskService {
 
   async getByUser(userId: string): Promise<Task[]> {
     return this.taskRepo.findByUser(userId);
+  }
+
+  async getVisibleByUser(userId: string, listId?: string | null): Promise<Task[]> {
+    const tasks = listId
+      ? await this.taskRepo.findByList(listId, userId)
+      : await this.taskRepo.findActiveByUser(userId);
+    const today = new Date().toISOString().slice(0, 10);
+    return tasks.filter((t) => !t.isCompleted && !isFutureTask(t, today));
+  }
+
+  async getFutureByUser(userId: string): Promise<Task[]> {
+    const tasks = await this.taskRepo.findActiveByUser(userId);
+    const today = new Date().toISOString().slice(0, 10);
+    return tasks.filter((t) => isFutureTask(t, today));
+  }
+
+  async getCompletedByUser(
+    userId: string,
+    limit: number,
+    offset: number,
+  ): Promise<{ tasks: Task[]; hasMore: boolean }> {
+    const tasks = await this.taskRepo.findCompletedByUser(userId, limit + 1, offset);
+    const hasMore = tasks.length > limit;
+    return { tasks: tasks.slice(0, limit), hasMore };
   }
 
   async getById(id: string, userId: string): Promise<Task | undefined> {

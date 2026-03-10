@@ -1,14 +1,68 @@
 "use client";
 
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useEffect, useState, useCallback, useRef, type ReactNode } from "react";
 import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
+import { useQuery, useLazyQuery, useApolloClient } from "@apollo/client/react";
 
 // ---------------------------------------------------------------------------
-// Query
+// Shared task fields fragment
+// ---------------------------------------------------------------------------
+
+export const APP_TASK_FIELDS = gql`
+  fragment AppTaskFields on Task {
+    id
+    listId
+    locationId
+    locationRadius
+    title
+    notes
+    isCompleted
+    completedAt
+    dueDate
+    reminderAt
+    recurrence
+    deviceContext
+    sortOrder
+    createdAt
+    steps {
+      id
+      taskId
+      title
+      isCompleted
+      sortOrder
+    }
+    tags {
+      id
+      name
+      color
+    }
+    location {
+      id
+      name
+      latitude
+      longitude
+      radius
+    }
+    list {
+      id
+      name
+    }
+    blockedByTaskId
+    blockedByTask {
+      id
+      title
+    }
+    blockedByTaskIsCompleted
+    dependentTaskCount
+  }
+`;
+
+// ---------------------------------------------------------------------------
+// Phase 1: App metadata + visible tasks
 // ---------------------------------------------------------------------------
 
 export const GET_APP_DATA = gql`
+  ${APP_TASK_FIELDS}
   query GetAppData {
     lists {
       id
@@ -21,6 +75,8 @@ export const GET_APP_DATA = gql`
       locationId
       locationRadius
       deviceContext
+      taskCount
+      visibleTaskCount
       location {
         id
         name
@@ -29,51 +85,8 @@ export const GET_APP_DATA = gql`
         radius
       }
     }
-    allTasks {
-      id
-      listId
-      locationId
-      locationRadius
-      title
-      notes
-      isCompleted
-      completedAt
-      dueDate
-      reminderAt
-      recurrence
-      deviceContext
-      sortOrder
-      createdAt
-      steps {
-        id
-        taskId
-        title
-        isCompleted
-        sortOrder
-      }
-      tags {
-        id
-        name
-        color
-      }
-      location {
-        id
-        name
-        latitude
-        longitude
-        radius
-      }
-      list {
-        id
-        name
-      }
-      blockedByTaskId
-      blockedByTask {
-        id
-        title
-      }
-      blockedByTaskIsCompleted
-      dependentTaskCount
+    visibleTasks {
+      ...AppTaskFields
     }
     tags {
       id
@@ -103,6 +116,35 @@ export const GET_APP_DATA = gql`
 `;
 
 // ---------------------------------------------------------------------------
+// Phase 2: Future tasks (loaded in background)
+// ---------------------------------------------------------------------------
+
+const GET_FUTURE_TASKS = gql`
+  ${APP_TASK_FIELDS}
+  query GetFutureTasks {
+    futureTasks {
+      ...AppTaskFields
+    }
+  }
+`;
+
+// ---------------------------------------------------------------------------
+// Phase 3: Completed tasks (loaded in background, paginated)
+// ---------------------------------------------------------------------------
+
+const GET_COMPLETED_TASKS = gql`
+  ${APP_TASK_FIELDS}
+  query GetCompletedTasks($limit: Int!, $offset: Int) {
+    completedTasks(limit: $limit, offset: $offset) {
+      tasks {
+        ...AppTaskFields
+      }
+      hasMore
+    }
+  }
+`;
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -126,6 +168,8 @@ export interface ListItem {
   locationRadius: number | null;
   location: ListLocationInfo | null;
   deviceContext: string | null;
+  taskCount: number;
+  visibleTaskCount: number;
 }
 
 export interface TaskStep {
@@ -197,9 +241,20 @@ export interface LocationItem {
 
 interface GetAppDataResult {
   lists: ListItem[];
-  allTasks: AppTask[];
+  visibleTasks: AppTask[];
   tags: TagItem[];
   locations: LocationItem[];
+}
+
+interface GetFutureTasksResult {
+  futureTasks: AppTask[];
+}
+
+interface GetCompletedTasksResult {
+  completedTasks: {
+    tasks: AppTask[];
+    hasMore: boolean;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -212,6 +267,12 @@ interface AppDataContextValue {
   tags: TagItem[];
   locations: LocationItem[];
   loading: boolean;
+  /** True once future tasks have been loaded */
+  futureTasksLoaded: boolean;
+  /** True once initial completed tasks have been loaded */
+  completedTasksLoaded: boolean;
+  hasMoreCompleted: boolean;
+  fetchMoreCompleted: () => void;
   refetch: () => void;
 }
 
@@ -222,18 +283,116 @@ const AppDataContext = createContext<AppDataContextValue | null>(null);
 // ---------------------------------------------------------------------------
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
-  const { data, loading, refetch } = useQuery<GetAppDataResult>(GET_APP_DATA);
+  // Phase 1: metadata + visible tasks
+  const { data: appData, loading: appLoading, refetch: refetchAppData } = useQuery<GetAppDataResult>(GET_APP_DATA);
+
+  // Phase 2: future tasks (loaded after phase 1)
+  const [loadFuture, { data: futureData, called: futureCalled }] =
+    useLazyQuery<GetFutureTasksResult>(GET_FUTURE_TASKS);
+
+  // Phase 3: completed tasks (loaded after phase 2, accumulated manually)
+  const apolloClient = useApolloClient();
+  const [completedTasks, setCompletedTasks] = useState<AppTask[]>([]);
+  const [hasMoreCompleted, setHasMoreCompleted] = useState(true);
+  const [completedLoaded, setCompletedLoaded] = useState(false);
+  const completedLoadingRef = useRef(false);
+
+  const loadCompletedTasks = useCallback(
+    async (offset: number) => {
+      if (completedLoadingRef.current) return;
+      completedLoadingRef.current = true;
+      try {
+        const result = await apolloClient.query<GetCompletedTasksResult>({
+          query: GET_COMPLETED_TASKS,
+          variables: { limit: 10, offset },
+          fetchPolicy: "network-only",
+        });
+        const { data } = result;
+        if (!data) return;
+        setCompletedTasks((prev) => {
+          const existingIds = new Set(prev.map((t) => t.id));
+          const newTasks = data.completedTasks.tasks.filter((t) => !existingIds.has(t.id));
+          return [...prev, ...newTasks];
+        });
+        setHasMoreCompleted(data.completedTasks.hasMore);
+        setCompletedLoaded(true);
+      } finally {
+        completedLoadingRef.current = false;
+      }
+    },
+    [apolloClient],
+  );
+
+  // Sequential loading: phase 1 → phase 2 → phase 3
+  useEffect(() => {
+    if (appData && !futureCalled) {
+      loadFuture();
+    }
+  }, [appData, futureCalled, loadFuture]);
+
+  useEffect(() => {
+    if (futureData && !completedLoaded) {
+      loadCompletedTasks(0);
+    }
+  }, [futureData, completedLoaded, loadCompletedTasks]);
+
+  // Fetch more completed tasks (for infinite scroll)
+  const fetchMoreCompleted = useCallback(() => {
+    if (!hasMoreCompleted) return;
+    loadCompletedTasks(completedTasks.length);
+  }, [hasMoreCompleted, completedTasks.length, loadCompletedTasks]);
+
+  // Merge all tasks into a single array
+  const allTasks = useMemo(() => {
+    const visible = appData?.visibleTasks ?? [];
+    const future = futureData?.futureTasks ?? [];
+
+    if (completedTasks.length === 0 && future.length === 0) return visible;
+
+    const seen = new Set<string>();
+    const result: AppTask[] = [];
+    for (const task of visible) {
+      if (!seen.has(task.id)) {
+        seen.add(task.id);
+        result.push(task);
+      }
+    }
+    for (const task of future) {
+      if (!seen.has(task.id)) {
+        seen.add(task.id);
+        result.push(task);
+      }
+    }
+    for (const task of completedTasks) {
+      if (!seen.has(task.id)) {
+        seen.add(task.id);
+        result.push(task);
+      }
+    }
+    return result;
+  }, [appData?.visibleTasks, futureData?.futureTasks, completedTasks]);
+
+  const refetch = useCallback(() => {
+    refetchAppData();
+    setCompletedTasks([]);
+    setCompletedLoaded(false);
+    setHasMoreCompleted(true);
+  }, [refetchAppData]);
 
   const value = useMemo(
     () => ({
-      lists: data?.lists ?? [],
-      allTasks: data?.allTasks ?? [],
-      tags: data?.tags ?? [],
-      locations: data?.locations ?? [],
-      loading,
+      lists: appData?.lists ?? [],
+      allTasks,
+      tags: appData?.tags ?? [],
+      locations: appData?.locations ?? [],
+      loading: appLoading,
+      futureTasksLoaded: !!futureData,
+      completedTasksLoaded: completedLoaded,
+      hasMoreCompleted,
+      fetchMoreCompleted,
       refetch,
     }),
-    [data, loading, refetch],
+    [appData, allTasks, appLoading, futureData, completedLoaded, hasMoreCompleted, fetchMoreCompleted, refetch],
   );
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
@@ -249,59 +408,19 @@ export function useAppData(): AppDataContextValue {
   return ctx;
 }
 
-/** Backward-compatible hook — returns lists with computed task counts. */
+/** Backward-compatible hook — returns lists with server-computed task counts. */
 export function useLists() {
-  const { lists, allTasks, loading, refetch } = useAppData();
+  const { lists, loading, refetch } = useAppData();
 
-  const listsWithCounts = useMemo(() => {
-    const countMap = new Map<string, { total: number; visible: number }>();
-    for (const list of lists) {
-      countMap.set(list.id, { total: 0, visible: 0 });
-    }
-    for (const task of allTasks) {
-      if (task.isCompleted) continue;
-      const entry = countMap.get(task.listId);
-      if (!entry) continue;
-      entry.total++;
-      // Visible = not future task (simplified: no future dueDate/reminder, not blocked)
-      const isFuture = isFutureTaskSimple(task);
-      if (!isFuture) entry.visible++;
-    }
-    return lists.map((list) => ({
-      ...list,
-      taskCount: countMap.get(list.id)?.total ?? 0,
-      visibleTaskCount: countMap.get(list.id)?.visible ?? 0,
-    }));
-  }, [lists, allTasks]);
+  const listsWithCounts = useMemo(
+    () =>
+      lists.map((list) => ({
+        ...list,
+        taskCount: list.taskCount,
+        visibleTaskCount: list.visibleTaskCount,
+      })),
+    [lists],
+  );
 
   return { lists: listsWithCounts, loading, refetch };
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Simplified isFutureTask for client-side use (matches domain/services/task-visibility). */
-function isFutureTaskSimple(task: AppTask): boolean {
-  if (task.isCompleted) return false;
-  if (task.blockedByTaskId && task.blockedByTaskIsCompleted === false) return true;
-
-  const todayStr = new Date().toISOString().slice(0, 10);
-
-  if (task.reminderAt) {
-    return task.reminderAt > todayStr;
-  }
-
-  if (!task.dueDate) return false;
-
-  if (task.dueDate.includes("T")) {
-    // Has time → visible the day before
-    const datePart = task.dueDate.split("T")[0];
-    const [year, month, day] = datePart.split("-").map(Number);
-    const date = new Date(year, month - 1, day - 1);
-    const visibleDate = date.toISOString().slice(0, 10);
-    return visibleDate > todayStr;
-  }
-
-  return task.dueDate > todayStr;
 }

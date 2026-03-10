@@ -189,11 +189,11 @@ export const TaskItem = memo(function TaskItem({
       // Update blockedByTaskIsCompleted on all tasks that depend on this one
       cache.modify({
         fields: {
-          allTasks(existing = [], { readField }) {
+          visibleTasks(existing = [], { readField }) {
             for (const ref of existing) {
               if (readField("blockedByTaskId", ref) === completedId) {
                 cache.modify({
-                  id: ref.__ref,
+                  id: (ref as { __ref: string }).__ref,
                   fields: {
                     blockedByTaskIsCompleted: () => isCompleted,
                   },
