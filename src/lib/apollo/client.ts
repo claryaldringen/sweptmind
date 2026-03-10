@@ -5,20 +5,9 @@ import { RetryLink } from "@apollo/client/link/retry";
 import { ApolloClient, InMemoryCache } from "@apollo/client-integration-nextjs";
 import { persistCache } from "apollo3-cache-persist";
 import { print } from "graphql";
-import { get, set, del } from "idb-keyval";
 import { syncManager } from "./sync-manager";
 
-class IdbStorageAdapter {
-  async getItem(key: string) {
-    return (await get(key)) ?? null;
-  }
-  async setItem(key: string, value: string) {
-    await set(key, value);
-  }
-  async removeItem(key: string) {
-    await del(key);
-  }
-}
+const CACHE_KEY = "apollo-cache-persist";
 
 export function makeClient() {
   const errorLink = new ErrorLink(({ error }) => {
@@ -76,6 +65,16 @@ export function makeClient() {
 
   const cache = new InMemoryCache();
 
+  // Synchronously restore cache from localStorage before any queries run
+  if (typeof window !== "undefined") {
+    try {
+      const data = localStorage.getItem(CACHE_KEY);
+      if (data) cache.restore(JSON.parse(data));
+    } catch {
+      /* corrupted cache — start fresh */
+    }
+  }
+
   const client = new ApolloClient({
     cache,
     link: errorLink.concat(offlineLink).concat(retryLink).concat(httpLink),
@@ -89,12 +88,12 @@ export function makeClient() {
   // Attach client to sync manager for replay
   syncManager.attach(client);
 
-  // Restore cache from IndexedDB (non-blocking — queries fire immediately,
-  // cache.restore() triggers watchers when data is ready)
+  // Set up ongoing cache persistence to localStorage
   if (typeof window !== "undefined") {
     persistCache({
       cache,
-      storage: new IdbStorageAdapter(),
+      storage: window.localStorage,
+      key: CACHE_KEY,
       maxSize: false,
     }).catch(() => {});
   }
