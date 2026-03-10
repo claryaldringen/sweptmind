@@ -38,11 +38,21 @@ function createMaskableIconSvg(size) {
 </svg>`;
 }
 
+// Favicon: just the bolt, no background (transparent)
+function createFaviconSvg(size) {
+  const scale = size / 24;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <g transform="scale(${scale})">
+    <path d="M13 2 3 14h9l-1 10 10-12h-9l1-10z" fill="#eab308" stroke="#ca8a04" stroke-width="0.5" stroke-linejoin="round"/>
+  </g>
+</svg>`;
+}
+
 async function main() {
-  // Generate favicon.ico (multi-size: 16, 32, 48)
-  const ico16 = await sharp(Buffer.from(createIconSvg(16))).resize(16, 16).png().toBuffer();
-  const ico32 = await sharp(Buffer.from(createIconSvg(32))).resize(32, 32).png().toBuffer();
-  const ico48 = await sharp(Buffer.from(createIconSvg(48))).resize(48, 48).png().toBuffer();
+  // Generate favicon.ico (just the bolt, no background)
+  const ico16 = await sharp(Buffer.from(createFaviconSvg(16))).resize(16, 16).png().toBuffer();
+  const ico32 = await sharp(Buffer.from(createFaviconSvg(32))).resize(32, 32).png().toBuffer();
+  const ico48 = await sharp(Buffer.from(createFaviconSvg(48))).resize(48, 48).png().toBuffer();
 
   // Build ICO file (simple ICO format with PNG entries)
   const icoBuffer = buildIco([
