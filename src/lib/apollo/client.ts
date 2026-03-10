@@ -19,6 +19,12 @@ class IdbStorageAdapter {
   }
 }
 
+// Promise that resolves when cache is restored from IndexedDB
+let cacheRestoredResolve: () => void;
+export const cacheRestored = new Promise<void>((resolve) => {
+  cacheRestoredResolve = resolve;
+});
+
 export function makeClient() {
   const errorLink = new ErrorLink(({ error }) => {
     if (CombinedGraphQLErrors.is(error)) {
@@ -80,7 +86,7 @@ export function makeClient() {
     link: errorLink.concat(offlineLink).concat(retryLink).concat(httpLink),
     defaultOptions: {
       watchQuery: {
-        fetchPolicy: "cache-first",
+        fetchPolicy: "cache-and-network",
       },
     },
   });
@@ -88,19 +94,20 @@ export function makeClient() {
   // Attach client to sync manager for replay
   syncManager.attach(client);
 
-  // Best-effort cache persistence to IndexedDB (client-side only)
+  // Restore cache from IndexedDB before queries run
   if (typeof window !== "undefined") {
     import("apollo3-cache-persist")
       .then(({ persistCache }) =>
         persistCache({
           cache,
           storage: new IdbStorageAdapter(),
-          maxSize: false, // no size limit for IndexedDB
+          maxSize: false,
         }),
       )
-      .catch(() => {
-        // Cache persistence is non-critical — app works fine without it
-      });
+      .catch(() => {})
+      .finally(() => cacheRestoredResolve());
+  } else {
+    cacheRestoredResolve();
   }
 
   return client;
