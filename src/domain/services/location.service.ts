@@ -13,6 +13,10 @@ export class LocationService {
   }
 
   async create(userId: string, input: CreateLocationInput): Promise<Location> {
+    // Return existing location if one with the same name already exists for this user
+    const existing = await this.locationRepo.findByName(input.name, userId);
+    if (existing) return existing;
+
     return this.locationRepo.create({
       ...(input.id ? { id: input.id } : {}),
       userId,

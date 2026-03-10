@@ -23,6 +23,7 @@ function makeRepo(overrides: Partial<ILocationRepository> = {}): ILocationReposi
     findByUser: vi.fn().mockResolvedValue([]),
     findById: vi.fn(),
     findByIds: vi.fn().mockResolvedValue([]),
+    findByName: vi.fn().mockResolvedValue(undefined),
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
@@ -115,6 +116,23 @@ describe("LocationService", () => {
       const result = await service.getById("non-existent", "user-1");
 
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe("create – deduplication", () => {
+    it("vrátí existující lokaci pokud se jméno shoduje", async () => {
+      const existing = makeLocation({ name: "Praha" });
+      vi.mocked(repo.findByName).mockResolvedValue(existing);
+
+      const result = await service.create("user-1", {
+        name: "Praha",
+        latitude: 50.0,
+        longitude: 14.4,
+      });
+
+      expect(repo.findByName).toHaveBeenCalledWith("Praha", "user-1");
+      expect(repo.create).not.toHaveBeenCalled();
+      expect(result).toEqual(existing);
     });
   });
 

@@ -107,6 +107,7 @@ interface NominatimLookupResult {
     town?: string;
     village?: string;
     municipality?: string;
+    county?: string;
     state?: string;
     country?: string;
   };
@@ -130,10 +131,12 @@ async function nominatimLookup(osmIds: string[], locale: string): Promise<Map<st
     const key = `${prefix}${r.osm_id}`;
     const city =
       r.address?.city || r.address?.town || r.address?.village || r.address?.municipality;
+    const region = r.address?.county || r.address?.state;
     const displayName = r.address
       ? formatLocationName({
           name: r.name,
           city: city ?? undefined,
+          region: region ?? undefined,
           country: r.address.country,
         })
       : r.name;

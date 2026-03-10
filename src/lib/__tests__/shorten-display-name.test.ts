@@ -32,6 +32,34 @@ describe("formatLocationName", () => {
     expect(formatLocationName({ name: "Somewhere" })).toBe("Somewhere");
   });
 
+  it("adds region when city equals name (small villages)", () => {
+    expect(
+      formatLocationName({
+        name: "Sedlečko",
+        city: "Sedlečko",
+        region: "Šemnice",
+        country: "Česko",
+      }),
+    ).toBe("Sedlečko, Šemnice, Česko");
+  });
+
+  it("adds region when city is missing", () => {
+    expect(formatLocationName({ name: "Sedlečko", region: "Šemnice", country: "Česko" })).toBe(
+      "Sedlečko, Šemnice, Česko",
+    );
+  });
+
+  it("does not add region when city differs from name", () => {
+    expect(
+      formatLocationName({
+        name: "Lužiny",
+        city: "Praha",
+        region: "Středočeský kraj",
+        country: "Česko",
+      }),
+    ).toBe("Lužiny, Praha, Česko");
+  });
+
   it("returns empty string for empty input", () => {
     expect(formatLocationName({})).toBe("");
   });

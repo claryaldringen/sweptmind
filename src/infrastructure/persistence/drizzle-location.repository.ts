@@ -20,6 +20,12 @@ export class DrizzleLocationRepository implements ILocationRepository {
     });
   }
 
+  async findByName(name: string, userId: string): Promise<Location | undefined> {
+    return this.db.query.locations.findFirst({
+      where: and(eq(schema.locations.name, name), eq(schema.locations.userId, userId)),
+    });
+  }
+
   async findByIds(ids: string[], userId: string): Promise<Location[]> {
     if (ids.length === 0) return [];
     return this.db.query.locations.findMany({

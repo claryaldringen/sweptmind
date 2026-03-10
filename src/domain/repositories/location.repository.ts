@@ -4,6 +4,7 @@ export interface ILocationRepository {
   findByUser(userId: string): Promise<Location[]>;
   findById(id: string, userId: string): Promise<Location | undefined>;
   findByIds(ids: string[], userId: string): Promise<Location[]>;
+  findByName(name: string, userId: string): Promise<Location | undefined>;
   create(values: {
     id?: string;
     userId: string;
