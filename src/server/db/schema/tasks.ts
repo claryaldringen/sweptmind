@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, boolean, doublePrecision, index } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { lists } from "./lists";
 import { locations } from "./locations";
@@ -25,6 +25,7 @@ export const tasks = pgTable(
     dueDate: text("due_date"), // YYYY-MM-DD date string
     reminderAt: text("reminder_at"), // YYYY-MM-DD date string (visibility override)
     recurrence: text("recurrence"), // iCal RRULE
+    locationRadius: doublePrecision("location_radius"), // km, null = use location default
     deviceContext: text("device_context"), // 'phone' | 'computer' | null
     notifiedAt: timestamp("notified_at", { mode: "date" }),
     blockedByTaskId: text("blocked_by_task_id"),

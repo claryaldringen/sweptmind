@@ -67,6 +67,7 @@ const UPDATE_LIST = gql`
       name
       icon
       locationId
+      locationRadius
       deviceContext
       location {
         id
@@ -89,15 +90,6 @@ const CREATE_LOCATION = gql`
       longitude
       radius
       address
-    }
-  }
-`;
-
-const UPDATE_LOCATION = gql`
-  mutation UpdateLocation($id: String!, $input: UpdateLocationInput!) {
-    updateLocation(id: $id, input: $input) {
-      id
-      radius
     }
   }
 `;
@@ -136,7 +128,6 @@ export default function ListPage() {
   const { open: openSidebar, isDesktop } = useSidebarContext();
   const { isNearby: checkNearby, userLatitude, userLongitude } = useNearby();
   const geocode = useGeocode({ userLatitude, userLongitude, locale: appLocale });
-  const taskListScrollRef = useRef<HTMLDivElement>(null);
   const { lists, allTasks, locations: allLocations, loading } = useAppData();
 
   const [updateList] = useMutation<UpdateListData>(UPDATE_LIST);
@@ -181,7 +172,6 @@ export default function ListPage() {
       cache.gc();
     },
   });
-  const [updateLocation] = useMutation(UPDATE_LOCATION);
 
   const list = lists.find((l) => l.id === listId) ?? null;
   const tasks = useMemo(
@@ -290,8 +280,9 @@ export default function ListPage() {
     );
   }
 
-  function handleUpdateLocationRadius(id: string, radius: number) {
-    updateLocation({ variables: { id, input: { radius } } });
+  function handleUpdateLocationRadius(_id: string, radius: number) {
+    if (!list) return;
+    updateList({ variables: { id: list.id, input: { locationRadius: radius } } });
   }
 
   return (
@@ -354,7 +345,9 @@ export default function ListPage() {
             />
           </div>
           <div className="flex items-center gap-1">
-            {list?.location && (
+            {list?.location && (() => {
+              const effectiveRadius = list.locationRadius ?? list.location.radius;
+              return (
               <div className="flex items-center gap-1">
                 <Badge
                   variant="secondary"
@@ -363,7 +356,7 @@ export default function ListPage() {
                     checkNearby(
                       list.location.latitude,
                       list.location.longitude,
-                      list.location.radius,
+                      effectiveRadius,
                     )
                       ? "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
                       : "",
@@ -375,7 +368,7 @@ export default function ListPage() {
                       checkNearby(
                         list.location.latitude,
                         list.location.longitude,
-                        list.location.radius,
+                        effectiveRadius,
                       ) && "animate-pulse",
                     )}
                   />
@@ -390,7 +383,7 @@ export default function ListPage() {
                 <Popover open={radiusPopoverOpen} onOpenChange={setRadiusPopoverOpen}>
                   <PopoverTrigger asChild>
                     <button className="text-muted-foreground hover:text-foreground flex items-center gap-0.5 text-xs transition-colors">
-                      {t("locations.radiusKm", { radius: String(list.location.radius) })}
+                      {t("locations.radiusKm", { radius: String(effectiveRadius) })}
                       <ChevronDown className="h-3 w-3" />
                     </button>
                   </PopoverTrigger>
@@ -405,7 +398,7 @@ export default function ListPage() {
                           }}
                           className={cn(
                             "rounded-md px-2 py-1 text-xs transition-colors",
-                            list.location!.radius === r
+                            effectiveRadius === r
                               ? "bg-primary text-primary-foreground"
                               : "hover:bg-accent text-muted-foreground hover:text-foreground",
                           )}
@@ -417,7 +410,8 @@ export default function ListPage() {
                   </PopoverContent>
                 </Popover>
               </div>
-            )}
+              );
+            })()}
             <DeviceContextPicker
               value={list?.deviceContext ?? null}
               onChange={(val) => {
@@ -571,12 +565,12 @@ export default function ListPage() {
             <div className="text-muted-foreground animate-pulse">{t("common.loading")}</div>
           </div>
         ) : (
-          <SortableTaskList tasks={tasks} scrollRef={taskListScrollRef} />
+          <SortableTaskList tasks={tasks} />
         )}
 
         <TaskInput
           listId={listId}
-          onTaskCreated={() => taskListScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+          onTaskCreated={() => document.querySelector("[data-task-scroll-container]")?.scrollTo({ top: 0, behavior: "smooth" })}
         />
       </div>
     </ResizableTaskLayout>

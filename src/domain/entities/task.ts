@@ -3,6 +3,7 @@ export interface Task {
   userId: string;
   listId: string;
   locationId: string | null;
+  locationRadius: number | null;
   title: string;
   notes: string | null;
   isCompleted: boolean;
@@ -33,6 +34,7 @@ export interface CreateTaskInput {
   notes?: string | null;
   dueDate?: string | null;
   locationId?: string | null;
+  locationRadius?: number | null;
   deviceContext?: string | null;
 }
 
@@ -44,6 +46,7 @@ export interface UpdateTaskInput {
   recurrence?: string | null;
   listId?: string | null;
   locationId?: string | null;
+  locationRadius?: number | null;
   deviceContext?: string | null;
   blockedByTaskId?: string | null;
 }

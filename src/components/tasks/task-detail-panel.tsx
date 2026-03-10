@@ -43,6 +43,7 @@ const UPDATE_TASK = gql`
       deviceContext
       listId
       locationId
+      locationRadius
       location {
         id
         name
@@ -150,15 +151,6 @@ const CREATE_LOCATION = gql`
   }
 `;
 
-const UPDATE_LOCATION = gql`
-  mutation UpdateLocation($id: String!, $input: UpdateLocationInput!) {
-    updateLocation(id: $id, input: $input) {
-      id
-      radius
-    }
-  }
-`;
-
 const DELETE_LOCATION = gql`
   mutation DeleteLocation($id: String!) {
     deleteLocation(id: $id)
@@ -196,6 +188,7 @@ interface TaskDetail {
   id: string;
   listId: string;
   locationId: string | null;
+  locationRadius: number | null;
   title: string;
   notes: string | null;
   isCompleted: boolean;
@@ -226,6 +219,7 @@ interface UpdateTaskData {
     deviceContext: string | null;
     listId: string;
     locationId: string | null;
+    locationRadius: number | null;
     location: TaskLocation | null;
     blockedByTaskId: string | null;
     blockedByTask: { id: string; title: string } | null;
@@ -513,7 +507,6 @@ export function TaskDetailPanel() {
       cache.gc();
     },
   });
-  const [updateLocation] = useMutation(UPDATE_LOCATION);
 
   // ---- Hooks ----
 
@@ -663,8 +656,9 @@ export function TaskDetailPanel() {
     }
   }
 
-  function handleUpdateLocationRadius(id: string, radius: number) {
-    updateLocation({ variables: { id, input: { radius } } });
+  function handleUpdateLocationRadius(_id: string, radius: number) {
+    if (!task) return;
+    optimisticUpdate({ locationRadius: radius });
   }
 
   async function handleRemoveLocation() {
@@ -854,7 +848,11 @@ export function TaskDetailPanel() {
 
           {/* Location */}
           <TaskLocation
-            location={task.location}
+            location={
+              task.location
+                ? { ...task.location, radius: task.locationRadius ?? task.location.radius }
+                : null
+            }
             savedLocations={
               allLocationsFromProvider as Array<{
                 id: string;

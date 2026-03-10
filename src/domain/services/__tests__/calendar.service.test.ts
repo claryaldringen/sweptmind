@@ -10,6 +10,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     userId: "user-1",
     listId: "list-1",
     locationId: null,
+    locationRadius: null,
     title: "Test Task",
     notes: null,
     isCompleted: false,

@@ -12,6 +12,7 @@ export const ListType = ListRef.implement({
     sortOrder: t.exposeInt("sortOrder"),
     groupId: t.exposeString("groupId", { nullable: true }),
     locationId: t.exposeString("locationId", { nullable: true }),
+    locationRadius: t.exposeFloat("locationRadius", { nullable: true }),
     deviceContext: t.exposeString("deviceContext", { nullable: true }),
     taskCount: t.int({
       resolve: async (list, _args, ctx) => ctx.loaders.taskCountByListId.load(list.id),
@@ -74,6 +75,7 @@ const UpdateListInput = builder.inputType("UpdateListInput", {
     themeColor: t.string(),
     groupId: t.string(),
     locationId: t.string(),
+    locationRadius: t.float({ required: false }),
     deviceContext: t.string(),
   }),
 });

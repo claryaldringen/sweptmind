@@ -109,6 +109,7 @@ export class TaskService {
     }
     if (input.listId != null) updates.listId = input.listId;
     if (input.locationId !== undefined) updates.locationId = input.locationId ?? null;
+    if (input.locationRadius !== undefined) updates.locationRadius = input.locationRadius ?? null;
     if (input.deviceContext !== undefined) updates.deviceContext = input.deviceContext ?? null;
     if (input.blockedByTaskId !== undefined)
       updates.blockedByTaskId = input.blockedByTaskId ?? null;

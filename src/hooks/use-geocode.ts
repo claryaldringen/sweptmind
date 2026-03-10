@@ -26,8 +26,8 @@ interface UseGeocodeReturn {
 const PHOTON_URL = "https://photon.komoot.io/api/";
 const NOMINATIM_LOOKUP_URL = "https://nominatim.openstreetmap.org/lookup";
 const MIN_INTERVAL_MS = 1000;
-const FETCH_LIMIT = 15;
-const MAX_RESULTS = 5;
+const FETCH_LIMIT = 20;
+const MAX_RESULTS = 10;
 
 interface IpInfo {
   latitude: number;

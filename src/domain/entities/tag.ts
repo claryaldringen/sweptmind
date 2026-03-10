@@ -5,6 +5,7 @@ export interface Tag {
   color: string;
   deviceContext: string | null;
   locationId: string | null;
+  locationRadius: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,6 +16,7 @@ export interface CreateTagInput {
   color?: string;
   deviceContext?: string | null;
   locationId?: string | null;
+  locationRadius?: number | null;
 }
 
 export interface UpdateTagInput {
@@ -22,4 +24,5 @@ export interface UpdateTagInput {
   color?: string;
   deviceContext?: string | null;
   locationId?: string | null;
+  locationRadius?: number | null;
 }

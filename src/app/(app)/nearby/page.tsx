@@ -22,7 +22,7 @@ export default function NearbyPage() {
       (task) =>
         !task.isCompleted &&
         task.location &&
-        isNearby(task.location.latitude, task.location.longitude, task.location.radius),
+        isNearby(task.location.latitude, task.location.longitude, task.locationRadius ?? task.location.radius),
     );
   }, [allTasks, isTracking, isNearby]);
 

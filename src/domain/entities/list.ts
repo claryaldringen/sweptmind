@@ -3,6 +3,7 @@ export interface List {
   userId: string;
   groupId: string | null;
   locationId: string | null;
+  locationRadius: number | null;
   deviceContext: string | null;
   name: string;
   icon: string | null;
@@ -36,6 +37,7 @@ export interface UpdateListInput {
   themeColor?: string | null;
   groupId?: string | null;
   locationId?: string | null;
+  locationRadius?: number | null;
   deviceContext?: string | null;
 }
 

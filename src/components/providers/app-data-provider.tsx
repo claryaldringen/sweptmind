@@ -19,6 +19,7 @@ export const GET_APP_DATA = gql`
       sortOrder
       groupId
       locationId
+      locationRadius
       deviceContext
       location {
         id
@@ -32,6 +33,7 @@ export const GET_APP_DATA = gql`
       id
       listId
       locationId
+      locationRadius
       title
       notes
       isCompleted
@@ -80,6 +82,7 @@ export const GET_APP_DATA = gql`
       taskCount
       deviceContext
       locationId
+      locationRadius
       location {
         id
         name
@@ -120,6 +123,7 @@ export interface ListItem {
   sortOrder: number;
   groupId: string | null;
   locationId: string | null;
+  locationRadius: number | null;
   location: ListLocationInfo | null;
   deviceContext: string | null;
 }
@@ -150,6 +154,7 @@ export interface AppTask {
   id: string;
   listId: string;
   locationId: string | null;
+  locationRadius: number | null;
   title: string;
   notes: string | null;
   isCompleted: boolean;
@@ -177,6 +182,7 @@ export interface TagItem {
   taskCount: number;
   deviceContext: string | null;
   locationId: string | null;
+  locationRadius: number | null;
   location: ListLocationInfo | null;
 }
 

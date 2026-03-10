@@ -39,6 +39,7 @@ export class ListService {
     if (input.themeColor !== undefined) updates.themeColor = input.themeColor ?? null;
     if (input.groupId !== undefined) updates.groupId = input.groupId ?? null;
     if (input.locationId !== undefined) updates.locationId = input.locationId ?? null;
+    if (input.locationRadius !== undefined) updates.locationRadius = input.locationRadius ?? null;
     if (input.deviceContext !== undefined) updates.deviceContext = input.deviceContext ?? null;
 
     return this.listRepo.update(id, userId, updates);

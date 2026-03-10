@@ -10,6 +10,7 @@ export const TagType = TagRef.implement({
     color: t.exposeString("color"),
     deviceContext: t.exposeString("deviceContext", { nullable: true }),
     locationId: t.exposeString("locationId", { nullable: true }),
+    locationRadius: t.exposeFloat("locationRadius", { nullable: true }),
     location: t.field({
       type: LocationRef,
       nullable: true,
@@ -55,6 +56,7 @@ const CreateTagInput = builder.inputType("CreateTagInput", {
     color: t.string(),
     deviceContext: t.string(),
     locationId: t.string(),
+    locationRadius: t.float({ required: false }),
   }),
 });
 
@@ -64,6 +66,7 @@ const UpdateTagInput = builder.inputType("UpdateTagInput", {
     color: t.string(),
     deviceContext: t.string(),
     locationId: t.string(),
+    locationRadius: t.float({ required: false }),
   }),
 });
 
@@ -81,6 +84,7 @@ builder.mutationField("createTag", (t) =>
         color: input.color ?? undefined,
         deviceContext: input.deviceContext ?? undefined,
         locationId: input.locationId ?? undefined,
+        locationRadius: input.locationRadius ?? undefined,
       });
     },
   }),
@@ -101,6 +105,7 @@ builder.mutationField("updateTag", (t) =>
         color: input.color ?? undefined,
         deviceContext: input.deviceContext,
         locationId: input.locationId,
+        locationRadius: input.locationRadius,
       });
     },
   }),

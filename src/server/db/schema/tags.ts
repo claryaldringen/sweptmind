@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, primaryKey, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, primaryKey, doublePrecision, index } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { tasks } from "./tasks";
 import { locations } from "./locations";
@@ -18,6 +18,7 @@ export const tags = pgTable(
     locationId: text("location_id").references(() => locations.id, {
       onDelete: "set null",
     }),
+    locationRadius: doublePrecision("location_radius"), // km, null = use location default
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()

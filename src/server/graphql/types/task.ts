@@ -17,6 +17,7 @@ export const TaskType = TaskRef.implement({
     dueDate: t.exposeString("dueDate", { nullable: true }),
     reminderAt: t.exposeString("reminderAt", { nullable: true }),
     recurrence: t.exposeString("recurrence", { nullable: true }),
+    locationRadius: t.exposeFloat("locationRadius", { nullable: true }),
     deviceContext: t.exposeString("deviceContext", { nullable: true }),
     sortOrder: t.exposeInt("sortOrder"),
     createdAt: t.string({
@@ -191,6 +192,7 @@ const CreateTaskInput = builder.inputType("CreateTaskInput", {
     notes: t.string(),
     dueDate: t.string(),
     locationId: t.string(),
+    locationRadius: t.float({ required: false }),
     deviceContext: t.string(),
   }),
 });
@@ -204,6 +206,7 @@ const UpdateTaskInput = builder.inputType("UpdateTaskInput", {
     recurrence: t.string(),
     listId: t.string(),
     locationId: t.string(),
+    locationRadius: t.float({ required: false }),
     deviceContext: t.string(),
     blockedByTaskId: t.string(),
   }),

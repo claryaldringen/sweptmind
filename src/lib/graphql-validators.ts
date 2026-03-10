@@ -25,6 +25,7 @@ export const updateTaskSchema = z.object({
   recurrence: z.string().max(500).nullish(),
   listId: z.string().uuid().nullish(),
   locationId: z.string().uuid().nullish(),
+  locationRadius: z.number().min(0.1).max(100).nullish(),
   deviceContext: deviceContextEnum,
   blockedByTaskId: z.string().uuid().nullish(),
 });
@@ -51,6 +52,7 @@ export const updateListSchema = z.object({
   themeColor: z.string().max(50).nullish(),
   groupId: z.string().uuid().nullish(),
   locationId: z.string().uuid().nullish(),
+  locationRadius: z.number().min(0.1).max(100).nullish(),
   deviceContext: deviceContextEnum,
 });
 
@@ -72,6 +74,7 @@ export const createTagSchema = z.object({
   color: z.string().max(50).nullish(),
   deviceContext: deviceContextEnum,
   locationId: z.string().uuid().nullish(),
+  locationRadius: z.number().min(0.1).max(100).nullish(),
 });
 
 export const updateTagSchema = z.object({
@@ -79,6 +82,7 @@ export const updateTagSchema = z.object({
   color: z.string().max(50).nullish(),
   deviceContext: deviceContextEnum,
   locationId: z.string().uuid().nullish(),
+  locationRadius: z.number().min(0.1).max(100).nullish(),
 });
 
 export const createLocationSchema = z.object({

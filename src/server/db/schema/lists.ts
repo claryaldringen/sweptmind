@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, boolean, doublePrecision, index } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { locations } from "./locations";
 
@@ -38,6 +38,7 @@ export const lists = pgTable(
     icon: text("icon"),
     themeColor: text("theme_color"),
     isDefault: boolean("is_default").notNull().default(false),
+    locationRadius: doublePrecision("location_radius"), // km, null = use location default
     deviceContext: text("device_context"), // 'phone' | 'computer' | null
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),

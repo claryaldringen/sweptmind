@@ -9,6 +9,7 @@ function makeList(overrides: Partial<List> = {}): List {
     userId: "user-1",
     groupId: null,
     locationId: null,
+    locationRadius: null,
     deviceContext: null,
     name: "Test list",
     icon: null,

@@ -38,14 +38,6 @@ function createMaskableIconSvg(size) {
 </svg>`;
 }
 
-// Favicon SVG (simple, no background for browser tab)
-const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#18181b"/>
-  <g transform="translate(4.5, 4) scale(0.96)">
-    <path d="M13 2 3 14h9l-1 10 10-12h-9l1-10z" fill="#eab308" stroke="#ca8a04" stroke-width="0.5" stroke-linejoin="round"/>
-  </g>
-</svg>`;
-
 async function main() {
   // Generate favicon.ico (multi-size: 16, 32, 48)
   const ico16 = await sharp(Buffer.from(createIconSvg(16))).resize(16, 16).png().toBuffer();

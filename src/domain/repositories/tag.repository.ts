@@ -12,6 +12,7 @@ export interface ITagRepository {
     color: string;
     deviceContext?: string | null;
     locationId?: string | null;
+    locationRadius?: number | null;
   }): Promise<Tag>;
   update(id: string, userId: string, data: Partial<Tag>): Promise<Tag>;
   delete(id: string, userId: string): Promise<void>;

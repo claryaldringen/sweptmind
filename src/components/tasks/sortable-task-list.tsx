@@ -35,14 +35,12 @@ interface SortableTaskListProps {
   tasks: Task[];
   showListName?: boolean;
   showCompleted?: boolean;
-  scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function SortableTaskList({
   tasks,
   showListName = false,
   showCompleted = true,
-  scrollRef,
 }: SortableTaskListProps) {
   const { t } = useTranslations();
   const { registerTaskReorder } = useTaskDnd();
@@ -112,14 +110,7 @@ export function SortableTaskList({
   }, [registerTaskReorder, handleTaskReorder]);
 
   return (
-    <div
-      ref={(el) => {
-        (listRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-        if (scrollRef)
-          (scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-      }}
-      className="flex-1 overflow-auto"
-    >
+    <div ref={listRef} data-task-scroll-container className="flex-1 overflow-auto">
       <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
         <ul className="space-y-0.5">
           {items.map((task) =>

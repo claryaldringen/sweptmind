@@ -13,6 +13,7 @@ function makeTag(overrides: Partial<Tag> = {}): Tag {
     color: "blue",
     deviceContext: null,
     locationId: null,
+    locationRadius: null,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     ...overrides,
@@ -25,6 +26,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     userId: "user-1",
     listId: "list-1",
     locationId: null,
+    locationRadius: null,
     title: "Test task",
     notes: null,
     isCompleted: false,
@@ -108,6 +110,7 @@ describe("TagService", () => {
         color: "blue",
         deviceContext: null,
         locationId: null,
+        locationRadius: null,
       });
     });
 
@@ -123,6 +126,7 @@ describe("TagService", () => {
         color: "red",
         deviceContext: null,
         locationId: null,
+        locationRadius: null,
       });
     });
   });

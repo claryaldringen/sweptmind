@@ -28,6 +28,7 @@ export class TagService {
       color: input.color ?? "blue",
       deviceContext: input.deviceContext ?? null,
       locationId: input.locationId ?? null,
+      locationRadius: input.locationRadius ?? null,
     });
   }
 
@@ -37,6 +38,7 @@ export class TagService {
     if (input.color != null) updates.color = input.color;
     if (input.deviceContext !== undefined) updates.deviceContext = input.deviceContext ?? null;
     if (input.locationId !== undefined) updates.locationId = input.locationId ?? null;
+    if (input.locationRadius !== undefined) updates.locationRadius = input.locationRadius ?? null;
     return this.tagRepo.update(id, userId, updates);
   }
 
