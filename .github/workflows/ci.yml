@@ -17,9 +17,9 @@ jobs:
         run: |
           # codegen introspects a running server — skip gracefully in CI if unavailable
           yarn codegen 2>/dev/null || true
-          if [ -n "$(git diff --name-only)" ]; then
+          if [ -n "$(git diff --name-only -- 'src/__generated__/')" ]; then
             echo "::error::GraphQL codegen produced uncommitted changes. Run 'yarn codegen' and commit the results."
-            git diff --name-only
+            git diff --name-only -- 'src/__generated__/'
             exit 1
           fi
       - name: Build
