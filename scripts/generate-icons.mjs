@@ -7,17 +7,16 @@ function createIconSvg(size) {
   const padding = Math.round(size * 0.15);
   const cornerRadius = Math.round(size * 0.22);
 
-  // Lucide Zap path scaled to fit inside the padded area
-  // Original Lucide viewBox is 0 0 24 24, path: M13 2 3 14h9l-1 10 10-12h-9l1-10z
+  // Lucide Zap outline path on white background
   const iconArea = size - padding * 2;
   const scale = iconArea / 24;
   const tx = padding;
   const ty = padding;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <rect width="${size}" height="${size}" rx="${cornerRadius}" fill="#18181b"/>
+  <rect width="${size}" height="${size}" rx="${cornerRadius}" fill="#ffffff"/>
   <g transform="translate(${tx}, ${ty}) scale(${scale})">
-    <path d="M13 2 3 14h9l-1 10 10-12h-9l1-10z" fill="#eab308" stroke="#ca8a04" stroke-width="0.5" stroke-linejoin="round"/>
+    <path d="M13 2 3 14h9l-1 10 10-12h-9l1-10z" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>`;
 }
@@ -31,9 +30,9 @@ function createMaskableIconSvg(size) {
   const ty = padding;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <rect width="${size}" height="${size}" fill="#18181b"/>
+  <rect width="${size}" height="${size}" fill="#ffffff"/>
   <g transform="translate(${tx}, ${ty}) scale(${scale})">
-    <path d="M13 2 3 14h9l-1 10 10-12h-9l1-10z" fill="#eab308" stroke="#ca8a04" stroke-width="0.5" stroke-linejoin="round"/>
+    <path d="M13 2 3 14h9l-1 10 10-12h-9l1-10z" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>`;
 }
