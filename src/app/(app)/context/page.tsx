@@ -91,7 +91,7 @@ export default function ContextPage() {
       return false;
     }
 
-    // Sort priority: 0=overdue, 1=today, 2=location AND device, 3=location OR device
+    // Sort priority: 0=overdue, 1=today, 2=location AND device, 3=location only, 4=device only
     function sortPriority(task: (typeof filtered)[0]): number {
       const dateStr = task.dueDate?.slice(0, 10);
       if (dateStr && dateStr < todayStr) return 0; // overdue
@@ -99,7 +99,8 @@ export default function ContextPage() {
       const loc = hasLocation(task);
       const dev = hasDevice(task);
       if (loc && dev) return 2; // location AND device
-      return 3; // location OR device
+      if (loc) return 3; // location only — fleeting, prioritize
+      return 4; // device only
     }
 
     return filtered.sort((a, b) => sortPriority(a) - sortPriority(b));
