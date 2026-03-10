@@ -3,6 +3,7 @@ import { CombinedGraphQLErrors } from "@apollo/client/errors";
 import { ErrorLink } from "@apollo/client/link/error";
 import { RetryLink } from "@apollo/client/link/retry";
 import { ApolloClient, InMemoryCache } from "@apollo/client-integration-nextjs";
+import { persistCache } from "apollo3-cache-persist";
 import { print } from "graphql";
 import { get, set, del } from "idb-keyval";
 import { syncManager } from "./sync-manager";
@@ -19,11 +20,6 @@ class IdbStorageAdapter {
   }
 }
 
-// Promise that resolves when cache is restored from IndexedDB
-let cacheRestoredResolve: () => void;
-export const cacheRestored = new Promise<void>((resolve) => {
-  cacheRestoredResolve = resolve;
-});
 
 export function makeClient() {
   const errorLink = new ErrorLink(({ error }) => {
@@ -94,20 +90,14 @@ export function makeClient() {
   // Attach client to sync manager for replay
   syncManager.attach(client);
 
-  // Restore cache from IndexedDB before queries run
+  // Restore cache from IndexedDB (non-blocking — queries fire immediately,
+  // cache.restore() triggers watchers when data is ready)
   if (typeof window !== "undefined") {
-    import("apollo3-cache-persist")
-      .then(({ persistCache }) =>
-        persistCache({
-          cache,
-          storage: new IdbStorageAdapter(),
-          maxSize: false,
-        }),
-      )
-      .catch(() => {})
-      .finally(() => cacheRestoredResolve());
-  } else {
-    cacheRestoredResolve();
+    persistCache({
+      cache,
+      storage: new IdbStorageAdapter(),
+      maxSize: false,
+    }).catch(() => {});
   }
 
   return client;

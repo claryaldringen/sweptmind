@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { ApolloNextAppProvider } from "@apollo/client-integration-nextjs";
-import { makeClient, cacheRestored } from "./client";
+import { makeClient } from "./client";
 import { syncManager, type SyncState } from "./sync-manager";
 
 interface SyncContextType {
@@ -16,17 +16,6 @@ const SyncContext = createContext<SyncContextType>({
 });
 
 export const useSyncState = () => useContext(SyncContext);
-
-function CacheGate({ children }: { children: React.ReactNode }) {
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    cacheRestored.then(() => setReady(true));
-  }, []);
-
-  if (!ready) return null;
-  return children;
-}
 
 export function ApolloProvider({ children }: { children: React.ReactNode }) {
   const [syncState, setSyncState] = useState<SyncState>("idle");
@@ -42,7 +31,7 @@ export function ApolloProvider({ children }: { children: React.ReactNode }) {
   return (
     <SyncContext.Provider value={{ syncState, pendingCount }}>
       <ApolloNextAppProvider makeClient={makeClient}>
-        <CacheGate>{children}</CacheGate>
+        {children}
       </ApolloNextAppProvider>
     </SyncContext.Provider>
   );
