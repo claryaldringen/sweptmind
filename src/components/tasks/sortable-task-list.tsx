@@ -88,6 +88,7 @@ export function SortableTaskList({
       const input = newIds.map((id, i) => ({ id, sortOrder: i }));
       reorderTasks({
         variables: { input },
+        optimisticResponse: { reorderTasks: true },
         update(cache) {
           for (const { id, sortOrder } of input) {
             cache.modify({
