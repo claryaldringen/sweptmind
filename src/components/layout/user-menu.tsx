@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,13 +12,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Settings, User } from "lucide-react";
-import Link from "next/link";
 import { useTranslations } from "@/lib/i18n";
+import { useSidebarContext } from "@/components/layout/app-shell";
 
 export function UserMenu() {
   const triggerId = useId();
   const { data: session } = useSession();
   const { t } = useTranslations();
+  const { close: closeSidebar } = useSidebarContext();
+  const router = useRouter();
 
   const initials = session?.user?.name
     ?.split(" ")
@@ -46,11 +49,14 @@ export function UserMenu() {
           <p className="text-muted-foreground text-xs">{session?.user?.email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/settings">
-            <Settings className="mr-2 h-4 w-4" />
-            {t("sidebar.settings")}
-          </Link>
+        <DropdownMenuItem
+          onClick={() => {
+            closeSidebar();
+            router.push("/settings");
+          }}
+        >
+          <Settings className="mr-2 h-4 w-4" />
+          {t("sidebar.settings")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
