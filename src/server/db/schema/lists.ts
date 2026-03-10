@@ -1,4 +1,12 @@
-import { pgTable, text, timestamp, integer, boolean, doublePrecision, index } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  integer,
+  boolean,
+  doublePrecision,
+  index,
+} from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { locations } from "./locations";
 

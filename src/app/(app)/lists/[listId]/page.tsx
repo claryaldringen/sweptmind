@@ -80,7 +80,6 @@ const UPDATE_LIST = gql`
   }
 `;
 
-
 const CREATE_LOCATION = gql`
   mutation CreateLocation($input: CreateLocationInput!) {
     createLocation(input: $input) {
@@ -140,7 +139,9 @@ export default function ListPage() {
     },
   });
 
-  const [createLocation] = useMutation<{ createLocation: { id: string; name: string; latitude: number; longitude: number } }>(CREATE_LOCATION, {
+  const [createLocation] = useMutation<{
+    createLocation: { id: string; name: string; latitude: number; longitude: number };
+  }>(CREATE_LOCATION, {
     update(cache, { data }) {
       if (!data?.createLocation) return;
       cache.modify({
@@ -175,10 +176,7 @@ export default function ListPage() {
 
   const list = lists.find((l) => l.id === listId) ?? null;
   const tasks = useMemo(
-    () =>
-      allTasks
-        .filter((t) => t.listId === listId)
-        .sort((a, b) => a.sortOrder - b.sortOrder),
+    () => allTasks.filter((t) => t.listId === listId).sort((a, b) => a.sortOrder - b.sortOrder),
     [allTasks, listId],
   );
 
@@ -345,73 +343,74 @@ export default function ListPage() {
             />
           </div>
           <div className="flex items-center gap-1">
-            {list?.location && (() => {
-              const effectiveRadius = list.locationRadius ?? list.location.radius;
-              return (
-              <div className="flex items-center gap-1">
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    "gap-1 pr-1",
-                    checkNearby(
-                      list.location.latitude,
-                      list.location.longitude,
-                      effectiveRadius,
-                    )
-                      ? "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
-                      : "",
-                  )}
-                >
-                  <MapPin
-                    className={cn(
-                      "h-3 w-3",
-                      checkNearby(
-                        list.location.latitude,
-                        list.location.longitude,
-                        effectiveRadius,
-                      ) && "animate-pulse",
-                    )}
-                  />
-                  {list.location.name}
-                  <button
-                    onClick={handleRemoveListLocation}
-                    className="rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10"
-                  >
-                    <span className="sr-only">{t("tasks.removeLocation")}</span>×
-                  </button>
-                </Badge>
-                <Popover open={radiusPopoverOpen} onOpenChange={setRadiusPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <button className="text-muted-foreground hover:text-foreground flex items-center gap-0.5 text-xs transition-colors">
-                      {t("locations.radiusKm", { radius: String(effectiveRadius) })}
-                      <ChevronDown className="h-3 w-3" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-2" align="start">
-                    <div className="flex flex-wrap gap-1">
-                      {RADIUS_OPTIONS.map((r) => (
-                        <button
-                          key={r}
-                          onClick={() => {
-                            handleUpdateLocationRadius(list.location!.id, r);
-                            setRadiusPopoverOpen(false);
-                          }}
-                          className={cn(
-                            "rounded-md px-2 py-1 text-xs transition-colors",
-                            effectiveRadius === r
-                              ? "bg-primary text-primary-foreground"
-                              : "hover:bg-accent text-muted-foreground hover:text-foreground",
-                          )}
-                        >
-                          {t("locations.radiusKm", { radius: String(r) })}
+            {list?.location &&
+              (() => {
+                const effectiveRadius = list.locationRadius ?? list.location.radius;
+                return (
+                  <div className="flex items-center gap-1">
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "gap-1 pr-1",
+                        checkNearby(
+                          list.location.latitude,
+                          list.location.longitude,
+                          effectiveRadius,
+                        )
+                          ? "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
+                          : "",
+                      )}
+                    >
+                      <MapPin
+                        className={cn(
+                          "h-3 w-3",
+                          checkNearby(
+                            list.location.latitude,
+                            list.location.longitude,
+                            effectiveRadius,
+                          ) && "animate-pulse",
+                        )}
+                      />
+                      {list.location.name}
+                      <button
+                        onClick={handleRemoveListLocation}
+                        className="rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10"
+                      >
+                        <span className="sr-only">{t("tasks.removeLocation")}</span>×
+                      </button>
+                    </Badge>
+                    <Popover open={radiusPopoverOpen} onOpenChange={setRadiusPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <button className="text-muted-foreground hover:text-foreground flex items-center gap-0.5 text-xs transition-colors">
+                          {t("locations.radiusKm", { radius: String(effectiveRadius) })}
+                          <ChevronDown className="h-3 w-3" />
                         </button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              );
-            })()}
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2" align="start">
+                        <div className="flex flex-wrap gap-1">
+                          {RADIUS_OPTIONS.map((r) => (
+                            <button
+                              key={r}
+                              onClick={() => {
+                                handleUpdateLocationRadius(list.location!.id, r);
+                                setRadiusPopoverOpen(false);
+                              }}
+                              className={cn(
+                                "rounded-md px-2 py-1 text-xs transition-colors",
+                                effectiveRadius === r
+                                  ? "bg-primary text-primary-foreground"
+                                  : "hover:bg-accent text-muted-foreground hover:text-foreground",
+                              )}
+                            >
+                              {t("locations.radiusKm", { radius: String(r) })}
+                            </button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                );
+              })()}
             <DeviceContextPicker
               value={list?.deviceContext ?? null}
               onChange={(val) => {
@@ -570,7 +569,11 @@ export default function ListPage() {
 
         <TaskInput
           listId={listId}
-          onTaskCreated={() => document.querySelector("[data-task-scroll-container]")?.scrollTo({ top: 0, behavior: "smooth" })}
+          onTaskCreated={() =>
+            document
+              .querySelector("[data-task-scroll-container]")
+              ?.scrollTo({ top: 0, behavior: "smooth" })
+          }
         />
       </div>
     </ResizableTaskLayout>

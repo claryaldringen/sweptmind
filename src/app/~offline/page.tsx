@@ -12,7 +12,7 @@ export default function OfflinePage() {
           strokeWidth={2}
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="mx-auto mb-4 text-muted-foreground"
+          className="text-muted-foreground mx-auto mb-4"
           aria-hidden="true"
         >
           <path d="M12 20h.01" />
@@ -24,9 +24,9 @@ export default function OfflinePage() {
           <line x1="2" x2="22" y1="2" y2="22" />
         </svg>
         <h1 className="text-xl font-semibold">Jsi offline</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Tuto stránku nemáme v mezipaměti. Jakmile se připojíš k internetu,
-          aplikace se automaticky obnoví.
+        <p className="text-muted-foreground mt-2 text-sm">
+          Tuto stránku nemáme v mezipaměti. Jakmile se připojíš k internetu, aplikace se automaticky
+          obnoví.
         </p>
       </div>
       <script

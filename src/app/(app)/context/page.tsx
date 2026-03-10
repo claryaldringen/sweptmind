@@ -25,31 +25,31 @@ export default function ContextPage() {
     // Helper: is this list nearby (using its own locationRadius)?
     function isListNearby(l: (typeof lists)[0]): boolean {
       if (!l.location) return false;
-      return isNearby(l.location.latitude, l.location.longitude, l.locationRadius ?? l.location.radius);
+      return isNearby(
+        l.location.latitude,
+        l.location.longitude,
+        l.locationRadius ?? l.location.radius,
+      );
     }
 
     // Helper: is this tag nearby (using its own locationRadius)?
     function isTagNearby(tg: (typeof tags)[0]): boolean {
       if (!tg.location) return false;
-      return isNearby(tg.location.latitude, tg.location.longitude, tg.locationRadius ?? tg.location.radius);
+      return isNearby(
+        tg.location.latitude,
+        tg.location.longitude,
+        tg.locationRadius ?? tg.location.radius,
+      );
     }
 
     const contextListIds = new Set(
       lists
-        .filter(
-          (l) =>
-            (deviceContext && l.deviceContext === deviceContext) ||
-            isListNearby(l),
-        )
+        .filter((l) => (deviceContext && l.deviceContext === deviceContext) || isListNearby(l))
         .map((l) => l.id),
     );
     const contextTagIds = new Set(
       tags
-        .filter(
-          (t) =>
-            (deviceContext && t.deviceContext === deviceContext) ||
-            isTagNearby(t),
-        )
+        .filter((t) => (deviceContext && t.deviceContext === deviceContext) || isTagNearby(t))
         .map((t) => t.id),
     );
 
@@ -59,7 +59,11 @@ export default function ContextPage() {
       if (deviceContext && task.deviceContext === deviceContext) return true;
       if (
         task.location &&
-        isNearby(task.location.latitude, task.location.longitude, task.locationRadius ?? task.location.radius)
+        isNearby(
+          task.location.latitude,
+          task.location.longitude,
+          task.locationRadius ?? task.location.radius,
+        )
       )
         return true;
       if (contextListIds.has(task.listId)) return true;
@@ -71,12 +75,20 @@ export default function ContextPage() {
     function hasLocation(task: (typeof filtered)[0]): boolean {
       if (
         task.location &&
-        isNearby(task.location.latitude, task.location.longitude, task.locationRadius ?? task.location.radius)
+        isNearby(
+          task.location.latitude,
+          task.location.longitude,
+          task.locationRadius ?? task.location.radius,
+        )
       )
         return true;
       if (contextListIds.has(task.listId) && lists.find((l) => l.id === task.listId)?.locationId)
         return true;
-      if (task.tags?.some((t) => contextTagIds.has(t.id) && tags.find((tg) => tg.id === t.id)?.locationId))
+      if (
+        task.tags?.some(
+          (t) => contextTagIds.has(t.id) && tags.find((tg) => tg.id === t.id)?.locationId,
+        )
+      )
         return true;
       return false;
     }
@@ -84,9 +96,18 @@ export default function ContextPage() {
     // Helper: does task match device context?
     function hasDevice(task: (typeof filtered)[0]): boolean {
       if (deviceContext && task.deviceContext === deviceContext) return true;
-      if (contextListIds.has(task.listId) && lists.find((l) => l.id === task.listId)?.deviceContext === deviceContext)
+      if (
+        contextListIds.has(task.listId) &&
+        lists.find((l) => l.id === task.listId)?.deviceContext === deviceContext
+      )
         return true;
-      if (task.tags?.some((t) => contextTagIds.has(t.id) && tags.find((tg) => tg.id === t.id)?.deviceContext === deviceContext))
+      if (
+        task.tags?.some(
+          (t) =>
+            contextTagIds.has(t.id) &&
+            tags.find((tg) => tg.id === t.id)?.deviceContext === deviceContext,
+        )
+      )
         return true;
       return false;
     }

@@ -171,7 +171,14 @@ export const TaskItem = memo(function TaskItem({
   }
 
   const [toggleCompleted] = useMutation<{
-    toggleTaskCompleted: { __typename: "Task"; id: string; isCompleted: boolean; completedAt: string | null; dueDate: string | null; reminderAt: string | null };
+    toggleTaskCompleted: {
+      __typename: "Task";
+      id: string;
+      isCompleted: boolean;
+      completedAt: string | null;
+      dueDate: string | null;
+      reminderAt: string | null;
+    };
   }>(TOGGLE_COMPLETED, {
     optimisticResponse: {
       toggleTaskCompleted: {
@@ -284,7 +291,11 @@ export const TaskItem = memo(function TaskItem({
   const hasRecurrence = !!task.recurrence;
   const hasLocation = !!task.location;
   const locationNearby = task.location
-    ? checkNearby(task.location.latitude, task.location.longitude, task.locationRadius ?? task.location.radius)
+    ? checkNearby(
+        task.location.latitude,
+        task.location.longitude,
+        task.locationRadius ?? task.location.radius,
+      )
     : false;
   const taskList = task.list ? lists.find((l) => l.id === task.list!.id) : undefined;
   const deviceMatch = !locationNearby && taskList?.deviceContext === deviceContext;

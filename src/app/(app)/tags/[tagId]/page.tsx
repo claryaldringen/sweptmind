@@ -114,8 +114,7 @@ export default function TagPage() {
 
   const tag = tags.find((t) => t.id === tagId);
   const tasks = useMemo(
-    () =>
-      allTasks.filter((task) => task.tags?.some((t) => t.id === tagId)),
+    () => allTasks.filter((task) => task.tags?.some((t) => t.id === tagId)),
     [allTasks, tagId],
   );
   const colors = tag ? getTagColorClasses(tag.color) : getTagColorClasses("blue");
@@ -208,7 +207,7 @@ export default function TagPage() {
                       className={cn(
                         "flex h-8 w-8 items-center justify-center rounded-full transition-transform hover:scale-110",
                         c.bg,
-                        tag?.color === key && "ring-2 ring-offset-2 ring-current",
+                        tag?.color === key && "ring-2 ring-current ring-offset-2",
                       )}
                     >
                       <span className={cn("h-4 w-4 rounded-full", c.bg)} />
@@ -238,7 +237,11 @@ export default function TagPage() {
                 variant="secondary"
                 className={cn(
                   "gap-1 pr-1",
-                  checkNearby(tag.location.latitude, tag.location.longitude, tag.locationRadius ?? tag.location.radius)
+                  checkNearby(
+                    tag.location.latitude,
+                    tag.location.longitude,
+                    tag.locationRadius ?? tag.location.radius,
+                  )
                     ? "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
                     : "",
                 )}

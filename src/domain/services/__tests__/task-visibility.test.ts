@@ -153,25 +153,34 @@ describe("isFutureTask", () => {
     // WEEKLY:1 (Monday), today is Wednesday → next Monday is future
     const wednesday = "2026-03-11"; // a Wednesday
     expect(
-      isFutureTask({ dueDate: null, reminderAt: null, isCompleted: false, recurrence: "WEEKLY:1" }, wednesday),
+      isFutureTask(
+        { dueDate: null, reminderAt: null, isCompleted: false, recurrence: "WEEKLY:1" },
+        wednesday,
+      ),
     ).toBe(true);
   });
 
   it("recurring task s prošlým dueDate → budoucí", () => {
     const wednesday = "2026-03-11"; // a Wednesday
     expect(
-      isFutureTask({
-        dueDate: "2025-01-01",
-        reminderAt: null,
-        isCompleted: false,
-        recurrence: "WEEKLY:1",
-      }, wednesday),
+      isFutureTask(
+        {
+          dueDate: "2025-01-01",
+          reminderAt: null,
+          isCompleted: false,
+          recurrence: "WEEKLY:1",
+        },
+        wednesday,
+      ),
     ).toBe(true); // past dueDate → compute next occurrence which is in the future
   });
 
   it("recurring DAILY task bez dueDate → viditelný dnes", () => {
     expect(
-      isFutureTask({ dueDate: null, reminderAt: null, isCompleted: false, recurrence: "DAILY" }, today),
+      isFutureTask(
+        { dueDate: null, reminderAt: null, isCompleted: false, recurrence: "DAILY" },
+        today,
+      ),
     ).toBe(false); // daily = today, so not future
   });
 });

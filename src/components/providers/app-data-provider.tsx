@@ -1,6 +1,15 @@
 "use client";
 
-import { createContext, useContext, useMemo, useEffect, useState, useCallback, useRef, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  type ReactNode,
+} from "react";
 import { gql } from "@apollo/client";
 import { useQuery, useLazyQuery, useApolloClient } from "@apollo/client/react";
 
@@ -284,7 +293,11 @@ const AppDataContext = createContext<AppDataContextValue | null>(null);
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
   // Phase 1: metadata + visible tasks
-  const { data: appData, loading: appLoading, refetch: refetchAppData } = useQuery<GetAppDataResult>(GET_APP_DATA);
+  const {
+    data: appData,
+    loading: appLoading,
+    refetch: refetchAppData,
+  } = useQuery<GetAppDataResult>(GET_APP_DATA);
 
   // Phase 2: future tasks (loaded after phase 1)
   const [loadFuture, { data: futureData, called: futureCalled }] =
@@ -392,7 +405,16 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       fetchMoreCompleted,
       refetch,
     }),
-    [appData, allTasks, appLoading, futureData, completedLoaded, hasMoreCompleted, fetchMoreCompleted, refetch],
+    [
+      appData,
+      allTasks,
+      appLoading,
+      futureData,
+      completedLoaded,
+      hasMoreCompleted,
+      fetchMoreCompleted,
+      refetch,
+    ],
   );
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

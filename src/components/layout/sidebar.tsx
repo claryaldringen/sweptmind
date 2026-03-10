@@ -5,7 +5,12 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
-import { useLists, useAppData, type ListItem, type TagItem } from "@/components/providers/app-data-provider";
+import {
+  useLists,
+  useAppData,
+  type ListItem,
+  type TagItem,
+} from "@/components/providers/app-data-provider";
 import { useDroppable } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -280,9 +285,7 @@ function SidebarTagItem({
                 <Monitor className="h-3 w-3 animate-pulse text-yellow-500" />
               ))}
           </div>
-          {taskCount > 0 && (
-            <span className="text-muted-foreground text-xs">{taskCount}</span>
-          )}
+          {taskCount > 0 && <span className="text-muted-foreground text-xs">{taskCount}</span>}
         </Link>
       </ContextMenuTrigger>
       <ContextMenuContent>

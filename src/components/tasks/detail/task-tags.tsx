@@ -99,7 +99,9 @@ export function TaskTags({
                   );
                   if (existingMatch) {
                     handleAddTag(existingMatch.id);
-                  } else if (!allTags.some((tg) => tg.name.toLowerCase() === trimmed.toLowerCase())) {
+                  } else if (
+                    !allTags.some((tg) => tg.name.toLowerCase() === trimmed.toLowerCase())
+                  ) {
                     handleCreateAndAddTag();
                   }
                   e.preventDefault();
