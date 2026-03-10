@@ -570,6 +570,10 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      <div className="text-muted-foreground mt-12 max-w-md border-t pt-4 text-xs">
+        <p>SweptMind &middot; Build {process.env.NEXT_PUBLIC_BUILD_ID ?? "dev"}</p>
+      </div>
     </div>
   );
 }
