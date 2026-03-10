@@ -64,14 +64,17 @@ export function useUserLocation(): UseUserLocationReturn {
   const [isApproximate, setIsApproximate] = useState(() => getCachedPosition() !== null);
   const watchIdRef = useRef<number | null>(null);
   const ipFetchedRef = useRef(false);
+  const hasGeoPositionRef = useRef(false);
 
   const isSupported = typeof window !== "undefined" && "geolocation" in navigator;
 
   const tryIpFallback = useCallback(async () => {
     if (ipFetchedRef.current) return;
     ipFetchedRef.current = true;
+    // Don't replace a good geolocation position with less accurate IP data
+    if (hasGeoPositionRef.current) return;
     const ipPos = await fetchIpLocation();
-    if (ipPos) {
+    if (ipPos && !hasGeoPositionRef.current) {
       setPosition(ipPos);
       setIsApproximate(true);
       setIsTracking(true);
@@ -100,6 +103,7 @@ export function useUserLocation(): UseUserLocationReturn {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const p = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+        hasGeoPositionRef.current = true;
         setPosition(p);
         setIsApproximate(false);
         setError(null);
@@ -115,6 +119,7 @@ export function useUserLocation(): UseUserLocationReturn {
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const p = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+        hasGeoPositionRef.current = true;
         setPosition(p);
         setIsApproximate(false);
         setError(null);
