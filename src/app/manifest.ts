@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "SweptMind",
     short_name: "SweptMind",
     description: "GTD-inspired task management",
-    start_url: "/lists",
+    start_url: "/context",
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#09090b",

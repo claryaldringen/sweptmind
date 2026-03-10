@@ -30,7 +30,7 @@ self.addEventListener("message", (event) => {
 });
 
 // Pre-warm cache with key app routes after activation
-const APP_SHELL_ROUTES = ["/lists", "/planned", "/context", "/settings"];
+const APP_SHELL_ROUTES = ["/context", "/planned", "/settings"];
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
