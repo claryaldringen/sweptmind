@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ChevronRight, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,7 +38,7 @@ export function TaskActions({
       <div className="flex items-center gap-2">
         {onClose && (
           <Button variant="ghost" size="icon" onClick={onClose}>
-            <ArrowLeft className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
           </Button>
         )}
         <span className="text-muted-foreground text-xs">{createdLabel}</span>

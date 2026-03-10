@@ -653,6 +653,12 @@ export const TaskItem = memo(function TaskItem({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
                 deleteTask({ variables: { id: task.id } });
+                // Close detail panel if it's showing this task
+                if (selectedTaskId === task.id) {
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.delete("task");
+                  router.push(`?${params.toString()}`, { scroll: false });
+                }
                 onDelete?.();
               }}
             >
