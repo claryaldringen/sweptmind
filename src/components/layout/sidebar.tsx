@@ -344,7 +344,7 @@ function SortableSmartItem({ id, children }: { id: string; children: ReactNode }
 }
 
 export function Sidebar() {
-  const { close: closeSidebar } = useSidebarContext();
+  const { close: closeSidebar, isDesktop } = useSidebarContext();
   useKeyboardShortcuts();
   const { mode: taskCountMode } = useTaskCountMode();
   const deviceContext = useDeviceContext();
@@ -583,7 +583,7 @@ export function Sidebar() {
                   <SortableSmartItem key={id} id={id}>
                     <DroppableDefaultList
                       list={defaultList}
-                      isActive={pathname === "/context"}
+                      isActive={isDesktop && pathname === "/context"}
                       contextCount={contextTaskCount}
                       isDropTarget={activeType === "task" && overListId === defaultList.id}
                       onNavigate={closeSidebar}
@@ -591,7 +591,7 @@ export function Sidebar() {
                   </SortableSmartItem>
                 );
               }
-              const isActive = pathname === def.href;
+              const isActive = isDesktop && pathname === def.href;
               return (
                 <SortableSmartItem key={id} id={id}>
                   <Link
@@ -627,7 +627,7 @@ export function Sidebar() {
               <SortableListItem
                 key={list.id}
                 list={list}
-                isActive={pathname === `/lists/${list.id}`}
+                isActive={isDesktop && pathname === `/lists/${list.id}`}
                 taskCountMode={taskCountMode}
                 isNearby={
                   list.location
@@ -656,7 +656,7 @@ export function Sidebar() {
                 <SidebarTagItem
                   key={tag.id}
                   tag={tag}
-                  isActive={pathname === `/tags/${tag.id}`}
+                  isActive={isDesktop && pathname === `/tags/${tag.id}`}
                   isNearby={
                     tag.location
                       ? checkNearby(tag.location.latitude, tag.location.longitude)
