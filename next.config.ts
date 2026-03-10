@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BUILD_ID:
       process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev",
   },
+  async redirects() {
+    return [
+      {
+        source: "/lists",
+        destination: "/context",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {
