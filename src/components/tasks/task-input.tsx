@@ -7,100 +7,14 @@ import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useTranslations } from "@/lib/i18n";
 import { useNewTaskPosition } from "@/hooks/use-new-task-position";
-import { useAppData } from "@/components/providers/app-data-provider";
+import { useAppData, APP_TASK_FIELDS } from "@/components/providers/app-data-provider";
 
 const CREATE_TASK = gql`
+  ${APP_TASK_FIELDS}
   mutation CreateTask($input: CreateTaskInput!) {
     createTask(input: $input) {
-      id
-      listId
-      locationId
-      title
-      notes
-      isCompleted
-      dueDate
-      reminderAt
-      recurrence
-      deviceContext
-      sortOrder
-      createdAt
-      steps {
-        id
-        taskId
-        title
-        isCompleted
-        sortOrder
-      }
-      tags {
-        id
-        name
-        color
-      }
-      location {
-        id
-        name
-        latitude
-        longitude
-      }
-      list {
-        id
-        name
-      }
-      blockedByTaskId
-      blockedByTask {
-        id
-        title
-      }
-      blockedByTaskIsCompleted
-      dependentTaskCount
+      ...AppTaskFields
     }
-  }
-`;
-
-const TASK_FRAGMENT = gql`
-  fragment TaskFields on Task {
-    id
-    listId
-    locationId
-    title
-    notes
-    isCompleted
-    completedAt
-    dueDate
-    reminderAt
-    recurrence
-    deviceContext
-    sortOrder
-    createdAt
-    steps {
-      id
-      taskId
-      title
-      isCompleted
-      sortOrder
-    }
-    tags {
-      id
-      name
-      color
-    }
-    location {
-      id
-      name
-      latitude
-      longitude
-    }
-    list {
-      id
-      name
-    }
-    blockedByTaskId
-    blockedByTask {
-      id
-      title
-    }
-    blockedByTaskIsCompleted
-    dependentTaskCount
   }
 `;
 
@@ -140,6 +54,7 @@ export function TaskInput({ listId, placeholder, onTaskCreated }: TaskInputProps
         id,
         listId,
         locationId: null,
+        locationRadius: null,
         title: trimmed,
         notes: null,
         isCompleted: false,
@@ -159,7 +74,8 @@ export function TaskInput({ listId, placeholder, onTaskCreated }: TaskInputProps
         blockedByTaskIsCompleted: null,
         dependentTaskCount: 0,
       },
-      fragment: TASK_FRAGMENT,
+      fragment: APP_TASK_FIELDS,
+      fragmentName: "AppTaskFields",
     });
 
     // Add to visibleTasks cache (used by AppDataProvider)
