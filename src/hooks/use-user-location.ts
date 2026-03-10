@@ -17,6 +17,32 @@ interface UseUserLocationReturn {
   stopTracking: () => void;
 }
 
+const POSITION_CACHE_KEY = "sweptmind-last-position";
+
+function getCachedPosition(): Position | null {
+  try {
+    const stored = localStorage.getItem(POSITION_CACHE_KEY);
+    if (!stored) return null;
+    const { latitude, longitude, ts } = JSON.parse(stored);
+    // Use cached position if less than 30 minutes old
+    if (Date.now() - ts > 30 * 60 * 1000) return null;
+    return { latitude, longitude };
+  } catch {
+    return null;
+  }
+}
+
+function cachePosition(pos: Position) {
+  try {
+    localStorage.setItem(
+      POSITION_CACHE_KEY,
+      JSON.stringify({ latitude: pos.latitude, longitude: pos.longitude, ts: Date.now() }),
+    );
+  } catch {
+    /* quota exceeded — ignore */
+  }
+}
+
 async function fetchIpLocation(): Promise<Position | null> {
   try {
     const res = await fetch("https://ipapi.co/json/");
@@ -32,10 +58,10 @@ async function fetchIpLocation(): Promise<Position | null> {
 }
 
 export function useUserLocation(): UseUserLocationReturn {
-  const [position, setPosition] = useState<Position | null>(null);
+  const [position, setPosition] = useState<Position | null>(() => getCachedPosition());
   const [error, setError] = useState<string | null>(null);
-  const [isTracking, setIsTracking] = useState(false);
-  const [isApproximate, setIsApproximate] = useState(false);
+  const [isTracking, setIsTracking] = useState(() => getCachedPosition() !== null);
+  const [isApproximate, setIsApproximate] = useState(() => getCachedPosition() !== null);
   const watchIdRef = useRef<number | null>(null);
   const ipFetchedRef = useRef(false);
 
@@ -70,24 +96,35 @@ export function useUserLocation(): UseUserLocationReturn {
     setError(null);
     setIsTracking(true);
 
-    watchIdRef.current = navigator.geolocation.watchPosition(
+    // Step 1: Quick coarse position from network/cache (fast, low accuracy)
+    navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setPosition({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        });
+        const p = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+        setPosition(p);
         setIsApproximate(false);
         setError(null);
+        cachePosition(p);
+      },
+      () => {
+        /* ignore — watchPosition will handle it */
+      },
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 5 * 60 * 1000 },
+    );
+
+    // Step 2: Continuous high-accuracy tracking (GPS, slower but precise)
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        const p = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+        setPosition(p);
+        setIsApproximate(false);
+        setError(null);
+        cachePosition(p);
       },
       (err) => {
         setError(err.message);
         tryIpFallback();
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000,
-      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 5 * 60 * 1000 },
     );
   }, [isSupported, tryIpFallback]);
 
