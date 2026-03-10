@@ -60,7 +60,7 @@ async function fetchIpLocation(): Promise<Position | null> {
 export function useUserLocation(): UseUserLocationReturn {
   const [position, setPosition] = useState<Position | null>(() => getCachedPosition());
   const [error, setError] = useState<string | null>(null);
-  const [isTracking, setIsTracking] = useState(() => getCachedPosition() !== null);
+  const [isTracking, setIsTracking] = useState(false);
   const [isApproximate, setIsApproximate] = useState(() => getCachedPosition() !== null);
   const watchIdRef = useRef<number | null>(null);
   const ipFetchedRef = useRef(false);
