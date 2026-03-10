@@ -398,7 +398,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       allTasks,
       tags: appData?.tags ?? [],
       locations: appData?.locations ?? [],
-      loading: appLoading,
+      loading: appLoading && !appData,
       futureTasksLoaded: !!futureData,
       completedTasksLoaded: completedLoaded,
       hasMoreCompleted,
