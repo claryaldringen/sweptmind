@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 
 export const pushSubscriptions = pgTable(
@@ -13,6 +13,8 @@ export const pushSubscriptions = pgTable(
     endpoint: text("endpoint").notNull(),
     p256dh: text("p256dh").notNull(),
     auth: text("auth").notNull(),
+    notifyDueDate: boolean("notify_due_date").notNull().default(true),
+    notifyReminder: boolean("notify_reminder").notNull().default(true),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   },
   (table) => [

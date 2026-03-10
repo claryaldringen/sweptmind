@@ -254,12 +254,22 @@ export const en: Dictionary = {
     reminder: "Reminder",
     done: "Done",
   },
+  pwa: {
+    installTitle: "Install SweptMind",
+    installDescription: "Add SweptMind to your home screen for quick access and offline mode.",
+    installButton: "Install",
+    installDismiss: "Not now",
+    updateAvailable: "A new version is available",
+    updateAction: "Update",
+  },
   push: {
     title: "Push Notifications",
-    description: "Get reminders for tasks with a specific time.",
+    description: "Get reminders for your tasks.",
     enabled: "Notifications enabled",
     disabled: "Notifications disabled",
     unsupported: "Push notifications are not supported in this browser.",
+    notifyDueDate: "Tasks with due date",
+    notifyReminder: "Reminders",
   },
   calendar: {
     title: "Calendar",

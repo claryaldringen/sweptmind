@@ -16,10 +16,38 @@ declare const self: ServiceWorkerGlobalScope;
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
-  skipWaiting: true,
+  skipWaiting: false,
   clientsClaim: true,
   navigationPreload: false,
   runtimeCaching: defaultCache,
+});
+
+// Allow the client to trigger skipWaiting when user clicks "Update"
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
+// Pre-warm cache with key app routes after activation
+const APP_SHELL_ROUTES = ["/lists", "/planned", "/context", "/settings"];
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open("pages");
+      for (const route of APP_SHELL_ROUTES) {
+        try {
+          const response = await fetch(route);
+          if (response.ok) {
+            await cache.put(route, response);
+          }
+        } catch {
+          // Skip — will be cached on first visit
+        }
+      }
+    })(),
+  );
 });
 
 // Handle navigation requests with guaranteed offline fallback.

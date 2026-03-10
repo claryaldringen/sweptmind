@@ -110,6 +110,8 @@ export default function SettingsPage() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushSupported, setPushSupported] = useState(true);
   const [pushLoading, setPushLoading] = useState(false);
+  const [notifyDueDate, setNotifyDueDate] = useState(true);
+  const [notifyReminder, setNotifyReminder] = useState(true);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -119,9 +121,38 @@ export default function SettingsPage() {
     navigator.serviceWorker.ready.then((reg) => {
       reg.pushManager.getSubscription().then((sub) => {
         setPushEnabled(!!sub);
+        if (sub) {
+          fetch("/api/push/preferences")
+            .then((r) => r.json())
+            .then((prefs) => {
+              if (typeof prefs.notifyDueDate === "boolean") setNotifyDueDate(prefs.notifyDueDate);
+              if (typeof prefs.notifyReminder === "boolean")
+                setNotifyReminder(prefs.notifyReminder);
+            })
+            .catch(() => {});
+        }
       });
     });
   }, []);
+
+  const handlePrefChange = useCallback(
+    async (key: "notifyDueDate" | "notifyReminder", checked: boolean) => {
+      if (key === "notifyDueDate") setNotifyDueDate(checked);
+      else setNotifyReminder(checked);
+      try {
+        await fetch("/api/push/preferences", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [key]: checked }),
+        });
+      } catch {
+        // Revert on failure
+        if (key === "notifyDueDate") setNotifyDueDate(!checked);
+        else setNotifyReminder(!checked);
+      }
+    },
+    [],
+  );
 
   const handlePushToggle = useCallback(async (checked: boolean) => {
     setPushLoading(true);
@@ -473,13 +504,33 @@ export default function SettingsPage() {
           <h2 className="mb-3 text-lg font-semibold">{t("push.title")}</h2>
           <p className="text-muted-foreground mb-3 text-xs">{t("push.description")}</p>
           {pushSupported ? (
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-sm">{pushEnabled ? t("push.enabled") : t("push.disabled")}</p>
-              <Switch
-                checked={pushEnabled}
-                onCheckedChange={handlePushToggle}
-                disabled={pushLoading}
-              />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-sm">{pushEnabled ? t("push.enabled") : t("push.disabled")}</p>
+                <Switch
+                  checked={pushEnabled}
+                  onCheckedChange={handlePushToggle}
+                  disabled={pushLoading}
+                />
+              </div>
+              {pushEnabled && (
+                <>
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-muted-foreground text-sm">{t("push.notifyDueDate")}</p>
+                    <Switch
+                      checked={notifyDueDate}
+                      onCheckedChange={(checked) => handlePrefChange("notifyDueDate", checked)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-muted-foreground text-sm">{t("push.notifyReminder")}</p>
+                    <Switch
+                      checked={notifyReminder}
+                      onCheckedChange={(checked) => handlePrefChange("notifyReminder", checked)}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <p className="text-muted-foreground text-sm">{t("push.unsupported")}</p>

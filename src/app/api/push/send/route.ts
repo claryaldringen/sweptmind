@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     // Mark as notified first to prevent duplicate notifications on timeout
     await db.update(schema.tasks).set({ notifiedAt: now }).where(eq(schema.tasks.id, task.id));
 
-    const subscriptions = subsByUser.get(task.userId) ?? [];
+    const subscriptions = (subsByUser.get(task.userId) ?? []).filter((sub) => sub.notifyDueDate);
     const payload = JSON.stringify({
       title: "SweptMind",
       body: task.title,

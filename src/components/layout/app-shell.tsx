@@ -9,6 +9,8 @@ import { NearbyProvider } from "@/components/providers/nearby-provider";
 import { ErrorBoundary } from "@/components/providers/error-boundary";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { OfflineIndicator } from "@/components/layout/offline-indicator";
+import { InstallPrompt } from "@/components/layout/install-prompt";
+import { UpdateToast } from "@/components/layout/update-toast";
 
 interface SidebarContextType {
   close: () => void;
@@ -58,7 +60,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                     maxWidth={400}
                   />
                   <div className="flex flex-1 flex-col overflow-hidden">
+                    <UpdateToast />
                     <OfflineIndicator />
+                    <InstallPrompt />
                     <main className="flex flex-1 overflow-hidden">
                       <ErrorBoundary>{children}</ErrorBoundary>
                     </main>
@@ -66,12 +70,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </>
               ) : sidebarOpen ? (
                 <div className="flex flex-1 flex-col overflow-hidden">
+                  <UpdateToast />
                   <OfflineIndicator />
+                  <InstallPrompt />
                   <Sidebar />
                 </div>
               ) : (
                 <div className="flex flex-1 flex-col overflow-hidden">
+                  <UpdateToast />
                   <OfflineIndicator />
+                  <InstallPrompt />
                   <main className="flex flex-1 overflow-hidden">
                     <ErrorBoundary>{children}</ErrorBoundary>
                   </main>

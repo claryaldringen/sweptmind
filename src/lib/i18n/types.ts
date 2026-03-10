@@ -238,12 +238,22 @@ export interface Dictionary {
     reminder: string;
     done: string;
   };
+  pwa: {
+    installTitle: string;
+    installDescription: string;
+    installButton: string;
+    installDismiss: string;
+    updateAvailable: string;
+    updateAction: string;
+  };
   push: {
     title: string;
     description: string;
     enabled: string;
     disabled: string;
     unsupported: string;
+    notifyDueDate: string;
+    notifyReminder: string;
   };
   calendar: {
     title: string;

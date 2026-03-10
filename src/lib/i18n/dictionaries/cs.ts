@@ -254,12 +254,22 @@ export const cs: Dictionary = {
     reminder: "Připomenutí",
     done: "Hotovo",
   },
+  pwa: {
+    installTitle: "Nainstalovat SweptMind",
+    installDescription: "Přidej si SweptMind na plochu pro rychlejší přístup a offline režim.",
+    installButton: "Nainstalovat",
+    installDismiss: "Teď ne",
+    updateAvailable: "Je dostupná nová verze",
+    updateAction: "Aktualizovat",
+  },
   push: {
     title: "Push notifikace",
-    description: "Dostávej připomínky na úkoly s přesným časem.",
+    description: "Dostávej připomínky na úkoly.",
     enabled: "Notifikace zapnuty",
     disabled: "Notifikace vypnuty",
     unsupported: "Tento prohlížeč nepodporuje push notifikace.",
+    notifyDueDate: "Úkoly s termínem",
+    notifyReminder: "Připomenutí",
   },
   calendar: {
     title: "Kalendář",

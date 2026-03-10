@@ -27,11 +27,16 @@ export async function POST(request: NextRequest) {
       ),
     );
 
+  const notifyDueDate = body?.notifyDueDate !== false;
+  const notifyReminder = body?.notifyReminder !== false;
+
   await db.insert(schema.pushSubscriptions).values({
     userId: session.user.id,
     endpoint,
     p256dh,
     auth: authKey,
+    notifyDueDate,
+    notifyReminder,
   });
 
   return NextResponse.json({ ok: true });
