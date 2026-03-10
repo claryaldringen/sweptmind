@@ -296,6 +296,27 @@ export function TaskDetailPanel() {
         reminderAt: task?.reminderAt ?? null,
       },
     },
+    update(cache, { data }) {
+      if (!data?.toggleTaskCompleted) return;
+      const { id: completedId, isCompleted } = data.toggleTaskCompleted;
+      cache.modify({
+        fields: {
+          allTasks(existing = [], { readField }) {
+            for (const ref of existing) {
+              if (readField("blockedByTaskId", ref) === completedId) {
+                cache.modify({
+                  id: (ref as { __ref: string }).__ref,
+                  fields: {
+                    blockedByTaskIsCompleted: () => isCompleted,
+                  },
+                });
+              }
+            }
+            return existing;
+          },
+        },
+      });
+    },
   });
   const [deleteTask] = useMutation<DeleteTaskData>(DELETE_TASK, {
     update(cache) {

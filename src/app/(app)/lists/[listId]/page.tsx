@@ -136,6 +136,7 @@ export default function ListPage() {
   const { open: openSidebar, isDesktop } = useSidebarContext();
   const { isNearby: checkNearby, userLatitude, userLongitude } = useNearby();
   const geocode = useGeocode({ userLatitude, userLongitude, locale: appLocale });
+  const taskListScrollRef = useRef<HTMLDivElement>(null);
   const { lists, allTasks, locations: allLocations, loading } = useAppData();
 
   const [updateList] = useMutation<UpdateListData>(UPDATE_LIST);
@@ -570,10 +571,13 @@ export default function ListPage() {
             <div className="text-muted-foreground animate-pulse">{t("common.loading")}</div>
           </div>
         ) : (
-          <SortableTaskList tasks={tasks} />
+          <SortableTaskList tasks={tasks} scrollRef={taskListScrollRef} />
         )}
 
-        <TaskInput listId={listId} />
+        <TaskInput
+          listId={listId}
+          onTaskCreated={() => taskListScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+        />
       </div>
     </ResizableTaskLayout>
   );

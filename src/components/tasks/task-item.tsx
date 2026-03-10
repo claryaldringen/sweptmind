@@ -169,7 +169,9 @@ export const TaskItem = memo(function TaskItem({
     }
   }
 
-  const [toggleCompleted] = useMutation(TOGGLE_COMPLETED, {
+  const [toggleCompleted] = useMutation<{
+    toggleTaskCompleted: { __typename: "Task"; id: string; isCompleted: boolean; completedAt: string | null; dueDate: string | null; reminderAt: string | null };
+  }>(TOGGLE_COMPLETED, {
     optimisticResponse: {
       toggleTaskCompleted: {
         __typename: "Task" as const,
@@ -179,6 +181,28 @@ export const TaskItem = memo(function TaskItem({
         dueDate: task.dueDate,
         reminderAt: task.reminderAt,
       },
+    },
+    update(cache, { data }) {
+      if (!data?.toggleTaskCompleted) return;
+      const { id: completedId, isCompleted } = data.toggleTaskCompleted;
+      // Update blockedByTaskIsCompleted on all tasks that depend on this one
+      cache.modify({
+        fields: {
+          allTasks(existing = [], { readField }) {
+            for (const ref of existing) {
+              if (readField("blockedByTaskId", ref) === completedId) {
+                cache.modify({
+                  id: ref.__ref,
+                  fields: {
+                    blockedByTaskIsCompleted: () => isCompleted,
+                  },
+                });
+              }
+            }
+            return existing;
+          },
+        },
+      });
     },
   });
   const visuallyCompleted = localChecked ?? task.isCompleted;

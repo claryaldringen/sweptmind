@@ -20,6 +20,8 @@ export default function ContextPage() {
   const { allTasks, lists, tags, loading } = useAppData();
 
   const tasks = useMemo(() => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+
     const contextListIds = new Set(
       lists
         .filter(
@@ -43,7 +45,7 @@ export default function ContextPage() {
         .map((t) => t.id),
     );
 
-    return allTasks.filter((task) => {
+    const filtered = allTasks.filter((task) => {
       if (task.isCompleted) return false;
       if (isFutureTask(task)) return false;
       if (deviceContext && task.deviceContext === deviceContext) return true;
@@ -57,6 +59,44 @@ export default function ContextPage() {
       if (task.tags?.some((t) => contextTagIds.has(t.id))) return true;
       return false;
     });
+
+    // Helper: does task match nearby location (directly, via list, or via tag)?
+    function hasLocation(task: (typeof filtered)[0]): boolean {
+      if (
+        nearbyLocationIds.length > 0 &&
+        task.locationId &&
+        nearbyLocationIds.includes(task.locationId)
+      )
+        return true;
+      if (contextListIds.has(task.listId) && lists.find((l) => l.id === task.listId)?.locationId)
+        return true;
+      if (task.tags?.some((t) => contextTagIds.has(t.id) && tags.find((tg) => tg.id === t.id)?.locationId))
+        return true;
+      return false;
+    }
+
+    // Helper: does task match device context?
+    function hasDevice(task: (typeof filtered)[0]): boolean {
+      if (deviceContext && task.deviceContext === deviceContext) return true;
+      if (contextListIds.has(task.listId) && lists.find((l) => l.id === task.listId)?.deviceContext === deviceContext)
+        return true;
+      if (task.tags?.some((t) => contextTagIds.has(t.id) && tags.find((tg) => tg.id === t.id)?.deviceContext === deviceContext))
+        return true;
+      return false;
+    }
+
+    // Sort priority: 0=overdue, 1=today, 2=location AND device, 3=location OR device
+    function sortPriority(task: (typeof filtered)[0]): number {
+      const dateStr = task.dueDate?.slice(0, 10);
+      if (dateStr && dateStr < todayStr) return 0; // overdue
+      if (dateStr && dateStr === todayStr) return 1; // today
+      const loc = hasLocation(task);
+      const dev = hasDevice(task);
+      if (loc && dev) return 2; // location AND device
+      return 3; // location OR device
+    }
+
+    return filtered.sort((a, b) => sortPriority(a) - sortPriority(b));
   }, [allTasks, lists, tags, deviceContext, nearbyLocationIds]);
 
   return (

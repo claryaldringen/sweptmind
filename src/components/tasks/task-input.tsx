@@ -107,9 +107,10 @@ const TASK_FRAGMENT = gql`
 interface TaskInputProps {
   listId: string;
   placeholder?: string;
+  onTaskCreated?: () => void;
 }
 
-export function TaskInput({ listId, placeholder }: TaskInputProps) {
+export function TaskInput({ listId, placeholder, onTaskCreated }: TaskInputProps) {
   const { t } = useTranslations();
   const [title, setTitle] = useState("");
   const client = useApolloClient();
@@ -170,6 +171,8 @@ export function TaskInput({ listId, placeholder }: TaskInputProps) {
         },
       },
     });
+
+    onTaskCreated?.();
 
     // Fire mutation — same ID means Apollo auto-merges server response
     createTask({
