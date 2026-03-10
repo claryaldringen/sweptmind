@@ -20,7 +20,6 @@ class IdbStorageAdapter {
   }
 }
 
-
 export function makeClient() {
   const errorLink = new ErrorLink(({ error }) => {
     if (CombinedGraphQLErrors.is(error)) {

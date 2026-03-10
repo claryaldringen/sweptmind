@@ -12,22 +12,42 @@ export function UpdateToast() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
+    function trackInstalling(worker: ServiceWorker) {
+      worker.addEventListener("statechange", () => {
+        if (worker.state === "installed" && navigator.serviceWorker.controller) {
+          setWaitingWorker(worker);
+        }
+      });
+    }
+
     navigator.serviceWorker.ready.then((reg) => {
       // Check if there's already a waiting worker
       if (reg.waiting) {
         setWaitingWorker(reg.waiting);
       }
 
+      // Check if a SW is currently being installed (updatefound already fired)
+      if (reg.installing) {
+        trackInstalling(reg.installing);
+      }
+
       // Listen for new workers entering waiting state
       reg.addEventListener("updatefound", () => {
-        const newWorker = reg.installing;
-        if (!newWorker) return;
-        newWorker.addEventListener("statechange", () => {
-          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-            setWaitingWorker(newWorker);
-          }
-        });
+        if (reg.installing) trackInstalling(reg.installing);
       });
+
+      // Force an update check now
+      reg.update().catch(() => {});
+
+      // Check for updates whenever the app returns to foreground
+      function handleVisibility() {
+        if (document.visibilityState === "visible") {
+          reg.update().catch(() => {});
+        }
+      }
+      document.addEventListener("visibilitychange", handleVisibility);
+
+      return () => document.removeEventListener("visibilitychange", handleVisibility);
     });
 
     // Reload when the new SW takes over

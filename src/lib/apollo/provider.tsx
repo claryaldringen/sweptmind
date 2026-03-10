@@ -30,9 +30,7 @@ export function ApolloProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <SyncContext.Provider value={{ syncState, pendingCount }}>
-      <ApolloNextAppProvider makeClient={makeClient}>
-        {children}
-      </ApolloNextAppProvider>
+      <ApolloNextAppProvider makeClient={makeClient}>{children}</ApolloNextAppProvider>
     </SyncContext.Provider>
   );
 }
