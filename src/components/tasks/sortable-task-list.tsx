@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { gql } from "@apollo/client";
@@ -60,10 +60,6 @@ export function SortableTaskList({
 
   // Keep ordered IDs in sync — but not while tasks are departing (preserve position)
   const activeIds = useMemo(() => activeWithDeparting.map((t) => t.id), [activeWithDeparting]);
-  const newDeparturesDetected = useRef(false);
-  if (departingIds.size > 0) newDeparturesDetected.current = true;
-  if (departingIds.size === 0 && newDeparturesDetected.current)
-    newDeparturesDetected.current = false;
 
   if (
     departingIds.size === 0 &&

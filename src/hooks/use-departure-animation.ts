@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { isFutureTask } from "@/domain/services/task-visibility";
 
 interface VisibilityTask {
@@ -40,34 +40,42 @@ export function useDepartureAnimation<T extends VisibilityTask>(
 
   const taskMap = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
 
-  // Detect tasks departing to "Future" during render (no flash)
+  // Detect tasks departing to "Future" using state-during-render pattern
   const [departingIds, setDepartingIds] = useState<Set<string>>(new Set());
-  const prevActiveIdsRef = useRef(new Set<string>());
-
+  const [prevActiveIds, setPrevActiveIds] = useState<Set<string>>(() => new Set());
   const currentActiveSet = useMemo(() => new Set(activeTasks.map((t) => t.id)), [activeTasks]);
-  const newDepartures: string[] = [];
-  for (const id of prevActiveIdsRef.current) {
-    if (!currentActiveSet.has(id) && !departingIds.has(id)) {
-      const task = taskMap.get(id);
-      if (task && isFutureTask(task)) newDepartures.push(id);
+
+  // React allows conditional setState during render for derived state (getDerivedStateFromProps pattern)
+  const activeIdsChanged =
+    prevActiveIds.size !== currentActiveSet.size ||
+    [...prevActiveIds].some((id) => !currentActiveSet.has(id));
+
+  if (activeIdsChanged) {
+    const departures: string[] = [];
+    for (const id of prevActiveIds) {
+      if (!currentActiveSet.has(id) && !departingIds.has(id)) {
+        const task = taskMap.get(id);
+        if (task && isFutureTask(task)) departures.push(id);
+      }
+    }
+    setPrevActiveIds(currentActiveSet);
+    if (departures.length > 0) {
+      setDepartingIds((prev) => {
+        const next = new Set(prev);
+        for (const id of departures) next.add(id);
+        return next;
+      });
     }
   }
-  prevActiveIdsRef.current = currentActiveSet;
 
-  if (newDepartures.length > 0) {
-    setDepartingIds((prev) => {
-      const next = new Set(prev);
-      newDepartures.forEach((id) => next.add(id));
-      return next;
-    });
-  }
-
+  // Clear departing IDs after animation
+  const clearDeparting = useCallback(() => setDepartingIds(new Set()), []);
   useEffect(() => {
     if (departingIds.size > 0) {
-      const timer = setTimeout(() => setDepartingIds(new Set()), 750);
+      const timer = setTimeout(clearDeparting, 750);
       return () => clearTimeout(timer);
     }
-  }, [departingIds]);
+  }, [departingIds, clearDeparting]);
 
   const activeWithDeparting = useMemo(() => {
     if (departingIds.size === 0) return activeTasks;
