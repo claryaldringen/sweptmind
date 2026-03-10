@@ -38,12 +38,12 @@ function createMaskableIconSvg(size) {
 </svg>`;
 }
 
-// Favicon: just the bolt, no background (transparent)
+// Favicon: outline bolt only (matches Lucide Zap icon style)
 function createFaviconSvg(size) {
   const scale = size / 24;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <g transform="scale(${scale})">
-    <path d="M13 2 3 14h9l-1 10 10-12h-9l1-10z" fill="#eab308" stroke="#ca8a04" stroke-width="0.5" stroke-linejoin="round"/>
+    <path d="M13 2 3 14h9l-1 10 10-12h-9l1-10z" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>`;
 }
