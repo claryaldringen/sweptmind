@@ -236,6 +236,7 @@ export interface Dictionary {
     removeDate: string;
     dueDate: string;
     reminder: string;
+    done: string;
   };
   push: {
     title: string;

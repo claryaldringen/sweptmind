@@ -45,7 +45,6 @@ export function DatePickerContent({
 
   function handleCalendarSelect(date: Date | undefined) {
     onDateSelect(date);
-    if (date) onClose?.();
   }
 
   function handleClear() {
@@ -142,6 +141,18 @@ export function DatePickerContent({
               onClick={handleClear}
             >
               {t("datePicker.removeDate")}
+            </Button>
+          </div>
+        </>
+      )}
+
+      {/* Done button */}
+      {onClose && (
+        <>
+          <Separator />
+          <div className="p-3">
+            <Button size="sm" className="h-9 w-full md:h-8" onClick={onClose}>
+              {t("datePicker.done")}
             </Button>
           </div>
         </>

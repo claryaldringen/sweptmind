@@ -252,6 +252,7 @@ export const en: Dictionary = {
     removeDate: "Remove date",
     dueDate: "Due date",
     reminder: "Reminder",
+    done: "Done",
   },
   push: {
     title: "Push Notifications",

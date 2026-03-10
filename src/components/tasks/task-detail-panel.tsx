@@ -379,12 +379,28 @@ export function TaskDetailPanel() {
         fields: {
           tags(existing = []) {
             const newRef = cache.writeFragment({
-              data: data.createTag,
+              data: {
+                ...data.createTag,
+                taskCount: 0,
+                deviceContext: null,
+                locationId: null,
+                location: null,
+              },
               fragment: gql`
                 fragment NewTag on Tag {
                   id
                   name
                   color
+                  taskCount
+                  deviceContext
+                  locationId
+                  location {
+                    id
+                    name
+                    latitude
+                    longitude
+                    radius
+                  }
                 }
               `,
             });
@@ -398,8 +414,17 @@ export function TaskDetailPanel() {
     update(cache, _result, { variables }) {
       if (!variables?.tagId || !taskId) return;
       const tagId = variables.tagId as string;
-      const allTags = allTagsFromProvider;
-      const tag = allTags.find((t) => t.id === tagId);
+      // Read tag from cache (handles both existing and just-created tags)
+      const tag = cache.readFragment<TaskTag>({
+        id: cache.identify({ __typename: "Tag", id: tagId }),
+        fragment: gql`
+          fragment ReadTag on Tag {
+            id
+            name
+            color
+          }
+        `,
+      });
       if (!tag) return;
       cache.modify({
         id: cache.identify({ __typename: "Task", id: taskId }),
@@ -408,7 +433,7 @@ export function TaskDetailPanel() {
             const newRef = cache.writeFragment({
               data: tag,
               fragment: gql`
-                fragment NewTag on Tag {
+                fragment TaskTag on Tag {
                   id
                   name
                   color

@@ -252,6 +252,7 @@ export const cs: Dictionary = {
     removeDate: "Odebrat datum",
     dueDate: "Datum splnění",
     reminder: "Připomenutí",
+    done: "Hotovo",
   },
   push: {
     title: "Push notifikace",

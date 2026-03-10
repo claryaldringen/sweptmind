@@ -34,9 +34,10 @@ export function TaskSteps({
 
   async function handleAddStep(e: React.FormEvent) {
     e.preventDefault();
-    if (!newStepTitle.trim()) return;
-    await onAddStep(newStepTitle.trim());
+    const title = newStepTitle.trim();
+    if (!title) return;
     setNewStepTitle("");
+    await onAddStep(title);
   }
 
   return (
