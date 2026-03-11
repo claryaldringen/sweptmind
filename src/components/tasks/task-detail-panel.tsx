@@ -755,7 +755,7 @@ export function TaskDetailPanel() {
         </div>
       )}
 
-      <div className="flex-1 space-y-4 overflow-auto px-4 pt-4 pb-4">
+      <div className="min-h-0 flex-1 space-y-4 overflow-auto px-4 pt-4 pb-4">
         {/* Title + Checkbox */}
         <div className="flex items-start gap-3">
           <Checkbox
