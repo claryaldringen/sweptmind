@@ -25,21 +25,24 @@ export function ResizableTaskLayout({ children }: ResizableTaskLayoutProps) {
   const [showPanel, setShowPanel] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
 
+  // Mount/unmount the panel DOM
   useEffect(() => {
     if (taskId) {
-      // Step 1: mount with width: 0
       setShowPanel(true);
-      // Step 2: next frame → transition to full width
-      const raf = requestAnimationFrame(() => setPanelOpen(true));
-      return () => cancelAnimationFrame(raf);
     } else {
-      // Step 1: transition to width: 0
       setPanelOpen(false);
-      // Step 2: unmount after transition
       const timer = setTimeout(() => setShowPanel(false), 300);
       return () => clearTimeout(timer);
     }
   }, [taskId]);
+
+  // After panel is mounted in DOM, trigger the open transition
+  useEffect(() => {
+    if (showPanel && taskId) {
+      const raf = requestAnimationFrame(() => setPanelOpen(true));
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [showPanel, taskId]);
 
   const handleDetailResize = useCallback((w: number) => {
     setDetailWidth(w);
