@@ -266,6 +266,8 @@ export interface Dictionary {
     syncAllLabel: string;
     syncAllDescription: string;
     generating: string;
+    icsFeedUrl: string;
+    icsFeedDescription: string;
   };
   context: {
     hereAndNow: string;

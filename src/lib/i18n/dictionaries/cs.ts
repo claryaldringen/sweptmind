@@ -285,6 +285,9 @@ export const cs: Dictionary = {
     syncAllDescription:
       "Výchozí: pouze úkoly s přesným časem. Zapnutím se budou synchronizovat i úkoly pouze s datem.",
     generating: "Generuji...",
+    icsFeedUrl: "ICS Feed (jen čtení)",
+    icsFeedDescription:
+      "Použij tuto URL v Google Kalendáři (Nastavení → Přidat kalendář → Z URL) nebo v jakékoli aplikaci podporující ICS feeds.",
   },
   context: {
     hereAndNow: "Tady & teď",

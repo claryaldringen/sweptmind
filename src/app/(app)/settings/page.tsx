@@ -98,6 +98,7 @@ export default function SettingsPage() {
   const [calendarToken, setCalendarToken] = useState<string | null>(null);
   const [calendarTokenLoading, setCalendarTokenLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [icsCopied, setIcsCopied] = useState(false);
 
   const [getToken] = useMutation<GetCalendarTokenData>(GET_CALENDAR_TOKEN);
   const [regenerateToken] = useMutation<RegenerateCalendarTokenData>(REGENERATE_CALENDAR_TOKEN);
@@ -206,10 +207,20 @@ export default function SettingsPage() {
     ? `${window.location.origin}/api/caldav/${calendarToken}/calendars/tasks/`
     : "";
 
+  const icsFeedUrl = calendarToken
+    ? `${window.location.origin}/api/calendar/${calendarToken}/feed.ics`
+    : "";
+
   const handleCopy = async () => {
     await navigator.clipboard.writeText(caldavUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleIcsCopy = async () => {
+    await navigator.clipboard.writeText(icsFeedUrl);
+    setIcsCopied(true);
+    setTimeout(() => setIcsCopied(false), 2000);
   };
 
   const handleRegenerate = async () => {
@@ -552,6 +563,26 @@ export default function SettingsPage() {
               />
               <Button variant="outline" size="icon" onClick={handleCopy} disabled={!calendarToken}>
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+          <div className="mt-4 space-y-2">
+            <label className="text-sm font-medium">{t("calendar.icsFeedUrl")}</label>
+            <p className="text-muted-foreground text-xs">{t("calendar.icsFeedDescription")}</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                readOnly
+                value={calendarTokenLoading ? t("calendar.generating") : icsFeedUrl}
+                className="bg-muted flex-1 rounded-md border px-3 py-2 text-sm"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleIcsCopy}
+                disabled={!calendarToken}
+              >
+                {icsCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
           </div>

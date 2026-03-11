@@ -285,6 +285,9 @@ export const en: Dictionary = {
     syncAllDescription:
       "Default: only tasks with an exact time. Enable to also sync date-only tasks.",
     generating: "Generating...",
+    icsFeedUrl: "ICS Feed (read-only)",
+    icsFeedDescription:
+      "Use this URL in Google Calendar (Settings → Add calendar → From URL) or any app that supports ICS feeds.",
   },
   context: {
     hereAndNow: "Here & Now",
