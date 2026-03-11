@@ -757,11 +757,11 @@ export function TaskDetailPanel() {
 
       <div className="min-h-0 flex-1 space-y-4 overflow-auto px-4 pt-4 pb-4">
         {/* Title + Checkbox */}
-        <div className="flex items-start gap-3">
+        <div className="flex min-w-0 items-start gap-3">
           <Checkbox
             checked={task.isCompleted}
             onCheckedChange={() => toggleCompleted({ variables: { id: task.id } })}
-            className="mt-1.5 rounded-full"
+            className="mt-1.5 shrink-0 rounded-full"
           />
           <Input
             key={task.id + task.title}
@@ -775,7 +775,7 @@ export function TaskDetailPanel() {
               }
             }}
             className={cn(
-              "h-auto border-0 bg-transparent p-0 text-lg leading-tight font-medium shadow-none outline-none focus-visible:ring-0 md:text-lg",
+              "h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-lg leading-tight font-medium shadow-none outline-none focus-visible:ring-0 md:text-lg",
               task.isCompleted && "text-muted-foreground line-through",
             )}
           />

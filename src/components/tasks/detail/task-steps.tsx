@@ -43,11 +43,11 @@ export function TaskSteps({
   return (
     <div className="space-y-1">
       {steps.map((step) => (
-        <div key={step.id} className="group flex items-center gap-2">
+        <div key={step.id} className="group flex min-w-0 items-center gap-2">
           <Checkbox
             checked={step.isCompleted}
             onCheckedChange={() => onToggleStep(step.id)}
-            className="h-4 w-4 rounded-full"
+            className="h-4 w-4 shrink-0 rounded-full"
           />
           <Input
             defaultValue={step.title}
@@ -67,7 +67,7 @@ export function TaskSteps({
               }
             }}
             className={cn(
-              "h-auto flex-1 border-0 bg-transparent p-0 text-sm shadow-none outline-none focus-visible:ring-0 md:text-sm",
+              "h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-sm shadow-none outline-none focus-visible:ring-0 md:text-sm",
               step.isCompleted && "text-muted-foreground line-through",
             )}
           />
