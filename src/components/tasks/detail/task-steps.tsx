@@ -5,6 +5,11 @@ import { X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+
+function autoResize(el: HTMLTextAreaElement) {
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
+}
 import { cn } from "@/lib/utils";
 
 interface StepItem {
@@ -49,8 +54,13 @@ export function TaskSteps({
             onCheckedChange={() => onToggleStep(step.id)}
             className="h-4 w-4 shrink-0 rounded-full"
           />
-          <Input
+          <textarea
             defaultValue={step.title}
+            rows={1}
+            ref={(el) => {
+              if (el) el.style.height = el.scrollHeight + "px";
+            }}
+            onInput={(e) => autoResize(e.currentTarget)}
             onBlur={(e) => {
               const newTitle = e.target.value.trim();
               if (newTitle && newTitle !== step.title) {
@@ -60,14 +70,17 @@ export function TaskSteps({
               }
             }}
             onKeyDown={(e) => {
-              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.currentTarget.blur();
+              }
               if (e.key === "Escape") {
                 e.currentTarget.value = step.title;
                 e.currentTarget.blur();
               }
             }}
             className={cn(
-              "h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-sm shadow-none outline-none focus-visible:ring-0 md:text-sm",
+              "min-w-0 flex-1 resize-none overflow-hidden border-0 bg-transparent p-0 text-sm shadow-none outline-none focus-visible:ring-0 md:text-sm",
               step.isCompleted && "text-muted-foreground line-through",
             )}
           />

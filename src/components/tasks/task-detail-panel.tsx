@@ -763,19 +763,38 @@ export function TaskDetailPanel() {
             onCheckedChange={() => toggleCompleted({ variables: { id: task.id } })}
             className="mt-1.5 shrink-0 rounded-full"
           />
-          <Input
+          <textarea
             key={task.id + task.title}
             defaultValue={task.title}
-            onBlur={handleTitleBlur}
+            rows={1}
+            ref={(el) => {
+              if (el) el.style.height = el.scrollHeight + "px";
+            }}
+            onInput={(e) => {
+              const el = e.currentTarget;
+              el.style.height = "auto";
+              el.style.height = el.scrollHeight + "px";
+            }}
+            onBlur={(e) => {
+              const newTitle = e.target.value.trim();
+              if (task && newTitle && newTitle !== task.title) {
+                optimisticUpdate({ title: newTitle });
+              } else if (task) {
+                e.target.value = task.title;
+              }
+            }}
             onKeyDown={(e) => {
-              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.currentTarget.blur();
+              }
               if (e.key === "Escape") {
                 e.currentTarget.value = task.title;
                 e.currentTarget.blur();
               }
             }}
             className={cn(
-              "h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-lg leading-tight font-medium shadow-none outline-none focus-visible:ring-0 md:text-lg",
+              "min-w-0 flex-1 resize-none overflow-hidden border-0 bg-transparent p-0 text-lg leading-tight font-medium shadow-none outline-none focus-visible:ring-0 md:text-lg",
               task.isCompleted && "text-muted-foreground line-through",
             )}
           />
