@@ -22,16 +22,21 @@ export function ResizableTaskLayout({ children }: ResizableTaskLayoutProps) {
   });
 
   // Keep panel mounted during close animation
-  const prevTaskIdRef = useRef<string | null>(null);
   const [showPanel, setShowPanel] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   useEffect(() => {
     if (taskId) {
-      prevTaskIdRef.current = taskId;
+      // Step 1: mount with width: 0
       setShowPanel(true);
+      // Step 2: next frame → transition to full width
+      const raf = requestAnimationFrame(() => setPanelOpen(true));
+      return () => cancelAnimationFrame(raf);
     } else {
-      // Delay unmount until transition finishes
-      const timer = setTimeout(() => setShowPanel(false), 200);
+      // Step 1: transition to width: 0
+      setPanelOpen(false);
+      // Step 2: unmount after transition
+      const timer = setTimeout(() => setShowPanel(false), 300);
       return () => clearTimeout(timer);
     }
   }, [taskId]);
@@ -63,8 +68,8 @@ export function ResizableTaskLayout({ children }: ResizableTaskLayoutProps) {
             maxWidth={600}
           />
           <div
-            className="h-full shrink-0 overflow-hidden transition-[width] duration-200 ease-out"
-            style={{ width: taskId ? detailWidth : 0 }}
+            className="h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out"
+            style={{ width: panelOpen ? detailWidth : 0 }}
           >
             <div className="h-full" style={{ width: detailWidth }}>
               <TaskDetailPanel />
