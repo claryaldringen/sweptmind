@@ -4,20 +4,55 @@ import { db } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import { eq, and } from "drizzle-orm";
 
+const VALID_PLATFORMS = ["web", "ios", "android"] as const;
+type PushPlatform = (typeof VALID_PLATFORMS)[number];
+
+function isValidPlatform(p: unknown): p is PushPlatform {
+  return typeof p === "string" && VALID_PLATFORMS.includes(p as PushPlatform);
+}
+
 export async function POST(request: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const endpoint = typeof body?.endpoint === "string" ? body.endpoint.slice(0, 2048) : null;
-  const p256dh = typeof body?.keys?.p256dh === "string" ? body.keys.p256dh.slice(0, 512) : null;
-  const authKey = typeof body?.keys?.auth === "string" ? body.keys.auth.slice(0, 512) : null;
+  const platform: PushPlatform = isValidPlatform(body?.platform)
+    ? body.platform
+    : "web";
 
-  if (!endpoint || !p256dh || !authKey) {
-    return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
+  const endpoint =
+    typeof body?.endpoint === "string" ? body.endpoint.slice(0, 2048) : null;
+  if (!endpoint) {
+    return NextResponse.json(
+      { error: "Invalid subscription" },
+      { status: 400 },
+    );
   }
 
-  // Upsert: delete existing subscription for this endpoint, insert new
+  let p256dh: string;
+  let authKey: string;
+
+  if (platform === "web") {
+    p256dh =
+      typeof body?.keys?.p256dh === "string"
+        ? body.keys.p256dh.slice(0, 512)
+        : "";
+    authKey =
+      typeof body?.keys?.auth === "string"
+        ? body.keys.auth.slice(0, 512)
+        : "";
+    if (!p256dh || !authKey) {
+      return NextResponse.json(
+        { error: "Invalid subscription" },
+        { status: 400 },
+      );
+    }
+  } else {
+    p256dh = "_";
+    authKey = "_";
+  }
+
   await db
     .delete(schema.pushSubscriptions)
     .where(
@@ -35,6 +70,7 @@ export async function POST(request: NextRequest) {
     endpoint,
     p256dh,
     auth: authKey,
+    platform,
     notifyDueDate,
     notifyReminder,
   });
