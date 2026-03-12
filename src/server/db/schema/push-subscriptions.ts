@@ -13,6 +13,7 @@ export const pushSubscriptions = pgTable(
     endpoint: text("endpoint").notNull(),
     p256dh: text("p256dh").notNull(),
     auth: text("auth").notNull(),
+    platform: text("platform").notNull().default("web"),
     notifyDueDate: boolean("notify_due_date").notNull().default(true),
     notifyReminder: boolean("notify_reminder").notNull().default(true),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
