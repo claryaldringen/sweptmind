@@ -103,20 +103,15 @@ export async function GET(request: NextRequest) {
           });
         }
       } catch (error: unknown) {
+        const errObj = error as Record<string, unknown> | null;
         const statusCode =
-          error &&
-          typeof error === "object" &&
-          "statusCode" in error &&
-          typeof (error as any).statusCode === "number"
-            ? (error as any).statusCode
+          errObj && typeof errObj.statusCode === "number"
+            ? errObj.statusCode
             : 0;
 
         const isFcmGone =
-          error &&
-          typeof error === "object" &&
-          "code" in error &&
-          (error as any).code ===
-            "messaging/registration-token-not-registered";
+          errObj &&
+          errObj.code === "messaging/registration-token-not-registered";
 
         if (statusCode === 410 || isFcmGone) {
           await db

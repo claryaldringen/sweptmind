@@ -30,7 +30,18 @@ export class CapacitorLocationAdapter implements LocationPort {
 
   async startBackgroundTracking(config: TrackingConfig): Promise<void> {
     const { registerPlugin } = await import("@capacitor/core");
-    const BackgroundGeolocation = registerPlugin<any>("BackgroundGeolocation");
+    interface BgGeoPlugin {
+      addWatcher(
+        opts: Record<string, unknown>,
+        cb: (
+          location: { latitude: number; longitude: number } | null,
+          error: unknown,
+        ) => void,
+      ): Promise<string>;
+      removeWatcher(opts: { id: string }): Promise<void>;
+    }
+    const BackgroundGeolocation =
+      registerPlugin<BgGeoPlugin>("BackgroundGeolocation");
 
     this.watcherId = await BackgroundGeolocation.addWatcher(
       {
@@ -40,7 +51,7 @@ export class CapacitorLocationAdapter implements LocationPort {
         stale: false,
         distanceFilter: config.distanceFilterMeters,
       },
-      (location: any, error: any) => {
+      (location, error) => {
         if (error) {
           console.error("Background location error:", error);
           return;
@@ -58,8 +69,11 @@ export class CapacitorLocationAdapter implements LocationPort {
   async stopBackgroundTracking(): Promise<void> {
     if (this.watcherId) {
       const { registerPlugin } = await import("@capacitor/core");
+      interface BgGeoPlugin {
+        removeWatcher(opts: { id: string }): Promise<void>;
+      }
       const BackgroundGeolocation =
-        registerPlugin<any>("BackgroundGeolocation");
+        registerPlugin<BgGeoPlugin>("BackgroundGeolocation");
       await BackgroundGeolocation.removeWatcher({ id: this.watcherId });
       this.watcherId = null;
     }
