@@ -25,6 +25,7 @@ import { useNewTaskPosition } from "@/hooks/use-new-task-position";
 import { useLocale } from "@/hooks/use-locale";
 import { useTranslations } from "@/lib/i18n";
 import { parseCSV, mapOutlookTaskRow, type MappedTask } from "@/lib/csv-import";
+import { getPlatform, getPushAdapter } from "@sweptmind/native-bridge";
 
 const IMPORT_TASKS = gql`
   mutation ImportTasks($input: [ImportTaskInput!]!) {
@@ -115,6 +116,20 @@ export default function SettingsPage() {
   const [notifyReminder, setNotifyReminder] = useState(true);
 
   useEffect(() => {
+    const platform = getPlatform();
+    if (platform === "ios" || platform === "android") {
+      setPushSupported(true);
+      fetch("/api/push/preferences")
+        .then((r) => r.json())
+        .then((prefs) => {
+          setPushEnabled(true);
+          if (typeof prefs.notifyDueDate === "boolean") setNotifyDueDate(prefs.notifyDueDate);
+          if (typeof prefs.notifyReminder === "boolean") setNotifyReminder(prefs.notifyReminder);
+        })
+        .catch(() => setPushEnabled(false));
+      return;
+    }
+
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
       setPushSupported(false);
       return;
@@ -158,33 +173,53 @@ export default function SettingsPage() {
   const handlePushToggle = useCallback(async (checked: boolean) => {
     setPushLoading(true);
     try {
+      const platform = getPlatform();
+
       if (checked) {
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-          setPushLoading(false);
-          return;
-        }
-        const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-        });
-        await fetch("/api/push/subscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sub.toJSON()),
-        });
-        setPushEnabled(true);
-      } else {
-        const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.getSubscription();
-        if (sub) {
-          await fetch("/api/push/unsubscribe", {
+        if (platform === "ios" || platform === "android") {
+          const pushAdapter = getPushAdapter();
+          const { token, platform: detectedPlatform } = await pushAdapter.register();
+          await fetch("/api/push/subscribe", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ endpoint: sub.endpoint }),
+            body: JSON.stringify({
+              endpoint: token,
+              platform: detectedPlatform,
+            }),
           });
-          await sub.unsubscribe();
+        } else {
+          const permission = await Notification.requestPermission();
+          if (permission !== "granted") {
+            setPushLoading(false);
+            return;
+          }
+          const reg = await navigator.serviceWorker.ready;
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+          });
+          await fetch("/api/push/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(sub.toJSON()),
+          });
+        }
+        setPushEnabled(true);
+      } else {
+        if (platform === "ios" || platform === "android") {
+          const pushAdapter = getPushAdapter();
+          await pushAdapter.unregister();
+        } else {
+          const reg = await navigator.serviceWorker.ready;
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) {
+            await fetch("/api/push/unsubscribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ endpoint: sub.endpoint }),
+            });
+            await sub.unsubscribe();
+          }
         }
         setPushEnabled(false);
       }

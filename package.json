@@ -36,6 +36,7 @@
     "@pothos/core": "^4.12.0",
     "@pothos/plugin-drizzle": "^0.17.0",
     "@pothos/plugin-scope-auth": "^4.1.6",
+    "@sweptmind/native-bridge": "workspace:*",
     "apollo3-cache-persist": "^0.15.0",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",

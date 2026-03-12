@@ -11,9 +11,9 @@
   "dependencies": {
     "@capacitor/android": "^6",
     "@capacitor/core": "^6",
+    "@capacitor/geolocation": "^6",
     "@capacitor/ios": "^6",
-    "@capacitor/push-notifications": "^6",
-    "@capacitor/geolocation": "^6"
+    "@capacitor/push-notifications": "^6"
   },
   "devDependencies": {
     "@capacitor/cli": "^6"
