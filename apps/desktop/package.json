@@ -2,6 +2,8 @@
   "name": "@sweptmind/desktop",
   "version": "0.0.1",
   "private": true,
+  "description": "SweptMind desktop app for macOS",
+  "author": "SweptMind",
   "main": "dist/main.js",
   "scripts": {
     "dev": "tsc && electron dist/main.js",
@@ -9,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "electron": "^33",
+    "electron": "33.4.0",
     "electron-builder": "^25",
     "typescript": "^5"
   }

@@ -1,19 +1,13 @@
 appId: com.sweptmind.desktop
 productName: SweptMind
+npmRebuild: false
+files:
+  - "dist/**/*"
+  - "package.json"
 mac:
   category: public.app-category.productivity
   target:
-    - dmg
-    - zip
+    - dir
   icon: icon.icns
-dmg:
-  title: SweptMind
-  contents:
-    - x: 130
-      y: 220
-    - x: 410
-      y: 220
-      type: link
-      path: /Applications
 directories:
   output: release
