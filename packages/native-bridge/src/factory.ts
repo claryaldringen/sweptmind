@@ -3,6 +3,8 @@ import type { PushPort } from "./ports/push.port";
 import type { LocationPort } from "./ports/location.port";
 import { WebPushAdapter } from "./adapters/web/web-push.adapter";
 import { WebLocationAdapter } from "./adapters/web/web-location.adapter";
+import { CapacitorPushAdapter } from "./adapters/capacitor/capacitor-push.adapter";
+import { CapacitorLocationAdapter } from "./adapters/capacitor/capacitor-location.adapter";
 
 let pushInstance: PushPort | null = null;
 let locationInstance: LocationPort | null = null;
@@ -14,8 +16,7 @@ export function getPushAdapter(): PushPort {
   switch (platform) {
     case "ios":
     case "android":
-      // Will be replaced in Task 10 with CapacitorPushAdapter
-      pushInstance = new WebPushAdapter();
+      pushInstance = new CapacitorPushAdapter();
       return pushInstance;
     case "electron":
     default:
@@ -31,8 +32,7 @@ export function getLocationAdapter(): LocationPort {
   switch (platform) {
     case "ios":
     case "android":
-      // Will be replaced in Task 10 with CapacitorLocationAdapter
-      locationInstance = new WebLocationAdapter();
+      locationInstance = new CapacitorLocationAdapter();
       return locationInstance;
     default:
       locationInstance = new WebLocationAdapter();
