@@ -1,0 +1,21 @@
+{
+  "name": "@sweptmind/mobile",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "sync:android": "npx cap sync android",
+    "sync:ios": "npx cap sync ios",
+    "open:android": "npx cap open android",
+    "open:ios": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6",
+    "@capacitor/core": "^6",
+    "@capacitor/ios": "^6",
+    "@capacitor/push-notifications": "^6",
+    "@capacitor/geolocation": "^6"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6"
+  }
+}

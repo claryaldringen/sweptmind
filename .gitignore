@@ -45,3 +45,8 @@ next-env.d.ts
 
 # Serwist — SW is now generated via route handler at /serwist/sw.js
 coverage/
+
+# Capacitor native projects (auto-generated)
+apps/mobile/android/
+apps/mobile/ios/
+apps/mobile/node_modules/
