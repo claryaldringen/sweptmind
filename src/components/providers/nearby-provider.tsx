@@ -4,6 +4,7 @@ import { createContext, useContext, useCallback, useEffect, useMemo, type ReactN
 import { useUserLocation } from "@/hooks/use-user-location";
 import { useAppData } from "@/components/providers/app-data-provider";
 import { isNearby as checkNearby } from "@/lib/geo";
+import { getPlatform, getLocationAdapter } from "@sweptmind/native-bridge";
 
 interface NearbyContextValue {
   userLatitude: number | null;
@@ -48,6 +49,22 @@ export function NearbyProvider({ children }: { children: ReactNode }) {
       )
       .map((loc) => loc.id);
   }, [position, locations, isApproximate]);
+
+  // Start native background tracking on Capacitor
+  useEffect(() => {
+    const platform = getPlatform();
+    if (platform !== "ios" && platform !== "android") return;
+
+    const locationAdapter = getLocationAdapter();
+    locationAdapter.startBackgroundTracking({
+      intervalMs: 10 * 60 * 1000,
+      distanceFilterMeters: 100,
+    });
+
+    return () => {
+      locationAdapter.stopBackgroundTracking();
+    };
+  }, []);
 
   return (
     <NearbyContext.Provider
