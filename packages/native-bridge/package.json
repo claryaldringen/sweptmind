@@ -8,6 +8,9 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@capacitor/core": "^8.2.0",
+    "@capacitor/geolocation": "^8.1.0",
+    "@capacitor/push-notifications": "^8.0.2",
     "typescript": "^5"
   }
 }

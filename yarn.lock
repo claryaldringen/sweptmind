@@ -511,6 +511,42 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@capacitor/core@npm:^8.2.0":
+  version: 8.2.0
+  resolution: "@capacitor/core@npm:8.2.0"
+  dependencies:
+    tslib: "npm:^2.1.0"
+  checksum: 10c0/9cb050f76adfd300f82a5cf4e8c48d266db2dc70889e5b342b6439aa8f7edcf87e98ff946d98be42aed01ea6cfe8660a6e5a153097c3df898de47554d04ab00b
+  languageName: node
+  linkType: hard
+
+"@capacitor/geolocation@npm:^8.1.0":
+  version: 8.1.0
+  resolution: "@capacitor/geolocation@npm:8.1.0"
+  dependencies:
+    "@capacitor/synapse": "npm:^1.0.4"
+  peerDependencies:
+    "@capacitor/core": ">=8.0.0"
+  checksum: 10c0/e067c3ff56cf3a413510b802b3dcf69a6cf34df6b7c7fe49300f77450c346ab8b58850d3493037436ee4189a94cf5ddf40a9f57e47e6afdaae6d58cc13a464d3
+  languageName: node
+  linkType: hard
+
+"@capacitor/push-notifications@npm:^8.0.2":
+  version: 8.0.2
+  resolution: "@capacitor/push-notifications@npm:8.0.2"
+  peerDependencies:
+    "@capacitor/core": ">=8.0.0"
+  checksum: 10c0/656266ecb42f6bc944bd689be3704c2d1cda83e167df20f1278d28183f90961fbf1fe716e0ccd9e714ea194cb6d0c405af4f029526830763b86f1d35fb2778f7
+  languageName: node
+  linkType: hard
+
+"@capacitor/synapse@npm:^1.0.4":
+  version: 1.0.4
+  resolution: "@capacitor/synapse@npm:1.0.4"
+  checksum: 10c0/83f37d06ebdb4234596f123417043aae8b0fd3b5905d399fe8bb7f1d7c3352c8449bef093793b01a0b3c4a59208ac27aec5b1ed7cf5e399c5c3004cc0ca74646
+  languageName: node
+  linkType: hard
+
 "@date-fns/tz@npm:^1.4.1":
   version: 1.4.1
   resolution: "@date-fns/tz@npm:1.4.1"
@@ -5041,6 +5077,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@sweptmind/native-bridge@workspace:packages/native-bridge"
   dependencies:
+    "@capacitor/core": "npm:^8.2.0"
+    "@capacitor/geolocation": "npm:^8.1.0"
+    "@capacitor/push-notifications": "npm:^8.0.2"
     typescript: "npm:^5"
   languageName: unknown
   linkType: soft
