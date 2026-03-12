@@ -16,6 +16,7 @@ Komunikuj se mnou vždy v češtině a tykej mi, jako kdybych byl tvůj kolega. 
 - **DnD:** @dnd-kit/core + @dnd-kit/sortable
 - **Validace:** Zod v4
 - **Testy:** Vitest (unit testy domain services)
+- **Nativní:** Capacitor 6 (iOS + Android), Electron (macOS), Firebase Admin SDK (FCM/APNs)
 
 ## Příkazy
 
@@ -33,11 +34,34 @@ yarn db:seed              # Seedování testovacích dat (tsx scripts/seed.ts)
 yarn db:studio            # Drizzle Studio GUI
 yarn codegen              # Generování GraphQL TypeScript typů
 docker compose up -d      # Spustit lokální PostgreSQL
+
+# Mobile (Capacitor)
+cd apps/mobile && npx cap sync android    # Sync web → Android
+cd apps/mobile && npx cap sync ios        # Sync web → iOS
+cd apps/mobile && npx cap open android    # Otevřít v Android Studio
+cd apps/mobile && npx cap open ios        # Otevřít v Xcode
+
+# Desktop (Electron)
+cd apps/desktop && yarn dev               # Dev mode (macOS)
+cd apps/desktop && yarn build             # Build .dmg
 ```
 
 ## Struktura projektu
 
 ```
+apps/
+├── mobile/                # Capacitor (iOS + Android) — WebView shell
+│   ├── capacitor.config.ts
+│   ├── android/           # Auto-generated (gitignored)
+│   └── ios/               # Auto-generated (gitignored)
+├── desktop/               # Electron (macOS) — Dock persistence
+│   ├── src/main.ts        # Main process
+│   └── src/preload.ts     # electronAPI marker
+packages/
+└── native-bridge/         # Port/adapter pattern pro nativní funkce
+    ├── src/ports/          # PushPort, LocationPort interfaces
+    ├── src/adapters/web/   # Web Push, Geolocation API
+    └── src/adapters/capacitor/  # FCM/APNs, Background Geolocation
 src/
 ├── app/
 │   ├── (auth)/           # Přihlášení, Registrace stránky
@@ -125,15 +149,14 @@ src/
 - Offline režim (Apollo cache persistence v IndexedDB, retry link, optimistic UI)
 - Push notifikace (Web Push API, VAPID, Vercel Cron)
 
-### Fáze 2 (později): Capacitor → App Store / Google Play
-- Capacitor wrapper kolem existující PWA pro nativní distribuce
-- Nativní push přes FCM (Android) / APNs (iOS) — spolehlivější než Web Push
-- Biometrics (Face ID / Fingerprint) pro odemčení appky
-- App badge count (počet nehotových tasků na ikoně)
-- Home screen widgets (iOS 17+ / Android)
-- Share target (sdílet text z jiné appky → nový task)
-- Důvod odložení: vyžaduje Apple Developer účet ($99/rok), nativní build pipeline (Xcode/Android Studio), testování na reálných zařízeních. PWA pokryje 95% use cases, Capacitor přidá zbylých 5% nativních funkcí.
+### Fáze 2 (implementováno): Capacitor + Electron
+- Capacitor wrapper (iOS + Android) — WebView shell načítající sweptmind.com
+- Electron wrapper (macOS) — Dock persistence, nativní menu
+- Nativní push přes FCM/APNs (Firebase Admin SDK) — hybridní model (web: VAPID, nativní: FCM)
+- Background geolocation + geofencing (stabilní lokace: nativní geofencing, ad-hoc: periodické kontroly)
+- Port/adapter pattern v `packages/native-bridge/` pro clean architecture
+- Později: Biometrics, App badge count, Home screen widgets, Share target
 
 ## Prostředí
 
-Vyžaduje `.env.local` s: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `AUTH_GOOGLE_ID/SECRET`, `AUTH_FACEBOOK_ID/SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `CRON_SECRET` (Vercel auto)
+Vyžaduje `.env.local` s: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `AUTH_GOOGLE_ID/SECRET`, `AUTH_FACEBOOK_ID/SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `CRON_SECRET` (Vercel auto), `FIREBASE_SERVICE_ACCOUNT` (JSON string Firebase service account pro FCM/APNs push)
