@@ -12,7 +12,10 @@ export async function GET(request: NextRequest) {
   }
 
   if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
-    return NextResponse.json({ error: "VAPID keys not configured" }, { status: 500 });
+    return NextResponse.json(
+      { error: "VAPID keys not configured" },
+      { status: 500 },
+    );
   }
 
   webpush.setVapidDetails(
@@ -22,9 +25,8 @@ export async function GET(request: NextRequest) {
   );
 
   const now = new Date();
-  const nowIso = now.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
+  const nowIso = now.toISOString().slice(0, 16);
 
-  // Find tasks with dueDate (with time) <= now, not completed, not yet notified
   const tasks = await db.query.tasks.findMany({
     where: and(
       isNotNull(schema.tasks.dueDate),
@@ -33,14 +35,14 @@ export async function GET(request: NextRequest) {
     ),
   });
 
-  // Filter: only tasks with exact time, and that time has passed
-  const dueTasks = tasks.filter((t) => t.dueDate && t.dueDate.includes("T") && t.dueDate <= nowIso);
+  const dueTasks = tasks.filter(
+    (t) => t.dueDate && t.dueDate.includes("T") && t.dueDate <= nowIso,
+  );
 
   if (dueTasks.length === 0) {
     return NextResponse.json({ sent: 0 });
   }
 
-  // Batch: collect unique userIds and fetch all subscriptions at once
   const userIds = [...new Set(dueTasks.map((t) => t.userId))];
   const allSubscriptions = await db.query.pushSubscriptions.findMany({
     where: inArray(schema.pushSubscriptions.userId, userIds),
@@ -53,33 +55,73 @@ export async function GET(request: NextRequest) {
     subsByUser.set(sub.userId, list);
   }
 
+  // Lazy-load Firebase Admin only when native subscriptions exist
+  const hasNative = allSubscriptions.some((s) => s.platform !== "web");
+  let firebaseMessaging: Awaited<
+    ReturnType<typeof import("firebase-admin/messaging").getMessaging>
+  > | null = null;
+  if (hasNative) {
+    try {
+      const { getFirebaseMessaging } = await import("@/lib/firebase-admin");
+      firebaseMessaging = getFirebaseMessaging();
+    } catch (err) {
+      console.error("Firebase Admin init failed:", err);
+    }
+  }
+
   let sent = 0;
   for (const task of dueTasks) {
-    // Mark as notified first to prevent duplicate notifications on timeout
-    await db.update(schema.tasks).set({ notifiedAt: now }).where(eq(schema.tasks.id, task.id));
+    await db
+      .update(schema.tasks)
+      .set({ notifiedAt: now })
+      .where(eq(schema.tasks.id, task.id));
 
-    const subscriptions = (subsByUser.get(task.userId) ?? []).filter((sub) => sub.notifyDueDate);
-    const payload = JSON.stringify({
+    const subscriptions = (subsByUser.get(task.userId) ?? []).filter(
+      (sub) => sub.notifyDueDate,
+    );
+    const payload = {
       title: "SweptMind",
       body: task.title,
       url: `/lists/${task.listId}?task=${task.id}`,
-    });
+    };
 
     for (const sub of subscriptions) {
       try {
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload,
-        );
+        if (sub.platform === "web") {
+          await webpush.sendNotification(
+            {
+              endpoint: sub.endpoint,
+              keys: { p256dh: sub.p256dh, auth: sub.auth },
+            },
+            JSON.stringify(payload),
+          );
+        } else if (firebaseMessaging) {
+          await firebaseMessaging.send({
+            token: sub.endpoint,
+            notification: { title: payload.title, body: payload.body },
+            data: { url: payload.url },
+          });
+        }
       } catch (error: unknown) {
-        // 410 Gone = subscription expired, clean up
-        if (
+        const statusCode =
           error &&
           typeof error === "object" &&
           "statusCode" in error &&
-          (error as { statusCode: number }).statusCode === 410
-        ) {
-          await db.delete(schema.pushSubscriptions).where(eq(schema.pushSubscriptions.id, sub.id));
+          typeof (error as any).statusCode === "number"
+            ? (error as any).statusCode
+            : 0;
+
+        const isFcmGone =
+          error &&
+          typeof error === "object" &&
+          "code" in error &&
+          (error as any).code ===
+            "messaging/registration-token-not-registered";
+
+        if (statusCode === 410 || isFcmGone) {
+          await db
+            .delete(schema.pushSubscriptions)
+            .where(eq(schema.pushSubscriptions.id, sub.id));
         }
       }
     }
