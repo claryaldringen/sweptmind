@@ -1,0 +1,16 @@
+{
+  "name": "@sweptmind/desktop",
+  "version": "0.0.1",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "tsc && electron dist/main.js",
+    "build": "tsc && electron-builder",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "electron": "^33",
+    "electron-builder": "^25",
+    "typescript": "^5"
+  }
+}
