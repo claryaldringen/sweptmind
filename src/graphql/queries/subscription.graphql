@@ -1,0 +1,10 @@
+query GetSubscription {
+  subscription {
+    id
+    status
+    plan
+    paymentMethod
+    currentPeriodEnd
+    createdAt
+  }
+}

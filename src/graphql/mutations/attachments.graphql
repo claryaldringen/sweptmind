@@ -1,0 +1,30 @@
+mutation UploadAttachment(
+  $taskId: String!
+  $fileName: String!
+  $fileSize: Int!
+  $mimeType: String!
+  $fileBase64: String!
+) {
+  uploadAttachment(
+    taskId: $taskId
+    fileName: $fileName
+    fileSize: $fileSize
+    mimeType: $mimeType
+    fileBase64: $fileBase64
+  ) {
+    id
+    taskId
+    fileName
+    fileSize
+    mimeType
+    createdAt
+  }
+}
+
+mutation DeleteAttachment($id: String!) {
+  deleteAttachment(id: $id)
+}
+
+query AttachmentDownloadUrl($id: String!) {
+  attachmentDownloadUrl(id: $id)
+}

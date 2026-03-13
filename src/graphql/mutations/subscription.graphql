@@ -1,0 +1,11 @@
+mutation CreateCheckoutSession($plan: String!) {
+  createCheckoutSession(plan: $plan)
+}
+
+mutation CreateCustomerPortalSession {
+  createCustomerPortalSession
+}
+
+mutation GenerateBankTransferQR($plan: String!) {
+  generateBankTransferQR(plan: $plan)
+}

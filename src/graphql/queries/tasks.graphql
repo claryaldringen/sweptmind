@@ -18,6 +18,14 @@ fragment TaskFields on Task {
     isCompleted
     sortOrder
   }
+  attachments {
+    id
+    taskId
+    fileName
+    fileSize
+    mimeType
+    createdAt
+  }
 }
 
 query TasksByList($listId: String!) {
@@ -52,5 +60,6 @@ query GetMe {
     name
     email
     image
+    isPremium
   }
 }
