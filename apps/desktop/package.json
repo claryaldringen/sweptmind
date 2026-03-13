@@ -6,8 +6,9 @@
   "author": "SweptMind",
   "main": "dist/main.js",
   "scripts": {
-    "dev": "tsc && electron dist/main.js",
-    "build": "tsc && electron-builder",
+    "generate-build-info": "node -e \"const h=require('child_process').execSync('git rev-parse --short HEAD').toString().trim(); const t=new Date().toISOString(); require('fs').writeFileSync('src/build-info.ts', 'export const BUILD_HASH = \\\"'+h+'\\\";\\nexport const BUILD_TIME = \\\"'+t+'\\\";\\n');\"",
+    "dev": "yarn generate-build-info && tsc && electron dist/main.js",
+    "build": "yarn generate-build-info && tsc && electron-builder",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, Menu, shell } from "electron";
 import { exec } from "child_process";
 import * as path from "path";
+import { BUILD_HASH, BUILD_TIME } from "./build-info";
 
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
@@ -75,10 +76,11 @@ app.on("before-quit", () => {
 });
 
 app.whenReady().then(() => {
+  const buildDate = new Date(BUILD_TIME).toLocaleString();
   app.setAboutPanelOptions({
     applicationName: "SweptMind",
     applicationVersion: app.getVersion(),
-    version: "", // hides build number
+    version: `Build ${BUILD_HASH} (${buildDate})`,
     copyright: "© 2026 Martin Zadražil. All rights reserved.",
     website: "https://sweptmind.com",
   });
