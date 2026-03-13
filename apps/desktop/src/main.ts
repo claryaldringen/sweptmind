@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, shell } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, shell } from "electron";
 import * as path from "path";
 
 let mainWindow: BrowserWindow | null = null;
@@ -74,6 +74,18 @@ app.on("before-quit", () => {
 });
 
 app.whenReady().then(() => {
+  // IPC: open macOS System Settings panes
+  ipcMain.handle("open-notification-settings", () =>
+    shell.openExternal(
+      "x-apple.systempreferences:com.apple.preference.notifications",
+    ),
+  );
+  ipcMain.handle("open-location-settings", () =>
+    shell.openExternal(
+      "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices",
+    ),
+  );
+
   createWindow();
 
   const template: Electron.MenuItemConstructorOptions[] = [

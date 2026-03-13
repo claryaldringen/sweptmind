@@ -214,6 +214,9 @@ export const en: Dictionary = {
     myLocation: "My location",
     detectingLocation: "Detecting location…",
     radiusKm: "{radius} km",
+    electronDesc:
+      "Location access is managed by macOS. Allow location for SweptMind in System Settings.",
+    openSettings: "Open System Settings",
   },
   recurrence: {
     addRecurrence: "Add recurrence",
@@ -274,6 +277,9 @@ export const en: Dictionary = {
     error: "Failed to enable notifications.",
     notifyDueDate: "Tasks with due date",
     notifyReminder: "Reminders",
+    electronDesc:
+      "Notifications are managed by macOS. Allow notifications for SweptMind in System Settings.",
+    openSettings: "Open System Settings",
   },
   calendar: {
     title: "Calendar",

@@ -198,6 +198,8 @@ export interface Dictionary {
     myLocation: string;
     detectingLocation: string;
     radiusKm: string;
+    electronDesc: string;
+    openSettings: string;
   };
   recurrence: {
     addRecurrence: string;
@@ -257,6 +259,8 @@ export interface Dictionary {
     error: string;
     notifyDueDate: string;
     notifyReminder: string;
+    electronDesc: string;
+    openSettings: string;
   };
   calendar: {
     title: string;

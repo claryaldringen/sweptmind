@@ -214,6 +214,9 @@ export const cs: Dictionary = {
     myLocation: "Moje poloha",
     detectingLocation: "Zjišťuji polohu…",
     radiusKm: "{radius} km",
+    electronDesc:
+      "Přístup k poloze spravuje macOS. Povol polohu pro SweptMind v Nastavení systému.",
+    openSettings: "Otevřít Nastavení systému",
   },
   recurrence: {
     addRecurrence: "Přidat opakování",
@@ -274,6 +277,9 @@ export const cs: Dictionary = {
     error: "Nepodařilo se zapnout notifikace.",
     notifyDueDate: "Úkoly s termínem",
     notifyReminder: "Připomenutí",
+    electronDesc:
+      "Notifikace spravuje macOS. Povol notifikace pro SweptMind v Nastavení systému.",
+    openSettings: "Otevřít Nastavení systému",
   },
   calendar: {
     title: "Kalendář",

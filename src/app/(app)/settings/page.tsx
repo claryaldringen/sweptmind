@@ -17,6 +17,8 @@ import {
   Check,
   AlertCircle,
   Copy,
+  ExternalLink,
+  MapPin,
   RefreshCw,
 } from "lucide-react";
 import { useSidebarContext } from "@/components/layout/app-shell";
@@ -26,6 +28,19 @@ import { useLocale } from "@/hooks/use-locale";
 import { useTranslations } from "@/lib/i18n";
 import { parseCSV, mapOutlookTaskRow, type MappedTask } from "@/lib/csv-import";
 import { getPlatform, getPushAdapter } from "@sweptmind/native-bridge";
+
+interface ElectronAPI {
+  platform: string;
+  openNotificationSettings?: () => Promise<void>;
+  openLocationSettings?: () => Promise<void>;
+}
+
+function getElectronAPI(): ElectronAPI | null {
+  if (typeof window !== "undefined" && "electronAPI" in window) {
+    return (window as unknown as { electronAPI: ElectronAPI }).electronAPI;
+  }
+  return null;
+}
 
 const IMPORT_TASKS = gql`
   mutation ImportTasks($input: [ImportTaskInput!]!) {
@@ -107,6 +122,10 @@ export default function SettingsPage() {
   const { data: syncAllData } = useQuery<CalendarSyncAllData>(CALENDAR_SYNC_ALL);
 
   const syncAll = syncAllData?.calendarSyncAll ?? false;
+
+  // Platform detection
+  const [platform, setPlatform] = useState<ReturnType<typeof getPlatform>>("web");
+  useEffect(() => setPlatform(getPlatform()), []);
 
   // Push notification state
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -616,10 +635,43 @@ export default function SettingsPage() {
                 </>
               )}
             </div>
+          ) : platform === "electron" ? (
+            <div className="space-y-3">
+              <p className="text-muted-foreground text-sm">{t("push.electronDesc")}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => getElectronAPI()?.openNotificationSettings?.()}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                {t("push.openSettings")}
+              </Button>
+            </div>
           ) : (
             <p className="text-muted-foreground text-sm">{t("push.unsupported")}</p>
           )}
         </div>
+
+        {/* Location (Electron only) */}
+        {platform === "electron" && (
+          <div>
+            <h2 className="mb-3 text-lg font-semibold">
+              <MapPin className="mr-2 inline h-5 w-5" />
+              {t("locations.myLocation")}
+            </h2>
+            <div className="space-y-3">
+              <p className="text-muted-foreground text-sm">{t("locations.electronDesc")}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => getElectronAPI()?.openLocationSettings?.()}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                {t("locations.openSettings")}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Calendar */}
         <div>
