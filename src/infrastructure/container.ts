@@ -8,6 +8,8 @@ import { DrizzleUserRepository } from "./persistence/drizzle-user.repository";
 import { DrizzleTagRepository } from "./persistence/drizzle-tag.repository";
 import { DrizzleLocationRepository } from "./persistence/drizzle-location.repository";
 import { DrizzleCalendarSyncRepository } from "./persistence/drizzle-calendar-sync.repository";
+import { DrizzleSubscriptionRepository } from "./persistence/drizzle-subscription.repository";
+import { DrizzleAttachmentRepository } from "./persistence/drizzle-attachment.repository";
 import { TaskService } from "@/domain/services/task.service";
 import { ListService } from "@/domain/services/list.service";
 import { StepService } from "@/domain/services/step.service";
@@ -18,6 +20,8 @@ import { CalendarService } from "@/domain/services/calendar.service";
 import { AuthService, type IPasswordHasher } from "@/domain/services/auth.service";
 import { UserService } from "@/domain/services/user.service";
 import { OnboardingService } from "@/domain/services/onboarding.service";
+import { SubscriptionService } from "@/domain/services/subscription.service";
+import { AttachmentService } from "@/domain/services/attachment.service";
 
 const taskRepo = new DrizzleTaskRepository(db);
 const listRepo = new DrizzleListRepository(db);
@@ -27,6 +31,8 @@ const userRepo = new DrizzleUserRepository(db);
 const tagRepo = new DrizzleTagRepository(db);
 const locationRepo = new DrizzleLocationRepository(db);
 const calendarSyncRepo = new DrizzleCalendarSyncRepository(db);
+const subscriptionRepo = new DrizzleSubscriptionRepository(db);
+const attachmentRepo = new DrizzleAttachmentRepository(db);
 
 const bcryptHasher: IPasswordHasher = {
   hash: (password) => hash(password, 12),
@@ -43,6 +49,8 @@ export const repos = {
   tag: tagRepo,
   location: locationRepo,
   calendarSync: calendarSyncRepo,
+  subscription: subscriptionRepo,
+  attachment: attachmentRepo,
   user: userRepo,
 };
 
@@ -59,6 +67,8 @@ export const services = {
   auth: new AuthService(userRepo, bcryptHasher),
   user: new UserService(userRepo),
   onboarding: new OnboardingService(listRepo, locationRepo, userRepo),
+  subscription: new SubscriptionService(subscriptionRepo),
+  attachment: new AttachmentService(attachmentRepo, taskRepo, subscriptionRepo),
 };
 
 export type Services = typeof services;
