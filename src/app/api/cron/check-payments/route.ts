@@ -38,6 +38,13 @@ export async function GET(req: NextRequest) {
 
     let processed = 0;
 
+    // Load all users once and build a lookup map by variable symbol
+    const allUsers = await db.query.users.findMany();
+    const usersByVS = new Map<string, (typeof allUsers)[0]>();
+    for (const u of allUsers) {
+      usersByVS.set(u.id.replace(/-/g, "").slice(0, 10), u);
+    }
+
     for (const tx of transactions) {
       const amount = tx.column22?.value;
       const variableSymbol = tx.column5?.value;
@@ -52,10 +59,7 @@ export async function GET(req: NextRequest) {
       });
       if (existing) continue;
 
-      const allUsers = await db.query.users.findMany();
-      const matchedUser = allUsers.find(
-        (u) => u.id.replace(/-/g, "").slice(0, 10) === variableSymbol,
-      );
+      const matchedUser = usersByVS.get(variableSymbol);
       if (!matchedUser) continue;
 
       await db.insert(bankPayments).values({

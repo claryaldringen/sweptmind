@@ -125,7 +125,7 @@ export function TaskAttachments({
             const newRef = cache.writeFragment({
               data: data.uploadAttachment,
               fragment: gql`
-                fragment NewAttachment on Attachment {
+                fragment NewAttachment on TaskAttachment {
                   id
                   taskId
                   fileName
@@ -156,7 +156,7 @@ export function TaskAttachments({
           },
         },
       });
-      cache.evict({ id: cache.identify({ __typename: "Attachment", id: attachmentId }) });
+      cache.evict({ id: cache.identify({ __typename: "TaskAttachment", id: attachmentId }) });
       cache.gc();
     },
   });

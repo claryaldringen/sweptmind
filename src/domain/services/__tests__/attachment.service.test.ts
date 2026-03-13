@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AttachmentService } from "../attachment.service";
+import { SubscriptionService } from "../subscription.service";
 import type { IAttachmentRepository } from "../../repositories/attachment.repository";
 import type { ITaskRepository } from "../../repositories/task.repository";
-import type { ISubscriptionRepository } from "../../repositories/subscription.repository";
 import type { TaskAttachment } from "../../entities/task-attachment";
-import type { Subscription } from "../../entities/subscription";
 import type { Task } from "../../entities/task";
 
 function makeAttachment(overrides: Partial<TaskAttachment> = {}): TaskAttachment {
@@ -16,25 +15,6 @@ function makeAttachment(overrides: Partial<TaskAttachment> = {}): TaskAttachment
     mimeType: "image/jpeg",
     blobUrl: "https://blob.example.com/photo.jpg",
     createdAt: new Date("2026-01-01"),
-    ...overrides,
-  };
-}
-
-function makeSubscription(overrides: Partial<Subscription> = {}): Subscription {
-  const futureDate = new Date();
-  futureDate.setFullYear(futureDate.getFullYear() + 1);
-  return {
-    id: "sub-1",
-    userId: "user-1",
-    status: "active",
-    plan: "monthly",
-    paymentMethod: "bank_transfer",
-    stripeCustomerId: null,
-    stripeSubscriptionId: null,
-    currentPeriodStart: new Date("2026-01-01"),
-    currentPeriodEnd: futureDate,
-    createdAt: new Date("2026-01-01"),
-    updatedAt: new Date("2026-01-01"),
     ...overrides,
   };
 }
@@ -102,33 +82,31 @@ function makeTaskRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository
   };
 }
 
-function makeSubRepo(overrides: Partial<ISubscriptionRepository> = {}): ISubscriptionRepository {
-  return {
-    findActiveByUser: vi.fn().mockResolvedValue(undefined),
-    findByStripeCustomerId: vi.fn().mockResolvedValue(undefined),
-    findByStripeSubscriptionId: vi.fn().mockResolvedValue(undefined),
-    create: vi.fn(),
-    updateStatus: vi.fn(),
-    updateStripeIds: vi.fn(),
-    ...overrides,
-  };
+function makeSubscriptionService(isPremium = true): SubscriptionService {
+  const svc = {
+    isPremium: vi.fn().mockResolvedValue(isPremium),
+    getSubscription: vi.fn().mockResolvedValue(undefined),
+    activateBankTransfer: vi.fn(),
+    handleStripeSubscriptionUpdate: vi.fn(),
+  } as unknown as SubscriptionService;
+  return svc;
 }
 
 describe("AttachmentService", () => {
   let attachmentRepo: IAttachmentRepository;
   let taskRepo: ITaskRepository;
-  let subRepo: ISubscriptionRepository;
+  let subscriptionService: SubscriptionService;
   let service: AttachmentService;
 
   beforeEach(() => {
     attachmentRepo = makeAttachmentRepo();
     taskRepo = makeTaskRepo();
-    subRepo = makeSubRepo();
-    service = new AttachmentService(attachmentRepo, taskRepo, subRepo);
+    subscriptionService = makeSubscriptionService(true);
+    service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService);
   });
 
   describe("getByTaskId", () => {
-    it("vrátí přílohy pro libovolného uživatele (free i premium)", async () => {
+    it("vrati prilohy pro libovolneho uzivatele (free i premium)", async () => {
       const attachments = [makeAttachment(), makeAttachment({ id: "att-2" })];
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
       vi.mocked(attachmentRepo.findByTaskId).mockResolvedValue(attachments);
@@ -140,66 +118,64 @@ describe("AttachmentService", () => {
       expect(attachmentRepo.findByTaskId).toHaveBeenCalledWith("task-1");
     });
 
-    it("vyhodí chybu pokud task nepatří uživateli", async () => {
+    it("vyhodi chybu pokud task nepatri uzivateli", async () => {
       vi.mocked(taskRepo.findById).mockResolvedValue(undefined);
 
       await expect(service.getByTaskId("task-1", "other-user")).rejects.toThrow("Task not found");
     });
   });
 
-  describe("upload", () => {
-    it("vyhodí chybu pokud uživatel není premium", async () => {
+  describe("validateUpload", () => {
+    it("vyhodi chybu pokud uzivatel neni premium", async () => {
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
-      vi.mocked(subRepo.findActiveByUser).mockResolvedValue(undefined);
+      subscriptionService = makeSubscriptionService(false);
+      service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService);
 
       await expect(
-        service.upload("user-1", {
-          taskId: "task-1",
-          fileName: "file.pdf",
-          fileSize: 1024,
-          mimeType: "application/pdf",
-          blobUrl: "https://blob.example.com/file.pdf",
-        }),
+        service.validateUpload("user-1", "task-1", 1024, "application/pdf"),
       ).rejects.toThrow("Premium subscription required");
     });
 
-    it("vyhodí chybu pokud soubor přesahuje 10 MB", async () => {
+    it("vyhodi chybu pokud soubor presahuje 10 MB", async () => {
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
-      vi.mocked(subRepo.findActiveByUser).mockResolvedValue(makeSubscription());
 
       const oversizedFile = 10 * 1024 * 1024 + 1; // 10 MB + 1 byte
       await expect(
-        service.upload("user-1", {
-          taskId: "task-1",
-          fileName: "big.zip",
-          fileSize: oversizedFile,
-          mimeType: "application/zip",
-          blobUrl: "https://blob.example.com/big.zip",
-        }),
+        service.validateUpload("user-1", "task-1", oversizedFile, "application/zip"),
       ).rejects.toThrow("File size exceeds 10 MB");
     });
 
-    it("vyhodí chybu pokud celkové úložiště přesáhne 1 GB", async () => {
+    it("vyhodi chybu pokud celkove uloziste presahne 1 GB", async () => {
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
-      vi.mocked(subRepo.findActiveByUser).mockResolvedValue(makeSubscription());
       vi.mocked(attachmentRepo.getTotalSizeByUser).mockResolvedValue(1024 * 1024 * 1024 - 100); // 1 GB - 100 bytes
 
       await expect(
-        service.upload("user-1", {
-          taskId: "task-1",
-          fileName: "file.pdf",
-          fileSize: 200, // 200 bytes - překročí limit
-          mimeType: "application/pdf",
-          blobUrl: "https://blob.example.com/file.pdf",
-        }),
+        service.validateUpload("user-1", "task-1", 200, "application/pdf"),
       ).rejects.toThrow("Storage limit exceeded");
     });
 
-    it("vytvoří přílohu pro premium uživatele v rámci limitů", async () => {
+    it("vyhodi chybu pokud MIME typ neni povoleny", async () => {
+      vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
+
+      await expect(
+        service.validateUpload("user-1", "task-1", 1024, "application/x-executable"),
+      ).rejects.toThrow("File type not allowed");
+    });
+
+    it("projde validaci pro premium uzivatele s povolenym typem", async () => {
+      vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
+      vi.mocked(attachmentRepo.getTotalSizeByUser).mockResolvedValue(0);
+
+      await expect(
+        service.validateUpload("user-1", "task-1", 1024, "image/jpeg"),
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  describe("upload", () => {
+    it("vytvori prilohu (validation uz probehla)", async () => {
       const attachment = makeAttachment();
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
-      vi.mocked(subRepo.findActiveByUser).mockResolvedValue(makeSubscription());
-      vi.mocked(attachmentRepo.getTotalSizeByUser).mockResolvedValue(0);
       vi.mocked(attachmentRepo.create).mockResolvedValue(attachment);
 
       const input = {
@@ -218,21 +194,21 @@ describe("AttachmentService", () => {
   });
 
   describe("download", () => {
-    it("vyhodí chybu pokud uživatel není premium", async () => {
+    it("vyhodi chybu pokud uzivatel neni premium", async () => {
       vi.mocked(attachmentRepo.findById).mockResolvedValue(makeAttachment());
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
-      vi.mocked(subRepo.findActiveByUser).mockResolvedValue(undefined);
+      subscriptionService = makeSubscriptionService(false);
+      service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService);
 
       await expect(service.download("att-1", "user-1")).rejects.toThrow(
         "Premium subscription required",
       );
     });
 
-    it("vrátí blob URL pro premium uživatele", async () => {
+    it("vrati blob URL pro premium uzivatele", async () => {
       const attachment = makeAttachment({ blobUrl: "https://blob.example.com/photo.jpg" });
       vi.mocked(attachmentRepo.findById).mockResolvedValue(attachment);
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
-      vi.mocked(subRepo.findActiveByUser).mockResolvedValue(makeSubscription());
 
       const result = await service.download("att-1", "user-1");
 
@@ -240,21 +216,41 @@ describe("AttachmentService", () => {
     });
   });
 
+  describe("getAttachmentBlobUrl", () => {
+    it("vrati blob URL pro vlastnika tasku", async () => {
+      const attachment = makeAttachment({ blobUrl: "https://blob.example.com/photo.jpg" });
+      vi.mocked(attachmentRepo.findById).mockResolvedValue(attachment);
+      vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
+
+      const result = await service.getAttachmentBlobUrl("att-1", "user-1");
+
+      expect(result).toBe("https://blob.example.com/photo.jpg");
+    });
+
+    it("vyhodi chybu pokud priloha neexistuje", async () => {
+      vi.mocked(attachmentRepo.findById).mockResolvedValue(undefined);
+
+      await expect(service.getAttachmentBlobUrl("att-1", "user-1")).rejects.toThrow(
+        "Attachment not found",
+      );
+    });
+  });
+
   describe("deleteAttachment", () => {
-    it("vyhodí chybu pokud uživatel není premium", async () => {
+    it("vyhodi chybu pokud uzivatel neni premium", async () => {
       vi.mocked(attachmentRepo.findById).mockResolvedValue(makeAttachment());
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
-      vi.mocked(subRepo.findActiveByUser).mockResolvedValue(undefined);
+      subscriptionService = makeSubscriptionService(false);
+      service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService);
 
       await expect(service.deleteAttachment("att-1", "user-1")).rejects.toThrow(
         "Premium subscription required",
       );
     });
 
-    it("smaže přílohu pro premium uživatele", async () => {
+    it("smaze prilohu pro premium uzivatele", async () => {
       vi.mocked(attachmentRepo.findById).mockResolvedValue(makeAttachment());
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
-      vi.mocked(subRepo.findActiveByUser).mockResolvedValue(makeSubscription());
 
       await service.deleteAttachment("att-1", "user-1");
 

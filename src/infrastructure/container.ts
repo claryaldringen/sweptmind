@@ -56,6 +56,8 @@ export const repos = {
 
 export type Repos = typeof repos;
 
+const subscriptionService = new SubscriptionService(subscriptionRepo);
+
 export const services = {
   task: taskService,
   list: new ListService(listRepo),
@@ -67,8 +69,8 @@ export const services = {
   auth: new AuthService(userRepo, bcryptHasher),
   user: new UserService(userRepo),
   onboarding: new OnboardingService(listRepo, locationRepo, userRepo),
-  subscription: new SubscriptionService(subscriptionRepo),
-  attachment: new AttachmentService(attachmentRepo, taskRepo, subscriptionRepo),
+  subscription: subscriptionService,
+  attachment: new AttachmentService(attachmentRepo, taskRepo, subscriptionService),
 };
 
 export type Services = typeof services;

@@ -28,9 +28,22 @@ builder.mutationField("uploadAttachment", (t) =>
       fileBase64: t.arg.string({ required: true }),
     },
     resolve: async (_root, args, ctx) => {
-      const { put } = await import("@vercel/blob");
       const buffer = Buffer.from(args.fileBase64, "base64");
+      const fileSize = buffer.length;
 
+      if (fileSize > 10 * 1024 * 1024) {
+        throw new Error("File size exceeds 10 MB limit");
+      }
+
+      // Validate before uploading to blob storage (premium check, limits, MIME type)
+      await ctx.services.attachment.validateUpload(
+        ctx.userId!,
+        args.taskId,
+        fileSize,
+        args.mimeType,
+      );
+
+      const { put } = await import("@vercel/blob");
       const blob = await put(`attachments/${ctx.userId}/${args.taskId}/${args.fileName}`, buffer, {
         access: "public",
         contentType: args.mimeType,
@@ -39,7 +52,7 @@ builder.mutationField("uploadAttachment", (t) =>
       return ctx.services.attachment.upload(ctx.userId!, {
         taskId: args.taskId,
         fileName: args.fileName,
-        fileSize: args.fileSize,
+        fileSize,
         mimeType: args.mimeType,
         blobUrl: blob.url,
       });
@@ -56,7 +69,7 @@ builder.mutationField("deleteAttachment", (t) =>
       id: t.arg.string({ required: true }),
     },
     resolve: async (_root, args, ctx) => {
-      const blobUrl = await ctx.services.attachment.download(args.id, ctx.userId!);
+      const blobUrl = await ctx.services.attachment.getAttachmentBlobUrl(args.id, ctx.userId!);
       const { del } = await import("@vercel/blob");
       await del(blobUrl);
       await ctx.services.attachment.deleteAttachment(args.id, ctx.userId!);
