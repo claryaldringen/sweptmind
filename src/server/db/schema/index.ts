@@ -6,4 +6,5 @@ export * from "./tags";
 export * from "./calendar-sync";
 export * from "./push-subscriptions";
 export * from "./subscriptions";
+export * from "./attachments";
 export * from "./relations";
