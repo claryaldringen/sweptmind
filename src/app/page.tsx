@@ -302,6 +302,12 @@ export default async function HomePage() {
           </div>
           <div className="text-muted-foreground flex gap-4 text-sm 2xl:text-base">
             <Link
+              href="/privacy"
+              className="hover:text-foreground transition-colors"
+            >
+              {t.landing.footerPrivacy}
+            </Link>
+            <Link
               href="mailto:info@sweptmind.com"
               className="hover:text-foreground transition-colors"
             >
