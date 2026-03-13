@@ -95,6 +95,17 @@ app.whenReady().then(() => {
       submenu: [
         { role: "about" },
         { type: "separator" },
+        {
+          label: "Settings…",
+          accelerator: "CmdOrCtrl+,",
+          click: () => {
+            mainWindow?.show();
+            mainWindow?.webContents.executeJavaScript(
+              "window.location.hash = ''; window.location.href = '/settings';",
+            );
+          },
+        },
+        { type: "separator" },
         { role: "hide" },
         { role: "hideOthers" },
         { role: "unhide" },
