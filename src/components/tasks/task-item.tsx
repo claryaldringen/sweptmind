@@ -289,6 +289,7 @@ export const TaskItem = memo(function TaskItem({
   const isOverdue =
     dueDateParsed && !task.isCompleted && !isDueToday && isPast(startOfDay(dueDateParsed));
   const hasReminder = !!task.reminderAt;
+  const isReminderToday = task.reminderAt?.split("T")[0] === localToday;
   const hasRecurrence = !!task.recurrence;
   const hasLocation = !!task.location;
   const locationNearby = task.location
@@ -438,9 +439,18 @@ export const TaskItem = memo(function TaskItem({
                     <span className="text-muted-foreground">·</span>
                   )}
                   {hasReminder && (
-                    <span className="text-muted-foreground flex items-center gap-0.5">
+                    <span
+                      className={cn(
+                        "flex items-center gap-0.5",
+                        isReminderToday ? "text-blue-500" : "text-muted-foreground",
+                      )}
+                    >
                       <Bell className="h-3 w-3" />
-                      {format(parseISO(task.reminderAt!), "MMM d", { locale: dateFnsLocale })}
+                      {isReminderToday
+                        ? t("tasks.today")
+                        : format(parseISO(task.reminderAt!), "MMM d", {
+                            locale: dateFnsLocale,
+                          })}
                     </span>
                   )}
                   {hasReminder && (hasRecurrence || totalSteps > 0) && (

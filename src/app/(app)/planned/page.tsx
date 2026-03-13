@@ -12,13 +12,18 @@ import { useAppData, type AppTask } from "@/components/providers/app-data-provid
 
 type GroupKey = "overdue" | "today" | "tomorrow" | "thisWeek" | "later";
 
+/** Returns the effective date for grouping: dueDate takes priority, then reminderAt. */
+function getEffectiveDate(task: AppTask): string | null {
+  return task.dueDate?.split("T")[0] ?? task.reminderAt?.split("T")[0] ?? null;
+}
+
 function getGroupKey(
   task: AppTask,
   todayStr: string,
   tomorrowStr: string,
   endOfWeekStr: string,
 ): GroupKey {
-  const due = task.dueDate?.split("T")[0] ?? null;
+  const due = getEffectiveDate(task);
   if (!due) return "later";
   if (due < todayStr) return "overdue";
   if (due === todayStr) return "today";
@@ -60,7 +65,7 @@ export default function PlannedPage() {
   const endOfWeekStr = getEndOfWeek(now);
 
   const groups = useMemo(() => {
-    const plannedTasks = allTasks.filter((t) => t.dueDate != null);
+    const plannedTasks = allTasks.filter((t) => t.dueDate != null || t.reminderAt != null);
 
     const visible = plannedTasks.filter((t) => !t.isCompleted);
 
@@ -74,11 +79,11 @@ export default function PlannedPage() {
       grouped.get(key)!.push(task);
     }
 
-    // Sort tasks within each group by dueDate, then sortOrder
+    // Sort tasks within each group by effective date, then sortOrder
     for (const [, items] of grouped) {
       items.sort((a, b) => {
-        const dateA = a.dueDate ?? "";
-        const dateB = b.dueDate ?? "";
+        const dateA = getEffectiveDate(a) ?? "";
+        const dateB = getEffectiveDate(b) ?? "";
         if (dateA !== dateB) return dateA.localeCompare(dateB);
         return a.sortOrder - b.sortOrder;
       });
