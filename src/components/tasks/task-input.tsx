@@ -88,6 +88,19 @@ export function TaskInput({ listId, placeholder, onTaskCreated }: TaskInputProps
       },
     });
 
+    // Increment task counts on the list
+    client.cache.modify({
+      id: client.cache.identify({ __typename: "List", id: listId }),
+      fields: {
+        taskCount(existing: number) {
+          return existing + 1;
+        },
+        visibleTaskCount(existing: number) {
+          return existing + 1;
+        },
+      },
+    });
+
     onTaskCreated?.();
 
     // Fire mutation — same ID means Apollo auto-merges server response
@@ -99,6 +112,17 @@ export function TaskInput({ listId, placeholder, onTaskCreated }: TaskInputProps
           fields: {
             visibleTasks(existing = [], { readField }) {
               return existing.filter((ref: { __ref: string }) => readField("id", ref) !== id);
+            },
+          },
+        });
+        client.cache.modify({
+          id: client.cache.identify({ __typename: "List", id: listId }),
+          fields: {
+            taskCount(existing: number) {
+              return Math.max(0, existing - 1);
+            },
+            visibleTaskCount(existing: number) {
+              return Math.max(0, existing - 1);
             },
           },
         });
