@@ -300,6 +300,8 @@ export interface Dictionary {
     premiumPlan: string;
     monthlyPrice: string;
     yearlyPrice: string;
+    monthlyPriceCZK: string;
+    yearlyPriceCZK: string;
     yearlyDiscount: string;
     upgrade: string;
     manageSubscription: string;
@@ -319,6 +321,16 @@ export interface Dictionary {
     storageUsed: string;
     fileTooLarge: string;
     storageFull: string;
+    monthly: string;
+    yearly: string;
+    checkoutSuccess: string;
+    checkoutCancel: string;
+    expiresOn: string;
+    paymentMethodCard: string;
+    paymentMethodBank: string;
+    activeSubscription: string;
+    redirecting: string;
+    closeQR: string;
   };
   validation: {
     invalidEmail: string;

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
+import { useSearchParams, useRouter } from "next/navigation";
 import { gql } from "@apollo/client";
 import { useMutation, useQuery, useApolloClient } from "@apollo/client/react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,11 @@ import {
   ExternalLink,
   MapPin,
   RefreshCw,
+  Crown,
+  CreditCard,
+  Landmark,
+  Paperclip,
+  X,
 } from "lucide-react";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { useTaskCountMode } from "@/hooks/use-task-count-mode";
@@ -75,6 +81,82 @@ const CALENDAR_SYNC_ALL = gql`
   }
 `;
 
+const GET_ME = gql`
+  query GetMe {
+    me {
+      id
+      name
+      email
+      image
+      isPremium
+    }
+  }
+`;
+
+const GET_SUBSCRIPTION = gql`
+  query GetSubscription {
+    subscription {
+      id
+      status
+      plan
+      paymentMethod
+      currentPeriodEnd
+      createdAt
+    }
+  }
+`;
+
+const CREATE_CHECKOUT_SESSION = gql`
+  mutation CreateCheckoutSession($plan: String!) {
+    createCheckoutSession(plan: $plan)
+  }
+`;
+
+const CREATE_CUSTOMER_PORTAL_SESSION = gql`
+  mutation CreateCustomerPortalSession {
+    createCustomerPortalSession
+  }
+`;
+
+const GENERATE_BANK_TRANSFER_QR = gql`
+  mutation GenerateBankTransferQR($plan: String!) {
+    generateBankTransferQR(plan: $plan)
+  }
+`;
+
+interface GetMeData {
+  me: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    image: string | null;
+    isPremium: boolean;
+  } | null;
+}
+
+interface SubscriptionData {
+  subscription: {
+    id: string;
+    status: string;
+    plan: string;
+    paymentMethod: string;
+    currentPeriodEnd: string;
+    createdAt: string;
+  } | null;
+}
+
+interface CreateCheckoutSessionData {
+  createCheckoutSession: string;
+}
+
+interface CreateCustomerPortalSessionData {
+  createCustomerPortalSession: string;
+}
+
+interface GenerateBankTransferQRData {
+  generateBankTransferQR: string;
+}
+
 interface ImportTasksData {
   importTasks: {
     importedCount: number;
@@ -109,6 +191,84 @@ export default function SettingsPage() {
   const [importError, setImportError] = useState<string | null>(null);
 
   const [importTasks, { loading: importing }] = useMutation<ImportTasksData>(IMPORT_TASKS);
+
+  // Premium / Subscription state
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { data: meData } = useQuery<GetMeData>(GET_ME);
+  const { data: subData, loading: subLoading } = useQuery<SubscriptionData>(GET_SUBSCRIPTION);
+  const [createCheckoutSession, { loading: checkoutLoading }] =
+    useMutation<CreateCheckoutSessionData>(CREATE_CHECKOUT_SESSION);
+  const [createPortalSession, { loading: portalLoading }] =
+    useMutation<CreateCustomerPortalSessionData>(CREATE_CUSTOMER_PORTAL_SESSION);
+  const [generateQR, { loading: qrLoading }] =
+    useMutation<GenerateBankTransferQRData>(GENERATE_BANK_TRANSFER_QR);
+
+  const isPremium = meData?.me?.isPremium ?? false;
+  const subscription = subData?.subscription ?? null;
+
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("yearly");
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [checkoutMessage, setCheckoutMessage] = useState<{
+    type: "success" | "cancel";
+    text: string;
+  } | null>(null);
+
+  // Handle ?checkout=success|cancel URL params after Stripe redirect
+  useEffect(() => {
+    const checkout = searchParams.get("checkout");
+    if (checkout === "success") {
+      setCheckoutMessage({ type: "success", text: t("premium.checkoutSuccess") });
+      router.replace("/settings", { scroll: false });
+    } else if (checkout === "cancel") {
+      setCheckoutMessage({ type: "cancel", text: t("premium.checkoutCancel") });
+      router.replace("/settings", { scroll: false });
+    }
+  }, [searchParams, router, t]);
+
+  // Auto-dismiss checkout message after 5s
+  useEffect(() => {
+    if (!checkoutMessage) return;
+    const timer = setTimeout(() => setCheckoutMessage(null), 5000);
+    return () => clearTimeout(timer);
+  }, [checkoutMessage]);
+
+  const handlePayByCard = useCallback(async () => {
+    try {
+      const { data } = await createCheckoutSession({
+        variables: { plan: selectedPlan },
+      });
+      if (data?.createCheckoutSession) {
+        window.location.href = data.createCheckoutSession;
+      }
+    } catch {
+      // Stripe error — silently fail (user can retry)
+    }
+  }, [createCheckoutSession, selectedPlan]);
+
+  const handlePayByTransfer = useCallback(async () => {
+    try {
+      const { data } = await generateQR({
+        variables: { plan: selectedPlan },
+      });
+      if (data?.generateBankTransferQR) {
+        setQrDataUrl(data.generateBankTransferQR);
+      }
+    } catch {
+      // QR generation error — silently fail
+    }
+  }, [generateQR, selectedPlan]);
+
+  const handleManageSubscription = useCallback(async () => {
+    try {
+      const { data } = await createPortalSession();
+      if (data?.createCustomerPortalSession) {
+        window.location.href = data.createCustomerPortalSession;
+      }
+    } catch {
+      // Portal error — silently fail
+    }
+  }, [createPortalSession]);
 
   // Calendar state
   const [calendarToken, setCalendarToken] = useState<string | null>(null);
@@ -393,6 +553,183 @@ export default function SettingsPage() {
       </h1>
 
       <div className="max-w-md space-y-6">
+        {/* Checkout feedback */}
+        {checkoutMessage && (
+          <div
+            className={`flex items-center gap-2 rounded-md border p-3 text-sm ${
+              checkoutMessage.type === "success"
+                ? "border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-400"
+                : "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-400"
+            }`}
+          >
+            {checkoutMessage.type === "success" ? (
+              <Check className="h-4 w-4 shrink-0" />
+            ) : (
+              <AlertCircle className="h-4 w-4 shrink-0" />
+            )}
+            {checkoutMessage.text}
+          </div>
+        )}
+
+        {/* Premium Section */}
+        <div className="rounded-lg border p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <Crown className="h-5 w-5 text-amber-500" />
+            <div>
+              <h2 className="text-lg font-semibold">{t("premium.title")}</h2>
+              <p className="text-muted-foreground text-sm">{t("premium.subtitle")}</p>
+            </div>
+          </div>
+
+          {isPremium && subscription ? (
+            /* ---- Premium User: Subscription Status ---- */
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{t("premium.currentPlan")}</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                    <Crown className="h-3 w-3" />
+                    {t("premium.premiumPlan")}
+                  </span>
+                </div>
+
+                <div className="text-muted-foreground space-y-1 text-sm">
+                  <p>
+                    {subscription.plan === "monthly"
+                      ? t("premium.monthly")
+                      : t("premium.yearly")}{" "}
+                    &middot;{" "}
+                    {subscription.paymentMethod === "stripe"
+                      ? t("premium.paymentMethodCard")
+                      : t("premium.paymentMethodBank")}
+                  </p>
+                  <p>
+                    {t("premium.expiresOn", {
+                      date: new Date(subscription.currentPeriodEnd).toLocaleDateString(),
+                    })}
+                  </p>
+                </div>
+
+                {subscription.status === "canceled" && (
+                  <div className="flex items-center gap-2 rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-400">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    {t("premium.cancelledInfo", {
+                      date: new Date(subscription.currentPeriodEnd).toLocaleDateString(),
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {subscription.paymentMethod === "stripe" && (
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={handleManageSubscription}
+                  disabled={portalLoading}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  {portalLoading ? t("premium.redirecting") : t("premium.manageSubscription")}
+                </Button>
+              )}
+            </div>
+          ) : (
+            /* ---- Free User: Upgrade Card ---- */
+            <div className="space-y-4">
+              {/* Features list */}
+              <div>
+                <p className="mb-2 text-sm font-medium">{t("premium.features")}</p>
+                <div className="flex items-start gap-2 rounded-md bg-amber-50 p-3 dark:bg-amber-900/10">
+                  <Paperclip className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <div>
+                    <p className="text-sm font-medium">{t("premium.attachments")}</p>
+                    <p className="text-muted-foreground text-xs">{t("premium.attachmentsDesc")}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Plan toggle */}
+              <div>
+                <div className="flex gap-2">
+                  <Button
+                    variant={selectedPlan === "monthly" ? "default" : "outline"}
+                    onClick={() => setSelectedPlan("monthly")}
+                    className="flex-1"
+                  >
+                    <div className="text-center">
+                      <div className="text-sm">{t("premium.monthly")}</div>
+                      <div className="text-xs opacity-80">{t("premium.monthlyPrice")}</div>
+                    </div>
+                  </Button>
+                  <Button
+                    variant={selectedPlan === "yearly" ? "default" : "outline"}
+                    onClick={() => setSelectedPlan("yearly")}
+                    className="relative flex-1"
+                  >
+                    <div className="text-center">
+                      <div className="text-sm">{t("premium.yearly")}</div>
+                      <div className="text-xs opacity-80">{t("premium.yearlyPrice")}</div>
+                    </div>
+                    <span className="absolute -top-2 -right-2 rounded-full bg-green-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      {t("premium.yearlyDiscount")}
+                    </span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Payment buttons */}
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 gap-2"
+                  onClick={handlePayByCard}
+                  disabled={checkoutLoading}
+                >
+                  <CreditCard className="h-4 w-4" />
+                  {checkoutLoading ? t("premium.redirecting") : t("premium.payByCard")}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-2"
+                  onClick={handlePayByTransfer}
+                  disabled={qrLoading}
+                >
+                  <Landmark className="h-4 w-4" />
+                  {t("premium.payByTransfer")}
+                </Button>
+              </div>
+
+              {/* QR Code Dialog (inline) */}
+              {qrDataUrl && (
+                <div className="space-y-3 rounded-md border p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{t("premium.scanQR")}</p>
+                      <p className="text-muted-foreground text-xs">{t("premium.scanQRDesc")}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() => setQrDataUrl(null)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex justify-center">
+                    <img
+                      src={qrDataUrl}
+                      alt="QR code for bank transfer"
+                      className="h-48 w-48 rounded-md"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {subLoading && (
+                <p className="text-muted-foreground text-sm">{t("common.loading")}</p>
+              )}
+            </div>
+          )}
+        </div>
+
         <div>
           <h2 className="mb-3 text-lg font-semibold">{t("settings.appearance")}</h2>
           <div className="flex gap-2">
