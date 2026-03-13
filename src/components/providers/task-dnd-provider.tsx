@@ -128,7 +128,6 @@ export function TaskDndProvider({ children }: { children: ReactNode }) {
       // Task dropped on a list — move it
       const taskId = String(active.id);
       const newListId = String(over.id);
-      const oldListId = activeData?.listId as string | undefined;
       // Apollo auto-merges the listId change into the Task entity;
       // pages filter allTasks by listId so the task moves automatically
       updateTask({

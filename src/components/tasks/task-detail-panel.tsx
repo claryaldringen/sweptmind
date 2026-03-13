@@ -6,7 +6,6 @@ import { useMutation, useApolloClient } from "@apollo/client/react";
 import { ArrowLeft } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
@@ -549,15 +548,6 @@ export function TaskDetailPanel() {
       fields: Object.fromEntries(Object.entries(input).map(([key, value]) => [key, () => value])),
     });
     updateTask({ variables: { id: task.id, input } });
-  }
-
-  function handleTitleBlur(e: React.FocusEvent<HTMLInputElement>) {
-    const newTitle = e.target.value.trim();
-    if (task && newTitle && newTitle !== task.title) {
-      optimisticUpdate({ title: newTitle });
-    } else if (task) {
-      e.target.value = task.title;
-    }
   }
 
   function handleNotesBlur(e: React.FocusEvent<HTMLTextAreaElement>) {

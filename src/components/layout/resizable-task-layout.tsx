@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { ResizeHandle } from "@/components/layout/resize-handle";
@@ -25,10 +25,11 @@ export function ResizableTaskLayout({ children }: ResizableTaskLayoutProps) {
   const [showPanel, setShowPanel] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
 
-  // Mount/unmount the panel DOM
+  // Mount/unmount the panel DOM — setState is intentional here to
+  // keep the DOM mounted during the 300ms close animation.
   useEffect(() => {
     if (taskId) {
-      setShowPanel(true);
+      setShowPanel(true); // eslint-disable-line react-hooks/set-state-in-effect
     } else {
       setPanelOpen(false);
       const timer = setTimeout(() => setShowPanel(false), 300);

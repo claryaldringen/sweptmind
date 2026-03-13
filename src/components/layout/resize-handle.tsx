@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
 
 interface ResizeHandleProps {
   /** Which side of the handle is the resizable panel on */
