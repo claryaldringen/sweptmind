@@ -15,6 +15,7 @@ import {
   Lock,
   MapPin,
   Monitor,
+  Paperclip,
   Repeat,
   Smartphone,
   Trash2,
@@ -128,6 +129,7 @@ interface Task {
   blockedByTaskId?: string | null;
   blockedByTaskIsCompleted?: boolean | null;
   dependentTaskCount?: number;
+  attachments?: { id: string }[];
 }
 
 interface TaskItemProps {
@@ -301,6 +303,7 @@ export const TaskItem = memo(function TaskItem({
     : false;
   const taskList = task.list ? lists.find((l) => l.id === task.list!.id) : undefined;
   const deviceMatch = !locationNearby && taskList?.deviceContext === deviceContext;
+  const hasAttachments = (task.attachments?.length ?? 0) > 0;
   const isBlocked = !!task.blockedByTaskId && task.blockedByTaskIsCompleted === false;
   const dependentCount = task.dependentTaskCount ?? 0;
   const hasMetadata =
@@ -313,6 +316,7 @@ export const TaskItem = memo(function TaskItem({
     hasReminder ||
     hasRecurrence ||
     hasLocation ||
+    hasAttachments ||
     deviceMatch;
 
   const allLists = lists;
@@ -529,8 +533,24 @@ export const TaskItem = memo(function TaskItem({
                       </button>
                     </span>
                   )}
-                  {deviceMatch &&
+                  {hasAttachments &&
                     (hasLocation ||
+                      hasTags ||
+                      totalSteps > 0 ||
+                      task.dueDate ||
+                      hasReminder ||
+                      hasRecurrence ||
+                      (showListName && task.list)) && (
+                      <span className="text-muted-foreground">·</span>
+                    )}
+                  {hasAttachments && (
+                    <span className="text-muted-foreground flex items-center gap-0.5">
+                      <Paperclip className="h-3 w-3" />
+                    </span>
+                  )}
+                  {deviceMatch &&
+                    (hasAttachments ||
+                      hasLocation ||
                       hasTags ||
                       totalSteps > 0 ||
                       task.dueDate ||
@@ -549,6 +569,7 @@ export const TaskItem = memo(function TaskItem({
                   )}
                   {isBlocked &&
                     (deviceMatch ||
+                      hasAttachments ||
                       hasLocation ||
                       hasTags ||
                       totalSteps > 0 ||
@@ -565,6 +586,7 @@ export const TaskItem = memo(function TaskItem({
                   {dependentCount > 0 &&
                     (isBlocked ||
                       deviceMatch ||
+                      hasAttachments ||
                       hasLocation ||
                       hasTags ||
                       totalSteps > 0 ||

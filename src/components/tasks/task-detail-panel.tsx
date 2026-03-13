@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { gql } from "@apollo/client";
-import { useMutation, useApolloClient } from "@apollo/client/react";
+import { useMutation, useQuery, useApolloClient } from "@apollo/client/react";
 import { ArrowLeft } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { TaskRecurrence } from "./detail/task-recurrence";
 import { TaskDates } from "./detail/task-dates";
 import { TaskActions } from "./detail/task-actions";
 import { TaskDependency } from "./detail/task-dependency";
+import { TaskAttachments } from "./detail/task-attachments";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 import { computeFirstOccurrence, parseRecurrence } from "@/domain/services/recurrence";
 import { pickNextTagColor } from "@/lib/tag-colors";
@@ -156,6 +157,18 @@ const DELETE_LOCATION = gql`
   }
 `;
 
+const GET_ME = gql`
+  query GetMe {
+    me {
+      id
+      name
+      email
+      image
+      isPremium
+    }
+  }
+`;
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -183,6 +196,15 @@ interface TaskLocation {
   address?: string | null;
 }
 
+interface TaskAttachment {
+  id: string;
+  taskId: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  createdAt: string;
+}
+
 interface TaskDetail {
   id: string;
   listId: string;
@@ -205,6 +227,17 @@ interface TaskDetail {
   blockedByTaskId: string | null;
   blockedByTask: { id: string; title: string } | null;
   blockedByTaskIsCompleted: boolean | null;
+  attachments: TaskAttachment[];
+}
+
+interface GetMeData {
+  me: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    image: string | null;
+    isPremium: boolean;
+  } | null;
 }
 
 interface UpdateTaskData {
@@ -271,6 +304,8 @@ export function TaskDetailPanel() {
     locations: allLocationsFromProvider,
     loading,
   } = useAppData();
+  const { data: meData } = useQuery<GetMeData>(GET_ME);
+  const isPremium = meData?.me?.isPremium ?? false;
   const task = taskId
     ? ((allTasks.find((t) => t.id === taskId) as TaskDetail | undefined) ?? null)
     : null;
@@ -907,6 +942,20 @@ export function TaskDetailPanel() {
           defaultValue={task.notes ?? ""}
           onBlur={handleNotesBlur}
           className="min-h-[100px] resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
+        />
+
+        {/* Attachments */}
+        <TaskAttachments
+          taskId={task.id}
+          attachments={task.attachments ?? []}
+          isPremium={isPremium}
+          uploadLabel={t("premium.uploadFile")}
+          deleteLabel={t("premium.deleteFile")}
+          downloadLabel={t("premium.downloadFile")}
+          premiumRequiredLabel={t("premium.premiumRequired")}
+          premiumRequiredDesc={t("premium.premiumRequiredDesc")}
+          fileTooLargeLabel={t("premium.fileTooLarge")}
+          storageFullLabel={t("premium.storageFull")}
         />
       </div>
 

@@ -63,6 +63,14 @@ export const APP_TASK_FIELDS = gql`
     }
     blockedByTaskIsCompleted
     dependentTaskCount
+    attachments {
+      id
+      taskId
+      fileName
+      fileSize
+      mimeType
+      createdAt
+    }
   }
 `;
 
@@ -203,6 +211,15 @@ export interface TaskLocation {
   radius: number;
 }
 
+export interface TaskAttachment {
+  id: string;
+  taskId: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  createdAt: string;
+}
+
 export interface AppTask {
   id: string;
   listId: string;
@@ -226,6 +243,7 @@ export interface AppTask {
   blockedByTask: { id: string; title: string } | null;
   blockedByTaskIsCompleted: boolean | null;
   dependentTaskCount: number;
+  attachments: TaskAttachment[];
 }
 
 export interface TagItem {
