@@ -1,10 +1,4 @@
-import {
-  index,
-  integer,
-  pgTable,
-  text,
-  timestamp,
-} from "drizzle-orm/pg-core";
+import { index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { tasks } from "./tasks";
 
 export const taskAttachments = pgTable(
@@ -20,9 +14,7 @@ export const taskAttachments = pgTable(
     fileSize: integer("file_size").notNull(),
     mimeType: text("mime_type").notNull(),
     blobUrl: text("blob_url").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [index("task_attachments_task_id_idx").on(table.taskId)],
 );

@@ -3,16 +3,7 @@
 import { useRef, useState } from "react";
 import { gql } from "@apollo/client";
 import { useMutation, useLazyQuery } from "@apollo/client/react";
-import {
-  File,
-  FileText,
-  Image,
-  Lock,
-  Loader2,
-  Paperclip,
-  Trash2,
-  Download,
-} from "lucide-react";
+import { File, FileText, Image, Lock, Loader2, Paperclip, Trash2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
@@ -295,12 +286,7 @@ export function TaskAttachments({
       {/* Upload button / Premium CTA */}
       {isPremium ? (
         <>
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
+          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} />
           <Button
             variant="ghost"
             size="sm"

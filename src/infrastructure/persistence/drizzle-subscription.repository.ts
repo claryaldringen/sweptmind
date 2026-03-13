@@ -2,14 +2,9 @@ import { eq, and } from "drizzle-orm";
 import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import type { ISubscriptionRepository } from "@/domain/repositories/subscription.repository";
-import type {
-  Subscription,
-  CreateSubscriptionInput,
-} from "@/domain/entities/subscription";
+import type { Subscription, CreateSubscriptionInput } from "@/domain/entities/subscription";
 
-export class DrizzleSubscriptionRepository
-  implements ISubscriptionRepository
-{
+export class DrizzleSubscriptionRepository implements ISubscriptionRepository {
   constructor(private readonly db: Database) {}
 
   async findActiveByUser(userId: string): Promise<Subscription | undefined> {
@@ -21,27 +16,20 @@ export class DrizzleSubscriptionRepository
     });
   }
 
-  async findByStripeCustomerId(
-    customerId: string,
-  ): Promise<Subscription | undefined> {
+  async findByStripeCustomerId(customerId: string): Promise<Subscription | undefined> {
     return this.db.query.subscriptions.findFirst({
       where: eq(schema.subscriptions.stripeCustomerId, customerId),
     });
   }
 
-  async findByStripeSubscriptionId(
-    subscriptionId: string,
-  ): Promise<Subscription | undefined> {
+  async findByStripeSubscriptionId(subscriptionId: string): Promise<Subscription | undefined> {
     return this.db.query.subscriptions.findFirst({
       where: eq(schema.subscriptions.stripeSubscriptionId, subscriptionId),
     });
   }
 
   async create(input: CreateSubscriptionInput): Promise<Subscription> {
-    const [sub] = await this.db
-      .insert(schema.subscriptions)
-      .values(input)
-      .returning();
+    const [sub] = await this.db.insert(schema.subscriptions).values(input).returning();
     return sub;
   }
 

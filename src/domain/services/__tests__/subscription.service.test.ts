@@ -92,8 +92,7 @@ describe("SubscriptionService", () => {
       );
 
       const createArg = vi.mocked(subRepo.create).mock.calls[0][0];
-      const diffMs =
-        createArg.currentPeriodEnd.getTime() - createArg.currentPeriodStart.getTime();
+      const diffMs = createArg.currentPeriodEnd.getTime() - createArg.currentPeriodStart.getTime();
       // Měsíční interval: cca 28-31 dní
       const diffDays = diffMs / (1000 * 60 * 60 * 24);
       expect(diffDays).toBeGreaterThanOrEqual(28);
@@ -116,8 +115,7 @@ describe("SubscriptionService", () => {
       );
 
       const createArg = vi.mocked(subRepo.create).mock.calls[0][0];
-      const diffMs =
-        createArg.currentPeriodEnd.getTime() - createArg.currentPeriodStart.getTime();
+      const diffMs = createArg.currentPeriodEnd.getTime() - createArg.currentPeriodStart.getTime();
       // Roční interval: cca 365-366 dní
       const diffDays = diffMs / (1000 * 60 * 60 * 24);
       expect(diffDays).toBeGreaterThanOrEqual(365);
@@ -139,9 +137,7 @@ describe("SubscriptionService", () => {
         stripeSubscriptionId: "stripe-sub-1",
       });
       vi.mocked(subRepo.findByStripeSubscriptionId).mockResolvedValue(sub);
-      vi.mocked(subRepo.updateStatus).mockResolvedValue(
-        makeSubscription({ status: "canceled" }),
-      );
+      vi.mocked(subRepo.updateStatus).mockResolvedValue(makeSubscription({ status: "canceled" }));
 
       const newPeriodEnd = new Date("2027-01-01");
       await service.handleStripeSubscriptionUpdate("stripe-sub-1", "canceled", newPeriodEnd);

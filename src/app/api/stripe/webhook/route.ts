@@ -12,9 +12,7 @@ function getSubscriptionPeriod(sub: Stripe.Subscription) {
   };
 }
 
-function getSubscriptionIdFromInvoice(
-  invoice: Stripe.Invoice,
-): string | null {
+function getSubscriptionIdFromInvoice(invoice: Stripe.Invoice): string | null {
   const subDetails = invoice.parent?.subscription_details;
   if (!subDetails?.subscription) return null;
   return typeof subDetails.subscription === "string"
@@ -32,11 +30,7 @@ export async function POST(req: NextRequest) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET!,
-    );
+    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
   } catch {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
@@ -54,10 +48,7 @@ export async function POST(req: NextRequest) {
 
       await repos.subscription.create({
         userId,
-        plan:
-          stripeSubscription.items.data[0]?.plan?.interval === "year"
-            ? "yearly"
-            : "monthly",
+        plan: stripeSubscription.items.data[0]?.plan?.interval === "year" ? "yearly" : "monthly",
         paymentMethod: "stripe",
         stripeCustomerId: session.customer as string,
         stripeSubscriptionId: session.subscription as string,
@@ -72,8 +63,7 @@ export async function POST(req: NextRequest) {
       const subscriptionId = getSubscriptionIdFromInvoice(invoice);
       if (!subscriptionId) break;
 
-      const stripeSubscription =
-        await stripe.subscriptions.retrieve(subscriptionId);
+      const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
       const period = getSubscriptionPeriod(stripeSubscription);
 
       await services.subscription.handleStripeSubscriptionUpdate(
@@ -89,11 +79,7 @@ export async function POST(req: NextRequest) {
       const status = sub.cancel_at_period_end ? "canceled" : "active";
       const period = getSubscriptionPeriod(sub);
 
-      await services.subscription.handleStripeSubscriptionUpdate(
-        sub.id,
-        status,
-        period.end,
-      );
+      await services.subscription.handleStripeSubscriptionUpdate(sub.id, status, period.end);
       break;
     }
 

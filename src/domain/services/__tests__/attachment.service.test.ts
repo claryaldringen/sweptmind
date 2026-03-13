@@ -62,9 +62,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
   };
 }
 
-function makeAttachmentRepo(
-  overrides: Partial<IAttachmentRepository> = {},
-): IAttachmentRepository {
+function makeAttachmentRepo(overrides: Partial<IAttachmentRepository> = {}): IAttachmentRepository {
   return {
     findByTaskId: vi.fn().mockResolvedValue([]),
     findByTaskIds: vi.fn().mockResolvedValue(new Map()),

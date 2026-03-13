@@ -23,16 +23,11 @@ export async function GET(req: NextRequest) {
 
   const token = process.env.FIO_API_TOKEN;
   if (!token) {
-    return NextResponse.json(
-      { error: "FIO_API_TOKEN not configured" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "FIO_API_TOKEN not configured" }, { status: 500 });
   }
 
   try {
-    const res = await fetch(
-      `${FIO_API_BASE}/last/${token}/transactions.json`,
-    );
+    const res = await fetch(`${FIO_API_BASE}/last/${token}/transactions.json`);
     if (!res.ok) {
       return NextResponse.json({ error: "FIO API error" }, { status: 502 });
     }
@@ -48,10 +43,7 @@ export async function GET(req: NextRequest) {
       const variableSymbol = tx.column5?.value;
       const fioTransactionId = String(tx.column17?.value);
 
-      if (
-        !variableSymbol ||
-        (amount !== MONTHLY_CZK && amount !== YEARLY_CZK)
-      ) {
+      if (!variableSymbol || (amount !== MONTHLY_CZK && amount !== YEARLY_CZK)) {
         continue;
       }
 

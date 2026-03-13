@@ -357,79 +357,82 @@ export default function SettingsPage() {
     [],
   );
 
-  const handlePushToggle = useCallback(async (checked: boolean) => {
-    setPushLoading(true);
-    setPushError(null);
-    try {
-      const platform = getPlatform();
+  const handlePushToggle = useCallback(
+    async (checked: boolean) => {
+      setPushLoading(true);
+      setPushError(null);
+      try {
+        const platform = getPlatform();
 
-      if (checked) {
-        if (platform === "ios" || platform === "android") {
-          const pushAdapter = getPushAdapter();
-          const { token, platform: detectedPlatform } = await pushAdapter.register();
-          await fetch("/api/push/subscribe", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              endpoint: token,
-              platform: detectedPlatform,
-            }),
-          });
-        } else {
-          const permission = await Notification.requestPermission();
-          if (permission !== "granted") {
-            setPushError(t("push.permissionDenied"));
-            setPushLoading(false);
-            return;
-          }
-          // Timeout to prevent hanging if service worker never activates
-          const reg = await Promise.race([
-            navigator.serviceWorker.ready,
-            new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error("timeout")), 10_000),
-            ),
-          ]);
-          const sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-          });
-          await fetch("/api/push/subscribe", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(sub.toJSON()),
-          });
-        }
-        setPushEnabled(true);
-      } else {
-        if (platform === "ios" || platform === "android") {
-          const pushAdapter = getPushAdapter();
-          await pushAdapter.unregister();
-        } else {
-          const reg = await Promise.race([
-            navigator.serviceWorker.ready,
-            new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error("timeout")), 10_000),
-            ),
-          ]);
-          const sub = await reg.pushManager.getSubscription();
-          if (sub) {
-            await fetch("/api/push/unsubscribe", {
+        if (checked) {
+          if (platform === "ios" || platform === "android") {
+            const pushAdapter = getPushAdapter();
+            const { token, platform: detectedPlatform } = await pushAdapter.register();
+            await fetch("/api/push/subscribe", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ endpoint: sub.endpoint }),
+              body: JSON.stringify({
+                endpoint: token,
+                platform: detectedPlatform,
+              }),
             });
-            await sub.unsubscribe();
+          } else {
+            const permission = await Notification.requestPermission();
+            if (permission !== "granted") {
+              setPushError(t("push.permissionDenied"));
+              setPushLoading(false);
+              return;
+            }
+            // Timeout to prevent hanging if service worker never activates
+            const reg = await Promise.race([
+              navigator.serviceWorker.ready,
+              new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error("timeout")), 10_000),
+              ),
+            ]);
+            const sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+            });
+            await fetch("/api/push/subscribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(sub.toJSON()),
+            });
           }
+          setPushEnabled(true);
+        } else {
+          if (platform === "ios" || platform === "android") {
+            const pushAdapter = getPushAdapter();
+            await pushAdapter.unregister();
+          } else {
+            const reg = await Promise.race([
+              navigator.serviceWorker.ready,
+              new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error("timeout")), 10_000),
+              ),
+            ]);
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) {
+              await fetch("/api/push/unsubscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ endpoint: sub.endpoint }),
+              });
+              await sub.unsubscribe();
+            }
+          }
+          setPushEnabled(false);
         }
-        setPushEnabled(false);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "unknown";
+        setPushError(msg === "timeout" ? t("push.swUnavailable") : t("push.error"));
+      } finally {
+        setPushLoading(false);
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "unknown";
-      setPushError(msg === "timeout" ? t("push.swUnavailable") : t("push.error"));
-    } finally {
-      setPushLoading(false);
-    }
-  }, [t]);
+    },
+    [t],
+  );
 
   useEffect(() => {
     getToken()
@@ -595,9 +598,7 @@ export default function SettingsPage() {
 
                 <div className="text-muted-foreground space-y-1 text-sm">
                   <p>
-                    {subscription.plan === "monthly"
-                      ? t("premium.monthly")
-                      : t("premium.yearly")}{" "}
+                    {subscription.plan === "monthly" ? t("premium.monthly") : t("premium.yearly")}{" "}
                     &middot;{" "}
                     {subscription.paymentMethod === "stripe"
                       ? t("premium.paymentMethodCard")
@@ -705,11 +706,7 @@ export default function SettingsPage() {
                       <p className="text-sm font-medium">{t("premium.scanQR")}</p>
                       <p className="text-muted-foreground text-xs">{t("premium.scanQRDesc")}</p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      onClick={() => setQrDataUrl(null)}
-                    >
+                    <Button variant="ghost" size="icon-xs" onClick={() => setQrDataUrl(null)}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
@@ -723,9 +720,7 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              {subLoading && (
-                <p className="text-muted-foreground text-sm">{t("common.loading")}</p>
-              )}
+              {subLoading && <p className="text-muted-foreground text-sm">{t("common.loading")}</p>}
             </div>
           )}
         </div>
@@ -950,9 +945,7 @@ export default function SettingsPage() {
                   disabled={pushLoading}
                 />
               </div>
-              {pushError && (
-                <p className="text-sm text-red-500">{pushError}</p>
-              )}
+              {pushError && <p className="text-sm text-red-500">{pushError}</p>}
               {pushEnabled && (
                 <>
                   <div className="flex items-center justify-between gap-4">

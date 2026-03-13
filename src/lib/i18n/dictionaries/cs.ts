@@ -277,8 +277,7 @@ export const cs: Dictionary = {
     error: "Nepodařilo se zapnout notifikace.",
     notifyDueDate: "Úkoly s termínem",
     notifyReminder: "Připomenutí",
-    electronDesc:
-      "Notifikace spravuje macOS. Povol notifikace pro SweptMind v Nastavení systému.",
+    electronDesc: "Notifikace spravuje macOS. Povol notifikace pro SweptMind v Nastavení systému.",
     openSettings: "Otevřít Nastavení systému",
   },
   calendar: {

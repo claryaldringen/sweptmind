@@ -138,12 +138,9 @@ export const bankPaymentsRelations = relations(bankPayments, ({ one }) => ({
   }),
 }));
 
-export const taskAttachmentsRelations = relations(
-  taskAttachments,
-  ({ one }) => ({
-    task: one(tasks, {
-      fields: [taskAttachments.taskId],
-      references: [tasks.id],
-    }),
+export const taskAttachmentsRelations = relations(taskAttachments, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskAttachments.taskId],
+    references: [tasks.id],
   }),
-);
+}));

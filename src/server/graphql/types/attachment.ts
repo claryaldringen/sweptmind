@@ -31,11 +31,10 @@ builder.mutationField("uploadAttachment", (t) =>
       const { put } = await import("@vercel/blob");
       const buffer = Buffer.from(args.fileBase64, "base64");
 
-      const blob = await put(
-        `attachments/${ctx.userId}/${args.taskId}/${args.fileName}`,
-        buffer,
-        { access: "public", contentType: args.mimeType },
-      );
+      const blob = await put(`attachments/${ctx.userId}/${args.taskId}/${args.fileName}`, buffer, {
+        access: "public",
+        contentType: args.mimeType,
+      });
 
       return ctx.services.attachment.upload(ctx.userId!, {
         taskId: args.taskId,
