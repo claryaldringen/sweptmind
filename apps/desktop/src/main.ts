@@ -41,10 +41,10 @@ function createWindow() {
     `);
   });
 
-  // Grant geolocation permission so nearby/home list detection works
+  // Grant geolocation + notification permissions for nearby detection & push
   mainWindow.webContents.session.setPermissionRequestHandler(
     (_webContents, permission, callback) => {
-      callback(permission === "geolocation");
+      callback(permission === "geolocation" || permission === "notifications");
     },
   );
 

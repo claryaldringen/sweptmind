@@ -265,7 +265,20 @@ export default function SettingsPage() {
   };
 
   const handleSyncAllToggle = async (checked: boolean) => {
-    await updateSyncAllMutation({ variables: { syncAll: checked } });
+    // Optimistic update — toggle UI immediately
+    apolloClient.cache.writeQuery({
+      query: CALENDAR_SYNC_ALL,
+      data: { calendarSyncAll: checked },
+    });
+    try {
+      await updateSyncAllMutation({ variables: { syncAll: checked } });
+    } catch {
+      // Revert on failure
+      apolloClient.cache.writeQuery({
+        query: CALENDAR_SYNC_ALL,
+        data: { calendarSyncAll: !checked },
+      });
+    }
   };
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
