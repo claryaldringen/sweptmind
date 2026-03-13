@@ -76,6 +76,7 @@ app.on("before-quit", () => {
 });
 
 app.whenReady().then(() => {
+  app.setName("SweptMind");
   const buildDate = new Date(BUILD_TIME).toLocaleString();
   app.setAboutPanelOptions({
     applicationName: "SweptMind",
