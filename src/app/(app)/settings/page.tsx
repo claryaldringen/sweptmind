@@ -112,6 +112,7 @@ export default function SettingsPage() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushSupported, setPushSupported] = useState(true);
   const [pushLoading, setPushLoading] = useState(false);
+  const [pushError, setPushError] = useState<string | null>(null);
   const [notifyDueDate, setNotifyDueDate] = useState(true);
   const [notifyReminder, setNotifyReminder] = useState(true);
 
@@ -172,6 +173,7 @@ export default function SettingsPage() {
 
   const handlePushToggle = useCallback(async (checked: boolean) => {
     setPushLoading(true);
+    setPushError(null);
     try {
       const platform = getPlatform();
 
@@ -190,10 +192,17 @@ export default function SettingsPage() {
         } else {
           const permission = await Notification.requestPermission();
           if (permission !== "granted") {
+            setPushError(t("push.permissionDenied"));
             setPushLoading(false);
             return;
           }
-          const reg = await navigator.serviceWorker.ready;
+          // Timeout to prevent hanging if service worker never activates
+          const reg = await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error("timeout")), 10_000),
+            ),
+          ]);
           const sub = await reg.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
@@ -210,7 +219,12 @@ export default function SettingsPage() {
           const pushAdapter = getPushAdapter();
           await pushAdapter.unregister();
         } else {
-          const reg = await navigator.serviceWorker.ready;
+          const reg = await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error("timeout")), 10_000),
+            ),
+          ]);
           const sub = await reg.pushManager.getSubscription();
           if (sub) {
             await fetch("/api/push/unsubscribe", {
@@ -223,12 +237,13 @@ export default function SettingsPage() {
         }
         setPushEnabled(false);
       }
-    } catch {
-      console.error("Push subscription failed");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "unknown";
+      setPushError(msg === "timeout" ? t("push.swUnavailable") : t("push.error"));
     } finally {
       setPushLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     getToken()
@@ -572,6 +587,9 @@ export default function SettingsPage() {
                   disabled={pushLoading}
                 />
               </div>
+              {pushError && (
+                <p className="text-sm text-red-500">{pushError}</p>
+              )}
               {pushEnabled && (
                 <>
                   <div className="flex items-center justify-between gap-4">

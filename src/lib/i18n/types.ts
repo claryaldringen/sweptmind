@@ -252,6 +252,9 @@ export interface Dictionary {
     enabled: string;
     disabled: string;
     unsupported: string;
+    permissionDenied: string;
+    swUnavailable: string;
+    error: string;
     notifyDueDate: string;
     notifyReminder: string;
   };

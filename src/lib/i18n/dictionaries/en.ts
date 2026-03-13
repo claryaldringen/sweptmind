@@ -268,6 +268,10 @@ export const en: Dictionary = {
     enabled: "Notifications enabled",
     disabled: "Notifications disabled",
     unsupported: "Push notifications are not supported in this browser.",
+    permissionDenied:
+      "Notifications are blocked. Allow them in your browser settings and try again.",
+    swUnavailable: "Service worker is unavailable. Try refreshing the page.",
+    error: "Failed to enable notifications.",
     notifyDueDate: "Tasks with due date",
     notifyReminder: "Reminders",
   },

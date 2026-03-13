@@ -268,6 +268,10 @@ export const cs: Dictionary = {
     enabled: "Notifikace zapnuty",
     disabled: "Notifikace vypnuty",
     unsupported: "Tento prohlížeč nepodporuje push notifikace.",
+    permissionDenied:
+      "Notifikace jsou zablokované. Povol je v nastavení prohlížeče a zkus to znovu.",
+    swUnavailable: "Service worker není dostupný. Zkus obnovit stránku.",
+    error: "Nepodařilo se zapnout notifikace.",
     notifyDueDate: "Úkoly s termínem",
     notifyReminder: "Připomenutí",
   },
