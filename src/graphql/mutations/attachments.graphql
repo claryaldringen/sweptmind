@@ -1,16 +1,16 @@
-mutation UploadAttachment(
+mutation RegisterAttachment(
   $taskId: String!
   $fileName: String!
   $fileSize: Int!
   $mimeType: String!
-  $fileBase64: String!
+  $blobUrl: String!
 ) {
-  uploadAttachment(
+  registerAttachment(
     taskId: $taskId
     fileName: $fileName
     fileSize: $fileSize
     mimeType: $mimeType
-    fileBase64: $fileBase64
+    blobUrl: $blobUrl
   ) {
     id
     taskId

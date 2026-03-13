@@ -236,6 +236,59 @@ describe("AttachmentService", () => {
     });
   });
 
+  describe("createRecord", () => {
+    it("vytvori prilohu pro premium uzivatele", async () => {
+      const attachment = makeAttachment();
+      vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
+      vi.mocked(attachmentRepo.create).mockResolvedValue(attachment);
+
+      const input = {
+        taskId: "task-1",
+        fileName: "photo.jpg",
+        fileSize: 1024,
+        mimeType: "image/jpeg",
+        blobUrl: "https://blob.example.com/photo.jpg",
+      };
+
+      const result = await service.createRecord("user-1", input);
+
+      expect(result).toEqual(attachment);
+      expect(attachmentRepo.create).toHaveBeenCalledWith(input);
+    });
+
+    it("vyhodi chybu pokud uzivatel neni premium", async () => {
+      vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
+      subscriptionService = makeSubscriptionService(false);
+      service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService);
+
+      const input = {
+        taskId: "task-1",
+        fileName: "photo.jpg",
+        fileSize: 1024,
+        mimeType: "image/jpeg",
+        blobUrl: "https://blob.example.com/photo.jpg",
+      };
+
+      await expect(service.createRecord("user-1", input)).rejects.toThrow(
+        "Premium subscription required",
+      );
+    });
+
+    it("vyhodi chybu pokud task nepatri uzivateli", async () => {
+      vi.mocked(taskRepo.findById).mockResolvedValue(undefined);
+
+      const input = {
+        taskId: "task-1",
+        fileName: "photo.jpg",
+        fileSize: 1024,
+        mimeType: "image/jpeg",
+        blobUrl: "https://blob.example.com/photo.jpg",
+      };
+
+      await expect(service.createRecord("other-user", input)).rejects.toThrow("Task not found");
+    });
+  });
+
   describe("deleteAttachment", () => {
     it("vyhodi chybu pokud uzivatel neni premium", async () => {
       vi.mocked(attachmentRepo.findById).mockResolvedValue(makeAttachment());

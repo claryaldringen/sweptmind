@@ -343,6 +343,8 @@ export const cs: Dictionary = {
     storageUsed: "{used} z {total} využito",
     fileTooLarge: "Soubor je příliš velký (max 10 MB)",
     storageFull: "Úložiště je plné (1 GB)",
+    dragDropHint: "Přetáhněte soubory sem nebo klikněte pro nahrání",
+    uploading: "Nahrávání...",
     monthly: "Měsíční",
     yearly: "Roční",
     checkoutSuccess: "Platba proběhla úspěšně! Premium je aktivní.",

@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { gql } from "@apollo/client";
 import { useMutation, useLazyQuery } from "@apollo/client/react";
-import { File, FileText, Image, Lock, Loader2, Paperclip, Trash2, Download } from "lucide-react";
+import { File, FileText, Image, Lock, Paperclip, Trash2, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
@@ -12,20 +12,20 @@ import type { LucideIcon } from "lucide-react";
 // GraphQL operations
 // ---------------------------------------------------------------------------
 
-const UPLOAD_ATTACHMENT = gql`
-  mutation UploadAttachment(
+const REGISTER_ATTACHMENT = gql`
+  mutation RegisterAttachment(
     $taskId: String!
     $fileName: String!
     $fileSize: Int!
     $mimeType: String!
-    $fileBase64: String!
+    $blobUrl: String!
   ) {
-    uploadAttachment(
+    registerAttachment(
       taskId: $taskId
       fileName: $fileName
       fileSize: $fileSize
       mimeType: $mimeType
-      fileBase64: $fileBase64
+      blobUrl: $blobUrl
     ) {
       id
       taskId
@@ -62,6 +62,13 @@ interface Attachment {
   createdAt: string;
 }
 
+interface UploadingFile {
+  name: string;
+  progress: number;
+  status: "uploading" | "done" | "error";
+  error?: string;
+}
+
 interface TaskAttachmentsProps {
   taskId: string;
   attachments: Attachment[];
@@ -73,6 +80,8 @@ interface TaskAttachmentsProps {
   premiumRequiredDesc: string;
   fileTooLargeLabel: string;
   storageFullLabel: string;
+  dragDropHintLabel: string;
+  uploadingLabel: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -108,22 +117,25 @@ export function TaskAttachments({
   premiumRequiredDesc,
   fileTooLargeLabel,
   storageFullLabel,
+  dragDropHintLabel,
+  uploadingLabel,
 }: TaskAttachmentsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
-  const [uploadAttachment] = useMutation<{
-    uploadAttachment: Attachment;
-  }>(UPLOAD_ATTACHMENT, {
+  const [registerAttachment] = useMutation<{
+    registerAttachment: Attachment;
+  }>(REGISTER_ATTACHMENT, {
     update(cache, { data }) {
-      if (!data?.uploadAttachment) return;
+      if (!data?.registerAttachment) return;
       cache.modify({
         id: cache.identify({ __typename: "Task", id: taskId }),
         fields: {
           attachments(existing = []) {
             const newRef = cache.writeFragment({
-              data: data.uploadAttachment,
+              data: data.registerAttachment,
               fragment: gql`
                 fragment NewAttachment on TaskAttachment {
                   id
@@ -166,53 +178,150 @@ export function TaskAttachments({
     { fetchPolicy: "network-only" },
   );
 
+  const updateFileProgress = useCallback((fileName: string, progress: number) => {
+    setUploadingFiles((prev) => prev.map((f) => (f.name === fileName ? { ...f, progress } : f)));
+  }, []);
+
+  const markFileDone = useCallback((fileName: string) => {
+    setUploadingFiles((prev) =>
+      prev.map((f) => (f.name === fileName ? { ...f, status: "done" as const, progress: 100 } : f)),
+    );
+    // Remove from list after a short delay
+    setTimeout(() => {
+      setUploadingFiles((prev) => prev.filter((f) => f.name !== fileName));
+    }, 1000);
+  }, []);
+
+  const markFileError = useCallback((fileName: string, errorMessage: string) => {
+    setUploadingFiles((prev) =>
+      prev.map((f) =>
+        f.name === fileName ? { ...f, status: "error" as const, error: errorMessage } : f,
+      ),
+    );
+    // Remove from list after a delay so user can see the error
+    setTimeout(() => {
+      setUploadingFiles((prev) => prev.filter((f) => f.name !== fileName));
+    }, 5000);
+  }, []);
+
+  async function uploadFile(file: globalThis.File) {
+    const mimeType = file.type || "application/octet-stream";
+
+    // 1. Get upload token from server
+    const tokenRes = await fetch("/api/upload/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        taskId,
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType,
+      }),
+    });
+
+    if (!tokenRes.ok) {
+      const err = await tokenRes.json();
+      throw new Error(err.error || "Upload validation failed");
+    }
+
+    const { clientToken, pathname } = await tokenRes.json();
+
+    // 2. Upload directly to Vercel Blob with progress
+    const { put } = await import("@vercel/blob/client");
+    const blob = await put(pathname, file, {
+      access: "public",
+      token: clientToken,
+      multipart: true,
+      onUploadProgress: ({ percentage }) => {
+        updateFileProgress(file.name, percentage);
+      },
+    });
+
+    // 3. Register in DB
+    await registerAttachment({
+      variables: {
+        taskId,
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType,
+        blobUrl: blob.url,
+      },
+    });
+  }
+
+  async function handleFiles(files: globalThis.File[]) {
+    setError(null);
+
+    // Filter out files that are too large
+    const validFiles: globalThis.File[] = [];
+    for (const file of files) {
+      if (file.size > MAX_FILE_SIZE) {
+        setError(fileTooLargeLabel);
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) return;
+
+    // Add all files to uploading state
+    setUploadingFiles((prev) => [
+      ...prev,
+      ...validFiles.map((f) => ({
+        name: f.name,
+        progress: 0,
+        status: "uploading" as const,
+      })),
+    ]);
+
+    // Upload all files concurrently
+    await Promise.all(
+      validFiles.map(async (file) => {
+        try {
+          await uploadFile(file);
+          markFileDone(file.name);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : "Upload failed";
+          if (message.includes("storage") || message.includes("limit")) {
+            setError(storageFullLabel);
+          }
+          markFileError(file.name, message);
+        }
+      }),
+    );
+  }
+
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
 
     // Reset input so same file can be selected again
     e.target.value = "";
 
-    if (file.size > MAX_FILE_SIZE) {
-      setError(fileTooLargeLabel);
-      return;
-    }
+    await handleFiles(Array.from(fileList));
+  }
 
-    setError(null);
-    setUploading(true);
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }
 
-    try {
-      const reader = new FileReader();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string;
-          // Strip data URL prefix (e.g. "data:image/png;base64,")
-          const base64Data = result.split(",")[1];
-          resolve(base64Data);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+  function handleDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }
 
-      await uploadAttachment({
-        variables: {
-          taskId,
-          fileName: file.name,
-          fileSize: file.size,
-          mimeType: file.type || "application/octet-stream",
-          fileBase64: base64,
-        },
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "";
-      if (message.includes("storage") || message.includes("limit")) {
-        setError(storageFullLabel);
-      } else {
-        setError(message || "Upload failed");
-      }
-    } finally {
-      setUploading(false);
-    }
+  async function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+
+    await handleFiles(files);
   }
 
   async function handleDownload(attachmentId: string) {
@@ -229,6 +338,8 @@ export function TaskAttachments({
   function handleDelete(attachmentId: string) {
     deleteAttachment({ variables: { id: attachmentId } });
   }
+
+  const isUploading = uploadingFiles.some((f) => f.status === "uploading");
 
   // Nothing to show for free users with no attachments
   if (!isPremium && attachments.length === 0) return null;
@@ -283,24 +394,89 @@ export function TaskAttachments({
         </div>
       )}
 
-      {/* Upload button / Premium CTA */}
+      {/* Upload area / Premium CTA */}
       {isPremium ? (
         <>
-          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground h-8 w-full justify-start gap-2 px-2"
-            disabled={uploading}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {uploading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Paperclip className="h-4 w-4" />
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+
+          {/* Drag & drop zone */}
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label={uploadLabel}
+            className={cn(
+              "flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed px-3 py-4 text-center transition-colors",
+              isDragOver
+                ? "border-primary bg-primary/5 text-primary"
+                : "border-muted-foreground/25 text-muted-foreground hover:border-muted-foreground/50",
+              isUploading && "pointer-events-none opacity-60",
             )}
-            {uploadLabel}
-          </Button>
+            onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            {isUploading ? (
+              <Upload className="h-5 w-5 animate-pulse" />
+            ) : (
+              <Paperclip className="h-5 w-5" />
+            )}
+            <span className="text-xs">{isUploading ? uploadingLabel : dragDropHintLabel}</span>
+          </div>
+
+          {/* Per-file progress bars */}
+          {uploadingFiles.length > 0 && (
+            <div className="space-y-1.5">
+              {uploadingFiles.map((file) => (
+                <div key={file.name} className="space-y-0.5 px-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                    <span
+                      className={cn(
+                        "ml-2 shrink-0",
+                        file.status === "error"
+                          ? "text-red-500"
+                          : file.status === "done"
+                            ? "text-green-600"
+                            : "text-muted-foreground",
+                      )}
+                    >
+                      {file.status === "error"
+                        ? file.error
+                        : file.status === "done"
+                          ? "100%"
+                          : `${Math.round(file.progress)}%`}
+                    </span>
+                  </div>
+                  <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all duration-300",
+                        file.status === "error"
+                          ? "bg-red-500"
+                          : file.status === "done"
+                            ? "bg-green-600"
+                            : "bg-primary",
+                      )}
+                      style={{ width: `${file.progress}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </>
       ) : (
         <a

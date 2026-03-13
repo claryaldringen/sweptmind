@@ -321,6 +321,8 @@ export interface Dictionary {
     storageUsed: string;
     fileTooLarge: string;
     storageFull: string;
+    dragDropHint: string;
+    uploading: string;
     monthly: string;
     yearly: string;
     checkoutSuccess: string;

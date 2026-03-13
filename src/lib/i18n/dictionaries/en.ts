@@ -344,6 +344,8 @@ export const en: Dictionary = {
     storageUsed: "{used} of {total} used",
     fileTooLarge: "File is too large (max 10 MB)",
     storageFull: "Storage limit reached (1 GB)",
+    dragDropHint: "Drag files here or click to upload",
+    uploading: "Uploading...",
     monthly: "Monthly",
     yearly: "Yearly",
     checkoutSuccess: "Payment successful! Premium is now active.",

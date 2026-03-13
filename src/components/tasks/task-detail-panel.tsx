@@ -956,6 +956,8 @@ export function TaskDetailPanel() {
           premiumRequiredDesc={t("premium.premiumRequiredDesc")}
           fileTooLargeLabel={t("premium.fileTooLarge")}
           storageFullLabel={t("premium.storageFull")}
+          dragDropHintLabel={t("premium.dragDropHint")}
+          uploadingLabel={t("premium.uploading")}
         />
       </div>
 

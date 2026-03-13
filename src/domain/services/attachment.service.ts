@@ -75,6 +75,21 @@ export class AttachmentService {
     return this.attachmentRepo.create(input);
   }
 
+  /**
+   * Register an attachment that was already uploaded directly to Vercel Blob
+   * from the client. Verifies task ownership, premium status, then creates
+   * the DB record.
+   */
+  async createRecord(userId: string, input: CreateAttachmentInput): Promise<TaskAttachment> {
+    await this.verifyTaskOwnership(input.taskId, userId);
+
+    if (!(await this.subscriptionService.isPremium(userId))) {
+      throw new Error("Premium subscription required");
+    }
+
+    return this.attachmentRepo.create(input);
+  }
+
   async download(attachmentId: string, userId: string): Promise<string> {
     const attachment = await this.attachmentRepo.findById(attachmentId);
     if (!attachment) throw new Error("Attachment not found");

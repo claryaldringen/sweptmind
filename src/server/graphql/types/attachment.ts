@@ -15,8 +15,8 @@ export const AttachmentType = AttachmentRef.implement({
   }),
 });
 
-// Mutation: upload attachment
-builder.mutationField("uploadAttachment", (t) =>
+// Mutation: register attachment (client already uploaded to Vercel Blob)
+builder.mutationField("registerAttachment", (t) =>
   t.field({
     type: AttachmentRef,
     authScopes: { authenticated: true },
@@ -25,36 +25,15 @@ builder.mutationField("uploadAttachment", (t) =>
       fileName: t.arg.string({ required: true }),
       fileSize: t.arg.int({ required: true }),
       mimeType: t.arg.string({ required: true }),
-      fileBase64: t.arg.string({ required: true }),
+      blobUrl: t.arg.string({ required: true }),
     },
     resolve: async (_root, args, ctx) => {
-      const buffer = Buffer.from(args.fileBase64, "base64");
-      const fileSize = buffer.length;
-
-      if (fileSize > 10 * 1024 * 1024) {
-        throw new Error("File size exceeds 10 MB limit");
-      }
-
-      // Validate before uploading to blob storage (premium check, limits, MIME type)
-      await ctx.services.attachment.validateUpload(
-        ctx.userId!,
-        args.taskId,
-        fileSize,
-        args.mimeType,
-      );
-
-      const { put } = await import("@vercel/blob");
-      const blob = await put(`attachments/${ctx.userId}/${args.taskId}/${args.fileName}`, buffer, {
-        access: "public",
-        contentType: args.mimeType,
-      });
-
-      return ctx.services.attachment.upload(ctx.userId!, {
+      return ctx.services.attachment.createRecord(ctx.userId!, {
         taskId: args.taskId,
         fileName: args.fileName,
-        fileSize,
+        fileSize: args.fileSize,
         mimeType: args.mimeType,
-        blobUrl: blob.url,
+        blobUrl: args.blobUrl,
       });
     },
   }),
