@@ -118,6 +118,13 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const platform = getPlatform();
+
+    // Electron doesn't support Web Push (no push service available)
+    if (platform === "electron") {
+      setPushSupported(false);
+      return;
+    }
+
     if (platform === "ios" || platform === "android") {
       setPushSupported(true);
       fetch("/api/push/preferences")
