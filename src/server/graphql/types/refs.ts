@@ -4,6 +4,7 @@ import type { Task, Step } from "@/domain/entities/task";
 import type { List, ListGroup } from "@/domain/entities/list";
 import type { Tag } from "@/domain/entities/tag";
 import type { Location } from "@/domain/entities/location";
+import type { Subscription } from "@/domain/entities/subscription";
 
 export const UserRef = builder.objectRef<User>("User");
 export const ListRef = builder.objectRef<List>("List");
@@ -12,3 +13,4 @@ export const StepRef = builder.objectRef<Step>("Step");
 export const ListGroupRef = builder.objectRef<ListGroup>("ListGroup");
 export const TagRef = builder.objectRef<Tag>("Tag");
 export const LocationRef = builder.objectRef<Location>("Location");
+export const SubscriptionRef = builder.objectRef<Subscription>("Subscription");

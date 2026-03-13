@@ -10,6 +10,12 @@ export const UserType = UserRef.implement({
     createdAt: t.string({
       resolve: (user) => user.createdAt.toISOString(),
     }),
+    isPremium: t.field({
+      type: "Boolean",
+      resolve: async (user, _args, ctx) => {
+        return ctx.services.subscription.isPremium(user.id);
+      },
+    }),
   }),
 });
 

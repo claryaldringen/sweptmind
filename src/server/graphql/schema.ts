@@ -10,5 +10,6 @@ import "./types/list-group";
 import "./types/register";
 import "./types/onboarding";
 import "./types/calendar";
+import "./types/subscription";
 
 export const schema = builder.toSchema();
