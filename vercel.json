@@ -1,5 +1,4 @@
 {
-  "installCommand": "corepack enable && yarn install",
   "crons": [
     {
       "path": "/api/push/send",

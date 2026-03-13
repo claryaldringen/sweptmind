@@ -5469,7 +5469,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@sweptmind/native-bridge@workspace:*, @sweptmind/native-bridge@workspace:packages/native-bridge":
+"@sweptmind/native-bridge@file:packages/native-bridge::locator=sweptmind%40workspace%3A.":
+  version: 0.0.1
+  resolution: "@sweptmind/native-bridge@file:packages/native-bridge#packages/native-bridge::hash=785f89&locator=sweptmind%40workspace%3A."
+  checksum: 10c0/6b28ddde88bcb47f807550cc01f1d350b3d6e498a5b528b1811aaeebc71bc093b769c31c7bccfe9152d6fbeb0c3679fed189af91eeaaccde8ae2c4deb4e388a3
+  languageName: node
+  linkType: hard
+
+"@sweptmind/native-bridge@workspace:packages/native-bridge":
   version: 0.0.0-use.local
   resolution: "@sweptmind/native-bridge@workspace:packages/native-bridge"
   dependencies:
@@ -15708,7 +15715,7 @@ __metadata:
     "@pothos/plugin-drizzle": "npm:^0.17.0"
     "@pothos/plugin-scope-auth": "npm:^4.1.6"
     "@serwist/turbopack": "npm:^9.5.6"
-    "@sweptmind/native-bridge": "workspace:*"
+    "@sweptmind/native-bridge": "file:packages/native-bridge"
     "@tailwindcss/postcss": "npm:^4"
     "@types/bcryptjs": "npm:^3.0.0"
     "@types/node": "npm:^20"
