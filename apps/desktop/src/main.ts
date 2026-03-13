@@ -75,6 +75,14 @@ app.on("before-quit", () => {
 });
 
 app.whenReady().then(() => {
+  app.setAboutPanelOptions({
+    applicationName: "SweptMind",
+    applicationVersion: app.getVersion(),
+    version: "", // hides build number
+    copyright: "© 2026 Martin Zadražil. All rights reserved.",
+    website: "https://sweptmind.com",
+  });
+
   // IPC: open macOS System Settings panes
   ipcMain.handle("open-notification-settings", () => {
     exec(
