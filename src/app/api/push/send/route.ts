@@ -12,10 +12,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
-    return NextResponse.json(
-      { error: "VAPID keys not configured" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "VAPID keys not configured" }, { status: 500 });
   }
 
   webpush.setVapidDetails(
@@ -35,9 +32,7 @@ export async function GET(request: NextRequest) {
     ),
   });
 
-  const dueTasks = tasks.filter(
-    (t) => t.dueDate && t.dueDate.includes("T") && t.dueDate <= nowIso,
-  );
+  const dueTasks = tasks.filter((t) => t.dueDate && t.dueDate.includes("T") && t.dueDate <= nowIso);
 
   if (dueTasks.length === 0) {
     return NextResponse.json({ sent: 0 });
@@ -71,14 +66,9 @@ export async function GET(request: NextRequest) {
 
   let sent = 0;
   for (const task of dueTasks) {
-    await db
-      .update(schema.tasks)
-      .set({ notifiedAt: now })
-      .where(eq(schema.tasks.id, task.id));
+    await db.update(schema.tasks).set({ notifiedAt: now }).where(eq(schema.tasks.id, task.id));
 
-    const subscriptions = (subsByUser.get(task.userId) ?? []).filter(
-      (sub) => sub.notifyDueDate,
-    );
+    const subscriptions = (subsByUser.get(task.userId) ?? []).filter((sub) => sub.notifyDueDate);
     const payload = {
       title: "SweptMind",
       body: task.title,
@@ -104,19 +94,12 @@ export async function GET(request: NextRequest) {
         }
       } catch (error: unknown) {
         const errObj = error as Record<string, unknown> | null;
-        const statusCode =
-          errObj && typeof errObj.statusCode === "number"
-            ? errObj.statusCode
-            : 0;
+        const statusCode = errObj && typeof errObj.statusCode === "number" ? errObj.statusCode : 0;
 
-        const isFcmGone =
-          errObj &&
-          errObj.code === "messaging/registration-token-not-registered";
+        const isFcmGone = errObj && errObj.code === "messaging/registration-token-not-registered";
 
         if (statusCode === 410 || isFcmGone) {
-          await db
-            .delete(schema.pushSubscriptions)
-            .where(eq(schema.pushSubscriptions.id, sub.id));
+          await db.delete(schema.pushSubscriptions).where(eq(schema.pushSubscriptions.id, sub.id));
         }
       }
     }

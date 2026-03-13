@@ -13,40 +13,24 @@ function isValidPlatform(p: unknown): p is PushPlatform {
 
 export async function POST(request: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const platform: PushPlatform = isValidPlatform(body?.platform)
-    ? body.platform
-    : "web";
+  const platform: PushPlatform = isValidPlatform(body?.platform) ? body.platform : "web";
 
-  const endpoint =
-    typeof body?.endpoint === "string" ? body.endpoint.slice(0, 2048) : null;
+  const endpoint = typeof body?.endpoint === "string" ? body.endpoint.slice(0, 2048) : null;
   if (!endpoint) {
-    return NextResponse.json(
-      { error: "Invalid subscription" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
   }
 
   let p256dh: string;
   let authKey: string;
 
   if (platform === "web") {
-    p256dh =
-      typeof body?.keys?.p256dh === "string"
-        ? body.keys.p256dh.slice(0, 512)
-        : "";
-    authKey =
-      typeof body?.keys?.auth === "string"
-        ? body.keys.auth.slice(0, 512)
-        : "";
+    p256dh = typeof body?.keys?.p256dh === "string" ? body.keys.p256dh.slice(0, 512) : "";
+    authKey = typeof body?.keys?.auth === "string" ? body.keys.auth.slice(0, 512) : "";
     if (!p256dh || !authKey) {
-      return NextResponse.json(
-        { error: "Invalid subscription" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
     }
   } else {
     p256dh = "_";
