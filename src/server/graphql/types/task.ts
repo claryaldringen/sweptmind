@@ -1,5 +1,5 @@
 import { builder } from "../builder";
-import { TaskRef, ListRef, StepRef, TagRef, LocationRef } from "./refs";
+import { TaskRef, ListRef, StepRef, TagRef, LocationRef, AttachmentRef } from "./refs";
 import { createTaskSchema, updateTaskSchema, importTaskSchema } from "@/lib/graphql-validators";
 
 export const TaskType = TaskRef.implement({
@@ -77,6 +77,12 @@ export const TaskType = TaskRef.implement({
     dependentTaskCount: t.int({
       resolve: async (task, _args, ctx) => {
         return ctx.loaders.dependentTaskCountByTaskId.load(task.id);
+      },
+    }),
+    attachments: t.field({
+      type: [AttachmentRef],
+      resolve: async (task, _args, ctx) => {
+        return ctx.loaders.attachmentsByTaskId.load(task.id);
       },
     }),
   }),

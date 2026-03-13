@@ -3,6 +3,7 @@ import type { List } from "@/domain/entities/list";
 import type { Location } from "@/domain/entities/location";
 import type { Step } from "@/domain/entities/task";
 import type { Tag } from "@/domain/entities/tag";
+import type { TaskAttachment } from "@/domain/entities/task-attachment";
 import type { Repos } from "@/infrastructure/container";
 
 export interface DataLoaders {
@@ -14,6 +15,7 @@ export interface DataLoaders {
   taskCountByTagId: DataLoader<string, number>;
   visibleTaskCountByListId: DataLoader<string, number>;
   dependentTaskCountByTaskId: DataLoader<string, number>;
+  attachmentsByTaskId: DataLoader<string, TaskAttachment[]>;
 }
 
 export function createDataLoaders(repos: Repos, userId: string): DataLoaders {
@@ -64,6 +66,11 @@ export function createDataLoaders(repos: Repos, userId: string): DataLoaders {
         }),
       );
       return taskIds.map((_, i) => counts[i]);
+    }),
+
+    attachmentsByTaskId: new DataLoader(async (taskIds) => {
+      const map = await repos.attachment.findByTaskIds([...taskIds]);
+      return taskIds.map((id) => map.get(id) ?? []);
     }),
   };
 }
