@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { format } from "date-fns";
 import { ArrowLeft, CalendarDays } from "lucide-react";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,7 @@ function getEndOfWeek(today: Date): string {
   // End of week = Sunday (add days to reach next Sunday)
   const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
   end.setDate(end.getDate() + daysUntilSunday);
-  return end.toISOString().slice(0, 10);
+  return format(end, "yyyy-MM-dd");
 }
 
 const GROUP_ORDER: GroupKey[] = ["overdue", "today", "tomorrow", "thisWeek", "later"];
@@ -50,14 +51,16 @@ export default function PlannedPage() {
   const { open: openSidebar, isDesktop } = useSidebarContext();
   const { allTasks, loading } = useAppData();
 
+  // Compute date strings outside useMemo so they update when the day changes
+  const now = new Date();
+  const todayStr = format(now, "yyyy-MM-dd");
+  const tomorrowDate = new Date(now);
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrowStr = format(tomorrowDate, "yyyy-MM-dd");
+  const endOfWeekStr = getEndOfWeek(now);
+
   const groups = useMemo(() => {
     const plannedTasks = allTasks.filter((t) => t.dueDate != null);
-    const now = new Date();
-    const todayStr = now.toISOString().slice(0, 10);
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
-    const endOfWeekStr = getEndOfWeek(now);
 
     const visible = plannedTasks.filter((t) => !t.isCompleted);
 
@@ -82,7 +85,7 @@ export default function PlannedPage() {
     }
 
     return grouped;
-  }, [allTasks]);
+  }, [allTasks, todayStr, tomorrowStr, endOfWeekStr]);
 
   const groupLabels: Record<GroupKey, string> = {
     overdue: t("planned.overdue"),

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { format } from "date-fns";
 import { ArrowLeft, Zap } from "lucide-react";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { useDeviceContext } from "@/hooks/use-device-context";
@@ -20,7 +21,7 @@ export default function ContextPage() {
   const { allTasks, lists, tags, loading } = useAppData();
 
   const tasks = useMemo(() => {
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = format(new Date(), "yyyy-MM-dd");
 
     // Helper: is this list nearby (using its own locationRadius)?
     function isListNearby(l: (typeof lists)[0]): boolean {

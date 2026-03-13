@@ -44,7 +44,7 @@ import { cn } from "@/lib/utils";
 import { getTagColorClasses } from "@/lib/tag-colors";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { format, isPast, isToday, parseISO, startOfDay, addDays } from "date-fns";
+import { format, isPast, parseISO, startOfDay, addDays } from "date-fns";
 import { cs } from "date-fns/locale/cs";
 import { enUS } from "date-fns/locale/en-US";
 import { useTranslations } from "@/lib/i18n";
@@ -284,7 +284,8 @@ export const TaskItem = memo(function TaskItem({
   const totalSteps = task.steps?.length ?? 0;
   const hasTags = (task.tags?.length ?? 0) > 0;
   const dueDateParsed = task.dueDate ? parseISO(task.dueDate) : null;
-  const isDueToday = dueDateParsed && isToday(dueDateParsed);
+  const localToday = format(new Date(), "yyyy-MM-dd");
+  const isDueToday = task.dueDate?.split("T")[0] === localToday;
   const isOverdue =
     dueDateParsed && !task.isCompleted && !isDueToday && isPast(startOfDay(dueDateParsed));
   const hasReminder = !!task.reminderAt;
