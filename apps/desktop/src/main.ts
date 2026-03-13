@@ -79,8 +79,8 @@ app.whenReady().then(() => {
   const buildDate = new Date(BUILD_TIME).toLocaleString();
   app.setAboutPanelOptions({
     applicationName: "SweptMind",
-    applicationVersion: app.getVersion(),
-    version: `Build ${BUILD_HASH} (${buildDate})`,
+    applicationVersion: `Build ${BUILD_HASH}`,
+    version: buildDate,
     copyright: "© 2026 Martin Zadražil. All rights reserved.",
     website: "https://sweptmind.com",
   });

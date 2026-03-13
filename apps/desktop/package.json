@@ -1,5 +1,5 @@
 {
-  "name": "@sweptmind/desktop",
+  "name": "sweptmind-desktop",
   "version": "0.0.1",
   "private": true,
   "description": "SweptMind desktop app for macOS",
