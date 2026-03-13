@@ -676,7 +676,12 @@ export default function SettingsPage() {
       </div>
 
       <div className="text-muted-foreground mt-12 max-w-md border-t pt-4 text-xs">
-        <p>SweptMind &middot; Build {process.env.NEXT_PUBLIC_BUILD_ID ?? "dev"}</p>
+        <p>
+          SweptMind &middot; {getPlatform()} &middot; Build{" "}
+          {process.env.NEXT_PUBLIC_BUILD_ID ?? "dev"}
+          {process.env.NEXT_PUBLIC_BUILD_TIME &&
+            ` (${new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString()})`}
+        </p>
       </div>
     </div>
   );
