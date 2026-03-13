@@ -292,6 +292,34 @@ export interface Dictionary {
     circularError: string;
     searchPlaceholder: string;
   };
+  premium: {
+    title: string;
+    subtitle: string;
+    currentPlan: string;
+    freePlan: string;
+    premiumPlan: string;
+    monthlyPrice: string;
+    yearlyPrice: string;
+    yearlyDiscount: string;
+    upgrade: string;
+    manageSubscription: string;
+    cancelledInfo: string;
+    features: string;
+    attachments: string;
+    attachmentsDesc: string;
+    payByCard: string;
+    payByTransfer: string;
+    scanQR: string;
+    scanQRDesc: string;
+    uploadFile: string;
+    deleteFile: string;
+    downloadFile: string;
+    premiumRequired: string;
+    premiumRequiredDesc: string;
+    storageUsed: string;
+    fileTooLarge: string;
+    storageFull: string;
+  };
   validation: {
     invalidEmail: string;
     passwordRequired: string;
