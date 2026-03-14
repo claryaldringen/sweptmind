@@ -27,6 +27,7 @@ import { OnboardingService } from "@/domain/services/onboarding.service";
 import { SubscriptionService } from "@/domain/services/subscription.service";
 import { AttachmentService } from "@/domain/services/attachment.service";
 import { AiService } from "@/domain/services/ai.service";
+import { LlmProviderFactory } from "./llm/provider-factory";
 
 const taskRepo = new DrizzleTaskRepository(db);
 const listRepo = new DrizzleListRepository(db);
@@ -48,6 +49,7 @@ function createLlmProvider(): ILlmProvider {
 }
 
 const llmProvider = createLlmProvider();
+const llmFactory = new LlmProviderFactory();
 
 const bcryptHasher: IPasswordHasher = {
   hash: (password) => hash(password, 12),
@@ -87,7 +89,14 @@ export const services = {
   onboarding: new OnboardingService(listRepo, locationRepo, userRepo),
   subscription: subscriptionService,
   attachment: new AttachmentService(attachmentRepo, taskRepo, subscriptionService),
-  ai: new AiService(aiAnalysisRepo, taskRepo, llmProvider, subscriptionService),
+  ai: new AiService(
+    aiAnalysisRepo,
+    taskRepo,
+    llmProvider,
+    subscriptionService,
+    userRepo,
+    llmFactory,
+  ),
 };
 
 export type Services = typeof services;

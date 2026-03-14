@@ -1,16 +1,41 @@
 import type { TaskAiAnalysis } from "../entities/task-ai-analysis";
 import type { ITaskAiAnalysisRepository } from "../repositories/task-ai-analysis.repository";
 import type { ITaskRepository } from "../repositories/task.repository";
+import type { IUserRepository } from "../repositories/user.repository";
 import type { ILlmProvider } from "../ports/llm-provider";
 import type { SubscriptionService } from "./subscription.service";
+
+export interface ILlmProviderFactory {
+  create(config: {
+    provider: string;
+    apiKey: string;
+    baseUrl?: string | null;
+    model?: string | null;
+  }): ILlmProvider;
+}
 
 export class AiService {
   constructor(
     private readonly analysisRepo: ITaskAiAnalysisRepository,
     private readonly taskRepo: ITaskRepository,
-    private readonly llm: ILlmProvider,
+    private readonly defaultLlm: ILlmProvider,
     private readonly subscriptionService: SubscriptionService,
+    private readonly userRepo: IUserRepository,
+    private readonly llmFactory: ILlmProviderFactory,
   ) {}
+
+  private async resolveProvider(userId: string): Promise<ILlmProvider> {
+    const user = await this.userRepo.findById(userId);
+    if (user?.llmProvider && user.llmApiKey) {
+      return this.llmFactory.create({
+        provider: user.llmProvider,
+        apiKey: user.llmApiKey,
+        baseUrl: user.llmBaseUrl,
+        model: user.llmModel,
+      });
+    }
+    return this.defaultLlm;
+  }
 
   async analyzeTask(taskId: string, userId: string): Promise<TaskAiAnalysis> {
     const isPremium = await this.subscriptionService.isPremium(userId);
@@ -29,8 +54,11 @@ export class AiService {
       return cached;
     }
 
+    // Resolve provider (user-specific or default)
+    const llm = await this.resolveProvider(userId);
+
     // Call LLM
-    const result = await this.llm.analyzeTask(task.title);
+    const result = await llm.analyzeTask(task.title);
 
     // Cache result
     return this.analysisRepo.upsert({

@@ -16,6 +16,13 @@ export const UserType = UserRef.implement({
         return ctx.services.subscription.isPremium(user.id);
       },
     }),
+    llmProvider: t.exposeString("llmProvider", { nullable: true }),
+    llmApiKey: t.string({
+      nullable: true,
+      resolve: (user) => (user.llmApiKey ? "••••••••" : null),
+    }),
+    llmBaseUrl: t.exposeString("llmBaseUrl", { nullable: true }),
+    llmModel: t.exposeString("llmModel", { nullable: true }),
   }),
 });
 
@@ -27,6 +34,35 @@ builder.queryField("me", (t) =>
     resolve: async (_root, _args, ctx) => {
       if (!ctx.userId) return null;
       return ctx.services.user.getById(ctx.userId);
+    },
+  }),
+);
+
+const UpdateLlmConfigInput = builder.inputType("UpdateLlmConfigInput", {
+  fields: (t) => ({
+    llmProvider: t.string({ required: false }),
+    llmApiKey: t.string({ required: false }),
+    llmBaseUrl: t.string({ required: false }),
+    llmModel: t.string({ required: false }),
+  }),
+});
+
+builder.mutationField("updateLlmConfig", (t) =>
+  t.field({
+    type: "Boolean",
+    authScopes: { authenticated: true },
+    args: {
+      input: t.arg({ type: UpdateLlmConfigInput, required: true }),
+    },
+    resolve: async (_root, { input }, ctx) => {
+      if (!ctx.userId) return false;
+      await ctx.services.user.updateLlmConfig(ctx.userId, {
+        llmProvider: input.llmProvider ?? null,
+        llmApiKey: input.llmApiKey ?? null,
+        llmBaseUrl: input.llmBaseUrl ?? null,
+        llmModel: input.llmModel ?? null,
+      });
+      return true;
     },
   }),
 );

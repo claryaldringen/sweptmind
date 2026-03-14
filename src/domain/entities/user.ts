@@ -10,6 +10,10 @@ export interface User {
   onboardingCompleted: boolean;
   calendarSyncAll: boolean;
   calendarToken: string | null;
+  llmProvider: string | null;
+  llmApiKey: string | null;
+  llmBaseUrl: string | null;
+  llmModel: string | null;
 }
 
 export interface CreateUserInput {

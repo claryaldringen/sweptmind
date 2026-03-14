@@ -24,9 +24,11 @@ import {
   Crown,
   CreditCard,
   Landmark,
+  Brain,
   Paperclip,
   X,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { useTaskCountMode } from "@/hooks/use-task-count-mode";
 import { useNewTaskPosition } from "@/hooks/use-new-task-position";
@@ -89,7 +91,17 @@ const GET_ME = gql`
       email
       image
       isPremium
+      llmProvider
+      llmApiKey
+      llmBaseUrl
+      llmModel
     }
+  }
+`;
+
+const UPDATE_LLM_CONFIG = gql`
+  mutation UpdateLlmConfig($input: UpdateLlmConfigInput!) {
+    updateLlmConfig(input: $input)
   }
 `;
 
@@ -131,6 +143,10 @@ interface GetMeData {
     email: string | null;
     image: string | null;
     isPremium: boolean;
+    llmProvider: string | null;
+    llmApiKey: string | null;
+    llmBaseUrl: string | null;
+    llmModel: string | null;
   } | null;
 }
 
@@ -206,6 +222,57 @@ export default function SettingsPage() {
 
   const isPremium = meData?.me?.isPremium ?? false;
   const subscription = subData?.subscription ?? null;
+
+  // AI LLM config
+  const [updateLlmConfig] = useMutation(UPDATE_LLM_CONFIG);
+  const [aiProvider, setAiProvider] = useState<string>("");
+  const [aiApiKey, setAiApiKey] = useState("");
+  const [aiBaseUrl, setAiBaseUrl] = useState("");
+  const [aiModel, setAiModel] = useState("");
+  const [aiSaved, setAiSaved] = useState(false);
+
+  useEffect(() => {
+    if (meData?.me) {
+      setAiProvider(meData.me.llmProvider ?? "");
+      setAiBaseUrl(meData.me.llmBaseUrl ?? "");
+      setAiModel(meData.me.llmModel ?? "");
+      // Don't set apiKey from server (it's masked)
+    }
+  }, [meData]);
+
+  const handleSaveAiConfig = useCallback(async () => {
+    await updateLlmConfig({
+      variables: {
+        input: {
+          llmProvider: aiProvider || null,
+          llmApiKey: aiApiKey || null,
+          llmBaseUrl: aiBaseUrl || null,
+          llmModel: aiModel || null,
+        },
+      },
+    });
+    setAiSaved(true);
+    setTimeout(() => setAiSaved(false), 2000);
+  }, [aiProvider, aiApiKey, aiBaseUrl, aiModel, updateLlmConfig]);
+
+  const handleResetAiConfig = useCallback(async () => {
+    await updateLlmConfig({
+      variables: {
+        input: {
+          llmProvider: null,
+          llmApiKey: null,
+          llmBaseUrl: null,
+          llmModel: null,
+        },
+      },
+    });
+    setAiProvider("");
+    setAiApiKey("");
+    setAiBaseUrl("");
+    setAiModel("");
+    setAiSaved(true);
+    setTimeout(() => setAiSaved(false), 2000);
+  }, [updateLlmConfig]);
 
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("yearly");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -1056,6 +1123,89 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* AI Model Settings — premium only */}
+      {isPremium && (
+        <div className="max-w-md">
+          <h2 className="mb-3 text-lg font-semibold">
+            <Brain className="mr-2 inline h-5 w-5" />
+            {t("settings.aiModel")}
+          </h2>
+          <p className="text-muted-foreground mb-4 text-sm">{t("settings.aiModelDesc")}</p>
+          <div className="space-y-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium">{t("settings.aiProvider")}</label>
+              <select
+                value={aiProvider}
+                onChange={(e) => setAiProvider(e.target.value)}
+                className="border-input bg-background ring-offset-background focus:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+              >
+                <option value="">{t("settings.aiProviderDefault")}</option>
+                <option value="openai">{t("settings.aiProviderOpenai")}</option>
+                <option value="ollama">{t("settings.aiProviderOllama")}</option>
+              </select>
+            </div>
+            {aiProvider && aiProvider !== "ollama" && (
+              <div>
+                <label className="mb-1 block text-sm font-medium">{t("settings.aiApiKey")}</label>
+                <Input
+                  type="password"
+                  value={aiApiKey}
+                  onChange={(e) => setAiApiKey(e.target.value)}
+                  placeholder={t("settings.aiApiKeyPlaceholder")}
+                />
+              </div>
+            )}
+            {aiProvider && (
+              <>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">
+                    {t("settings.aiBaseUrl")}
+                  </label>
+                  <Input
+                    value={aiBaseUrl}
+                    onChange={(e) => setAiBaseUrl(e.target.value)}
+                    placeholder={
+                      aiProvider === "ollama"
+                        ? "http://localhost:11434"
+                        : t("settings.aiBaseUrlPlaceholder")
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">
+                    {t("settings.aiModelName")}
+                  </label>
+                  <Input
+                    value={aiModel}
+                    onChange={(e) => setAiModel(e.target.value)}
+                    placeholder={
+                      aiProvider === "ollama" ? "llama3.1" : t("settings.aiModelPlaceholder")
+                    }
+                  />
+                </div>
+              </>
+            )}
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={handleSaveAiConfig}>
+                {aiSaved ? (
+                  <>
+                    <Check className="mr-1 h-4 w-4" />
+                    {t("settings.aiSaved")}
+                  </>
+                ) : (
+                  t("lists.save")
+                )}
+              </Button>
+              {(aiProvider || aiApiKey || aiBaseUrl || aiModel) && (
+                <Button size="sm" variant="outline" onClick={handleResetAiConfig}>
+                  {t("settings.aiReset")}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="text-muted-foreground mt-12 max-w-md border-t pt-4 text-xs">
         <p>

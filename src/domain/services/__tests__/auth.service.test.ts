@@ -16,6 +16,10 @@ function makeUser(overrides: Partial<User> = {}): User {
     onboardingCompleted: true,
     calendarSyncAll: false,
     calendarToken: null,
+    llmProvider: null,
+    llmApiKey: null,
+    llmBaseUrl: null,
+    llmModel: null,
     ...overrides,
   };
 }
@@ -35,6 +39,7 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     createPasswordResetToken: vi.fn(),
     validatePasswordResetToken: vi.fn(),
     deletePasswordResetToken: vi.fn(),
+    updateLlmConfig: vi.fn(),
     ...overrides,
   };
 }

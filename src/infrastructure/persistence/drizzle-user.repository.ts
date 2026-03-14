@@ -114,4 +114,16 @@ export class DrizzleUserRepository implements IUserRepository {
       .delete(schema.verificationTokens)
       .where(eq(schema.verificationTokens.token, token));
   }
+
+  async updateLlmConfig(
+    userId: string,
+    config: {
+      llmProvider: string | null;
+      llmApiKey: string | null;
+      llmBaseUrl: string | null;
+      llmModel: string | null;
+    },
+  ): Promise<void> {
+    await this.db.update(schema.users).set(config).where(eq(schema.users.id, userId));
+  }
 }

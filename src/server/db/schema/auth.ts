@@ -18,6 +18,10 @@ export const users = pgTable("users", {
   onboardingCompleted: boolean("onboarding_completed").notNull().default(true),
   calendarSyncAll: boolean("calendar_sync_all").notNull().default(false),
   calendarToken: text("calendar_token").unique(),
+  llmProvider: text("llm_provider"),
+  llmApiKey: text("llm_api_key"),
+  llmBaseUrl: text("llm_base_url"),
+  llmModel: text("llm_model"),
 });
 
 export const accounts = pgTable(

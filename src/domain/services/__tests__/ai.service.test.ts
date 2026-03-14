@@ -4,8 +4,11 @@ import { SubscriptionService } from "../subscription.service";
 import type { ITaskAiAnalysisRepository } from "../../repositories/task-ai-analysis.repository";
 import type { ITaskRepository } from "../../repositories/task.repository";
 import type { ILlmProvider } from "../../ports/llm-provider";
+import type { IUserRepository } from "../../repositories/user.repository";
+import type { ILlmProviderFactory } from "../ai.service";
 import type { TaskAiAnalysis } from "../../entities/task-ai-analysis";
 import type { Task } from "../../entities/task";
+import type { User } from "../../entities/user";
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {
@@ -101,11 +104,56 @@ function makeSubscriptionService(isPremium = true): SubscriptionService {
   return svc;
 }
 
+function makeUserRepo(overrides: Partial<User> = {}): IUserRepository {
+  const user: User = {
+    id: "user-1",
+    name: "Test",
+    email: "test@test.com",
+    emailVerified: null,
+    image: null,
+    hashedPassword: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    onboardingCompleted: true,
+    calendarSyncAll: false,
+    calendarToken: null,
+    llmProvider: null,
+    llmApiKey: null,
+    llmBaseUrl: null,
+    llmModel: null,
+    ...overrides,
+  };
+  return {
+    findById: vi.fn().mockResolvedValue(user),
+    findByEmail: vi.fn().mockResolvedValue(undefined),
+    create: vi.fn(),
+    findByCalendarToken: vi.fn().mockResolvedValue(undefined),
+    getCalendarToken: vi.fn().mockResolvedValue(""),
+    regenerateCalendarToken: vi.fn().mockResolvedValue(""),
+    updateCalendarSyncAll: vi.fn(),
+    getCalendarSyncAll: vi.fn().mockResolvedValue(false),
+    updateOnboardingCompleted: vi.fn(),
+    updatePassword: vi.fn(),
+    createPasswordResetToken: vi.fn().mockResolvedValue(null),
+    validatePasswordResetToken: vi.fn().mockResolvedValue(null),
+    deletePasswordResetToken: vi.fn(),
+    updateLlmConfig: vi.fn(),
+  };
+}
+
+function makeLlmFactory(): ILlmProviderFactory {
+  return {
+    create: vi.fn().mockReturnValue(makeLlmProvider()),
+  };
+}
+
 describe("AiService", () => {
   let analysisRepo: ITaskAiAnalysisRepository;
   let taskRepo: ITaskRepository;
   let llm: ILlmProvider;
   let subscriptionService: SubscriptionService;
+  let userRepo: IUserRepository;
+  let llmFactory: ILlmProviderFactory;
   let service: AiService;
 
   beforeEach(() => {
@@ -113,7 +161,9 @@ describe("AiService", () => {
     taskRepo = makeTaskRepo();
     llm = makeLlmProvider();
     subscriptionService = makeSubscriptionService(true);
-    service = new AiService(analysisRepo, taskRepo, llm, subscriptionService);
+    userRepo = makeUserRepo();
+    llmFactory = makeLlmFactory();
+    service = new AiService(analysisRepo, taskRepo, llm, subscriptionService, userRepo, llmFactory);
   });
 
   it("vrati cachovanu analyzu pokud se title nezmenil (nevola LLM)", async () => {
@@ -174,12 +224,52 @@ describe("AiService", () => {
 
   it("vyhodi chybu pro ne-premium uzivatele", async () => {
     subscriptionService = makeSubscriptionService(false);
-    service = new AiService(analysisRepo, taskRepo, llm, subscriptionService);
+    service = new AiService(analysisRepo, taskRepo, llm, subscriptionService, userRepo, llmFactory);
 
     await expect(service.analyzeTask("task-1", "user-1")).rejects.toThrow(
       "Premium subscription required",
     );
     expect(taskRepo.findById).not.toHaveBeenCalled();
+    expect(llm.analyzeTask).not.toHaveBeenCalled();
+  });
+
+  it("pouzije uzivateluv vlastni LLM provider kdyz je nastaven", async () => {
+    const customLlm = makeLlmProvider({
+      analyzeTask: vi
+        .fn()
+        .mockResolvedValue({ isActionable: false, suggestion: "Custom suggestion" }),
+    });
+    const customUserRepo = makeUserRepo({
+      llmProvider: "openai",
+      llmApiKey: "sk-test",
+      llmBaseUrl: "https://custom.api/v1",
+      llmModel: "custom-model",
+    });
+    const customFactory: ILlmProviderFactory = { create: vi.fn().mockReturnValue(customLlm) };
+    service = new AiService(
+      analysisRepo,
+      taskRepo,
+      llm,
+      subscriptionService,
+      customUserRepo,
+      customFactory,
+    );
+
+    const task = makeTask({ title: "Handle project" });
+    vi.mocked(taskRepo.findById).mockResolvedValue(task);
+    vi.mocked(analysisRepo.upsert).mockResolvedValue(
+      makeAnalysis({ isActionable: false, suggestion: "Custom suggestion" }),
+    );
+
+    await service.analyzeTask("task-1", "user-1");
+
+    expect(customFactory.create).toHaveBeenCalledWith({
+      provider: "openai",
+      apiKey: "sk-test",
+      baseUrl: "https://custom.api/v1",
+      model: "custom-model",
+    });
+    expect(customLlm.analyzeTask).toHaveBeenCalledWith("Handle project");
     expect(llm.analyzeTask).not.toHaveBeenCalled();
   });
 

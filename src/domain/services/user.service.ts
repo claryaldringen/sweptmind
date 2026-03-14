@@ -27,4 +27,16 @@ export class UserService {
   async updateOnboardingCompleted(userId: string, completed: boolean): Promise<void> {
     return this.userRepo.updateOnboardingCompleted(userId, completed);
   }
+
+  async updateLlmConfig(
+    userId: string,
+    config: {
+      llmProvider: string | null;
+      llmApiKey: string | null;
+      llmBaseUrl: string | null;
+      llmModel: string | null;
+    },
+  ): Promise<void> {
+    return this.userRepo.updateLlmConfig(userId, config);
+  }
 }
