@@ -1,10 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { gql } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { TaskItem } from "./task-item";
 import { useTranslations } from "@/lib/i18n";
 import { useDepartureAnimation } from "@/hooks/use-departure-animation";
+import { useTaskAnalysis } from "@/hooks/use-task-analysis";
+
+const GET_ME = gql`
+  query GetMeForAnalysis {
+    me {
+      id
+      isPremium
+    }
+  }
+`;
 
 interface Task {
   id: string;
@@ -17,6 +29,11 @@ interface Task {
   blockedByTaskId?: string | null;
   blockedByTaskIsCompleted?: boolean | null;
   dependentTaskCount?: number;
+  aiAnalysis?: {
+    isActionable: boolean;
+    suggestion: string | null;
+    analyzedTitle: string;
+  } | null;
 }
 
 interface TaskListProps {
@@ -27,6 +44,9 @@ interface TaskListProps {
 
 export function TaskList({ tasks, showListName = false, showCompleted = true }: TaskListProps) {
   const { t } = useTranslations();
+  const { data: meData } = useQuery<{ me: { id: string; isPremium: boolean } | null }>(GET_ME);
+  const isPremium = meData?.me?.isPremium ?? false;
+  const analyzingIds = useTaskAnalysis(tasks, isPremium);
   const {
     futureTasks,
     completedTasks,
@@ -44,11 +64,11 @@ export function TaskList({ tasks, showListName = false, showCompleted = true }: 
         {activeWithDeparting.map((task) =>
           departingIds.has(task.id) ? (
             <li key={task.id} data-departing={task.id} className="animate-fly-to-future">
-              <TaskItem task={task} showListName={showListName} />
+              <TaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingIds} />
             </li>
           ) : (
             <li key={task.id}>
-              <TaskItem task={task} showListName={showListName} />
+              <TaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingIds} />
             </li>
           ),
         )}
@@ -70,7 +90,7 @@ export function TaskList({ tasks, showListName = false, showCompleted = true }: 
             <ul className="space-y-0.5">
               {futureTasks.map((task) => (
                 <li key={task.id}>
-                  <TaskItem task={task} showListName={showListName} />
+                  <TaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingIds} />
                 </li>
               ))}
             </ul>
@@ -94,7 +114,7 @@ export function TaskList({ tasks, showListName = false, showCompleted = true }: 
             <ul className="space-y-0.5">
               {completedTasks.map((task) => (
                 <li key={task.id}>
-                  <TaskItem task={task} showListName={showListName} />
+                  <TaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingIds} />
                 </li>
               ))}
             </ul>

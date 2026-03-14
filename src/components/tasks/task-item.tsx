@@ -10,6 +10,7 @@ import {
   Bell,
   CalendarDays,
   FolderOutput,
+  Lightbulb,
   Link2,
   List,
   Lock,
@@ -130,6 +131,11 @@ interface Task {
   blockedByTaskIsCompleted?: boolean | null;
   dependentTaskCount?: number;
   attachments?: { id: string }[];
+  aiAnalysis?: {
+    isActionable: boolean;
+    suggestion: string | null;
+    analyzedTitle: string;
+  } | null;
 }
 
 interface TaskItemProps {
@@ -137,6 +143,7 @@ interface TaskItemProps {
   showListName?: boolean;
   onDelete?: () => void;
   fadingOut?: boolean;
+  analyzingTaskIds?: Set<string>;
 }
 
 export const TaskItem = memo(function TaskItem({
@@ -144,6 +151,7 @@ export const TaskItem = memo(function TaskItem({
   showListName = false,
   onDelete,
   fadingOut: externalFadingOut = false,
+  analyzingTaskIds,
 }: TaskItemProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -547,6 +555,24 @@ export const TaskItem = memo(function TaskItem({
                     <span className="text-muted-foreground flex items-center gap-0.5">
                       <Paperclip className="h-3 w-3" />
                     </span>
+                  )}
+                  {/* AI Analysis — not actionable indicator */}
+                  {task.aiAnalysis && !task.aiAnalysis.isActionable && (
+                    <>
+                      <span className="text-muted-foreground">·</span>
+                      <span className="flex items-center gap-0.5 text-yellow-500" title={task.aiAnalysis.suggestion ?? undefined}>
+                        <Lightbulb className="h-3 w-3" />
+                      </span>
+                    </>
+                  )}
+                  {/* AI Analysis — loading indicator */}
+                  {analyzingTaskIds?.has(task.id) && !task.aiAnalysis && (
+                    <>
+                      <span className="text-muted-foreground">·</span>
+                      <span className="flex items-center gap-0.5 text-yellow-500/50">
+                        <Lightbulb className="h-3 w-3 animate-pulse" />
+                      </span>
+                    </>
                   )}
                   {deviceMatch &&
                     (hasAttachments ||

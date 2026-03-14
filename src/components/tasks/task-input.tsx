@@ -73,6 +73,8 @@ export function TaskInput({ listId, placeholder, onTaskCreated }: TaskInputProps
         blockedByTask: null,
         blockedByTaskIsCompleted: null,
         dependentTaskCount: 0,
+        attachments: [],
+        aiAnalysis: null,
       },
       fragment: APP_TASK_FIELDS,
       fragmentName: "AppTaskFields",

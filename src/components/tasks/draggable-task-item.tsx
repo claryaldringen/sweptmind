@@ -14,14 +14,20 @@ interface Task {
   blockedByTaskId?: string | null;
   blockedByTaskIsCompleted?: boolean | null;
   dependentTaskCount?: number;
+  aiAnalysis?: {
+    isActionable: boolean;
+    suggestion: string | null;
+    analyzedTitle: string;
+  } | null;
 }
 
 interface DraggableTaskItemProps {
   task: Task;
   showListName?: boolean;
+  analyzingTaskIds?: Set<string>;
 }
 
-export function DraggableTaskItem({ task, showListName }: DraggableTaskItemProps) {
+export function DraggableTaskItem({ task, showListName, analyzingTaskIds }: DraggableTaskItemProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: task.id,
     data: { type: "task", title: task.title },
@@ -29,7 +35,7 @@ export function DraggableTaskItem({ task, showListName }: DraggableTaskItemProps
 
   return (
     <div ref={setNodeRef} style={{ opacity: isDragging ? 0.5 : 1 }} {...attributes} {...listeners}>
-      <TaskItem task={task} showListName={showListName} />
+      <TaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingTaskIds} />
     </div>
   );
 }

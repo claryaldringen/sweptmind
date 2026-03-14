@@ -4,12 +4,22 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { gql } from "@apollo/client";
-import { useMutation } from "@apollo/client/react";
+import { useMutation, useQuery } from "@apollo/client/react";
 import { SortableTaskItem } from "./sortable-task-item";
 import { TaskItem } from "./task-item";
 import { useTranslations } from "@/lib/i18n";
 import { useTaskDnd } from "@/components/providers/task-dnd-provider";
 import { useDepartureAnimation } from "@/hooks/use-departure-animation";
+import { useTaskAnalysis } from "@/hooks/use-task-analysis";
+
+const GET_ME_FOR_SORTABLE = gql`
+  query GetMeForSortableAnalysis {
+    me {
+      id
+      isPremium
+    }
+  }
+`;
 
 const REORDER_TASKS = gql`
   mutation ReorderTasks($input: [ReorderTaskInput!]!) {
@@ -29,6 +39,11 @@ interface Task {
   blockedByTaskId?: string | null;
   blockedByTaskIsCompleted?: boolean | null;
   dependentTaskCount?: number;
+  aiAnalysis?: {
+    isActionable: boolean;
+    suggestion: string | null;
+    analyzedTitle: string;
+  } | null;
 }
 
 interface SortableTaskListProps {
@@ -43,6 +58,9 @@ export function SortableTaskList({
   showCompleted = true,
 }: SortableTaskListProps) {
   const { t } = useTranslations();
+  const { data: meData } = useQuery<{ me: { id: string; isPremium: boolean } | null }>(GET_ME_FOR_SORTABLE);
+  const isPremium = meData?.me?.isPremium ?? false;
+  const analyzingIds = useTaskAnalysis(tasks, isPremium);
   const { registerTaskReorder } = useTaskDnd();
   const {
     activeTasks,
@@ -113,11 +131,11 @@ export function SortableTaskList({
           {items.map((task) =>
             departingIds.has(task.id) ? (
               <li key={task.id} data-departing={task.id} className="animate-fly-to-future">
-                <TaskItem task={task} showListName={showListName} />
+                <TaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingIds} />
               </li>
             ) : (
               <li key={task.id}>
-                <SortableTaskItem key={task.id} task={task} showListName={showListName} />
+                <SortableTaskItem key={task.id} task={task} showListName={showListName} analyzingTaskIds={analyzingIds} />
               </li>
             ),
           )}
@@ -141,7 +159,7 @@ export function SortableTaskList({
             <ul className="space-y-0.5">
               {futureTasks.map((task) => (
                 <li key={task.id}>
-                  <SortableTaskItem task={task} showListName={showListName} />
+                  <SortableTaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingIds} />
                 </li>
               ))}
             </ul>
@@ -166,7 +184,7 @@ export function SortableTaskList({
             <ul className="space-y-0.5">
               {completedTasks.map((task) => (
                 <li key={task.id}>
-                  <SortableTaskItem task={task} showListName={showListName} />
+                  <SortableTaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingIds} />
                 </li>
               ))}
             </ul>

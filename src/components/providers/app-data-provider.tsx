@@ -71,6 +71,13 @@ export const APP_TASK_FIELDS = gql`
       mimeType
       createdAt
     }
+    aiAnalysis {
+      id
+      taskId
+      isActionable
+      suggestion
+      analyzedTitle
+    }
   }
 `;
 
@@ -244,6 +251,13 @@ export interface AppTask {
   blockedByTaskIsCompleted: boolean | null;
   dependentTaskCount: number;
   attachments: TaskAttachment[];
+  aiAnalysis: {
+    id: string;
+    taskId: string;
+    isActionable: boolean;
+    suggestion: string | null;
+    analyzedTitle: string;
+  } | null;
 }
 
 export interface TagItem {
