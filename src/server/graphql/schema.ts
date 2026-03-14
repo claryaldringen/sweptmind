@@ -12,5 +12,6 @@ import "./types/onboarding";
 import "./types/calendar";
 import "./types/subscription";
 import "./types/attachment";
+import "./types/ai-analysis";
 
 export const schema = builder.toSchema();

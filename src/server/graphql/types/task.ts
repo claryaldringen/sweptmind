@@ -1,5 +1,13 @@
 import { builder } from "../builder";
-import { TaskRef, ListRef, StepRef, TagRef, LocationRef, AttachmentRef } from "./refs";
+import {
+  TaskRef,
+  ListRef,
+  StepRef,
+  TagRef,
+  LocationRef,
+  AttachmentRef,
+  TaskAiAnalysisRef,
+} from "./refs";
 import { createTaskSchema, updateTaskSchema, importTaskSchema } from "@/lib/graphql-validators";
 
 export const TaskType = TaskRef.implement({
@@ -83,6 +91,13 @@ export const TaskType = TaskRef.implement({
       type: [AttachmentRef],
       resolve: async (task, _args, ctx) => {
         return ctx.loaders.attachmentsByTaskId.load(task.id);
+      },
+    }),
+    aiAnalysis: t.field({
+      type: TaskAiAnalysisRef,
+      nullable: true,
+      resolve: async (task, _args, ctx) => {
+        return ctx.loaders.aiAnalysisByTaskId.load(task.id);
       },
     }),
   }),

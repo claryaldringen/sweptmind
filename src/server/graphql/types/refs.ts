@@ -6,6 +6,7 @@ import type { Tag } from "@/domain/entities/tag";
 import type { Location } from "@/domain/entities/location";
 import type { Subscription } from "@/domain/entities/subscription";
 import type { TaskAttachment } from "@/domain/entities/task-attachment";
+import type { TaskAiAnalysis } from "@/domain/entities/task-ai-analysis";
 
 export const UserRef = builder.objectRef<User>("User");
 export const ListRef = builder.objectRef<List>("List");
@@ -16,3 +17,4 @@ export const TagRef = builder.objectRef<Tag>("Tag");
 export const LocationRef = builder.objectRef<Location>("Location");
 export const SubscriptionRef = builder.objectRef<Subscription>("Subscription");
 export const AttachmentRef = builder.objectRef<TaskAttachment>("TaskAttachment");
+export const TaskAiAnalysisRef = builder.objectRef<TaskAiAnalysis>("TaskAiAnalysis");
