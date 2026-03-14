@@ -8,6 +8,7 @@ import { calendarSync } from "./calendar-sync";
 import { pushSubscriptions } from "./push-subscriptions";
 import { subscriptions, bankPayments } from "./subscriptions";
 import { taskAttachments } from "./attachments";
+import { taskAiAnalyses } from "./ai-analyses";
 
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
@@ -69,6 +70,10 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   steps: many(steps),
   taskTags: many(taskTags),
   attachments: many(taskAttachments),
+  aiAnalysis: one(taskAiAnalyses, {
+    fields: [tasks.id],
+    references: [taskAiAnalyses.taskId],
+  }),
 }));
 
 export const stepsRelations = relations(steps, ({ one }) => ({
@@ -141,6 +146,13 @@ export const bankPaymentsRelations = relations(bankPayments, ({ one }) => ({
 export const taskAttachmentsRelations = relations(taskAttachments, ({ one }) => ({
   task: one(tasks, {
     fields: [taskAttachments.taskId],
+    references: [tasks.id],
+  }),
+}));
+
+export const taskAiAnalysesRelations = relations(taskAiAnalyses, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskAiAnalyses.taskId],
     references: [tasks.id],
   }),
 }));

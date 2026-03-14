@@ -7,4 +7,5 @@ export * from "./calendar-sync";
 export * from "./push-subscriptions";
 export * from "./subscriptions";
 export * from "./attachments";
+export * from "./ai-analyses";
 export * from "./relations";
