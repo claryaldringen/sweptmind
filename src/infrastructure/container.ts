@@ -10,6 +10,8 @@ import { DrizzleLocationRepository } from "./persistence/drizzle-location.reposi
 import { DrizzleCalendarSyncRepository } from "./persistence/drizzle-calendar-sync.repository";
 import { DrizzleSubscriptionRepository } from "./persistence/drizzle-subscription.repository";
 import { DrizzleAttachmentRepository } from "./persistence/drizzle-attachment.repository";
+import { DrizzleTaskAiAnalysisRepository } from "./persistence/drizzle-task-ai-analysis.repository";
+import { OllamaProvider } from "./llm/ollama-provider";
 import { TaskService } from "@/domain/services/task.service";
 import { ListService } from "@/domain/services/list.service";
 import { StepService } from "@/domain/services/step.service";
@@ -22,6 +24,7 @@ import { UserService } from "@/domain/services/user.service";
 import { OnboardingService } from "@/domain/services/onboarding.service";
 import { SubscriptionService } from "@/domain/services/subscription.service";
 import { AttachmentService } from "@/domain/services/attachment.service";
+import { AiService } from "@/domain/services/ai.service";
 
 const taskRepo = new DrizzleTaskRepository(db);
 const listRepo = new DrizzleListRepository(db);
@@ -33,6 +36,8 @@ const locationRepo = new DrizzleLocationRepository(db);
 const calendarSyncRepo = new DrizzleCalendarSyncRepository(db);
 const subscriptionRepo = new DrizzleSubscriptionRepository(db);
 const attachmentRepo = new DrizzleAttachmentRepository(db);
+const aiAnalysisRepo = new DrizzleTaskAiAnalysisRepository(db);
+const llmProvider = new OllamaProvider();
 
 const bcryptHasher: IPasswordHasher = {
   hash: (password) => hash(password, 12),
@@ -51,6 +56,7 @@ export const repos = {
   calendarSync: calendarSyncRepo,
   subscription: subscriptionRepo,
   attachment: attachmentRepo,
+  aiAnalysis: aiAnalysisRepo,
   user: userRepo,
 };
 
@@ -71,6 +77,7 @@ export const services = {
   onboarding: new OnboardingService(listRepo, locationRepo, userRepo),
   subscription: subscriptionService,
   attachment: new AttachmentService(attachmentRepo, taskRepo, subscriptionService),
+  ai: new AiService(aiAnalysisRepo, taskRepo, llmProvider, subscriptionService),
 };
 
 export type Services = typeof services;
