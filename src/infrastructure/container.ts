@@ -12,6 +12,8 @@ import { DrizzleSubscriptionRepository } from "./persistence/drizzle-subscriptio
 import { DrizzleAttachmentRepository } from "./persistence/drizzle-attachment.repository";
 import { DrizzleTaskAiAnalysisRepository } from "./persistence/drizzle-task-ai-analysis.repository";
 import { OllamaProvider } from "./llm/ollama-provider";
+import { OpenAiCompatibleProvider } from "./llm/openai-compatible-provider";
+import type { ILlmProvider } from "@/domain/ports/llm-provider";
 import { TaskService } from "@/domain/services/task.service";
 import { ListService } from "@/domain/services/list.service";
 import { StepService } from "@/domain/services/step.service";
@@ -37,7 +39,15 @@ const calendarSyncRepo = new DrizzleCalendarSyncRepository(db);
 const subscriptionRepo = new DrizzleSubscriptionRepository(db);
 const attachmentRepo = new DrizzleAttachmentRepository(db);
 const aiAnalysisRepo = new DrizzleTaskAiAnalysisRepository(db);
-const llmProvider = new OllamaProvider();
+function createLlmProvider(): ILlmProvider {
+  const provider = process.env.LLM_PROVIDER || "ollama";
+  if (provider === "openai") {
+    return new OpenAiCompatibleProvider();
+  }
+  return new OllamaProvider();
+}
+
+const llmProvider = createLlmProvider();
 
 const bcryptHasher: IPasswordHasher = {
   hash: (password) => hash(password, 12),
