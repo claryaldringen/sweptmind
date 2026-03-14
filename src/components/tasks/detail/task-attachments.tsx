@@ -5,6 +5,17 @@ import { gql } from "@apollo/client";
 import { useMutation, useLazyQuery } from "@apollo/client/react";
 import { File, FileText, Image, Lock, Paperclip, Trash2, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
@@ -82,6 +93,10 @@ interface TaskAttachmentsProps {
   storageFullLabel: string;
   dragDropHintLabel: string;
   uploadingLabel: string;
+  deleteConfirmTitle: string;
+  deleteConfirmDesc: string;
+  deleteConfirmCancel: string;
+  deleteConfirmAction: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -119,6 +134,10 @@ export function TaskAttachments({
   storageFullLabel,
   dragDropHintLabel,
   uploadingLabel,
+  deleteConfirmTitle,
+  deleteConfirmDesc,
+  deleteConfirmCancel,
+  deleteConfirmAction,
 }: TaskAttachmentsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
@@ -295,10 +314,13 @@ export function TaskAttachments({
     const fileList = e.target.files;
     if (!fileList || fileList.length === 0) return;
 
+    // Copy files BEFORE resetting input (FileList is a live object)
+    const files = Array.from(fileList);
+
     // Reset input so same file can be selected again
     e.target.value = "";
 
-    await handleFiles(Array.from(fileList));
+    await handleFiles(files);
   }
 
   function handleDragOver(e: React.DragEvent) {
@@ -375,15 +397,28 @@ export function TaskAttachments({
                     >
                       <Download className="h-3 w-3" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => handleDelete(attachment.id)}
-                      title={deleteLabel}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" title={deleteLabel}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{deleteConfirmTitle}</AlertDialogTitle>
+                          <AlertDialogDescription>{deleteConfirmDesc}</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{deleteConfirmCancel}</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => handleDelete(attachment.id)}
+                          >
+                            {deleteConfirmAction}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 ) : (
                   <Lock className="text-muted-foreground h-3 w-3 shrink-0" />

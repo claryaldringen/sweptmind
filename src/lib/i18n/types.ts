@@ -315,6 +315,7 @@ export interface Dictionary {
     scanQRDesc: string;
     uploadFile: string;
     deleteFile: string;
+    deleteFileConfirmDesc: string;
     downloadFile: string;
     premiumRequired: string;
     premiumRequiredDesc: string;
@@ -333,6 +334,8 @@ export interface Dictionary {
     activeSubscription: string;
     redirecting: string;
     closeQR: string;
+    aiAnalyzing: string;
+    aiNotActionable: string;
   };
   validation: {
     invalidEmail: string;

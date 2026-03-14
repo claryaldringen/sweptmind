@@ -32,13 +32,6 @@ interface AnalyzeTaskResult {
   } | null;
 }
 
-interface MeResult {
-  me: {
-    id: string;
-    isPremium: boolean;
-  } | null;
-}
-
 export function useTaskAnalysis(tasks: AnalyzableTask[], isPremium: boolean) {
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
   const analyzedRef = useRef<Set<string>>(new Set());
@@ -74,8 +67,7 @@ export function useTaskAnalysis(tasks: AnalyzableTask[], isPremium: boolean) {
 
     const needsAnalysis = tasks.filter(
       (t) =>
-        !analyzedRef.current.has(t.id) &&
-        (!t.aiAnalysis || t.aiAnalysis.analyzedTitle !== t.title),
+        !analyzedRef.current.has(t.id) && (!t.aiAnalysis || t.aiAnalysis.analyzedTitle !== t.title),
     );
 
     if (needsAnalysis.length === 0) return;

@@ -90,7 +90,11 @@ export function TaskList({ tasks, showListName = false, showCompleted = true }: 
             <ul className="space-y-0.5">
               {futureTasks.map((task) => (
                 <li key={task.id}>
-                  <TaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingIds} />
+                  <TaskItem
+                    task={task}
+                    showListName={showListName}
+                    analyzingTaskIds={analyzingIds}
+                  />
                 </li>
               ))}
             </ul>
@@ -114,7 +118,11 @@ export function TaskList({ tasks, showListName = false, showCompleted = true }: 
             <ul className="space-y-0.5">
               {completedTasks.map((task) => (
                 <li key={task.id}>
-                  <TaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingIds} />
+                  <TaskItem
+                    task={task}
+                    showListName={showListName}
+                    analyzingTaskIds={analyzingIds}
+                  />
                 </li>
               ))}
             </ul>

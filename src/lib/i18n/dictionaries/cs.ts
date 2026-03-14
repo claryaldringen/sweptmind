@@ -337,6 +337,7 @@ export const cs: Dictionary = {
     scanQRDesc: "Naskenujte v bankovní aplikaci",
     uploadFile: "Přidat přílohu",
     deleteFile: "Smazat",
+    deleteFileConfirmDesc: "Opravdu chceš smazat tuto přílohu? Tuto akci nelze vrátit zpět.",
     downloadFile: "Stáhnout",
     premiumRequired: "Premium funkce",
     premiumRequiredDesc: "Upgradujte na Premium pro nahrávání a stahování příloh",
@@ -355,6 +356,8 @@ export const cs: Dictionary = {
     activeSubscription: "Aktivní předplatné",
     redirecting: "Přesměrování...",
     closeQR: "Zavřít",
+    aiAnalyzing: "Analyzuji...",
+    aiNotActionable: "Tento úkol není konkrétní next action",
   },
   validation: {
     invalidEmail: "Neplatná e-mailová adresa",

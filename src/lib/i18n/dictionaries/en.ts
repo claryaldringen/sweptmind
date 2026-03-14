@@ -338,6 +338,8 @@ export const en: Dictionary = {
     scanQRDesc: "Scan with your banking app to pay",
     uploadFile: "Add attachment",
     deleteFile: "Delete",
+    deleteFileConfirmDesc:
+      "Are you sure you want to delete this attachment? This action cannot be undone.",
     downloadFile: "Download",
     premiumRequired: "Premium feature",
     premiumRequiredDesc: "Upgrade to Premium to upload and download attachments",
@@ -356,6 +358,8 @@ export const en: Dictionary = {
     activeSubscription: "Active subscription",
     redirecting: "Redirecting...",
     closeQR: "Close",
+    aiAnalyzing: "Analyzing...",
+    aiNotActionable: "This task is not a concrete next action",
   },
   validation: {
     invalidEmail: "Invalid email address",

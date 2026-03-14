@@ -43,8 +43,6 @@ export class DrizzleTaskAiAnalysisRepository implements ITaskAiAnalysisRepositor
   }
 
   async deleteByTaskId(taskId: string): Promise<void> {
-    await this.db
-      .delete(schema.taskAiAnalyses)
-      .where(eq(schema.taskAiAnalyses.taskId, taskId));
+    await this.db.delete(schema.taskAiAnalyses).where(eq(schema.taskAiAnalyses.taskId, taskId));
   }
 }

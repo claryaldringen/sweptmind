@@ -560,7 +560,10 @@ export const TaskItem = memo(function TaskItem({
                   {task.aiAnalysis && !task.aiAnalysis.isActionable && (
                     <>
                       <span className="text-muted-foreground">·</span>
-                      <span className="flex items-center gap-0.5 text-yellow-500" title={task.aiAnalysis.suggestion ?? undefined}>
+                      <span
+                        className="flex items-center gap-0.5 text-yellow-500"
+                        title={task.aiAnalysis.suggestion ?? t("premium.aiNotActionable")}
+                      >
                         <Lightbulb className="h-3 w-3" />
                       </span>
                     </>
@@ -569,7 +572,10 @@ export const TaskItem = memo(function TaskItem({
                   {analyzingTaskIds?.has(task.id) && !task.aiAnalysis && (
                     <>
                       <span className="text-muted-foreground">·</span>
-                      <span className="flex items-center gap-0.5 text-yellow-500/50">
+                      <span
+                        className="flex items-center gap-0.5 text-yellow-500/50"
+                        title={t("premium.aiAnalyzing")}
+                      >
                         <Lightbulb className="h-3 w-3 animate-pulse" />
                       </span>
                     </>

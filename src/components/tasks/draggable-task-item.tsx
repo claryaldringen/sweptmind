@@ -27,7 +27,11 @@ interface DraggableTaskItemProps {
   analyzingTaskIds?: Set<string>;
 }
 
-export function DraggableTaskItem({ task, showListName, analyzingTaskIds }: DraggableTaskItemProps) {
+export function DraggableTaskItem({
+  task,
+  showListName,
+  analyzingTaskIds,
+}: DraggableTaskItemProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: task.id,
     data: { type: "task", title: task.title },

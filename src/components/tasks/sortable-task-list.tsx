@@ -58,7 +58,9 @@ export function SortableTaskList({
   showCompleted = true,
 }: SortableTaskListProps) {
   const { t } = useTranslations();
-  const { data: meData } = useQuery<{ me: { id: string; isPremium: boolean } | null }>(GET_ME_FOR_SORTABLE);
+  const { data: meData } = useQuery<{ me: { id: string; isPremium: boolean } | null }>(
+    GET_ME_FOR_SORTABLE,
+  );
   const isPremium = meData?.me?.isPremium ?? false;
   const analyzingIds = useTaskAnalysis(tasks, isPremium);
   const { registerTaskReorder } = useTaskDnd();
@@ -135,7 +137,12 @@ export function SortableTaskList({
               </li>
             ) : (
               <li key={task.id}>
-                <SortableTaskItem key={task.id} task={task} showListName={showListName} analyzingTaskIds={analyzingIds} />
+                <SortableTaskItem
+                  key={task.id}
+                  task={task}
+                  showListName={showListName}
+                  analyzingTaskIds={analyzingIds}
+                />
               </li>
             ),
           )}
@@ -159,7 +166,11 @@ export function SortableTaskList({
             <ul className="space-y-0.5">
               {futureTasks.map((task) => (
                 <li key={task.id}>
-                  <SortableTaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingIds} />
+                  <SortableTaskItem
+                    task={task}
+                    showListName={showListName}
+                    analyzingTaskIds={analyzingIds}
+                  />
                 </li>
               ))}
             </ul>
@@ -184,7 +195,11 @@ export function SortableTaskList({
             <ul className="space-y-0.5">
               {completedTasks.map((task) => (
                 <li key={task.id}>
-                  <SortableTaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingIds} />
+                  <SortableTaskItem
+                    task={task}
+                    showListName={showListName}
+                    analyzingTaskIds={analyzingIds}
+                  />
                 </li>
               ))}
             </ul>
