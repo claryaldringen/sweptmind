@@ -48,6 +48,7 @@ function makeStepRepo(overrides: Partial<IStepRepository> = {}): IStepRepository
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    deleteMany: vi.fn(),
     ...overrides,
   };
 }
@@ -77,6 +78,8 @@ function makeTaskRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository
     findByUser: vi.fn().mockResolvedValue([]),
     findActiveByUser: vi.fn().mockResolvedValue([]),
     findCompletedByUser: vi.fn().mockResolvedValue([]),
+    deleteMany: vi.fn(),
+    updateMany: vi.fn(),
     ...overrides,
   };
 }

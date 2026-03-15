@@ -71,6 +71,8 @@ function makeTaskRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository
     findByUser: vi.fn().mockResolvedValue([]),
     findActiveByUser: vi.fn().mockResolvedValue([]),
     findCompletedByUser: vi.fn().mockResolvedValue([]),
+    deleteMany: vi.fn(),
+    updateMany: vi.fn(),
     ...overrides,
   };
 }

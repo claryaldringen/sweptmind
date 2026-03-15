@@ -61,6 +61,7 @@ function makeListRepo(overrides: Partial<IListRepository> = {}): IListRepository
     deleteNonDefault: vi.fn(),
     updateSortOrder: vi.fn(),
     ungroupByGroupId: vi.fn(),
+    deleteManyNonDefault: vi.fn(),
     ...overrides,
   };
 }
@@ -86,6 +87,7 @@ function makeStepRepo(overrides: Partial<IStepRepository> = {}): IStepRepository
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    deleteMany: vi.fn(),
     ...overrides,
   };
 }
@@ -115,6 +117,8 @@ function makeRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository {
     findByUser: vi.fn().mockResolvedValue([]),
     findActiveByUser: vi.fn().mockResolvedValue([]),
     findCompletedByUser: vi.fn().mockResolvedValue([]),
+    deleteMany: vi.fn(),
+    updateMany: vi.fn(),
     ...overrides,
   };
 }
@@ -806,6 +810,80 @@ describe("TaskService", () => {
       await service.setDependency("task-a", "user-1", "task-b");
 
       expect(repo.update).toHaveBeenCalledWith("task-a", "user-1", { blockedByTaskId: "task-b" });
+    });
+  });
+
+  describe("deleteMany", () => {
+    it("smaže více úkolů najednou", async () => {
+      vi.mocked(repo.deleteMany).mockResolvedValue(undefined);
+
+      const result = await service.deleteMany(["task-1", "task-2"], "user-1");
+
+      expect(result).toBe(true);
+      expect(repo.deleteMany).toHaveBeenCalledWith(["task-1", "task-2"], "user-1");
+    });
+  });
+
+  describe("updateMany", () => {
+    it("aktualizuje listId pro více úkolů", async () => {
+      vi.mocked(repo.updateMany).mockResolvedValue(undefined);
+
+      const result = await service.updateMany(["task-1", "task-2"], "user-1", { listId: "list-2" });
+
+      expect(result).toBe(true);
+      expect(repo.updateMany).toHaveBeenCalledWith(
+        ["task-1", "task-2"],
+        "user-1",
+        expect.objectContaining({ listId: "list-2" }),
+      );
+    });
+
+    it("nastaví reminderAt při změně dueDate", async () => {
+      vi.mocked(repo.updateMany).mockResolvedValue(undefined);
+
+      await service.updateMany(["task-1"], "user-1", { dueDate: "2026-03-20" });
+
+      expect(repo.updateMany).toHaveBeenCalledWith(
+        ["task-1"],
+        "user-1",
+        expect.objectContaining({
+          dueDate: "2026-03-20",
+          reminderAt: expect.any(String),
+        }),
+      );
+    });
+  });
+
+  describe("setManyCompleted", () => {
+    it("označí více úkolů jako dokončené", async () => {
+      vi.mocked(repo.updateMany).mockResolvedValue(undefined);
+
+      const result = await service.setManyCompleted(["task-1", "task-2"], "user-1", true);
+
+      expect(result).toBe(true);
+      expect(repo.updateMany).toHaveBeenCalledWith(
+        ["task-1", "task-2"],
+        "user-1",
+        expect.objectContaining({
+          isCompleted: true,
+          completedAt: expect.any(Date),
+        }),
+      );
+    });
+
+    it("označí více úkolů jako nedokončené", async () => {
+      vi.mocked(repo.updateMany).mockResolvedValue(undefined);
+
+      await service.setManyCompleted(["task-1"], "user-1", false);
+
+      expect(repo.updateMany).toHaveBeenCalledWith(
+        ["task-1"],
+        "user-1",
+        expect.objectContaining({
+          isCompleted: false,
+          completedAt: null,
+        }),
+      );
     });
   });
 });

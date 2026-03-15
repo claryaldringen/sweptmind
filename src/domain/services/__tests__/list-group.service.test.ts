@@ -39,6 +39,7 @@ function makeListRepo(overrides: Partial<IListRepository> = {}): IListRepository
     deleteNonDefault: vi.fn(),
     updateSortOrder: vi.fn(),
     ungroupByGroupId: vi.fn(),
+    deleteManyNonDefault: vi.fn(),
     ...overrides,
   };
 }
