@@ -189,6 +189,7 @@ export function veventToTaskData(ical: string): VeventTaskData | null {
     title: unescapeIcalText(summary),
     notes: description ? unescapeIcalText(description) : null,
     dueDate: dtstart ? parseIcalDate(dtstart) : null,
+    dueDateEnd: null,
     isCompleted: status?.toUpperCase() === "COMPLETED",
     recurrence: rrule ? rruleToRecurrence(rrule) : null,
     icalUid: uid,

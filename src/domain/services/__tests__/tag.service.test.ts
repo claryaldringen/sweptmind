@@ -32,6 +32,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     isCompleted: false,
     completedAt: null,
     dueDate: null,
+    dueDateEnd: null,
     reminderAt: null,
     recurrence: null,
     deviceContext: null,

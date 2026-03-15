@@ -23,6 +23,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     isCompleted: false,
     completedAt: null,
     dueDate: null,
+    dueDateEnd: null,
     reminderAt: null,
     recurrence: null,
     deviceContext: null,
@@ -40,6 +41,11 @@ function makeAnalysis(overrides: Partial<TaskAiAnalysis> = {}): TaskAiAnalysis {
     taskId: "task-1",
     isActionable: false,
     suggestion: 'Rewrite as "Buy milk and eggs at the store"',
+    suggestedTitle: null,
+    projectName: null,
+    decomposition: null,
+    duplicateTaskId: null,
+    callIntent: null,
     analyzedTitle: "Buy groceries",
     createdAt: new Date("2024-01-01"),
     ...overrides,
@@ -92,7 +98,9 @@ function makeListRepo(): IListRepository {
   return {
     findById: vi.fn().mockResolvedValue(undefined),
     findByIds: vi.fn().mockResolvedValue([]),
-    findByUser: vi.fn().mockResolvedValue([]),
+    findByUser: vi.fn().mockResolvedValue([
+      { id: "list-1", name: "Tasks", userId: "user-1", isDefault: true, groupId: null, sortOrder: 0, createdAt: new Date() },
+    ]),
     findByGroup: vi.fn().mockResolvedValue([]),
     findMaxSortOrder: vi.fn().mockResolvedValue(undefined),
     create: vi.fn(),
@@ -108,10 +116,7 @@ function makeLlmProvider(overrides: Partial<ILlmProvider> = {}): ILlmProvider {
   return {
     analyzeTask: vi
       .fn()
-      .mockResolvedValue({ isActionable: true, suggestion: "Looks good as an action" }),
-    decomposeTask: vi
-      .fn()
-      .mockResolvedValue({ steps: [] }),
+      .mockResolvedValue({ isActionable: true, suggestion: null, suggestedTitle: null, projectName: null, steps: null, duplicateTaskId: null, callIntent: null }),
     ...overrides,
   };
 }
@@ -190,7 +195,7 @@ describe("AiService", () => {
 
   it("vrati cachovanu analyzu pokud se title nezmenil (nevola LLM)", async () => {
     const task = makeTask({ title: "Buy groceries" });
-    const cached = makeAnalysis({ analyzedTitle: "Buy groceries" });
+    const cached = makeAnalysis({ analyzedTitle: "Buy groceries", isActionable: true });
     vi.mocked(taskRepo.findById).mockResolvedValue(task);
     vi.mocked(analysisRepo.findByTaskId).mockResolvedValue(cached);
 
@@ -203,7 +208,7 @@ describe("AiService", () => {
 
   it("zavola LLM a ulozi vysledek kdyz analyza neexistuje", async () => {
     const task = makeTask({ title: "Buy groceries" });
-    const newAnalysis = makeAnalysis({ isActionable: true, suggestion: "Looks good as an action" });
+    const newAnalysis = makeAnalysis({ isActionable: true, suggestion: null, projectName: null, decomposition: null });
     vi.mocked(taskRepo.findById).mockResolvedValue(task);
     vi.mocked(analysisRepo.findByTaskId).mockResolvedValue(undefined);
     vi.mocked(analysisRepo.upsert).mockResolvedValue(newAnalysis);
@@ -211,11 +216,16 @@ describe("AiService", () => {
     const result = await service.analyzeTask("task-1", "user-1");
 
     expect(result).toEqual(newAnalysis);
-    expect(llm.analyzeTask).toHaveBeenCalledWith("Buy groceries", "en");
+    expect(llm.analyzeTask).toHaveBeenCalledWith("Buy groceries", "en", { lists: ["Tasks"], tasks: [], deviceContext: null, listName: null });
     expect(analysisRepo.upsert).toHaveBeenCalledWith({
       taskId: "task-1",
       isActionable: true,
-      suggestion: "Looks good as an action",
+      suggestion: null,
+      suggestedTitle: null,
+      projectName: null,
+      decomposition: null,
+      duplicateTaskId: null,
+      callIntent: null,
       analyzedTitle: "Buy groceries",
     });
   });
@@ -226,7 +236,9 @@ describe("AiService", () => {
     const updatedAnalysis = makeAnalysis({
       analyzedTitle: "Buy milk and eggs",
       isActionable: true,
-      suggestion: "Looks good as an action",
+      suggestion: null,
+      projectName: null,
+      decomposition: null,
     });
     vi.mocked(taskRepo.findById).mockResolvedValue(task);
     vi.mocked(analysisRepo.findByTaskId).mockResolvedValue(oldCached);
@@ -235,11 +247,16 @@ describe("AiService", () => {
     const result = await service.analyzeTask("task-1", "user-1");
 
     expect(result).toEqual(updatedAnalysis);
-    expect(llm.analyzeTask).toHaveBeenCalledWith("Buy milk and eggs", "en");
+    expect(llm.analyzeTask).toHaveBeenCalledWith("Buy milk and eggs", "en", { lists: ["Tasks"], tasks: [], deviceContext: null, listName: null });
     expect(analysisRepo.upsert).toHaveBeenCalledWith({
       taskId: "task-1",
       isActionable: true,
-      suggestion: "Looks good as an action",
+      suggestion: null,
+      suggestedTitle: null,
+      projectName: null,
+      decomposition: null,
+      duplicateTaskId: null,
+      callIntent: null,
       analyzedTitle: "Buy milk and eggs",
     });
   });
@@ -259,7 +276,7 @@ describe("AiService", () => {
     const customLlm = makeLlmProvider({
       analyzeTask: vi
         .fn()
-        .mockResolvedValue({ isActionable: false, suggestion: "Custom suggestion" }),
+        .mockResolvedValue({ isActionable: false, suggestion: "Custom suggestion", suggestedTitle: null, projectName: "Groceries", steps: [{ title: "Buy milk", listName: null, dependsOn: null }], duplicateTaskId: null, callIntent: null }),
     });
     const customUserRepo = makeUserRepo({
       llmProvider: "openai",
@@ -281,7 +298,7 @@ describe("AiService", () => {
     const task = makeTask({ title: "Handle project" });
     vi.mocked(taskRepo.findById).mockResolvedValue(task);
     vi.mocked(analysisRepo.upsert).mockResolvedValue(
-      makeAnalysis({ isActionable: false, suggestion: "Custom suggestion" }),
+      makeAnalysis({ isActionable: false, suggestion: "Custom suggestion", projectName: "Groceries", decomposition: [{ title: "Buy milk", listName: null, dependsOn: null }] }),
     );
 
     await service.analyzeTask("task-1", "user-1");
@@ -292,7 +309,7 @@ describe("AiService", () => {
       baseUrl: "https://custom.api/v1",
       model: "custom-model",
     });
-    expect(customLlm.analyzeTask).toHaveBeenCalledWith("Handle project", "en");
+    expect(customLlm.analyzeTask).toHaveBeenCalledWith("Handle project", "en", { lists: ["Tasks"], tasks: [], deviceContext: null, listName: null });
     expect(llm.analyzeTask).not.toHaveBeenCalled();
   });
 

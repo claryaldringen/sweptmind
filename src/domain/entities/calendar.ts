@@ -3,6 +3,7 @@ export interface VeventTaskData {
   title: string;
   notes: string | null;
   dueDate: string | null;
+  dueDateEnd: string | null;
   recurrence: string | null;
   isCompleted: boolean;
 }

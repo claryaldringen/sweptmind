@@ -9,6 +9,7 @@ export interface Task {
   isCompleted: boolean;
   completedAt: Date | null;
   dueDate: string | null;
+  dueDateEnd: string | null;
   reminderAt: string | null;
   recurrence: string | null;
   deviceContext: string | null;
@@ -33,6 +34,7 @@ export interface CreateTaskInput {
   title: string;
   notes?: string | null;
   dueDate?: string | null;
+  dueDateEnd?: string | null;
   locationId?: string | null;
   locationRadius?: number | null;
   deviceContext?: string | null;
@@ -42,6 +44,7 @@ export interface UpdateTaskInput {
   title?: string | null;
   notes?: string | null;
   dueDate?: string | null;
+  dueDateEnd?: string | null;
   reminderAt?: string | null;
   recurrence?: string | null;
   listId?: string | null;
