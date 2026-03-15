@@ -393,6 +393,7 @@ export const TaskItem = memo(function TaskItem({
     taskSelection?.handleClick(task.id, {});
     const params = new URLSearchParams(searchParams.toString());
     params.set("task", task.id);
+    params.delete("ai");
     router.push(`?${params.toString()}`, { scroll: false });
   }
 

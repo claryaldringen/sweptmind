@@ -571,7 +571,19 @@ export function TaskDetailPanel() {
     },
   });
 
-  const [createTask] = useMutation(CREATE_TASK);
+  const [createTask] = useMutation<{
+    createTask: {
+      id: string;
+      listId: string;
+      title: string;
+      notes: string | null;
+      isCompleted: boolean;
+      dueDate: string | null;
+      sortOrder: number;
+      createdAt: string;
+      steps: TaskStep[];
+    };
+  }>(CREATE_TASK);
 
   // ---- Hooks ----
 
@@ -733,29 +745,139 @@ export function TaskDetailPanel() {
 
   async function handleApplyDecomposition(steps: { title: string; listName: string | null }[]) {
     if (!task || steps.length === 0) return;
+    const taskTags = task.tags ?? [];
+
     // Step 1: Rename current task to first step
     optimisticUpdate({ title: steps[0].title });
-    // If the first step has a different list, move it
     if (steps[0].listName) {
       const targetList = allLists.find((l) => l.name === steps[0].listName);
       if (targetList) optimisticUpdate({ listId: targetList.id });
     }
-    // Step 2: Create remaining steps as new tasks
+
+    // Step 2: Create remaining steps as new tasks with cache update, tags, and dependency chain
+    let previousTaskId = task.id;
     for (let i = 1; i < steps.length; i++) {
       const step = steps[i];
       const targetList = step.listName
         ? allLists.find((l) => l.name === step.listName)
         : null;
-      await createTask({
+      const newId = crypto.randomUUID();
+      const result = await createTask({
         variables: {
           input: {
-            id: crypto.randomUUID(),
+            id: newId,
             listId: targetList?.id ?? task.listId,
             title: step.title,
           },
         },
+        update(cache, { data }) {
+          if (!data?.createTask) return;
+          cache.modify({
+            fields: {
+              visibleTasks(existing = []) {
+                const newRef = cache.writeFragment({
+                  data: {
+                    ...data.createTask,
+                    __typename: "Task",
+                    reminderAt: null,
+                    recurrence: null,
+                    locationId: null,
+                    locationRadius: null,
+                    location: null,
+                    deviceContext: null,
+                    completedAt: null,
+                    tags: [],
+                    attachments: [],
+                    aiAnalysis: null,
+                    blockedByTaskId: null,
+                    blockedByTaskIsCompleted: null,
+                    dependentTaskCount: 0,
+                    list: targetList
+                      ? { __typename: "List", id: targetList.id, name: targetList.name }
+                      : task!.list,
+                  },
+                  fragment: gql`
+                    fragment NewDecomposedTask on Task {
+                      id
+                      listId
+                      title
+                      notes
+                      isCompleted
+                      dueDate
+                      reminderAt
+                      recurrence
+                      sortOrder
+                      createdAt
+                      completedAt
+                      locationId
+                      locationRadius
+                      location { id name latitude longitude radius }
+                      deviceContext
+                      tags { id name color }
+                      steps { id taskId title isCompleted sortOrder }
+                      attachments { id }
+                      aiAnalysis { isActionable suggestion analyzedTitle }
+                      blockedByTaskId
+                      blockedByTaskIsCompleted
+                      dependentTaskCount
+                      list { id name }
+                    }
+                  `,
+                });
+                return [...existing, newRef];
+              },
+            },
+          });
+        },
       });
+
+      const createdId = result.data?.createTask?.id ?? newId;
+
+      // Copy tags from original task
+      for (const tag of taskTags) {
+        await addTagToTask({
+          variables: { taskId: createdId, tagId: tag.id },
+          update(cache) {
+            cache.modify({
+              id: cache.identify({ __typename: "Task", id: createdId }),
+              fields: {
+                tags(existing = []) {
+                  const newRef = cache.writeFragment({
+                    data: tag,
+                    fragment: gql`
+                      fragment CopiedTag on Tag { id name color }
+                    `,
+                  });
+                  return [...existing, newRef];
+                },
+              },
+            });
+          },
+        });
+      }
+
+      // Set dependency chain: each task blocked by the previous one
+      await updateTask({
+        variables: { id: createdId, input: { blockedByTaskId: previousTaskId } },
+      });
+      apolloClient.cache.modify({
+        id: apolloClient.cache.identify({ __typename: "Task", id: createdId }),
+        fields: {
+          blockedByTaskId: () => previousTaskId,
+          blockedByTaskIsCompleted: () => false,
+        },
+      });
+      // Update dependent count on previous task
+      apolloClient.cache.modify({
+        id: apolloClient.cache.identify({ __typename: "Task", id: previousTaskId }),
+        fields: {
+          dependentTaskCount(existing = 0) { return existing + 1; },
+        },
+      });
+
+      previousTaskId = createdId;
     }
+
     // Step 3: Remove ai param from URL
     const params = new URLSearchParams(searchParams.toString());
     params.delete("ai");
