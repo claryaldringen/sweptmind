@@ -855,6 +855,87 @@ describe("TaskService", () => {
     });
   });
 
+  describe("dueDateEnd", () => {
+    it("create passes dueDateEnd through", async () => {
+      vi.mocked(repo.findMinSortOrder).mockResolvedValue(undefined);
+      vi.mocked(repo.create).mockResolvedValue(makeTask());
+
+      await service.create("user-1", {
+        listId: "list-1",
+        title: "Multi-day",
+        dueDate: "2026-03-21",
+        dueDateEnd: "2026-03-23",
+      });
+
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ dueDateEnd: "2026-03-23" }),
+      );
+    });
+
+    it("update passes dueDateEnd through", async () => {
+      vi.mocked(repo.update).mockResolvedValue(makeTask());
+
+      await service.update("task-1", "user-1", { dueDateEnd: "2026-03-23" });
+
+      expect(repo.update).toHaveBeenCalledWith(
+        "task-1",
+        "user-1",
+        expect.objectContaining({ dueDateEnd: "2026-03-23" }),
+      );
+    });
+
+    it("clearing dueDate also clears dueDateEnd", async () => {
+      vi.mocked(repo.update).mockResolvedValue(makeTask());
+
+      await service.update("task-1", "user-1", { dueDate: null });
+
+      expect(repo.update).toHaveBeenCalledWith(
+        "task-1",
+        "user-1",
+        expect.objectContaining({ dueDateEnd: null }),
+      );
+    });
+
+    it("recurring task completion preserves range duration", async () => {
+      const task = makeTask({
+        isCompleted: false,
+        dueDate: "2026-03-21",
+        dueDateEnd: "2026-03-23",
+        recurrence: "WEEKLY:6",
+      });
+      vi.mocked(repo.findById).mockResolvedValue(task);
+      vi.mocked(repo.update).mockResolvedValue(makeTask({ dueDate: "2026-03-28" }));
+
+      await service.toggleCompleted("task-1", "user-1");
+
+      expect(repo.update).toHaveBeenCalledWith(
+        "task-1",
+        "user-1",
+        expect.objectContaining({
+          dueDate: "2026-03-28",
+          dueDateEnd: "2026-03-30",
+        }),
+      );
+    });
+
+    it("recurring task completion with no dueDateEnd doesn't add one", async () => {
+      const task = makeTask({
+        isCompleted: false,
+        dueDate: "2026-03-21",
+        dueDateEnd: null,
+        recurrence: "WEEKLY:6",
+      });
+      vi.mocked(repo.findById).mockResolvedValue(task);
+      vi.mocked(repo.update).mockResolvedValue(makeTask({ dueDate: "2026-03-28" }));
+
+      await service.toggleCompleted("task-1", "user-1");
+
+      const updateCall = vi.mocked(repo.update).mock.calls[0];
+      const updateData = updateCall[2];
+      expect(updateData).not.toHaveProperty("dueDateEnd");
+    });
+  });
+
   describe("setManyCompleted", () => {
     it("označí více úkolů jako dokončené", async () => {
       vi.mocked(repo.updateMany).mockResolvedValue(undefined);

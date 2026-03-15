@@ -92,6 +92,7 @@ export class TaskService {
       title: input.title,
       notes: input.notes ?? null,
       dueDate,
+      dueDateEnd: input.dueDateEnd ?? null,
       reminderAt: computeDefaultReminder(dueDate),
       locationId: input.locationId ?? null,
       deviceContext: input.deviceContext ?? null,
@@ -131,6 +132,13 @@ export class TaskService {
         }
       }
     }
+    if (input.dueDateEnd !== undefined) {
+      updates.dueDateEnd = input.dueDateEnd ?? null;
+    }
+    // When clearing dueDate, also clear dueDateEnd
+    if (input.dueDate !== undefined && input.dueDate === null) {
+      updates.dueDateEnd = null;
+    }
     if (input.listId != null) updates.listId = input.listId;
     if (input.locationId !== undefined) updates.locationId = input.locationId ?? null;
     if (input.locationRadius !== undefined) updates.locationRadius = input.locationRadius ?? null;
@@ -154,12 +162,29 @@ export class TaskService {
     if (!task.isCompleted && task.recurrence) {
       const baseDueDate = task.dueDate ?? format(new Date(), "yyyy-MM-dd");
       const nextDueDate = computeNextDueDate(task.recurrence, baseDueDate);
-      return this.taskRepo.update(id, userId, {
+      const recurrenceUpdates: Partial<Task> = {
         isCompleted: false,
         completedAt: null,
         dueDate: nextDueDate ?? baseDueDate,
         reminderAt: computeDefaultReminder(nextDueDate ?? baseDueDate),
-      });
+      };
+
+      // Preserve date range duration
+      if (task.dueDateEnd && task.dueDate && nextDueDate) {
+        const startMs = new Date(task.dueDate.split("T")[0]).getTime();
+        const endMs = new Date(task.dueDateEnd.split("T")[0]).getTime();
+        const durationDays = Math.round((endMs - startMs) / (1000 * 60 * 60 * 24));
+        if (durationDays > 0) {
+          const newEnd = new Date(nextDueDate.split("T")[0]);
+          newEnd.setDate(newEnd.getDate() + durationDays);
+          const endTimeSuffix = task.dueDateEnd.includes("T")
+            ? "T" + task.dueDateEnd.split("T")[1]
+            : "";
+          recurrenceUpdates.dueDateEnd = format(newEnd, "yyyy-MM-dd") + endTimeSuffix;
+        }
+      }
+
+      return this.taskRepo.update(id, userId, recurrenceUpdates);
     }
 
     return this.taskRepo.update(id, userId, {
@@ -230,6 +255,7 @@ export class TaskService {
         title: task.title.trim(),
         notes: task.notes ?? null,
         dueDate,
+        dueDateEnd: null,
         reminderAt: computeDefaultReminder(dueDate),
         sortOrder,
       });
@@ -281,7 +307,7 @@ export class TaskService {
     ids: string[],
     userId: string,
     input: Partial<
-      Pick<Task, "listId" | "dueDate" | "reminderAt" | "recurrence" | "deviceContext">
+      Pick<Task, "listId" | "dueDate" | "dueDateEnd" | "reminderAt" | "recurrence" | "deviceContext">
     >,
   ): Promise<boolean> {
     const data: Partial<Task> = {};
@@ -290,6 +316,7 @@ export class TaskService {
       data.dueDate = input.dueDate;
       data.reminderAt = computeDefaultReminder(input.dueDate);
     }
+    if (input.dueDateEnd !== undefined) data.dueDateEnd = input.dueDateEnd;
     if (input.recurrence !== undefined) data.recurrence = input.recurrence;
     if (input.deviceContext !== undefined) data.deviceContext = input.deviceContext;
     await this.taskRepo.updateMany(ids, userId, data);
