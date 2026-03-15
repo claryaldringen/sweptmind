@@ -382,6 +382,7 @@ export const en: Dictionary = {
     passwordTooShort: "Password must be at least 8 characters",
     passwordTooLong: "Password must be at most 128 characters",
   },
+  bulkDeleteLists: "Delete selected lists",
   bulkDelete: "Delete selected",
   bulkComplete: "Mark as completed",
   bulkUncomplete: "Mark as not completed",

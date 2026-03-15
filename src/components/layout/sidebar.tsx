@@ -47,9 +47,14 @@ import { useNearby } from "@/components/providers/nearby-provider";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { UserMenu } from "./user-menu";
 import {
+  ListSelectionProvider,
+  useListSelectionOptional,
+} from "@/components/providers/list-selection-provider";
+import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import {
@@ -93,6 +98,12 @@ const DELETE_LIST = gql`
   }
 `;
 
+const DELETE_LISTS = gql`
+  mutation DeleteLists($ids: [String!]!) {
+    deleteLists(ids: $ids)
+  }
+`;
+
 const UPDATE_TAG = gql`
   mutation UpdateTag($id: String!, $input: UpdateTagInput!) {
     updateTag(id: $id, input: $input) {
@@ -132,6 +143,11 @@ function SortableListItem({
   onNavigate?: () => void;
 }) {
   const { t } = useTranslations();
+  const [deleteLists] = useMutation(DELETE_LISTS);
+  const listSelection = useListSelectionOptional();
+  const isListSelected = listSelection?.selectedIds.has(list.id) ?? false;
+  const isBulkMode = isListSelected && (listSelection?.selectedIds.size ?? 0) >= 2;
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: list.id,
     data: { type: "list" },
@@ -143,6 +159,21 @@ function SortableListItem({
   };
 
   const count = taskCountMode === "visible" ? list.visibleTaskCount : list.taskCount;
+
+  const handleBulkDelete = () => {
+    if (!listSelection) return;
+    const ids = [...listSelection.selectedIds];
+    deleteLists({
+      variables: { ids },
+      update(cache) {
+        for (const id of ids) {
+          cache.evict({ id: cache.identify({ __typename: "List", id }) });
+        }
+        cache.gc();
+      },
+    });
+    listSelection.clear();
+  };
 
   return (
     <div
@@ -156,7 +187,24 @@ function SortableListItem({
         <ContextMenuTrigger asChild>
           <Link
             href={`/lists/${list.id}`}
-            onClick={onNavigate}
+            onClick={(e) => {
+              if ((e.metaKey || e.ctrlKey || e.shiftKey) && listSelection) {
+                e.preventDefault();
+                listSelection.handleClick(list.id, {
+                  metaKey: e.metaKey,
+                  ctrlKey: e.ctrlKey,
+                  shiftKey: e.shiftKey,
+                });
+                return;
+              }
+              listSelection?.clear();
+              onNavigate?.();
+            }}
+            onContextMenu={() => {
+              if (!isListSelected && listSelection) {
+                listSelection.handleClick(list.id, {});
+              }
+            }}
             className={cn(
               "hover:bg-sidebar-accent flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
               isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
@@ -164,6 +212,7 @@ function SortableListItem({
               isNearby && "bg-emerald-50 dark:bg-emerald-950/30",
               isDeviceMatch && "bg-yellow-50 dark:bg-yellow-950/30",
               isDropTarget && "ring-primary bg-primary/10 ring-2",
+              isListSelected && "bg-sidebar-accent",
             )}
           >
             <div className="flex items-center gap-3">
@@ -182,15 +231,30 @@ function SortableListItem({
           </Link>
         </ContextMenuTrigger>
         <ContextMenuContent>
-          <ContextMenuItem onClick={() => onRename(list)}>
-            <Pencil className="h-4 w-4" />
-            {t("lists.rename")}
-          </ContextMenuItem>
-          {!list.isDefault && (
-            <ContextMenuItem variant="destructive" onClick={() => onDelete(list)}>
-              <Trash2 className="h-4 w-4" />
-              {t("lists.delete")}
-            </ContextMenuItem>
+          {isBulkMode ? (
+            <>
+              <ContextMenuItem disabled className="text-muted-foreground text-xs">
+                {t("bulkSelectedCount", { count: String(listSelection!.selectedIds.size) })}
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem variant="destructive" onClick={handleBulkDelete}>
+                <Trash2 className="h-4 w-4" />
+                {t("bulkDeleteLists")}
+              </ContextMenuItem>
+            </>
+          ) : (
+            <>
+              <ContextMenuItem onClick={() => onRename(list)}>
+                <Pencil className="h-4 w-4" />
+                {t("lists.rename")}
+              </ContextMenuItem>
+              {!list.isDefault && (
+                <ContextMenuItem variant="destructive" onClick={() => onDelete(list)}>
+                  <Trash2 className="h-4 w-4" />
+                  {t("lists.delete")}
+                </ContextMenuItem>
+              )}
+            </>
           )}
         </ContextMenuContent>
       </ContextMenu>
@@ -444,6 +508,7 @@ export function Sidebar() {
     .sort((a, b) => a.sortOrder - b.sortOrder);
   const customLists = localOrder ?? serverCustomLists;
   const defaultList = allLists.find((l) => l.isDefault);
+  const listIds = useMemo(() => customLists.map((l) => l.id), [customLists]);
 
   const smartListDefs: Record<
     string,
@@ -618,35 +683,37 @@ export function Sidebar() {
 
         <Separator className="my-3" />
 
-        <SortableContext
-          items={customLists.map((l) => l.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <nav className="space-y-1">
-            {customLists.map((list) => (
-              <SortableListItem
-                key={list.id}
-                list={list}
-                isActive={isDesktop && pathname === `/lists/${list.id}`}
-                taskCountMode={taskCountMode}
-                isNearby={
-                  list.location
-                    ? checkNearby(list.location.latitude, list.location.longitude)
-                    : false
-                }
-                isDeviceMatch={list.deviceContext === deviceContext}
-                isDropTarget={activeType === "task" && overListId === list.id}
-                onRename={(l) => {
-                  setRenameListValue(l.name);
-                  setRenameListIcon(l.icon ?? "list");
-                  setRenameListTarget(l);
-                }}
-                onDelete={setDeleteListTarget}
-                onNavigate={closeSidebar}
-              />
-            ))}
-          </nav>
-        </SortableContext>
+        <ListSelectionProvider listIds={listIds}>
+          <SortableContext
+            items={customLists.map((l) => l.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <nav className="space-y-1">
+              {customLists.map((list) => (
+                <SortableListItem
+                  key={list.id}
+                  list={list}
+                  isActive={isDesktop && pathname === `/lists/${list.id}`}
+                  taskCountMode={taskCountMode}
+                  isNearby={
+                    list.location
+                      ? checkNearby(list.location.latitude, list.location.longitude)
+                      : false
+                  }
+                  isDeviceMatch={list.deviceContext === deviceContext}
+                  isDropTarget={activeType === "task" && overListId === list.id}
+                  onRename={(l) => {
+                    setRenameListValue(l.name);
+                    setRenameListIcon(l.icon ?? "list");
+                    setRenameListTarget(l);
+                  }}
+                  onDelete={setDeleteListTarget}
+                  onNavigate={closeSidebar}
+                />
+              ))}
+            </nav>
+          </SortableContext>
+        </ListSelectionProvider>
 
         {allTags.length > 0 && (
           <>
