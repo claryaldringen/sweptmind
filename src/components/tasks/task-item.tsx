@@ -377,47 +377,59 @@ export const TaskItem = memo(function TaskItem({
               className="rounded-full"
             />
             <div className="min-w-0 flex-1">
-              {isDesktop && selectedTaskId === task.id ? (
-                <input
-                  key={task.id + task.title}
-                  defaultValue={task.title}
-                  size={task.title.length || 1}
-                  onClick={(e: MouseEvent<HTMLInputElement>) => e.stopPropagation()}
-                  onChange={(e) => {
-                    e.target.size = e.target.value.length || 1;
-                  }}
-                  onBlur={(e) => {
-                    const newTitle = e.target.value.trim();
-                    if (newTitle && newTitle !== task.title) {
-                      updateTask({ variables: { id: task.id, input: { title: newTitle } } });
-                    } else {
-                      e.target.value = task.title;
-                      e.target.size = task.title.length || 1;
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") e.currentTarget.blur();
-                    if (e.key === "Escape") {
-                      e.currentTarget.value = task.title;
-                      e.currentTarget.size = task.title.length || 1;
-                      e.currentTarget.blur();
-                    }
-                  }}
-                  className={cn(
-                    "max-w-full min-w-0 bg-transparent text-sm outline-none",
-                    visuallyCompleted && "text-muted-foreground line-through",
-                  )}
-                />
-              ) : (
-                <span
-                  className={cn(
-                    "block truncate text-sm",
-                    visuallyCompleted && "text-muted-foreground line-through",
-                  )}
-                >
-                  {task.title}
-                </span>
-              )}
+              <div className="flex items-center gap-1.5">
+                {isDesktop && selectedTaskId === task.id ? (
+                  <input
+                    key={task.id + task.title}
+                    defaultValue={task.title}
+                    size={task.title.length || 1}
+                    onClick={(e: MouseEvent<HTMLInputElement>) => e.stopPropagation()}
+                    onChange={(e) => {
+                      e.target.size = e.target.value.length || 1;
+                    }}
+                    onBlur={(e) => {
+                      const newTitle = e.target.value.trim();
+                      if (newTitle && newTitle !== task.title) {
+                        updateTask({ variables: { id: task.id, input: { title: newTitle } } });
+                      } else {
+                        e.target.value = task.title;
+                        e.target.size = task.title.length || 1;
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") e.currentTarget.blur();
+                      if (e.key === "Escape") {
+                        e.currentTarget.value = task.title;
+                        e.currentTarget.size = task.title.length || 1;
+                        e.currentTarget.blur();
+                      }
+                    }}
+                    className={cn(
+                      "max-w-full min-w-0 bg-transparent text-sm outline-none",
+                      visuallyCompleted && "text-muted-foreground line-through",
+                    )}
+                  />
+                ) : (
+                  <span
+                    className={cn(
+                      "truncate text-sm",
+                      visuallyCompleted && "text-muted-foreground line-through",
+                    )}
+                  >
+                    {task.title}
+                  </span>
+                )}
+                {task.aiAnalysis && !task.aiAnalysis.isActionable && (
+                  <span title={task.aiAnalysis.suggestion ?? t("premium.aiNotActionable")}>
+                    <Lightbulb className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
+                  </span>
+                )}
+                {analyzingTaskIds?.has(task.id) && !task.aiAnalysis && (
+                  <span title={t("premium.aiAnalyzing")}>
+                    <Lightbulb className="h-3.5 w-3.5 shrink-0 animate-pulse text-yellow-500/50" />
+                  </span>
+                )}
+              </div>
               {hasMetadata && (
                 <div className="flex items-center gap-1 text-xs">
                   {showListName && task.list && (
@@ -556,30 +568,6 @@ export const TaskItem = memo(function TaskItem({
                       <Paperclip className="h-3 w-3" />
                     </span>
                   )}
-                  {/* AI Analysis — not actionable indicator */}
-                  {task.aiAnalysis && !task.aiAnalysis.isActionable && (
-                    <>
-                      <span className="text-muted-foreground">·</span>
-                      <span
-                        className="flex items-center gap-0.5 text-yellow-500"
-                        title={task.aiAnalysis.suggestion ?? t("premium.aiNotActionable")}
-                      >
-                        <Lightbulb className="h-3 w-3" />
-                      </span>
-                    </>
-                  )}
-                  {/* AI Analysis — loading indicator */}
-                  {analyzingTaskIds?.has(task.id) && !task.aiAnalysis && (
-                    <>
-                      <span className="text-muted-foreground">·</span>
-                      <span
-                        className="flex items-center gap-0.5 text-yellow-500/50"
-                        title={t("premium.aiAnalyzing")}
-                      >
-                        <Lightbulb className="h-3 w-3 animate-pulse" />
-                      </span>
-                    </>
-                  )}
                   {deviceMatch &&
                     (hasAttachments ||
                       hasLocation ||
@@ -638,7 +626,7 @@ export const TaskItem = memo(function TaskItem({
             </div>
             <Trash2
               className={cn(
-                "text-muted-foreground h-4 w-4 cursor-pointer transition-opacity",
+                "text-muted-foreground h-4 w-4 shrink-0 cursor-pointer transition-opacity",
                 isDesktop ? "opacity-0 group-hover:opacity-100" : "opacity-60",
               )}
               onClick={(e) => {
