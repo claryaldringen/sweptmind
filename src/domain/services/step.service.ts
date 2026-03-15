@@ -39,6 +39,17 @@ export class StepService {
     return true;
   }
 
+  async deleteMany(userId: string, ids: string[]): Promise<boolean> {
+    for (const id of ids) {
+      const step = await this.stepRepo.findById(id);
+      if (!step) throw new Error("Step not found");
+      const task = await this.taskRepo.findById(step.taskId, userId);
+      if (!task) throw new Error("Step not found");
+    }
+    await this.stepRepo.deleteMany(ids);
+    return true;
+  }
+
   async toggleCompleted(userId: string, id: string): Promise<Step> {
     const step = await this.stepRepo.findById(id);
     if (!step) throw new Error("Step not found");

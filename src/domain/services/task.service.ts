@@ -272,6 +272,38 @@ export class TaskService {
     return this.taskRepo.update(taskId, userId, { blockedByTaskId });
   }
 
+  async deleteMany(ids: string[], userId: string): Promise<boolean> {
+    await this.taskRepo.deleteMany(ids, userId);
+    return true;
+  }
+
+  async updateMany(
+    ids: string[],
+    userId: string,
+    input: Partial<
+      Pick<Task, "listId" | "dueDate" | "reminderAt" | "recurrence" | "deviceContext">
+    >,
+  ): Promise<boolean> {
+    const data: Partial<Task> = {};
+    if (input.listId !== undefined) data.listId = input.listId;
+    if (input.dueDate !== undefined) {
+      data.dueDate = input.dueDate;
+      data.reminderAt = computeDefaultReminder(input.dueDate);
+    }
+    if (input.recurrence !== undefined) data.recurrence = input.recurrence;
+    if (input.deviceContext !== undefined) data.deviceContext = input.deviceContext;
+    await this.taskRepo.updateMany(ids, userId, data);
+    return true;
+  }
+
+  async setManyCompleted(ids: string[], userId: string, isCompleted: boolean): Promise<boolean> {
+    await this.taskRepo.updateMany(ids, userId, {
+      isCompleted,
+      completedAt: isCompleted ? new Date() : null,
+    });
+    return true;
+  }
+
   async searchTasks(userId: string, query: string, tagIds?: string[]): Promise<Task[]> {
     return this.taskRepo.searchTasks(userId, query, tagIds);
   }

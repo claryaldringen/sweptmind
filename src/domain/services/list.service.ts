@@ -50,6 +50,11 @@ export class ListService {
     return true;
   }
 
+  async deleteMany(ids: string[], userId: string): Promise<boolean> {
+    await this.listRepo.deleteManyNonDefault(ids, userId);
+    return true;
+  }
+
   async reorder(userId: string, items: ReorderItem[]): Promise<boolean> {
     for (const item of items) {
       await this.listRepo.updateSortOrder(item.id, userId, item.sortOrder);
