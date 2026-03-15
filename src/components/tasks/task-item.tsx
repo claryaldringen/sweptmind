@@ -52,6 +52,7 @@ import { enUS } from "date-fns/locale/en-US";
 import { useTranslations } from "@/lib/i18n";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { useDeviceContext } from "@/hooks/use-device-context";
+import { useTaskSelectionOptional } from "@/components/providers/task-selection-provider";
 
 const TOGGLE_COMPLETED = gql`
   mutation ToggleTaskCompleted($id: String!) {
@@ -160,6 +161,8 @@ export const TaskItem = memo(function TaskItem({
   const selectedTaskId = searchParams.get("task");
   const { isNearby: checkNearby } = useNearby();
   const deviceContext = useDeviceContext();
+  const taskSelection = useTaskSelectionOptional();
+  const isSelected = taskSelection?.selectedIds.has(task.id) ?? false;
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const [localChecked, setLocalChecked] = useState<boolean | null>(null);
@@ -329,7 +332,18 @@ export const TaskItem = memo(function TaskItem({
 
   const allLists = lists;
 
-  function handleClick() {
+  function handleClick(e: MouseEvent) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey) {
+      e.preventDefault();
+      taskSelection?.handleClick(task.id, {
+        metaKey: e.metaKey,
+        ctrlKey: e.ctrlKey,
+        shiftKey: e.shiftKey,
+      });
+      return;
+    }
+    // Original behavior: clear selection and open detail panel
+    taskSelection?.clear();
     const params = new URLSearchParams(searchParams.toString());
     params.set("task", task.id);
     router.push(`?${params.toString()}`, { scroll: false });
@@ -350,6 +364,7 @@ export const TaskItem = memo(function TaskItem({
             className={cn(
               "group hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-4 py-2.5 transition-all duration-500",
               selectedTaskId === task.id && "bg-accent",
+              isSelected && "bg-accent",
               locationNearby && "bg-emerald-50 dark:bg-emerald-950/30",
               deviceMatch && "bg-yellow-50 dark:bg-yellow-950/30",
               (fadingOut || externalFadingOut) && "opacity-0",
