@@ -73,6 +73,7 @@ export function TaskDndProvider({ children }: { children: ReactNode }) {
   const listReorderRef = useRef<ReorderCallback | null>(null);
   const smartListReorderRef = useRef<ReorderCallback | null>(null);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
+  const [dragCount, setDragCount] = useState(0);
   const [overListId, setOverListId] = useState<string | null>(null);
   const [updateTask] = useMutation(UPDATE_TASK);
 
@@ -102,6 +103,7 @@ export function TaskDndProvider({ children }: { children: ReactNode }) {
       type,
       title: data?.title ?? "",
     });
+    setDragCount(data?.selectedCount ?? 1);
   }
 
   function handleDragOver(event: DragOverEvent) {
@@ -125,14 +127,14 @@ export function TaskDndProvider({ children }: { children: ReactNode }) {
     const overType = overData?.type as string | undefined;
 
     if (over && activeType === "task" && overType === "list") {
-      // Task dropped on a list — move it
-      const taskId = String(active.id);
+      // Task dropped on a list — move all selected (or just the dragged one)
       const newListId = String(over.id);
-      // Apollo auto-merges the listId change into the Task entity;
-      // pages filter allTasks by listId so the task moves automatically
-      updateTask({
-        variables: { id: taskId, input: { listId: newListId } },
-      });
+      const idsToMove: string[] = activeData?.selectedIds ?? [String(active.id)];
+      for (const taskId of idsToMove) {
+        updateTask({
+          variables: { id: taskId, input: { listId: newListId } },
+        });
+      }
     } else if (over && activeType === "task" && overType === "task" && active.id !== over.id) {
       // Task dropped on another task — reorder
       taskReorderRef.current?.(String(active.id), String(over.id));
@@ -150,11 +152,13 @@ export function TaskDndProvider({ children }: { children: ReactNode }) {
     }
 
     setActiveDrag(null);
+    setDragCount(0);
     setOverListId(null);
   }
 
   function handleDragCancel() {
     setActiveDrag(null);
+    setDragCount(0);
     setOverListId(null);
   }
 
@@ -180,8 +184,13 @@ export function TaskDndProvider({ children }: { children: ReactNode }) {
         {children}
         <DragOverlay dropAnimation={null}>
           {activeDrag?.type === "task" ? (
-            <div className="bg-background rounded-md border px-4 py-2 text-sm shadow-lg">
-              {activeDrag.title}
+            <div className="bg-background flex items-center gap-2 rounded-md border px-4 py-2 text-sm shadow-lg">
+              <span className="truncate">{activeDrag.title}</span>
+              {dragCount > 1 && (
+                <span className="bg-primary text-primary-foreground flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium">
+                  +{dragCount - 1}
+                </span>
+              )}
             </div>
           ) : null}
         </DragOverlay>

@@ -1,8 +1,10 @@
 "use client";
 
 import { useSortable } from "@dnd-kit/sortable";
+import { useDndContext } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { TaskItem } from "./task-item";
+import { useTaskSelectionOptional } from "@/components/providers/task-selection-provider";
 
 interface Task {
   id: string;
@@ -29,15 +31,23 @@ interface SortableTaskItemProps {
 }
 
 export function SortableTaskItem({ task, showListName, analyzingTaskIds }: SortableTaskItemProps) {
+  const taskSelection = useTaskSelectionOptional();
+  const isSelected = taskSelection?.selectedIds.has(task.id) ?? false;
+  const selectedCount = isSelected ? (taskSelection?.selectedIds.size ?? 1) : 1;
+  const selectedIds = isSelected ? [...(taskSelection?.selectedIds ?? [])] : [task.id];
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
-    data: { type: "task", title: task.title },
+    data: { type: "task", title: task.title, selectedCount, selectedIds },
   });
+
+  const { active } = useDndContext();
+  const isDraggedElsewhere = active != null && String(active.id) !== task.id && isSelected;
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.5 : isDraggedElsewhere ? 0.4 : 1,
   };
 
   return (
