@@ -30,25 +30,36 @@ builder.mutationField("analyzeTask", (t) =>
 );
 
 // Decomposition types
-const DecomposeStepRef = builder.objectRef<{ title: string; listName: string | null }>("DecomposeStep");
+const DecomposeStepRef = builder.objectRef<{ title: string; listName: string | null; dependsOn: number | null }>("DecomposeStep");
 DecomposeStepRef.implement({
   fields: (t) => ({
     title: t.exposeString("title"),
     listName: t.exposeString("listName", { nullable: true }),
+    dependsOn: t.exposeInt("dependsOn", { nullable: true }),
+  }),
+});
+
+const DecomposeResultRef = builder.objectRef<{ projectName: string; steps: { title: string; listName: string | null; dependsOn: number | null }[] }>("DecomposeResult");
+DecomposeResultRef.implement({
+  fields: (t) => ({
+    projectName: t.exposeString("projectName"),
+    steps: t.field({
+      type: [DecomposeStepRef],
+      resolve: (parent) => parent.steps,
+    }),
   }),
 });
 
 builder.mutationField("decomposeTask", (t) =>
   t.field({
-    type: [DecomposeStepRef],
+    type: DecomposeResultRef,
     authScopes: { authenticated: true },
     args: {
       taskId: t.arg.string({ required: true }),
     },
     resolve: async (_root, args, ctx) => {
-      if (!ctx.userId) return [];
-      const result = await ctx.services.ai.decomposeTask(args.taskId, ctx.userId);
-      return result.steps;
+      if (!ctx.userId) return { projectName: "", steps: [] };
+      return ctx.services.ai.decomposeTask(args.taskId, ctx.userId);
     },
   }),
 );

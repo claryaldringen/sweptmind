@@ -6,9 +6,11 @@ export interface LlmResponse {
 export interface DecomposeStep {
   title: string;
   listName: string | null;
+  dependsOn: number | null;
 }
 
 export interface DecomposeResponse {
+  projectName: string;
   steps: DecomposeStep[];
 }
 

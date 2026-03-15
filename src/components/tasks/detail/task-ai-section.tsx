@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
-import { Lightbulb, Loader2, ArrowRight, X } from "lucide-react";
+import { Lightbulb, Loader2, ArrowRight, X, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -11,8 +11,12 @@ import { cn } from "@/lib/utils";
 const DECOMPOSE_TASK = gql`
   mutation DecomposeTask($taskId: String!) {
     decomposeTask(taskId: $taskId) {
-      title
-      listName
+      projectName
+      steps {
+        title
+        listName
+        dependsOn
+      }
     }
   }
 `;
@@ -20,12 +24,18 @@ const DECOMPOSE_TASK = gql`
 interface DecomposeStep {
   title: string;
   listName: string | null;
+  dependsOn: number | null;
+}
+
+interface DecomposeResult {
+  projectName: string;
+  steps: DecomposeStep[];
 }
 
 interface TaskAiSectionProps {
   taskId: string;
   suggestion: string | null;
-  onApplyDecomposition: (steps: DecomposeStep[]) => void;
+  onApplyDecomposition: (result: DecomposeResult) => void;
   onDismiss: () => void;
 }
 
@@ -36,27 +46,44 @@ export function TaskAiSection({
   onDismiss,
 }: TaskAiSectionProps) {
   const { t } = useTranslations();
-  const [steps, setSteps] = useState<DecomposeStep[] | null>(null);
+  const [result, setResult] = useState<DecomposeResult | null>(null);
   const [error, setError] = useState(false);
   const [decomposeTask, { loading }] = useMutation<{
-    decomposeTask: DecomposeStep[];
+    decomposeTask: DecomposeResult;
   }>(DECOMPOSE_TASK);
 
   async function handleDecompose() {
     setError(false);
     try {
-      const result = await decomposeTask({ variables: { taskId } });
-      const newSteps = result.data?.decomposeTask ?? [];
-      setSteps(newSteps);
+      const res = await decomposeTask({ variables: { taskId } });
+      if (res.data?.decomposeTask) {
+        setResult(res.data.decomposeTask);
+      }
     } catch {
       setError(true);
     }
   }
 
   function handleRemoveStep(index: number) {
-    if (!steps) return;
-    setSteps(steps.filter((_, i) => i !== index));
+    if (!result) return;
+    // When removing a step, update dependsOn references
+    const newSteps = result.steps
+      .filter((_, i) => i !== index)
+      .map((step) => ({
+        ...step,
+        dependsOn:
+          step.dependsOn === null
+            ? null
+            : step.dependsOn === index
+              ? null // dependency removed
+              : step.dependsOn > index
+                ? step.dependsOn - 1 // shift index down
+                : step.dependsOn,
+      }));
+    setResult({ ...result, steps: newSteps });
   }
+
+  const steps = result?.steps ?? null;
 
   return (
     <div className="bg-yellow-50 dark:bg-yellow-950/20 rounded-lg p-3 space-y-3">
@@ -96,8 +123,13 @@ export function TaskAiSection({
         <p className="text-sm text-muted-foreground">{t("premium.aiDecomposeEmpty")}</p>
       )}
 
-      {steps && steps.length > 0 && (
+      {steps && steps.length > 0 && result && (
         <div className="space-y-2">
+          {result.projectName && (
+            <p className="text-xs text-muted-foreground">
+              Tag: <span className="font-medium">{result.projectName}</span>
+            </p>
+          )}
           <ol className="space-y-1.5">
             {steps.map((step, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">
@@ -107,8 +139,10 @@ export function TaskAiSection({
                   {step.listName && (
                     <span className="text-muted-foreground text-xs ml-1">→ {step.listName}</span>
                   )}
-                  {!step.listName && i > 0 && (
-                    <span className="text-muted-foreground text-xs ml-1">({t("premium.aiDecomposeKeepInList")})</span>
+                  {step.dependsOn !== null && (
+                    <span className="text-muted-foreground text-xs ml-1">
+                      <Link2 className="inline h-2.5 w-2.5" /> {step.dependsOn + 1}
+                    </span>
                   )}
                 </div>
                 <button
@@ -126,7 +160,7 @@ export function TaskAiSection({
               variant="default"
               size="sm"
               className="flex-1"
-              onClick={() => onApplyDecomposition(steps)}
+              onClick={() => onApplyDecomposition(result)}
             >
               {t("premium.aiDecomposeApply")}
             </Button>

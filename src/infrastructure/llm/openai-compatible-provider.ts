@@ -85,10 +85,12 @@ export class OpenAiCompatibleProvider implements ILlmProvider {
 
     const parsed = JSON.parse(content);
     return {
+      projectName: String(parsed.projectName ?? ""),
       steps: Array.isArray(parsed.steps)
-        ? parsed.steps.map((s: { title?: string; listName?: string | null }) => ({
+        ? parsed.steps.map((s: { title?: string; listName?: string | null; dependsOn?: number | null }) => ({
             title: String(s.title ?? ""),
             listName: s.listName ?? null,
+            dependsOn: typeof s.dependsOn === "number" ? s.dependsOn : null,
           }))
         : [],
     };

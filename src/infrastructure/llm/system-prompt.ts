@@ -13,11 +13,12 @@ export const GTD_DECOMPOSE_PROMPT = `You are a GTD (Getting Things Done) expert.
 
 Rules:
 - Each step must be a single physical, visible action doable in one sitting
-- Steps must be in the correct sequential order (dependencies matter)
 - Use the user's language (detect from the task title)
 - If a step belongs to a specific list from the user's lists, set listName to that list name. Otherwise set listName to null (it stays in the current list).
 - Keep it practical — typically 2-6 steps, no more than needed
+- Give the project a short, descriptive name (projectName) — this becomes a tag for all steps
+- For each step, set dependsOn to the 0-based index of the step it must wait for, or null if it can start independently. Only set real dependencies — not everything needs to be sequential.
 
 Respond with valid JSON only, no other text:
-{"steps": [{"title": "step title", "listName": "list name or null"}, ...]}`;
+{"projectName": "short project name", "steps": [{"title": "step title", "listName": "list name or null", "dependsOn": null}, ...]}`;
 

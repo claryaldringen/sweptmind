@@ -743,19 +743,55 @@ export function TaskDetailPanel() {
 
   // AI decomposition handler
 
-  async function handleApplyDecomposition(steps: { title: string; listName: string | null }[]) {
-    if (!task || steps.length === 0) return;
-    const taskTags = task.tags ?? [];
+  async function handleApplyDecomposition(decomposition: { projectName: string; steps: { title: string; listName: string | null; dependsOn: number | null }[] }) {
+    if (!task || decomposition.steps.length === 0) return;
+    const { projectName, steps } = decomposition;
 
-    // Step 1: Rename current task to first step
+    // Step 1: Create project tag
+    let projectTag: TaskTag | null = null;
+    if (projectName) {
+      const existingTag = allTagsFromProvider.find(
+        (t) => t.name.toLowerCase() === projectName.toLowerCase(),
+      );
+      if (existingTag) {
+        projectTag = existingTag;
+      } else {
+        const existingColors = allTagsFromProvider.map((t) => t.color);
+        const color = pickNextTagColor(existingColors);
+        const tagResult = await createTag({ variables: { input: { name: projectName, color } } });
+        if (tagResult.data?.createTag) {
+          projectTag = tagResult.data.createTag;
+        }
+      }
+    }
+
+    // Step 2: Rename current task to first step
     optimisticUpdate({ title: steps[0].title });
     if (steps[0].listName) {
       const targetList = allLists.find((l) => l.name === steps[0].listName);
       if (targetList) optimisticUpdate({ listId: targetList.id });
     }
+    // Add project tag to original task
+    if (projectTag) {
+      await addTagToTask({ variables: { taskId: task.id, tagId: projectTag.id } });
+      apolloClient.cache.modify({
+        id: apolloClient.cache.identify({ __typename: "Task", id: task.id }),
+        fields: {
+          tags(existing = []) {
+            const newRef = apolloClient.cache.writeFragment({
+              data: projectTag,
+              fragment: gql`fragment ProjTag on Tag { id name color }`,
+            });
+            return [...existing, newRef];
+          },
+        },
+      });
+    }
 
-    // Step 2: Create remaining steps as new tasks with cache update, tags, and dependency chain
-    let previousTaskId = task.id;
+    // Step 3: Create remaining steps as new tasks
+    // Map step index → created task ID (index 0 = original task)
+    const taskIdByIndex: string[] = [task.id];
+
     for (let i = 1; i < steps.length; i++) {
       const step = steps[i];
       const targetList = step.listName
@@ -798,28 +834,14 @@ export function TaskDetailPanel() {
                   },
                   fragment: gql`
                     fragment NewDecomposedTask on Task {
-                      id
-                      listId
-                      title
-                      notes
-                      isCompleted
-                      dueDate
-                      reminderAt
-                      recurrence
-                      sortOrder
-                      createdAt
-                      completedAt
-                      locationId
-                      locationRadius
+                      id listId title notes isCompleted dueDate reminderAt recurrence
+                      sortOrder createdAt completedAt locationId locationRadius
                       location { id name latitude longitude radius }
-                      deviceContext
-                      tags { id name color }
+                      deviceContext tags { id name color }
                       steps { id taskId title isCompleted sortOrder }
                       attachments { id }
                       aiAnalysis { isActionable suggestion analyzedTitle }
-                      blockedByTaskId
-                      blockedByTaskIsCompleted
-                      dependentTaskCount
+                      blockedByTaskId blockedByTaskIsCompleted dependentTaskCount
                       list { id name }
                     }
                   `,
@@ -832,21 +854,20 @@ export function TaskDetailPanel() {
       });
 
       const createdId = result.data?.createTask?.id ?? newId;
+      taskIdByIndex.push(createdId);
 
-      // Copy tags from original task
-      for (const tag of taskTags) {
+      // Add project tag
+      if (projectTag) {
         await addTagToTask({
-          variables: { taskId: createdId, tagId: tag.id },
+          variables: { taskId: createdId, tagId: projectTag.id },
           update(cache) {
             cache.modify({
               id: cache.identify({ __typename: "Task", id: createdId }),
               fields: {
                 tags(existing = []) {
                   const newRef = cache.writeFragment({
-                    data: tag,
-                    fragment: gql`
-                      fragment CopiedTag on Tag { id name color }
-                    `,
+                    data: projectTag,
+                    fragment: gql`fragment ProjTag2 on Tag { id name color }`,
                   });
                   return [...existing, newRef];
                 },
@@ -856,29 +877,29 @@ export function TaskDetailPanel() {
         });
       }
 
-      // Set dependency chain: each task blocked by the previous one
-      await updateTask({
-        variables: { id: createdId, input: { blockedByTaskId: previousTaskId } },
-      });
-      apolloClient.cache.modify({
-        id: apolloClient.cache.identify({ __typename: "Task", id: createdId }),
-        fields: {
-          blockedByTaskId: () => previousTaskId,
-          blockedByTaskIsCompleted: () => false,
-        },
-      });
-      // Update dependent count on previous task
-      apolloClient.cache.modify({
-        id: apolloClient.cache.identify({ __typename: "Task", id: previousTaskId }),
-        fields: {
-          dependentTaskCount(existing = 0) { return existing + 1; },
-        },
-      });
-
-      previousTaskId = createdId;
+      // Set dependency based on AI suggestion
+      if (step.dependsOn !== null && step.dependsOn >= 0 && step.dependsOn < taskIdByIndex.length) {
+        const blockedById = taskIdByIndex[step.dependsOn];
+        await updateTask({
+          variables: { id: createdId, input: { blockedByTaskId: blockedById } },
+        });
+        apolloClient.cache.modify({
+          id: apolloClient.cache.identify({ __typename: "Task", id: createdId }),
+          fields: {
+            blockedByTaskId: () => blockedById,
+            blockedByTaskIsCompleted: () => false,
+          },
+        });
+        apolloClient.cache.modify({
+          id: apolloClient.cache.identify({ __typename: "Task", id: blockedById }),
+          fields: {
+            dependentTaskCount(existing = 0) { return existing + 1; },
+          },
+        });
+      }
     }
 
-    // Step 3: Remove ai param from URL
+    // Step 4: Remove ai param from URL
     const params = new URLSearchParams(searchParams.toString());
     params.delete("ai");
     router.replace(`?${params.toString()}`, { scroll: false });
