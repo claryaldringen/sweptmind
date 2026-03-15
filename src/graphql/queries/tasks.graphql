@@ -6,6 +6,7 @@ fragment TaskFields on Task {
   isCompleted
   completedAt
   dueDate
+  dueDateEnd
   reminderAt
   recurrence
   deviceContext

@@ -64,6 +64,7 @@ const TOGGLE_COMPLETED = gql`
       isCompleted
       completedAt
       dueDate
+      dueDateEnd
       reminderAt
     }
   }
@@ -75,6 +76,7 @@ const UPDATE_TASK = gql`
       id
       title
       dueDate
+      dueDateEnd
       listId
       locationId
       recurrence
@@ -141,6 +143,7 @@ interface Task {
   title: string;
   isCompleted: boolean;
   dueDate: string | null;
+  dueDateEnd?: string | null;
   reminderAt: string | null;
   recurrence?: string | null;
   locationId?: string | null;
@@ -156,6 +159,10 @@ interface Task {
   aiAnalysis?: {
     isActionable: boolean;
     suggestion: string | null;
+    suggestedTitle?: string | null;
+    decomposition?: { title: string }[] | null;
+    duplicateTaskId?: string | null;
+    callIntent?: { name: string } | null;
     analyzedTitle: string;
   } | null;
 }
@@ -230,6 +237,7 @@ export const TaskItem = memo(function TaskItem({
       isCompleted: boolean;
       completedAt: string | null;
       dueDate: string | null;
+      dueDateEnd: string | null;
       reminderAt: string | null;
     };
   }>(TOGGLE_COMPLETED, {
@@ -240,6 +248,7 @@ export const TaskItem = memo(function TaskItem({
         isCompleted: !task.isCompleted,
         completedAt: task.isCompleted ? null : new Date().toISOString(),
         dueDate: task.dueDate,
+        dueDateEnd: task.dueDateEnd ?? null,
         reminderAt: task.reminderAt,
       },
     },
@@ -488,7 +497,7 @@ export const TaskItem = memo(function TaskItem({
                     {task.title}
                   </span>
                 )}
-                {task.aiAnalysis && !task.aiAnalysis.isActionable && (
+                {task.aiAnalysis && (task.aiAnalysis.suggestedTitle || task.aiAnalysis.decomposition?.length || task.aiAnalysis.duplicateTaskId || task.aiAnalysis.callIntent) && (
                   <button
                     type="button"
                     title={task.aiAnalysis.suggestion ?? t("premium.aiNotActionable")}

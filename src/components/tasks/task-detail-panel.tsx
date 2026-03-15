@@ -39,6 +39,7 @@ const UPDATE_TASK = gql`
       title
       notes
       dueDate
+      dueDateEnd
       reminderAt
       recurrence
       deviceContext
@@ -68,6 +69,7 @@ const TOGGLE_COMPLETED = gql`
       isCompleted
       completedAt
       dueDate
+      dueDateEnd
       reminderAt
     }
   }
@@ -88,6 +90,7 @@ const CREATE_TASK = gql`
       notes
       isCompleted
       dueDate
+      dueDateEnd
       sortOrder
       createdAt
       steps {
@@ -98,6 +101,12 @@ const CREATE_TASK = gql`
         sortOrder
       }
     }
+  }
+`;
+
+const MARK_TASKS_ACTIONABLE = gql`
+  mutation MarkTasksActionable($taskIds: [String!]!) {
+    markTasksActionable(taskIds: $taskIds)
   }
 `;
 
@@ -238,6 +247,7 @@ interface TaskDetail {
   isCompleted: boolean;
   completedAt: string | null;
   dueDate: string | null;
+  dueDateEnd: string | null;
   reminderAt: string | null;
   recurrence: string | null;
   deviceContext: string | null;
@@ -254,6 +264,11 @@ interface TaskDetail {
   aiAnalysis: {
     isActionable: boolean;
     suggestion: string | null;
+    suggestedTitle: string | null;
+    projectName: string | null;
+    decomposition: { title: string; listName: string | null; dependsOn: number | null }[] | null;
+    duplicateTaskId: string | null;
+    callIntent: { name: string; reason: string | null } | null;
   } | null;
 }
 
@@ -273,6 +288,7 @@ interface UpdateTaskData {
     title: string;
     notes: string | null;
     dueDate: string | null;
+    dueDateEnd: string | null;
     reminderAt: string | null;
     recurrence: string | null;
     deviceContext: string | null;
@@ -292,6 +308,7 @@ interface ToggleCompletedData {
     isCompleted: boolean;
     completedAt: string | null;
     dueDate: string | null;
+    dueDateEnd: string | null;
     reminderAt: string | null;
   };
 }
@@ -350,6 +367,7 @@ export function TaskDetailPanel() {
         isCompleted: !task?.isCompleted,
         completedAt: task?.isCompleted ? null : new Date().toISOString(),
         dueDate: task?.dueDate ?? null,
+        dueDateEnd: task?.dueDateEnd ?? null,
         reminderAt: task?.reminderAt ?? null,
       },
     },
@@ -579,11 +597,13 @@ export function TaskDetailPanel() {
       notes: string | null;
       isCompleted: boolean;
       dueDate: string | null;
+      dueDateEnd: string | null;
       sortOrder: number;
       createdAt: string;
       steps: TaskStep[];
     };
   }>(CREATE_TASK);
+  const [markTasksActionable] = useMutation(MARK_TASKS_ACTIONABLE);
 
   // ---- Hooks ----
 
@@ -834,13 +854,13 @@ export function TaskDetailPanel() {
                   },
                   fragment: gql`
                     fragment NewDecomposedTask on Task {
-                      id listId title notes isCompleted dueDate reminderAt recurrence
+                      id listId title notes isCompleted dueDate dueDateEnd reminderAt recurrence
                       sortOrder createdAt completedAt locationId locationRadius
                       location { id name latitude longitude radius }
                       deviceContext tags { id name color }
                       steps { id taskId title isCompleted sortOrder }
                       attachments { id }
-                      aiAnalysis { isActionable suggestion analyzedTitle }
+                      aiAnalysis { isActionable suggestion suggestedTitle projectName decomposition { title listName dependsOn } duplicateTaskId callIntent { name reason } analyzedTitle }
                       blockedByTaskId blockedByTaskIsCompleted dependentTaskCount
                       list { id name }
                     }
@@ -899,7 +919,34 @@ export function TaskDetailPanel() {
       }
     }
 
-    // Step 4: Remove ai param from URL
+    // Step 4: Mark all tasks (original + created) as actionable — prevents re-analysis
+    const allTaskIds = taskIdByIndex;
+    // Write to Apollo cache immediately (prevents lightbulb flicker)
+    for (const id of allTaskIds) {
+      const taskInCache = apolloClient.cache.identify({ __typename: "Task", id });
+      if (taskInCache) {
+        apolloClient.cache.modify({
+          id: taskInCache,
+          fields: {
+            aiAnalysis() {
+              return {
+                __typename: "TaskAiAnalysis",
+                isActionable: true,
+                suggestion: null,
+                suggestedTitle: null,
+                projectName: null,
+                decomposition: null,
+                analyzedTitle: "",
+              };
+            },
+          },
+        });
+      }
+    }
+    // Persist to DB (fire and forget)
+    markTasksActionable({ variables: { taskIds: allTaskIds } });
+
+    // Step 5: Remove ai param from URL
     const params = new URLSearchParams(searchParams.toString());
     params.delete("ai");
     router.replace(`?${params.toString()}`, { scroll: false });
@@ -981,8 +1028,10 @@ export function TaskDetailPanel() {
 
   // ---- Render ----
 
-  // AI-only panel
-  if (showAi && task.aiAnalysis && !task.aiAnalysis.isActionable) {
+  // AI-only panel — show only when there's displayable content
+  const ai = task.aiAnalysis;
+  const hasAiContent = ai && (ai.suggestedTitle || ai.decomposition?.length || ai.duplicateTaskId || ai.callIntent);
+  if (showAi && hasAiContent) {
     return (
       <div
         className={cn("bg-background flex flex-col", isDesktop ? "h-full" : "absolute inset-0 z-10")}
@@ -997,8 +1046,28 @@ export function TaskDetailPanel() {
           <TaskAiSection
             key={task.id}
             taskId={task.id}
-            suggestion={task.aiAnalysis.suggestion}
+            suggestedTitle={ai.suggestedTitle}
+            projectName={ai.projectName}
+            decomposition={ai.decomposition}
+            duplicateTaskId={ai.duplicateTaskId}
+            duplicateTaskTitle={
+              ai.duplicateTaskId
+                ? allTasks.find((t) => t.id === ai.duplicateTaskId)?.title ?? null
+                : null
+            }
+            callIntent={ai.callIntent}
             onApplyDecomposition={handleApplyDecomposition}
+            onApplyRename={(title) => {
+              optimisticUpdate({ title });
+              handleDismissAi();
+            }}
+            onDeleteDuplicate={() => handleDelete()}
+            onNavigateToDuplicate={(id) => {
+              const params = new URLSearchParams(searchParams.toString());
+              params.set("task", id);
+              params.delete("ai");
+              router.push(`?${params.toString()}`, { scroll: false });
+            }}
             onDismiss={handleDismissAi}
           />
         </div>

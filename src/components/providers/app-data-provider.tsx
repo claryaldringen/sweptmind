@@ -28,6 +28,7 @@ export const APP_TASK_FIELDS = gql`
     isCompleted
     completedAt
     dueDate
+    dueDateEnd
     reminderAt
     recurrence
     deviceContext
@@ -76,6 +77,18 @@ export const APP_TASK_FIELDS = gql`
       taskId
       isActionable
       suggestion
+      suggestedTitle
+      projectName
+      decomposition {
+        title
+        listName
+        dependsOn
+      }
+      duplicateTaskId
+      callIntent {
+        name
+        reason
+      }
       analyzedTitle
     }
   }
@@ -237,6 +250,7 @@ export interface AppTask {
   isCompleted: boolean;
   completedAt: string | null;
   dueDate: string | null;
+  dueDateEnd: string | null;
   reminderAt: string | null;
   recurrence: string | null;
   deviceContext: string | null;
@@ -256,6 +270,11 @@ export interface AppTask {
     taskId: string;
     isActionable: boolean;
     suggestion: string | null;
+    suggestedTitle: string | null;
+    projectName: string | null;
+    decomposition: { title: string; listName: string | null; dependsOn: number | null }[] | null;
+    duplicateTaskId: string | null;
+    callIntent: { name: string; reason: string | null } | null;
     analyzedTitle: string;
   } | null;
 }

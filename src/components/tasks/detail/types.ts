@@ -30,6 +30,7 @@ export interface TaskDetail {
   isCompleted: boolean;
   completedAt: string | null;
   dueDate: string | null;
+  dueDateEnd: string | null;
   reminderAt: string | null;
   recurrence: string | null;
   sortOrder: number;

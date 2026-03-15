@@ -6,6 +6,7 @@ mutation CreateTask($input: CreateTaskInput!) {
     notes
     isCompleted
     dueDate
+    dueDateEnd
     sortOrder
     createdAt
     steps {
@@ -24,6 +25,7 @@ mutation UpdateTask($id: String!, $input: UpdateTaskInput!) {
     title
     notes
     dueDate
+    dueDateEnd
     reminderAt
     recurrence
     deviceContext
