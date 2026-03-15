@@ -31,6 +31,7 @@ export const tasks = pgTable(
     isCompleted: boolean("is_completed").notNull().default(false),
     completedAt: timestamp("completed_at", { mode: "date" }),
     dueDate: text("due_date"), // YYYY-MM-DD date string
+    dueDateEnd: text("due_date_end"), // YYYY-MM-DD or YYYY-MM-DDTHH:mm (end of range)
     reminderAt: text("reminder_at"), // YYYY-MM-DD date string (visibility override)
     recurrence: text("recurrence"), // iCal RRULE
     locationRadius: doublePrecision("location_radius"), // km, null = use location default
