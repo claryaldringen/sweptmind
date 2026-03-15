@@ -541,11 +541,13 @@ export const TaskItem = memo(function TaskItem({
                       <CalendarDays className="h-3 w-3" />
                       {isDueToday
                         ? t("tasks.today")
-                        : format(
-                            dueDateParsed!,
-                            task.dueDate.includes("T") ? "MMM d, h:mm a" : "MMM d",
-                            { locale: dateFnsLocale },
-                          )}
+                        : task.dueDateEnd
+                          ? `${format(dueDateParsed!, task.dueDate.includes("T") ? "MMM d, h:mm a" : "MMM d", { locale: dateFnsLocale })} – ${format(parseISO(task.dueDateEnd), task.dueDateEnd.includes("T") ? "MMM d, h:mm a" : "MMM d", { locale: dateFnsLocale })}`
+                          : format(
+                              dueDateParsed!,
+                              task.dueDate.includes("T") ? "MMM d, h:mm a" : "MMM d",
+                              { locale: dateFnsLocale },
+                            )}
                     </span>
                   )}
                   {task.dueDate && (hasReminder || totalSteps > 0) && (
