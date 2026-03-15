@@ -488,9 +488,20 @@ export const TaskItem = memo(function TaskItem({
                   </span>
                 )}
                 {task.aiAnalysis && !task.aiAnalysis.isActionable && (
-                  <span title={task.aiAnalysis.suggestion ?? t("premium.aiNotActionable")}>
-                    <Lightbulb className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
-                  </span>
+                  <button
+                    type="button"
+                    title={task.aiAnalysis.suggestion ?? t("premium.aiNotActionable")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const params = new URLSearchParams(searchParams.toString());
+                      params.set("task", task.id);
+                      params.set("ai", "1");
+                      router.push(`?${params.toString()}`, { scroll: false });
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <Lightbulb className="h-5 w-5 shrink-0 text-yellow-500" />
+                  </button>
                 )}
                 {analyzingTaskIds?.has(task.id) && !task.aiAnalysis && (
                   <span title={t("premium.aiAnalyzing")}>

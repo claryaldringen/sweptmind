@@ -350,6 +350,14 @@ export interface Dictionary {
     closeQR: string;
     aiAnalyzing: string;
     aiNotActionable: string;
+    aiSuggestion: string;
+    aiDecompose: string;
+    aiDecomposing: string;
+    aiDecomposeApply: string;
+    aiDecomposeCancel: string;
+    aiDecomposeEmpty: string;
+    aiDecomposeError: string;
+    aiDecomposeKeepInList: string;
   };
   validation: {
     invalidEmail: string;

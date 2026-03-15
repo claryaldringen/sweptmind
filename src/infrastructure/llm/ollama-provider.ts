@@ -1,5 +1,5 @@
-import type { ILlmProvider, LlmResponse } from "@/domain/ports/llm-provider";
-import { GTD_SYSTEM_PROMPT } from "./system-prompt";
+import type { ILlmProvider, LlmResponse, DecomposeResponse } from "@/domain/ports/llm-provider";
+import { GTD_SYSTEM_PROMPT, GTD_DECOMPOSE_PROMPT } from "./system-prompt";
 
 export class OllamaProvider implements ILlmProvider {
   private readonly baseUrl: string;
@@ -42,6 +42,44 @@ export class OllamaProvider implements ILlmProvider {
     return {
       isActionable: Boolean(parsed.isActionable),
       suggestion: parsed.isActionable ? null : (parsed.suggestion ?? null),
+    };
+  }
+
+  async decomposeTask(title: string, context: { lists: string[]; tags: string[] }): Promise<DecomposeResponse> {
+    const userMessage = `Task: "${title}"\nUser's lists: ${context.lists.join(", ") || "(none)"}\nUser's tags: ${context.tags.join(", ") || "(none)"}`;
+
+    const res = await fetch(`${this.baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: this.model,
+        messages: [
+          { role: "system", content: GTD_DECOMPOSE_PROMPT },
+          { role: "user", content: userMessage },
+        ],
+        stream: false,
+        format: "json",
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Ollama API error: ${res.status}`);
+    }
+
+    const data = await res.json();
+    const content = data.message?.content;
+    if (!content) {
+      throw new Error("Empty response from Ollama");
+    }
+
+    const parsed = JSON.parse(content);
+    return {
+      steps: Array.isArray(parsed.steps)
+        ? parsed.steps.map((s: { title?: string; listName?: string | null }) => ({
+            title: String(s.title ?? ""),
+            listName: s.listName ?? null,
+          }))
+        : [],
     };
   }
 }

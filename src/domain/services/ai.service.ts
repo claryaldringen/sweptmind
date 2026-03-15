@@ -1,8 +1,9 @@
 import type { TaskAiAnalysis } from "../entities/task-ai-analysis";
 import type { ITaskAiAnalysisRepository } from "../repositories/task-ai-analysis.repository";
 import type { ITaskRepository } from "../repositories/task.repository";
+import type { IListRepository } from "../repositories/list.repository";
 import type { IUserRepository } from "../repositories/user.repository";
-import type { ILlmProvider } from "../ports/llm-provider";
+import type { ILlmProvider, DecomposeResponse } from "../ports/llm-provider";
 import type { SubscriptionService } from "./subscription.service";
 
 export interface ILlmProviderFactory {
@@ -18,6 +19,7 @@ export class AiService {
   constructor(
     private readonly analysisRepo: ITaskAiAnalysisRepository,
     private readonly taskRepo: ITaskRepository,
+    private readonly listRepo: IListRepository,
     private readonly defaultLlm: ILlmProvider,
     private readonly subscriptionService: SubscriptionService,
     private readonly userRepo: IUserRepository,
@@ -67,5 +69,23 @@ export class AiService {
       suggestion: result.suggestion,
       analyzedTitle: task.title,
     });
+  }
+
+  async decomposeTask(taskId: string, userId: string): Promise<DecomposeResponse> {
+    const isPremium = await this.subscriptionService.isPremium(userId);
+    if (!isPremium) {
+      throw new Error("Premium subscription required");
+    }
+
+    const task = await this.taskRepo.findById(taskId, userId);
+    if (!task) {
+      throw new Error("Task not found");
+    }
+
+    const lists = await this.listRepo.findByUser(userId);
+    const listNames = lists.map((l) => l.name);
+
+    const llm = await this.resolveProvider(userId);
+    return llm.decomposeTask(task.title, { lists: listNames, tags: [] });
   }
 }

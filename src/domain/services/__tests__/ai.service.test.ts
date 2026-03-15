@@ -3,6 +3,7 @@ import { AiService } from "../ai.service";
 import { SubscriptionService } from "../subscription.service";
 import type { ITaskAiAnalysisRepository } from "../../repositories/task-ai-analysis.repository";
 import type { ITaskRepository } from "../../repositories/task.repository";
+import type { IListRepository } from "../../repositories/list.repository";
 import type { ILlmProvider } from "../../ports/llm-provider";
 import type { IUserRepository } from "../../repositories/user.repository";
 import type { ILlmProviderFactory } from "../ai.service";
@@ -87,11 +88,30 @@ function makeTaskRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository
   };
 }
 
+function makeListRepo(): IListRepository {
+  return {
+    findById: vi.fn().mockResolvedValue(undefined),
+    findByIds: vi.fn().mockResolvedValue([]),
+    findByUser: vi.fn().mockResolvedValue([]),
+    findByGroup: vi.fn().mockResolvedValue([]),
+    findMaxSortOrder: vi.fn().mockResolvedValue(undefined),
+    create: vi.fn(),
+    update: vi.fn(),
+    deleteNonDefault: vi.fn(),
+    updateSortOrder: vi.fn(),
+    ungroupByGroupId: vi.fn(),
+    deleteManyNonDefault: vi.fn(),
+  };
+}
+
 function makeLlmProvider(overrides: Partial<ILlmProvider> = {}): ILlmProvider {
   return {
     analyzeTask: vi
       .fn()
       .mockResolvedValue({ isActionable: true, suggestion: "Looks good as an action" }),
+    decomposeTask: vi
+      .fn()
+      .mockResolvedValue({ steps: [] }),
     ...overrides,
   };
 }
@@ -165,7 +185,7 @@ describe("AiService", () => {
     subscriptionService = makeSubscriptionService(true);
     userRepo = makeUserRepo();
     llmFactory = makeLlmFactory();
-    service = new AiService(analysisRepo, taskRepo, llm, subscriptionService, userRepo, llmFactory);
+    service = new AiService(analysisRepo, taskRepo, makeListRepo(), llm, subscriptionService, userRepo, llmFactory);
   });
 
   it("vrati cachovanu analyzu pokud se title nezmenil (nevola LLM)", async () => {
@@ -226,7 +246,7 @@ describe("AiService", () => {
 
   it("vyhodi chybu pro ne-premium uzivatele", async () => {
     subscriptionService = makeSubscriptionService(false);
-    service = new AiService(analysisRepo, taskRepo, llm, subscriptionService, userRepo, llmFactory);
+    service = new AiService(analysisRepo, taskRepo, makeListRepo(), llm, subscriptionService, userRepo, llmFactory);
 
     await expect(service.analyzeTask("task-1", "user-1")).rejects.toThrow(
       "Premium subscription required",
@@ -251,6 +271,7 @@ describe("AiService", () => {
     service = new AiService(
       analysisRepo,
       taskRepo,
+      makeListRepo(),
       llm,
       subscriptionService,
       customUserRepo,

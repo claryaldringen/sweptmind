@@ -22,6 +22,7 @@ import { TaskDates } from "./detail/task-dates";
 import { TaskActions } from "./detail/task-actions";
 import { TaskDependency } from "./detail/task-dependency";
 import { TaskAttachments } from "./detail/task-attachments";
+import { TaskAiSection } from "./detail/task-ai-section";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 import { computeFirstOccurrence, parseRecurrence } from "@/domain/services/recurrence";
 import { pickNextTagColor } from "@/lib/tag-colors";
@@ -75,6 +76,28 @@ const TOGGLE_COMPLETED = gql`
 const DELETE_TASK = gql`
   mutation DeleteTask($id: String!) {
     deleteTask(id: $id)
+  }
+`;
+
+const CREATE_TASK = gql`
+  mutation CreateTask($input: CreateTaskInput!) {
+    createTask(input: $input) {
+      id
+      listId
+      title
+      notes
+      isCompleted
+      dueDate
+      sortOrder
+      createdAt
+      steps {
+        id
+        taskId
+        title
+        isCompleted
+        sortOrder
+      }
+    }
   }
 `;
 
@@ -228,6 +251,10 @@ interface TaskDetail {
   blockedByTask: { id: string; title: string } | null;
   blockedByTaskIsCompleted: boolean | null;
   attachments: TaskAttachment[];
+  aiAnalysis: {
+    isActionable: boolean;
+    suggestion: string | null;
+  } | null;
 }
 
 interface GetMeData {
@@ -295,11 +322,13 @@ export function TaskDetailPanel() {
   const { t, tArray, locale: appLocale } = useTranslations();
   const dateFnsLocale = appLocale === "cs" ? cs : enUS;
   const taskId = searchParams.get("task");
+  const showAi = searchParams.get("ai") === "1";
 
   // ---- Data ----
 
   const {
     allTasks,
+    lists: allLists,
     tags: allTagsFromProvider,
     locations: allLocationsFromProvider,
     loading,
@@ -542,6 +571,8 @@ export function TaskDetailPanel() {
     },
   });
 
+  const [createTask] = useMutation(CREATE_TASK);
+
   // ---- Hooks ----
 
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -698,6 +729,45 @@ export function TaskDetailPanel() {
     optimisticUpdate({ blockedByTaskId });
   }
 
+  // AI decomposition handler
+
+  async function handleApplyDecomposition(steps: { title: string; listName: string | null }[]) {
+    if (!task || steps.length === 0) return;
+    // Step 1: Rename current task to first step
+    optimisticUpdate({ title: steps[0].title });
+    // If the first step has a different list, move it
+    if (steps[0].listName) {
+      const targetList = allLists.find((l) => l.name === steps[0].listName);
+      if (targetList) optimisticUpdate({ listId: targetList.id });
+    }
+    // Step 2: Create remaining steps as new tasks
+    for (let i = 1; i < steps.length; i++) {
+      const step = steps[i];
+      const targetList = step.listName
+        ? allLists.find((l) => l.name === step.listName)
+        : null;
+      await createTask({
+        variables: {
+          input: {
+            id: crypto.randomUUID(),
+            listId: targetList?.id ?? task.listId,
+            title: step.title,
+          },
+        },
+      });
+    }
+    // Step 3: Remove ai param from URL
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("ai");
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }
+
+  function handleDismissAi() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("ai");
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }
+
   // Recurrence handlers
 
   function formatRecurrence(recurrence: string | null): string | null {
@@ -767,6 +837,30 @@ export function TaskDetailPanel() {
   }
 
   // ---- Render ----
+
+  // AI-only panel
+  if (showAi && task.aiAnalysis && !task.aiAnalysis.isActionable) {
+    return (
+      <div
+        className={cn("bg-background flex flex-col", isDesktop ? "h-full" : "absolute inset-0 z-10")}
+      >
+        <div className="flex items-center gap-2 border-b px-4 py-3">
+          <Button variant="ghost" size="icon" onClick={handleDismissAi}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <span className="min-w-0 truncate text-sm font-medium">{task.title}</span>
+        </div>
+        <div className="min-h-0 flex-1 overflow-auto p-4">
+          <TaskAiSection
+            taskId={task.id}
+            suggestion={task.aiAnalysis.suggestion}
+            onApplyDecomposition={handleApplyDecomposition}
+            onDismiss={handleDismissAi}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

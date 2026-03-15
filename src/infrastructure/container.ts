@@ -92,6 +92,7 @@ export const services = {
   ai: new AiService(
     aiAnalysisRepo,
     taskRepo,
+    listRepo,
     llmProvider,
     subscriptionService,
     userRepo,

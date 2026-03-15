@@ -28,3 +28,26 @@ builder.mutationField("analyzeTask", (t) =>
     },
   }),
 );
+
+// Decomposition types
+const DecomposeStepType = builder.simpleObject("DecomposeStep", {
+  fields: (t) => ({
+    title: t.string(),
+    listName: t.string({ nullable: true }),
+  }),
+});
+
+builder.mutationField("decomposeTask", (t) =>
+  t.field({
+    type: [DecomposeStepType],
+    authScopes: { authenticated: true },
+    args: {
+      taskId: t.arg.string({ required: true }),
+    },
+    resolve: async (_root, args, ctx) => {
+      if (!ctx.userId) return [];
+      const result = await ctx.services.ai.decomposeTask(args.taskId, ctx.userId);
+      return result.steps;
+    },
+  }),
+);
