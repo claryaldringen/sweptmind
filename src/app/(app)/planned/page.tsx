@@ -9,6 +9,7 @@ import { DraggableTaskItem } from "@/components/tasks/draggable-task-item";
 import { ResizableTaskLayout } from "@/components/layout/resizable-task-layout";
 import { useTranslations } from "@/lib/i18n";
 import { useAppData, type AppTask } from "@/components/providers/app-data-provider";
+import { TaskSelectionProvider } from "@/components/providers/task-selection-provider";
 
 type GroupKey = "overdue" | "today" | "tomorrow" | "thisWeek" | "later";
 
@@ -92,6 +93,16 @@ export default function PlannedPage() {
     return grouped;
   }, [allTasks, todayStr, tomorrowStr, endOfWeekStr]);
 
+  const taskIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const key of GROUP_ORDER) {
+      for (const task of groups.get(key) ?? []) {
+        ids.push(task.id);
+      }
+    }
+    return ids;
+  }, [groups]);
+
   const groupLabels: Record<GroupKey, string> = {
     overdue: t("planned.overdue"),
     today: t("planned.today"),
@@ -119,31 +130,33 @@ export default function PlannedPage() {
             <div className="text-muted-foreground animate-pulse">{t("common.loading")}</div>
           </div>
         ) : (
-          <div className="flex-1 overflow-auto">
-            {GROUP_ORDER.map((key) => {
-              const items = groups.get(key) ?? [];
-              if (items.length === 0) return null;
-              return (
-                <div key={key} className="mb-2">
-                  <h2
-                    className={`px-4 py-2 text-xs font-semibold tracking-wide uppercase ${GROUP_COLORS[key]}`}
-                  >
-                    {groupLabels[key]}
-                  </h2>
-                  <div className="space-y-0.5">
-                    {items.map((task) => (
-                      <DraggableTaskItem key={task.id} task={task} showListName />
-                    ))}
+          <TaskSelectionProvider taskIds={taskIds}>
+            <div className="flex-1 overflow-auto">
+              {GROUP_ORDER.map((key) => {
+                const items = groups.get(key) ?? [];
+                if (items.length === 0) return null;
+                return (
+                  <div key={key} className="mb-2">
+                    <h2
+                      className={`px-4 py-2 text-xs font-semibold tracking-wide uppercase ${GROUP_COLORS[key]}`}
+                    >
+                      {groupLabels[key]}
+                    </h2>
+                    <div className="space-y-0.5">
+                      {items.map((task) => (
+                        <DraggableTaskItem key={task.id} task={task} showListName />
+                      ))}
+                    </div>
                   </div>
+                );
+              })}
+              {GROUP_ORDER.every((key) => (groups.get(key) ?? []).length === 0) && (
+                <div className="flex flex-1 items-center justify-center py-20">
+                  <p className="text-muted-foreground text-sm">{t("planned.empty")}</p>
                 </div>
-              );
-            })}
-            {GROUP_ORDER.every((key) => (groups.get(key) ?? []).length === 0) && (
-              <div className="flex flex-1 items-center justify-center py-20">
-                <p className="text-muted-foreground text-sm">{t("planned.empty")}</p>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </TaskSelectionProvider>
         )}
       </div>
     </ResizableTaskLayout>

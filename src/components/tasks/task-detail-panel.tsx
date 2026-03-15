@@ -958,6 +958,10 @@ export function TaskDetailPanel() {
           storageFullLabel={t("premium.storageFull")}
           dragDropHintLabel={t("premium.dragDropHint")}
           uploadingLabel={t("premium.uploading")}
+          deleteConfirmTitle={t("common.deleteConfirmTitle")}
+          deleteConfirmDesc={t("premium.deleteFileConfirmDesc")}
+          deleteConfirmCancel={t("common.deleteConfirmCancel")}
+          deleteConfirmAction={t("common.deleteConfirmAction")}
         />
       </div>
 

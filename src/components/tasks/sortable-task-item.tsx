@@ -51,7 +51,7 @@ export function SortableTaskItem({ task, showListName, analyzingTaskIds }: Sorta
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="outline-none">
       <TaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingTaskIds} />
     </div>
   );

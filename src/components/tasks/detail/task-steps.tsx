@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
 import { X, Plus, Trash2 } from "lucide-react";
@@ -18,6 +18,7 @@ import {
   StepSelectionProvider,
   useStepSelectionOptional,
 } from "@/components/providers/step-selection-provider";
+import { setFocusArea, subscribeFocusArea, getFocusArea } from "@/lib/focus-area";
 import { useTranslations } from "@/lib/i18n";
 
 function autoResize(el: HTMLTextAreaElement) {
@@ -61,8 +62,17 @@ function StepRow({
   const { t } = useTranslations();
   const stepSelection = useStepSelectionOptional();
   const isSelected = stepSelection?.selectedIds.has(step.id) ?? false;
+  const focusArea = useSyncExternalStore(subscribeFocusArea, getFocusArea, getFocusArea);
+  const stepsHaveFocus = focusArea === "steps";
   const isBulkMode = isSelected && (stepSelection?.selectedIds.size ?? 0) >= 2;
   const [deleteSteps] = useMutation(DELETE_STEPS);
+  const rowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isSelected && rowRef.current) {
+      rowRef.current.scrollIntoView({ block: "nearest" });
+    }
+  }, [isSelected]);
 
   const handleBulkDelete = () => {
     if (!stepSelection) return;
@@ -83,11 +93,15 @@ function StepRow({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
+          ref={rowRef}
           className={cn(
             "group -mx-1 flex min-w-0 items-center gap-2 rounded-md px-1",
-            isSelected && "bg-accent",
+            isSelected && stepsHaveFocus && "bg-accent",
+            isSelected && !stepsHaveFocus && "bg-accent/50",
           )}
+          onMouseDown={(e) => { if (e.shiftKey) e.preventDefault(); }}
           onClick={(e) => {
+            setFocusArea("steps");
             if ((e.metaKey || e.ctrlKey || e.shiftKey) && stepSelection) {
               e.preventDefault();
               stepSelection.handleClick(step.id, {

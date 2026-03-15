@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useEffect, useRef, type MouseEvent } from "react";
+import { memo, useState, useEffect, useRef, useSyncExternalStore, type MouseEvent } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { gql } from "@apollo/client";
 import { useMutation, useApolloClient } from "@apollo/client/react";
@@ -45,6 +45,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
+import { setFocusArea, subscribeFocusArea, getFocusArea } from "@/lib/focus-area";
 import { getTagColorClasses } from "@/lib/tag-colors";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -183,6 +184,8 @@ export const TaskItem = memo(function TaskItem({
   const deviceContext = useDeviceContext();
   const taskSelection = useTaskSelectionOptional();
   const isSelected = taskSelection?.selectedIds.has(task.id) ?? false;
+  const focusArea = useSyncExternalStore(subscribeFocusArea, getFocusArea, getFocusArea);
+  const tasksHaveFocus = focusArea === "tasks";
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const client = useApolloClient();
@@ -206,6 +209,12 @@ export const TaskItem = memo(function TaskItem({
   useEffect(() => {
     return () => completionTimersRef.current.forEach(clearTimeout);
   }, []);
+
+  useEffect(() => {
+    if (isSelected && rowRef.current) {
+      rowRef.current.scrollIntoView({ block: "nearest" });
+    }
+  }, [isSelected]);
 
   if (prevIsCompleted !== task.isCompleted) {
     setPrevIsCompleted(task.isCompleted);
@@ -364,6 +373,7 @@ export const TaskItem = memo(function TaskItem({
   const allLists = lists;
 
   function handleClick(e: MouseEvent) {
+    setFocusArea("tasks");
     if (e.metaKey || e.ctrlKey || e.shiftKey) {
       e.preventDefault();
       taskSelection?.handleClick(task.id, {
@@ -379,8 +389,8 @@ export const TaskItem = memo(function TaskItem({
       }
       return;
     }
-    // Original behavior: clear selection and open detail panel
-    taskSelection?.clear();
+    // Original behavior: single-select (sets anchor) and open detail panel
+    taskSelection?.handleClick(task.id, {});
     const params = new URLSearchParams(searchParams.toString());
     params.set("task", task.id);
     router.push(`?${params.toString()}`, { scroll: false });
@@ -400,12 +410,13 @@ export const TaskItem = memo(function TaskItem({
             ref={rowRef}
             className={cn(
               "group hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-4 py-2.5 transition-all duration-500",
-              selectedTaskId === task.id && "bg-accent",
-              isSelected && "bg-accent",
+              (selectedTaskId === task.id || isSelected) && tasksHaveFocus && "bg-accent",
+              (selectedTaskId === task.id || isSelected) && !tasksHaveFocus && "bg-accent/50",
               locationNearby && "bg-emerald-50 dark:bg-emerald-950/30",
               deviceMatch && "bg-yellow-50 dark:bg-yellow-950/30",
               (fadingOut || externalFadingOut) && "opacity-0",
             )}
+            onMouseDown={(e) => { if (e.shiftKey) e.preventDefault(); }}
             onClick={handleClick}
             onContextMenu={() => {
               if (!isSelected && taskSelection) {
@@ -435,7 +446,7 @@ export const TaskItem = memo(function TaskItem({
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                {isDesktop && selectedTaskId === task.id ? (
+                {isDesktop && selectedTaskId === task.id && selectedIds.size < 2 ? (
                   <input
                     key={task.id + task.title}
                     defaultValue={task.title}

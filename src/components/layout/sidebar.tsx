@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { gql } from "@apollo/client";
-import { useMutation } from "@apollo/client/react";
+import { useMutation, useApolloClient } from "@apollo/client/react";
 import {
   useLists,
   useAppData,
@@ -45,6 +45,7 @@ import { Separator } from "@/components/ui/separator";
 import { CreateListDialog } from "@/components/lists/create-list-dialog";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { useSidebarContext } from "@/components/layout/app-shell";
+import { getFocusArea, setFocusArea, subscribeFocusArea } from "@/lib/focus-area";
 import { UserMenu } from "./user-menu";
 import {
   ListSelectionProvider,
@@ -124,29 +125,41 @@ type ListItemWithCounts = ListItem & { taskCount: number; visibleTaskCount: numb
 function SortableListItem({
   list,
   isActive,
+  sidebarHasFocus,
   taskCountMode,
   isNearby,
   isDeviceMatch,
   isDropTarget,
+  smartListIds,
   onRename,
   onDelete,
+  onBulkDelete,
   onNavigate,
 }: {
   list: ListItemWithCounts;
   isActive: boolean;
+  sidebarHasFocus: boolean;
   taskCountMode: "all" | "visible";
   isNearby: boolean;
   isDeviceMatch: boolean;
   isDropTarget: boolean;
+  smartListIds: Set<string>;
   onRename: (list: ListItemWithCounts) => void;
   onDelete: (list: ListItemWithCounts) => void;
+  onBulkDelete: (ids: string[]) => void;
   onNavigate?: () => void;
 }) {
   const { t } = useTranslations();
-  const [deleteLists] = useMutation(DELETE_LISTS);
   const listSelection = useListSelectionOptional();
   const isListSelected = listSelection?.selectedIds.has(list.id) ?? false;
   const isBulkMode = isListSelected && (listSelection?.selectedIds.size ?? 0) >= 2;
+  const hasSmartListInSelection = isBulkMode && [...(listSelection?.selectedIds ?? [])].some((id) => smartListIds.has(id));
+
+  const handleBulkDelete = () => {
+    if (!listSelection) return;
+    onBulkDelete([...listSelection.selectedIds]);
+    listSelection.clear();
+  };
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: list.id,
@@ -160,21 +173,6 @@ function SortableListItem({
 
   const count = taskCountMode === "visible" ? list.visibleTaskCount : list.taskCount;
 
-  const handleBulkDelete = () => {
-    if (!listSelection) return;
-    const ids = [...listSelection.selectedIds];
-    deleteLists({
-      variables: { ids },
-      update(cache) {
-        for (const id of ids) {
-          cache.evict({ id: cache.identify({ __typename: "List", id }) });
-        }
-        cache.gc();
-      },
-    });
-    listSelection.clear();
-  };
-
   return (
     <div
       ref={setNodeRef}
@@ -187,7 +185,9 @@ function SortableListItem({
         <ContextMenuTrigger asChild>
           <Link
             href={`/lists/${list.id}`}
+            onMouseDown={(e) => { if (e.shiftKey) e.preventDefault(); }}
             onClick={(e) => {
+              setFocusArea("sidebar");
               if ((e.metaKey || e.ctrlKey || e.shiftKey) && listSelection) {
                 e.preventDefault();
                 listSelection.handleClick(list.id, {
@@ -197,7 +197,7 @@ function SortableListItem({
                 });
                 return;
               }
-              listSelection?.clear();
+              listSelection?.handleClick(list.id, {});
               onNavigate?.();
             }}
             onContextMenu={() => {
@@ -207,7 +207,8 @@ function SortableListItem({
             }}
             className={cn(
               "hover:bg-sidebar-accent flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
+              isActive && sidebarHasFocus && "bg-sidebar-accent text-sidebar-accent-foreground",
+              isActive && !sidebarHasFocus && "bg-sidebar-accent/50",
               isDragging && "opacity-50",
               isNearby && "bg-emerald-50 dark:bg-emerald-950/30",
               isDeviceMatch && "bg-yellow-50 dark:bg-yellow-950/30",
@@ -237,9 +238,9 @@ function SortableListItem({
                 {t("bulkSelectedCount", { count: String(listSelection!.selectedIds.size) })}
               </ContextMenuItem>
               <ContextMenuSeparator />
-              <ContextMenuItem variant="destructive" onClick={handleBulkDelete}>
+              <ContextMenuItem variant="destructive" disabled={hasSmartListInSelection} onClick={handleBulkDelete}>
                 <Trash2 className="h-4 w-4" />
-                {t("bulkDeleteLists")}
+                {t("bulkDelete")}
               </ContextMenuItem>
             </>
           ) : (
@@ -265,14 +266,18 @@ function SortableListItem({
 function DroppableDefaultList({
   list,
   isActive,
+  sidebarHasFocus,
   contextCount,
   isDropTarget,
+  smartListIds,
   onNavigate,
 }: {
   list: ListItem;
   isActive: boolean;
+  sidebarHasFocus: boolean;
   contextCount: number;
   isDropTarget: boolean;
+  smartListIds: Set<string>;
   onNavigate?: () => void;
 }) {
   const { t } = useTranslations();
@@ -280,61 +285,142 @@ function DroppableDefaultList({
     id: list.id,
     data: { type: "list" },
   });
+  const listSelection = useListSelectionOptional();
+  const isSelected = listSelection?.selectedIds.has("context") ?? false;
+  const isBulkMode = isSelected && (listSelection?.selectedIds.size ?? 0) >= 2;
 
-  return (
-    <div ref={setNodeRef}>
-      <Link
-        href="/context"
-        onClick={onNavigate}
-        className={cn(
-          "hover:bg-sidebar-accent flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-          isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
-          isDropTarget && "ring-primary bg-primary/10 ring-2",
-        )}
-      >
-        <div className="flex items-center gap-3">
-          <Zap className="h-5 w-5 text-yellow-500" />
-          {t("sidebar.tasks")}
-        </div>
-        {contextCount > 0 && <span className="text-muted-foreground text-xs">{contextCount}</span>}
-      </Link>
-    </div>
+  const link = (
+    <Link
+      href="/context"
+      onMouseDown={(e) => { if (e.shiftKey) e.preventDefault(); }}
+      onClick={(e) => {
+        setFocusArea("sidebar");
+        if ((e.metaKey || e.ctrlKey || e.shiftKey) && listSelection) {
+          e.preventDefault();
+          listSelection.handleClick("context", {
+            metaKey: e.metaKey,
+            ctrlKey: e.ctrlKey,
+            shiftKey: e.shiftKey,
+          });
+          return;
+        }
+        listSelection?.handleClick("context", {});
+        onNavigate?.();
+      }}
+      onContextMenu={() => {
+        if (!isSelected && listSelection) {
+          listSelection.handleClick("context", {});
+        }
+      }}
+      className={cn(
+        "hover:bg-sidebar-accent flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+        isActive && sidebarHasFocus && "bg-sidebar-accent text-sidebar-accent-foreground",
+        isActive && !sidebarHasFocus && "bg-sidebar-accent/50",
+        isDropTarget && "ring-primary bg-primary/10 ring-2",
+        isSelected && "bg-sidebar-accent",
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <Zap className="h-5 w-5 text-yellow-500" />
+        {t("sidebar.tasks")}
+      </div>
+      {contextCount > 0 && <span className="text-muted-foreground text-xs">{contextCount}</span>}
+    </Link>
   );
+
+  if (isBulkMode) {
+    return (
+      <div ref={setNodeRef}>
+        <ContextMenu>
+          <ContextMenuTrigger asChild>{link}</ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem disabled className="text-muted-foreground text-xs">
+              {t("bulkSelectedCount", { count: String(listSelection!.selectedIds.size) })}
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem variant="destructive" disabled>
+              <Trash2 className="h-4 w-4" />
+              {t("bulkDelete")}
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      </div>
+    );
+  }
+
+  return <div ref={setNodeRef}>{link}</div>;
 }
 
 function SidebarTagItem({
   tag,
   isActive,
+  sidebarHasFocus,
   isNearby,
   isDeviceMatch,
   taskCount,
+  smartListIds,
   onRename,
   onDelete,
+  onBulkDelete,
   onNavigate,
 }: {
   tag: TagItem;
   isActive: boolean;
+  sidebarHasFocus: boolean;
   isNearby: boolean;
   isDeviceMatch: boolean;
   taskCount: number;
+  smartListIds: Set<string>;
   onRename: (tag: TagItem) => void;
   onDelete: (tag: TagItem) => void;
+  onBulkDelete: (ids: string[]) => void;
   onNavigate?: () => void;
 }) {
   const { t } = useTranslations();
   const colors = getTagColorClasses(tag.color);
+  const listSelection = useListSelectionOptional();
+  const isSelected = listSelection?.selectedIds.has(tag.id) ?? false;
+  const isBulkMode = isSelected && (listSelection?.selectedIds.size ?? 0) >= 2;
+  const hasSmartListInSelection = isBulkMode && [...(listSelection?.selectedIds ?? [])].some((id) => smartListIds.has(id));
+
+  const handleBulkDelete = () => {
+    if (!listSelection) return;
+    onBulkDelete([...listSelection.selectedIds]);
+    listSelection.clear();
+  };
 
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <Link
           href={`/tags/${tag.id}`}
-          onClick={onNavigate}
+          onMouseDown={(e) => { if (e.shiftKey) e.preventDefault(); }}
+          onClick={(e) => {
+            setFocusArea("sidebar");
+            if ((e.metaKey || e.ctrlKey || e.shiftKey) && listSelection) {
+              e.preventDefault();
+              listSelection.handleClick(tag.id, {
+                metaKey: e.metaKey,
+                ctrlKey: e.ctrlKey,
+                shiftKey: e.shiftKey,
+              });
+              return;
+            }
+            listSelection?.handleClick(tag.id, {});
+            onNavigate?.();
+          }}
+          onContextMenu={() => {
+            if (!isSelected && listSelection) {
+              listSelection.handleClick(tag.id, {});
+            }
+          }}
           className={cn(
             "hover:bg-sidebar-accent flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-            isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
+            isActive && sidebarHasFocus && "bg-sidebar-accent text-sidebar-accent-foreground",
+            isActive && !sidebarHasFocus && "bg-sidebar-accent/50",
             isNearby && "bg-emerald-50 dark:bg-emerald-950/30",
             isDeviceMatch && !isNearby && "bg-yellow-50 dark:bg-yellow-950/30",
+            isSelected && "bg-sidebar-accent",
           )}
         >
           <div className="flex items-center gap-3">
@@ -353,17 +439,119 @@ function SidebarTagItem({
         </Link>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem onClick={() => onRename(tag)}>
-          <Pencil className="h-4 w-4" />
-          {t("tags.rename")}
-        </ContextMenuItem>
-        <ContextMenuItem variant="destructive" onClick={() => onDelete(tag)}>
-          <Trash2 className="h-4 w-4" />
-          {t("tags.delete")}
-        </ContextMenuItem>
+        {isBulkMode ? (
+          <>
+            <ContextMenuItem disabled className="text-muted-foreground text-xs">
+              {t("bulkSelectedCount", { count: String(listSelection!.selectedIds.size) })}
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem variant="destructive" disabled={hasSmartListInSelection} onClick={handleBulkDelete}>
+              <Trash2 className="h-4 w-4" />
+              {t("bulkDelete")}
+            </ContextMenuItem>
+          </>
+        ) : (
+          <>
+            <ContextMenuItem onClick={() => onRename(tag)}>
+              <Pencil className="h-4 w-4" />
+              {t("tags.rename")}
+            </ContextMenuItem>
+            <ContextMenuItem variant="destructive" onClick={() => onDelete(tag)}>
+              <Trash2 className="h-4 w-4" />
+              {t("tags.delete")}
+            </ContextMenuItem>
+          </>
+        )}
       </ContextMenuContent>
     </ContextMenu>
   );
+}
+
+function SidebarSmartListItem({
+  id,
+  href,
+  label,
+  icon: Icon,
+  color,
+  isActive,
+  sidebarHasFocus,
+  count,
+  onNavigate,
+}: {
+  id: string;
+  href: string;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  color: string;
+  isActive: boolean;
+  sidebarHasFocus: boolean;
+  count?: number;
+  onNavigate?: () => void;
+}) {
+  const { t } = useTranslations();
+  const listSelection = useListSelectionOptional();
+  const isSelected = listSelection?.selectedIds.has(id) ?? false;
+  const isBulkMode = isSelected && (listSelection?.selectedIds.size ?? 0) >= 2;
+
+  const link = (
+    <Link
+      href={href}
+      onMouseDown={(e) => { if (e.shiftKey) e.preventDefault(); }}
+      onClick={(e) => {
+        setFocusArea("sidebar");
+        if ((e.metaKey || e.ctrlKey || e.shiftKey) && listSelection) {
+          e.preventDefault();
+          listSelection.handleClick(id, {
+            metaKey: e.metaKey,
+            ctrlKey: e.ctrlKey,
+            shiftKey: e.shiftKey,
+          });
+          return;
+        }
+        listSelection?.handleClick(id, {});
+        onNavigate?.();
+      }}
+      onContextMenu={() => {
+        if (!isSelected && listSelection) {
+          listSelection.handleClick(id, {});
+        }
+      }}
+      className={cn(
+        "hover:bg-sidebar-accent flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+        isActive && sidebarHasFocus && "bg-sidebar-accent text-sidebar-accent-foreground",
+        isActive && !sidebarHasFocus && "bg-sidebar-accent/50",
+        isSelected && "bg-sidebar-accent",
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <Icon className={cn("h-5 w-5", color)} />
+        {label}
+      </div>
+      {count != null && count > 0 && (
+        <span className="text-muted-foreground text-xs">{count}</span>
+      )}
+    </Link>
+  );
+
+  if (isBulkMode) {
+    return (
+      <ContextMenu>
+        <ContextMenuTrigger asChild>{link}</ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem disabled className="text-muted-foreground text-xs">
+            {t("bulkSelectedCount", { count: String(listSelection!.selectedIds.size) })}
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem variant="destructive" disabled>
+            <Trash2 className="h-4 w-4" />
+            {t("bulkDelete")}
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    );
+  }
+
+  return link;
 }
 
 const SMART_LIST_ORDER_KEY = "sweptmind-smart-list-order";
@@ -410,6 +598,8 @@ function SortableSmartItem({ id, children }: { id: string; children: ReactNode }
 export function Sidebar() {
   const { close: closeSidebar, isDesktop } = useSidebarContext();
   useKeyboardShortcuts();
+  const focusArea = useSyncExternalStore(subscribeFocusArea, getFocusArea, getFocusArea);
+  const sidebarHasFocus = focusArea === "sidebar";
   const { mode: taskCountMode } = useTaskCountMode();
   const deviceContext = useDeviceContext();
   const { t } = useTranslations();
@@ -509,6 +699,44 @@ export function Sidebar() {
   const customLists = localOrder ?? serverCustomLists;
   const defaultList = allLists.find((l) => l.isDefault);
   const listIds = useMemo(() => customLists.map((l) => l.id), [customLists]);
+  const sidebarSelectableIds = useMemo(
+    () => [...smartOrder, ...customLists.map((l) => l.id), ...allTags.map((t) => t.id)],
+    [smartOrder, customLists, allTags],
+  );
+  const listIdSet = useMemo(() => new Set(customLists.map((l) => l.id)), [customLists]);
+  const smartListIdSet = useMemo(() => new Set(smartOrder), [smartOrder]);
+
+  const [deleteListsBulk] = useMutation(DELETE_LISTS);
+  const [deleteTagBulk] = useMutation(DELETE_TAG);
+  const handleSidebarBulkDelete = useCallback(
+    (ids: string[]) => {
+      // Skip if any smart list is in selection
+      if (ids.some((id) => smartListIdSet.has(id))) return;
+      const listIdsToDelete = ids.filter((id) => listIdSet.has(id));
+      const tagIdsToDelete = ids.filter((id) => !listIdSet.has(id));
+      if (listIdsToDelete.length > 0) {
+        deleteListsBulk({
+          variables: { ids: listIdsToDelete },
+          update(cache) {
+            for (const id of listIdsToDelete) {
+              cache.evict({ id: cache.identify({ __typename: "List", id }) });
+            }
+            cache.gc();
+          },
+        });
+      }
+      for (const id of tagIdsToDelete) {
+        deleteTagBulk({
+          variables: { id },
+          update(cache) {
+            cache.evict({ id: cache.identify({ __typename: "Tag", id }) });
+            cache.gc();
+          },
+        });
+      }
+    },
+    [smartListIdSet, listIdSet, deleteListsBulk, deleteTagBulk],
+  );
 
   const smartListDefs: Record<
     string,
@@ -531,6 +759,51 @@ export function Sidebar() {
     }),
     [t],
   );
+
+  // Ordered list of all sidebar item hrefs for arrow key navigation
+  const sidebarHrefs = useMemo(() => {
+    const hrefs: string[] = [];
+    for (const id of smartOrder) {
+      if (id === "context") {
+        hrefs.push("/context");
+      } else if (smartListDefs[id]) {
+        hrefs.push(smartListDefs[id].href);
+      }
+    }
+    for (const list of customLists) {
+      hrefs.push(`/lists/${list.id}`);
+    }
+    for (const tag of allTags) {
+      hrefs.push(`/tags/${tag.id}`);
+    }
+    return hrefs;
+  }, [smartOrder, smartListDefs, customLists, allTags]);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (getFocusArea() !== "sidebar") return;
+
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        setFocusArea("tasks");
+        return;
+      }
+
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+      if (e.shiftKey) return; // Shift+arrow handled by ListSelectionProvider
+
+      const currentIdx = sidebarHrefs.indexOf(pathname);
+      if (currentIdx === -1) return;
+      const nextIdx = e.key === "ArrowDown" ? currentIdx + 1 : currentIdx - 1;
+      if (nextIdx < 0 || nextIdx >= sidebarHrefs.length) return;
+      e.preventDefault();
+      router.push(sidebarHrefs[nextIdx]);
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [sidebarHrefs, pathname, router]);
 
   // Register list reorder callback with the shared DnD provider
   const handleListReorder = useCallback(
@@ -638,52 +911,48 @@ export function Sidebar() {
         <UserMenu />
       </div>
       <ScrollArea className="min-h-0 flex-1 px-2">
-        <SortableContext items={smartOrder} strategy={verticalListSortingStrategy}>
-          <nav className="space-y-1">
-            {smartOrder.map((id) => {
-              const def = smartListDefs[id];
-              if (!def) return null;
-              if (id === "context" && defaultList) {
+        <ListSelectionProvider listIds={sidebarSelectableIds} onBulkDelete={handleSidebarBulkDelete}>
+          <SortableContext items={smartOrder} strategy={verticalListSortingStrategy}>
+            <nav className="space-y-1">
+              {smartOrder.map((id) => {
+                const def = smartListDefs[id];
+                if (!def) return null;
+                if (id === "context" && defaultList) {
+                  return (
+                    <SortableSmartItem key={id} id={id}>
+                      <DroppableDefaultList
+                        list={defaultList}
+                        isActive={isDesktop && pathname === "/context"}
+                        sidebarHasFocus={sidebarHasFocus}
+                        contextCount={contextTaskCount}
+                        isDropTarget={activeType === "task" && overListId === defaultList.id}
+                        smartListIds={smartListIdSet}
+                        onNavigate={closeSidebar}
+                      />
+                    </SortableSmartItem>
+                  );
+                }
                 return (
                   <SortableSmartItem key={id} id={id}>
-                    <DroppableDefaultList
-                      list={defaultList}
-                      isActive={isDesktop && pathname === "/context"}
-                      contextCount={contextTaskCount}
-                      isDropTarget={activeType === "task" && overListId === defaultList.id}
+                    <SidebarSmartListItem
+                      id={id}
+                      href={def.href}
+                      label={def.label}
+                      icon={def.icon}
+                      color={def.color}
+                      isActive={isDesktop && pathname === def.href}
+                      sidebarHasFocus={sidebarHasFocus}
+                      count={id === "nearby" ? nearbyCount : undefined}
                       onNavigate={closeSidebar}
                     />
                   </SortableSmartItem>
                 );
-              }
-              const isActive = isDesktop && pathname === def.href;
-              return (
-                <SortableSmartItem key={id} id={id}>
-                  <Link
-                    href={def.href}
-                    onClick={closeSidebar}
-                    className={cn(
-                      "hover:bg-sidebar-accent flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                      isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <def.icon className={cn("h-5 w-5", def.color)} />
-                      {def.label}
-                    </div>
-                    {id === "nearby" && nearbyCount > 0 && (
-                      <span className="text-muted-foreground text-xs">{nearbyCount}</span>
-                    )}
-                  </Link>
-                </SortableSmartItem>
-              );
-            })}
-          </nav>
-        </SortableContext>
+              })}
+            </nav>
+          </SortableContext>
 
-        <Separator className="my-3" />
+          <Separator className="my-3" />
 
-        <ListSelectionProvider listIds={listIds}>
           <SortableContext
             items={customLists.map((l) => l.id)}
             strategy={verticalListSortingStrategy}
@@ -694,7 +963,10 @@ export function Sidebar() {
                   key={list.id}
                   list={list}
                   isActive={isDesktop && pathname === `/lists/${list.id}`}
+                  sidebarHasFocus={sidebarHasFocus}
                   taskCountMode={taskCountMode}
+                  smartListIds={smartListIdSet}
+                  onBulkDelete={handleSidebarBulkDelete}
                   isNearby={
                     list.location
                       ? checkNearby(list.location.latitude, list.location.longitude)
@@ -713,35 +985,38 @@ export function Sidebar() {
               ))}
             </nav>
           </SortableContext>
-        </ListSelectionProvider>
 
-        {allTags.length > 0 && (
-          <>
-            <Separator className="my-3" />
-            <nav className="space-y-1">
-              {allTags.map((tag) => (
-                <SidebarTagItem
-                  key={tag.id}
-                  tag={tag}
-                  isActive={isDesktop && pathname === `/tags/${tag.id}`}
-                  isNearby={
-                    tag.location
-                      ? checkNearby(tag.location.latitude, tag.location.longitude)
-                      : false
-                  }
-                  isDeviceMatch={tag.deviceContext === deviceContext}
-                  taskCount={tagTaskCounts.get(tag.id) ?? 0}
-                  onRename={(t) => {
-                    setRenameTagValue(t.name);
-                    setRenameTagTarget(t);
-                  }}
-                  onDelete={setDeleteTagTarget}
-                  onNavigate={closeSidebar}
-                />
-              ))}
-            </nav>
-          </>
-        )}
+          {allTags.length > 0 && (
+            <>
+              <Separator className="my-3" />
+              <nav className="space-y-1">
+                {allTags.map((tag) => (
+                  <SidebarTagItem
+                    key={tag.id}
+                    tag={tag}
+                    isActive={isDesktop && pathname === `/tags/${tag.id}`}
+                    sidebarHasFocus={sidebarHasFocus}
+                    isNearby={
+                      tag.location
+                        ? checkNearby(tag.location.latitude, tag.location.longitude)
+                        : false
+                    }
+                    isDeviceMatch={tag.deviceContext === deviceContext}
+                    taskCount={tagTaskCounts.get(tag.id) ?? 0}
+                    smartListIds={smartListIdSet}
+                    onBulkDelete={handleSidebarBulkDelete}
+                    onRename={(t) => {
+                      setRenameTagValue(t.name);
+                      setRenameTagTarget(t);
+                    }}
+                    onDelete={setDeleteTagTarget}
+                    onNavigate={closeSidebar}
+                  />
+                ))}
+              </nav>
+            </>
+          )}
+        </ListSelectionProvider>
       </ScrollArea>
 
       <div className="border-t p-2">
