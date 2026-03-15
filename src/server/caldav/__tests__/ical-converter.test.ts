@@ -180,3 +180,40 @@ describe("veventToTaskData", () => {
     expect(data?.recurrence).toBe("WEEKLY:1,3,5");
   });
 });
+
+describe("dueDateEnd", () => {
+  it("taskToVevent uses dueDateEnd for DTEND when present (date-only)", () => {
+    const task = makeTask({
+      dueDate: "2026-03-21",
+      dueDateEnd: "2026-03-23",
+    });
+    const vevent = taskToVevent(task, "uid-1");
+    expect(vevent).toContain("DTSTART;VALUE=DATE:20260321");
+    expect(vevent).toContain("DTEND;VALUE=DATE:20260324"); // +1 day per iCal spec (exclusive end)
+  });
+
+  it("taskToVevent uses dueDateEnd for DTEND when present (with time)", () => {
+    const task = makeTask({
+      dueDate: "2026-03-21T14:00",
+      dueDateEnd: "2026-03-23T18:00",
+    });
+    const vevent = taskToVevent(task, "uid-1");
+    expect(vevent).toContain("DTSTART:20260321T140000");
+    expect(vevent).toContain("DTEND:20260323T180000");
+  });
+
+  it("veventToTaskData extracts dueDateEnd from DTEND", () => {
+    const ical = [
+      "BEGIN:VEVENT",
+      "UID:uid-1",
+      "SUMMARY:Trip",
+      "DTSTART;VALUE=DATE:20260321",
+      "DTEND;VALUE=DATE:20260324",
+      "STATUS:NEEDS-ACTION",
+      "END:VEVENT",
+    ].join("\r\n");
+    const data = veventToTaskData(ical);
+    expect(data?.dueDate).toBe("2026-03-21");
+    expect(data?.dueDateEnd).toBe("2026-03-23"); // -1 day: exclusive → inclusive
+  });
+});

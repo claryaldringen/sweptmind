@@ -112,15 +112,32 @@ export function taskToVevent(task: Task, icalUid: string): string {
   }
 
   if (task.dueDate) {
-    const hasTime = task.dueDate.includes("T");
-    if (hasTime) {
-      const dt = formatDateTimeIcal(task.dueDate);
-      lines.push(`DTSTART:${dt}`);
-      lines.push(`DTEND:${addOneHour(dt)}`);
+    const hasStartTime = task.dueDate.includes("T");
+    if (hasStartTime) {
+      lines.push(`DTSTART:${formatDateTimeIcal(task.dueDate)}`);
     } else {
-      const d = formatDateIcal(task.dueDate);
-      lines.push(`DTSTART;VALUE=DATE:${d}`);
-      lines.push(`DTEND;VALUE=DATE:${addOneDay(d)}`);
+      lines.push(`DTSTART;VALUE=DATE:${formatDateIcal(task.dueDate)}`);
+    }
+
+    if (task.dueDateEnd) {
+      const hasEndTime = task.dueDateEnd.includes("T");
+      if (hasEndTime) {
+        lines.push(`DTEND:${formatDateTimeIcal(task.dueDateEnd)}`);
+      } else {
+        // iCal DATE DTEND is exclusive — add one day
+        lines.push(
+          `DTEND;VALUE=DATE:${addOneDay(formatDateIcal(task.dueDateEnd))}`,
+        );
+      }
+    } else {
+      // Fallback: no dueDateEnd — use original logic (1 hour or 1 day)
+      if (hasStartTime) {
+        lines.push(`DTEND:${addOneHour(formatDateTimeIcal(task.dueDate))}`);
+      } else {
+        lines.push(
+          `DTEND;VALUE=DATE:${addOneDay(formatDateIcal(task.dueDate))}`,
+        );
+      }
     }
   }
 
@@ -185,11 +202,29 @@ export function veventToTaskData(ical: string): VeventTaskData | null {
   const status = getIcalProperty(lines, "STATUS");
   const rrule = getIcalProperty(lines, "RRULE");
 
+  const dtend = getIcalProperty(lines, "DTEND");
+
+  let dueDateEnd: string | null = null;
+  if (dtend && dtstart) {
+    const parsedEnd = parseIcalDate(dtend);
+    const parsedStart = parseIcalDate(dtstart);
+    // For date-only values, iCal DTEND is exclusive — subtract one day
+    if (dtend.length === 8 && dtstart.length === 8) {
+      const [y, m, d] = parsedEnd.split("-").map(Number);
+      const endDate = new Date(y, m - 1, d);
+      endDate.setDate(endDate.getDate() - 1);
+      const adjusted = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
+      dueDateEnd = adjusted !== parsedStart ? adjusted : null;
+    } else {
+      dueDateEnd = parsedEnd !== parsedStart ? parsedEnd : null;
+    }
+  }
+
   return {
     title: unescapeIcalText(summary),
     notes: description ? unescapeIcalText(description) : null,
     dueDate: dtstart ? parseIcalDate(dtstart) : null,
-    dueDateEnd: null,
+    dueDateEnd,
     isCompleted: status?.toUpperCase() === "COMPLETED",
     recurrence: rrule ? rruleToRecurrence(rrule) : null,
     icalUid: uid,
