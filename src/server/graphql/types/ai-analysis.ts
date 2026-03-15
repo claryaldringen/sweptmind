@@ -30,16 +30,17 @@ builder.mutationField("analyzeTask", (t) =>
 );
 
 // Decomposition types
-const DecomposeStepType = builder.simpleObject("DecomposeStep", {
+const DecomposeStepRef = builder.objectRef<{ title: string; listName: string | null }>("DecomposeStep");
+DecomposeStepRef.implement({
   fields: (t) => ({
-    title: t.string(),
-    listName: t.string({ nullable: true }),
+    title: t.exposeString("title"),
+    listName: t.exposeString("listName", { nullable: true }),
   }),
 });
 
 builder.mutationField("decomposeTask", (t) =>
   t.field({
-    type: [DecomposeStepType],
+    type: [DecomposeStepRef],
     authScopes: { authenticated: true },
     args: {
       taskId: t.arg.string({ required: true }),
