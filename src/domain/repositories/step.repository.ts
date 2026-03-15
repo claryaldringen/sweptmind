@@ -8,4 +8,5 @@ export interface IStepRepository {
   create(values: { id?: string; taskId: string; title: string; sortOrder: number }): Promise<Step>;
   update(id: string, data: Partial<Step>): Promise<Step>;
   delete(id: string): Promise<void>;
+  deleteMany(ids: string[]): Promise<void>;
 }

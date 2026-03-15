@@ -13,4 +13,5 @@ export interface IListRepository {
   deleteNonDefault(id: string, userId: string): Promise<void>;
   updateSortOrder(id: string, userId: string, sortOrder: number): Promise<void>;
   ungroupByGroupId(groupId: string): Promise<void>;
+  deleteManyNonDefault(ids: string[], userId: string): Promise<void>;
 }

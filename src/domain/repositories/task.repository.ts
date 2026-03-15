@@ -35,4 +35,6 @@ export interface ITaskRepository {
   findByUser(userId: string): Promise<Task[]>;
   findActiveByUser(userId: string): Promise<Task[]>;
   findCompletedByUser(userId: string, limit: number, offset: number): Promise<Task[]>;
+  deleteMany(ids: string[], userId: string): Promise<void>;
+  updateMany(ids: string[], userId: string, data: Partial<Task>): Promise<void>;
 }
