@@ -13,6 +13,7 @@ export const createTaskSchema = z.object({
   title: z.string().min(1).max(500),
   notes: z.string().max(10000).nullish(),
   dueDate: dateString,
+  dueDateEnd: dateString,
   locationId: z.string().uuid().nullish(),
   deviceContext: deviceContextEnum,
 });
@@ -21,6 +22,7 @@ export const updateTaskSchema = z.object({
   title: z.string().min(1).max(500).nullish(),
   notes: z.string().max(10000).nullish(),
   dueDate: dateString,
+  dueDateEnd: dateString,
   reminderAt: dateString,
   recurrence: z.string().max(500).nullish(),
   listId: z.string().uuid().nullish(),
