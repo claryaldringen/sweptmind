@@ -74,6 +74,7 @@ export interface Dictionary {
     today: string;
     tomorrow: string;
     dayAfterTomorrow: string;
+    dueDateRange: string;
   };
   lists: {
     newList: string;
@@ -253,6 +254,12 @@ export interface Dictionary {
     dueDate: string;
     reminder: string;
     done: string;
+    addEndDate: string;
+    removeEndDate: string;
+    endDate: string;
+    quickOneHour: string;
+    quickUntilSunday: string;
+    quickCustom: string;
   };
   pwa: {
     installTitle: string;
@@ -353,11 +360,18 @@ export interface Dictionary {
     aiSuggestion: string;
     aiDecompose: string;
     aiDecomposing: string;
+    aiDuplicate: string;
+    aiDuplicateDelete: string;
+    aiRenameApply: string;
     aiDecomposeApply: string;
     aiDecomposeCancel: string;
     aiDecomposeEmpty: string;
     aiDecomposeError: string;
     aiDecomposeKeepInList: string;
+    aiCallIntent: string;
+    aiCallIntentReason: string;
+    aiCallIntentNoContacts: string;
+    aiCallIntentCall: string;
   };
   validation: {
     invalidEmail: string;
