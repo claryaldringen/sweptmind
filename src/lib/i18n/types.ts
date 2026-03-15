@@ -358,6 +358,12 @@ export interface Dictionary {
     passwordTooShort: string;
     passwordTooLong: string;
   };
+  bulkDelete: string;
+  bulkComplete: string;
+  bulkUncomplete: string;
+  bulkMoveTo: string;
+  bulkSetDueDate: string;
+  bulkSelectedCount: string;
   onboarding: {
     introTitle: string;
     introDescription: string;

@@ -382,6 +382,12 @@ export const en: Dictionary = {
     passwordTooShort: "Password must be at least 8 characters",
     passwordTooLong: "Password must be at most 128 characters",
   },
+  bulkDelete: "Delete selected",
+  bulkComplete: "Mark as completed",
+  bulkUncomplete: "Mark as not completed",
+  bulkMoveTo: "Move to",
+  bulkSetDueDate: "Set due date",
+  bulkSelectedCount: "{count} selected",
   onboarding: {
     introTitle: "Want to set up SweptMind for GTD?",
     introDescription:

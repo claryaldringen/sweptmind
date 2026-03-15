@@ -3,12 +3,13 @@
 import { memo, useState, useEffect, useRef, type MouseEvent } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { gql } from "@apollo/client";
-import { useMutation } from "@apollo/client/react";
+import { useMutation, useApolloClient } from "@apollo/client/react";
 import { useLists } from "@/components/providers/app-data-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Bell,
   CalendarDays,
+  Check,
   FolderOutput,
   Lightbulb,
   Link2,
@@ -18,6 +19,7 @@ import {
   Monitor,
   Paperclip,
   Repeat,
+  RotateCcw,
   Smartphone,
   Trash2,
   X,
@@ -101,6 +103,24 @@ const CONVERT_TASK_TO_LIST = gql`
   }
 `;
 
+const DELETE_TASKS = gql`
+  mutation DeleteTasks($ids: [String!]!) {
+    deleteTasks(ids: $ids)
+  }
+`;
+
+const UPDATE_TASKS = gql`
+  mutation UpdateTasks($ids: [String!]!, $input: BulkTaskUpdateInput!) {
+    updateTasks(ids: $ids, input: $input)
+  }
+`;
+
+const SET_TASKS_COMPLETED = gql`
+  mutation SetTasksCompleted($ids: [String!]!, $isCompleted: Boolean!) {
+    setTasksCompleted(ids: $ids, isCompleted: $isCompleted)
+  }
+`;
+
 interface TaskTag {
   id: string;
   name: string;
@@ -164,6 +184,17 @@ export const TaskItem = memo(function TaskItem({
   const taskSelection = useTaskSelectionOptional();
   const isSelected = taskSelection?.selectedIds.has(task.id) ?? false;
   const isDesktop = useMediaQuery("(min-width: 768px)");
+
+  const client = useApolloClient();
+  const { cache } = client;
+
+  const [deleteTasks] = useMutation(DELETE_TASKS);
+  const [updateTasks] = useMutation(UPDATE_TASKS);
+  const [setTasksCompleted] = useMutation(SET_TASKS_COMPLETED);
+
+  const selectedIds = taskSelection?.selectedIds ?? new Set<string>();
+  const isBulkMode = isSelected && selectedIds.size >= 2;
+  const bulkIds = [...selectedIds];
 
   const [localChecked, setLocalChecked] = useState<boolean | null>(null);
   const [prevIsCompleted, setPrevIsCompleted] = useState(task.isCompleted);
@@ -370,6 +401,11 @@ export const TaskItem = memo(function TaskItem({
               (fadingOut || externalFadingOut) && "opacity-0",
             )}
             onClick={handleClick}
+            onContextMenu={() => {
+              if (!isSelected && taskSelection) {
+                taskSelection.handleClick(task.id, {});
+              }
+            }}
           >
             <Checkbox
               checked={visuallyCompleted}
@@ -652,60 +688,204 @@ export const TaskItem = memo(function TaskItem({
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent>
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>
-              <List className="mr-2 h-4 w-4" />
-              {t("tasks.moveTo")}
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent>
-              {allLists.map((list) => (
-                <ContextMenuItem
-                  key={list.id}
-                  disabled={list.id === task.list?.id}
-                  onClick={() =>
-                    updateTask({ variables: { id: task.id, input: { listId: list.id } } })
-                  }
-                >
-                  {list.name}
-                </ContextMenuItem>
-              ))}
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>
-              <CalendarDays className="mr-2 h-4 w-4" />
-              {t("datePicker.dueDate")}
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent>
-              <ContextMenuItem onClick={() => setDueDate(0)}>{t("tasks.today")}</ContextMenuItem>
-              <ContextMenuItem onClick={() => setDueDate(1)}>{t("tasks.tomorrow")}</ContextMenuItem>
-              <ContextMenuItem onClick={() => setDueDate(2)}>
-                {t("tasks.dayAfterTomorrow")}
+          {isBulkMode ? (
+            <>
+              <ContextMenuItem disabled className="text-muted-foreground text-xs">
+                {t("bulkSelectedCount", { count: String(selectedIds.size) })}
               </ContextMenuItem>
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-          <ContextMenuItem
-            onClick={() => {
-              convertTaskToList({ variables: { taskId: task.id } })
-                .then((res) => {
-                  const newList = res.data?.convertTaskToList;
-                  if (newList) {
-                    router.push(`/lists/${newList.id}`);
+              <ContextMenuSeparator />
+              <ContextMenuItem
+                onClick={() => {
+                  setTasksCompleted({ variables: { ids: bulkIds, isCompleted: true } });
+                  for (const id of bulkIds) {
+                    cache.modify({
+                      id: cache.identify({ __typename: "Task", id }),
+                      fields: {
+                        isCompleted: () => true,
+                        completedAt: () => new Date().toISOString(),
+                      },
+                    });
                   }
-                })
-                .catch((err) => {
-                  console.error(err);
-                });
-            }}
-          >
-            <FolderOutput className="mr-2 h-4 w-4" />
-            {t("tasks.convertToList")}
-          </ContextMenuItem>
-          <ContextMenuSeparator />
-          <ContextMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
-            <Trash2 className="mr-2 h-4 w-4" />
-            {t("common.deleteConfirmAction")}
-          </ContextMenuItem>
+                  taskSelection?.clear();
+                }}
+              >
+                <Check className="mr-2 h-4 w-4" />
+                {t("bulkComplete")}
+              </ContextMenuItem>
+              <ContextMenuItem
+                onClick={() => {
+                  setTasksCompleted({ variables: { ids: bulkIds, isCompleted: false } });
+                  for (const id of bulkIds) {
+                    cache.modify({
+                      id: cache.identify({ __typename: "Task", id }),
+                      fields: {
+                        isCompleted: () => false,
+                        completedAt: () => null,
+                      },
+                    });
+                  }
+                  taskSelection?.clear();
+                }}
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                {t("bulkUncomplete")}
+              </ContextMenuItem>
+              <ContextMenuSub>
+                <ContextMenuSubTrigger>
+                  <List className="mr-2 h-4 w-4" />
+                  {t("bulkMoveTo")}
+                </ContextMenuSubTrigger>
+                <ContextMenuSubContent>
+                  {allLists.map((list) => (
+                    <ContextMenuItem
+                      key={list.id}
+                      onClick={() => {
+                        updateTasks({ variables: { ids: bulkIds, input: { listId: list.id } } });
+                        for (const id of bulkIds) {
+                          cache.modify({
+                            id: cache.identify({ __typename: "Task", id }),
+                            fields: { listId: () => list.id },
+                          });
+                        }
+                        taskSelection?.clear();
+                      }}
+                    >
+                      {list.name}
+                    </ContextMenuItem>
+                  ))}
+                </ContextMenuSubContent>
+              </ContextMenuSub>
+              <ContextMenuSub>
+                <ContextMenuSubTrigger>
+                  <CalendarDays className="mr-2 h-4 w-4" />
+                  {t("bulkSetDueDate")}
+                </ContextMenuSubTrigger>
+                <ContextMenuSubContent>
+                  <ContextMenuItem
+                    onClick={() => {
+                      const dateStr = format(new Date(), "yyyy-MM-dd");
+                      updateTasks({ variables: { ids: bulkIds, input: { dueDate: dateStr } } });
+                      for (const id of bulkIds) {
+                        cache.modify({
+                          id: cache.identify({ __typename: "Task", id }),
+                          fields: { dueDate: () => dateStr },
+                        });
+                      }
+                      taskSelection?.clear();
+                    }}
+                  >
+                    {t("tasks.today")}
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    onClick={() => {
+                      const dateStr = format(addDays(new Date(), 1), "yyyy-MM-dd");
+                      updateTasks({ variables: { ids: bulkIds, input: { dueDate: dateStr } } });
+                      for (const id of bulkIds) {
+                        cache.modify({
+                          id: cache.identify({ __typename: "Task", id }),
+                          fields: { dueDate: () => dateStr },
+                        });
+                      }
+                      taskSelection?.clear();
+                    }}
+                  >
+                    {t("tasks.tomorrow")}
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    onClick={() => {
+                      const dateStr = format(addDays(new Date(), 2), "yyyy-MM-dd");
+                      updateTasks({ variables: { ids: bulkIds, input: { dueDate: dateStr } } });
+                      for (const id of bulkIds) {
+                        cache.modify({
+                          id: cache.identify({ __typename: "Task", id }),
+                          fields: { dueDate: () => dateStr },
+                        });
+                      }
+                      taskSelection?.clear();
+                    }}
+                  >
+                    {t("tasks.dayAfterTomorrow")}
+                  </ContextMenuItem>
+                </ContextMenuSubContent>
+              </ContextMenuSub>
+              <ContextMenuSeparator />
+              <ContextMenuItem
+                variant="destructive"
+                onClick={() => {
+                  deleteTasks({ variables: { ids: bulkIds } });
+                  for (const id of bulkIds) {
+                    cache.evict({ id: cache.identify({ __typename: "Task", id }) });
+                  }
+                  cache.gc();
+                  taskSelection?.clear();
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t("bulkDelete")}
+              </ContextMenuItem>
+            </>
+          ) : (
+            <>
+              <ContextMenuSub>
+                <ContextMenuSubTrigger>
+                  <List className="mr-2 h-4 w-4" />
+                  {t("tasks.moveTo")}
+                </ContextMenuSubTrigger>
+                <ContextMenuSubContent>
+                  {allLists.map((list) => (
+                    <ContextMenuItem
+                      key={list.id}
+                      disabled={list.id === task.list?.id}
+                      onClick={() =>
+                        updateTask({ variables: { id: task.id, input: { listId: list.id } } })
+                      }
+                    >
+                      {list.name}
+                    </ContextMenuItem>
+                  ))}
+                </ContextMenuSubContent>
+              </ContextMenuSub>
+              <ContextMenuSub>
+                <ContextMenuSubTrigger>
+                  <CalendarDays className="mr-2 h-4 w-4" />
+                  {t("datePicker.dueDate")}
+                </ContextMenuSubTrigger>
+                <ContextMenuSubContent>
+                  <ContextMenuItem onClick={() => setDueDate(0)}>
+                    {t("tasks.today")}
+                  </ContextMenuItem>
+                  <ContextMenuItem onClick={() => setDueDate(1)}>
+                    {t("tasks.tomorrow")}
+                  </ContextMenuItem>
+                  <ContextMenuItem onClick={() => setDueDate(2)}>
+                    {t("tasks.dayAfterTomorrow")}
+                  </ContextMenuItem>
+                </ContextMenuSubContent>
+              </ContextMenuSub>
+              <ContextMenuItem
+                onClick={() => {
+                  convertTaskToList({ variables: { taskId: task.id } })
+                    .then((res) => {
+                      const newList = res.data?.convertTaskToList;
+                      if (newList) {
+                        router.push(`/lists/${newList.id}`);
+                      }
+                    })
+                    .catch((err) => {
+                      console.error(err);
+                    });
+                }}
+              >
+                <FolderOutput className="mr-2 h-4 w-4" />
+                {t("tasks.convertToList")}
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t("common.deleteConfirmAction")}
+              </ContextMenuItem>
+            </>
+          )}
         </ContextMenuContent>
       </ContextMenu>
 

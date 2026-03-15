@@ -380,6 +380,12 @@ export const cs: Dictionary = {
     passwordTooShort: "Heslo musí mít alespoň 8 znaků",
     passwordTooLong: "Heslo může mít maximálně 128 znaků",
   },
+  bulkDelete: "Smazat vybrané",
+  bulkComplete: "Označit jako dokončené",
+  bulkUncomplete: "Označit jako nedokončené",
+  bulkMoveTo: "Přesunout do",
+  bulkSetDueDate: "Nastavit datum",
+  bulkSelectedCount: "{count} vybráno",
   onboarding: {
     introTitle: "Chceš nastavit SweptMind pro GTD?",
     introDescription:
