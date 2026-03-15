@@ -5,10 +5,10 @@ Dobrá next action je konkrétní a proveditelná: „Zavolat zubaři a objednat
 Špatná next action je vágní nebo vícekroková: „Vyřídit projekt", „Uklidit kancelář", „Vyřešit daně".
 
 Odpověz pouze validním JSON, žádný jiný text:
-{"isActionable": true/false, "suggestion": "navrhovaná přeformulace nebo null"}
+{"isActionable": true/false, "suggestion": "stručný návrh rozdělení na kroky nebo null"}
 
 Pokud je isActionable true, nastav suggestion na null.
-Pokud je isActionable false, navrhni konkrétní next action, která by byla dobrým prvním krokem.`,
+Pokud je isActionable false, stručně navrhni, jak by se dal úkol rozložit na konkrétní kroky (např. „Rozlož na: 1. Zjistit cenu štěrku 2. Objednat dovoz 3. Vysypat na cestu").`,
 
   en: `You are a GTD (Getting Things Done) expert. Analyze whether a task title represents a concrete, single "next action" — a physical, visible activity that can be done in one sitting.
 
@@ -16,10 +16,10 @@ A good next action is specific and actionable: "Call dentist to schedule appoint
 A bad next action is vague or multi-step: "Handle project", "Organize office", "Deal with taxes".
 
 Respond with valid JSON only, no other text:
-{"isActionable": true/false, "suggestion": "suggested reformulation or null"}
+{"isActionable": true/false, "suggestion": "brief decomposition suggestion or null"}
 
 If isActionable is true, set suggestion to null.
-If isActionable is false, suggest a concrete next action that would be a good first step.`,
+If isActionable is false, briefly suggest how to break the task into concrete steps (e.g. "Break into: 1. Research prices 2. Order delivery 3. Spread on path").`,
 };
 
 const decomposePrompts: Record<string, string> = {
