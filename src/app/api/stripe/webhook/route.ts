@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { repos, services } from "@/infrastructure/container";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!);
+}
 
 function getSubscriptionPeriod(sub: Stripe.Subscription) {
   const item = sub.items.data[0];
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    event = getStripe().webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
   } catch {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
       const userId = session.metadata?.userId;
       if (!userId || !session.subscription || !session.customer) break;
 
-      const stripeSubscription = await stripe.subscriptions.retrieve(
+      const stripeSubscription = await getStripe().subscriptions.retrieve(
         session.subscription as string,
       );
       const period = getSubscriptionPeriod(stripeSubscription);
@@ -63,7 +65,7 @@ export async function POST(req: NextRequest) {
       const subscriptionId = getSubscriptionIdFromInvoice(invoice);
       if (!subscriptionId) break;
 
-      const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const stripeSubscription = await getStripe().subscriptions.retrieve(subscriptionId);
       const period = getSubscriptionPeriod(stripeSubscription);
 
       await services.subscription.handleStripeSubscriptionUpdate(
