@@ -307,7 +307,10 @@ export class TaskService {
     ids: string[],
     userId: string,
     input: Partial<
-      Pick<Task, "listId" | "dueDate" | "dueDateEnd" | "reminderAt" | "recurrence" | "deviceContext">
+      Pick<
+        Task,
+        "listId" | "dueDate" | "dueDateEnd" | "reminderAt" | "recurrence" | "deviceContext"
+      >
     >,
   ): Promise<boolean> {
     const data: Partial<Task> = {};

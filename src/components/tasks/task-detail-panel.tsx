@@ -798,7 +798,10 @@ export function TaskDetailPanel() {
 
   // AI decomposition handler
 
-  async function handleApplyDecomposition(decomposition: { projectName: string; steps: { title: string; listName: string | null; dependsOn: number | null }[] }) {
+  async function handleApplyDecomposition(decomposition: {
+    projectName: string;
+    steps: { title: string; listName: string | null; dependsOn: number | null }[];
+  }) {
     if (!task || decomposition.steps.length === 0) return;
     const { projectName, steps } = decomposition;
 
@@ -835,7 +838,13 @@ export function TaskDetailPanel() {
           tags(existing = []) {
             const newRef = apolloClient.cache.writeFragment({
               data: projectTag,
-              fragment: gql`fragment ProjTag on Tag { id name color }`,
+              fragment: gql`
+                fragment ProjTag on Tag {
+                  id
+                  name
+                  color
+                }
+              `,
             });
             return [...existing, newRef];
           },
@@ -849,9 +858,7 @@ export function TaskDetailPanel() {
 
     for (let i = 1; i < steps.length; i++) {
       const step = steps[i];
-      const targetList = step.listName
-        ? allLists.find((l) => l.name === step.listName)
-        : null;
+      const targetList = step.listName ? allLists.find((l) => l.name === step.listName) : null;
       const newId = crypto.randomUUID();
       const result = await createTask({
         variables: {
@@ -889,15 +896,67 @@ export function TaskDetailPanel() {
                   },
                   fragment: gql`
                     fragment NewDecomposedTask on Task {
-                      id listId title notes isCompleted dueDate dueDateEnd reminderAt recurrence
-                      sortOrder createdAt completedAt locationId locationRadius
-                      location { id name latitude longitude radius }
-                      deviceContext tags { id name color }
-                      steps { id taskId title isCompleted sortOrder }
-                      attachments { id }
-                      aiAnalysis { isActionable suggestion suggestedTitle projectName decomposition { title listName dependsOn } duplicateTaskId callIntent { name reason } analyzedTitle }
-                      blockedByTaskId blockedByTaskIsCompleted dependentTaskCount
-                      list { id name }
+                      id
+                      listId
+                      title
+                      notes
+                      isCompleted
+                      dueDate
+                      dueDateEnd
+                      reminderAt
+                      recurrence
+                      sortOrder
+                      createdAt
+                      completedAt
+                      locationId
+                      locationRadius
+                      location {
+                        id
+                        name
+                        latitude
+                        longitude
+                        radius
+                      }
+                      deviceContext
+                      tags {
+                        id
+                        name
+                        color
+                      }
+                      steps {
+                        id
+                        taskId
+                        title
+                        isCompleted
+                        sortOrder
+                      }
+                      attachments {
+                        id
+                      }
+                      aiAnalysis {
+                        isActionable
+                        suggestion
+                        suggestedTitle
+                        projectName
+                        decomposition {
+                          title
+                          listName
+                          dependsOn
+                        }
+                        duplicateTaskId
+                        callIntent {
+                          name
+                          reason
+                        }
+                        analyzedTitle
+                      }
+                      blockedByTaskId
+                      blockedByTaskIsCompleted
+                      dependentTaskCount
+                      list {
+                        id
+                        name
+                      }
                     }
                   `,
                 });
@@ -922,7 +981,13 @@ export function TaskDetailPanel() {
                 tags(existing = []) {
                   const newRef = cache.writeFragment({
                     data: projectTag,
-                    fragment: gql`fragment ProjTag2 on Tag { id name color }`,
+                    fragment: gql`
+                      fragment ProjTag2 on Tag {
+                        id
+                        name
+                        color
+                      }
+                    `,
                   });
                   return [...existing, newRef];
                 },
@@ -948,7 +1013,9 @@ export function TaskDetailPanel() {
         apolloClient.cache.modify({
           id: apolloClient.cache.identify({ __typename: "Task", id: blockedById }),
           fields: {
-            dependentTaskCount(existing = 0) { return existing + 1; },
+            dependentTaskCount(existing = 0) {
+              return existing + 1;
+            },
           },
         });
       }
@@ -1065,11 +1132,15 @@ export function TaskDetailPanel() {
 
   // AI-only panel — show only when there's displayable content
   const ai = task.aiAnalysis;
-  const hasAiContent = ai && (ai.suggestedTitle || ai.decomposition?.length || ai.duplicateTaskId || ai.callIntent);
+  const hasAiContent =
+    ai && (ai.suggestedTitle || ai.decomposition?.length || ai.duplicateTaskId || ai.callIntent);
   if (showAi && hasAiContent) {
     return (
       <div
-        className={cn("bg-background flex flex-col", isDesktop ? "h-full" : "absolute inset-0 z-10")}
+        className={cn(
+          "bg-background flex flex-col",
+          isDesktop ? "h-full" : "absolute inset-0 z-10",
+        )}
       >
         <div className="flex items-center gap-2 border-b px-4 py-3">
           <Button variant="ghost" size="icon" onClick={handleDismissAi}>
@@ -1087,7 +1158,7 @@ export function TaskDetailPanel() {
             duplicateTaskId={ai.duplicateTaskId}
             duplicateTaskTitle={
               ai.duplicateTaskId
-                ? allTasks.find((t) => t.id === ai.duplicateTaskId)?.title ?? null
+                ? (allTasks.find((t) => t.id === ai.duplicateTaskId)?.title ?? null)
                 : null
             }
             callIntent={ai.callIntent}

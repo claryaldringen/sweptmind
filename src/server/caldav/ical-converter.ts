@@ -125,18 +125,14 @@ export function taskToVevent(task: Task, icalUid: string): string {
         lines.push(`DTEND:${formatDateTimeIcal(task.dueDateEnd)}`);
       } else {
         // iCal DATE DTEND is exclusive — add one day
-        lines.push(
-          `DTEND;VALUE=DATE:${addOneDay(formatDateIcal(task.dueDateEnd))}`,
-        );
+        lines.push(`DTEND;VALUE=DATE:${addOneDay(formatDateIcal(task.dueDateEnd))}`);
       }
     } else {
       // Fallback: no dueDateEnd — use original logic (1 hour or 1 day)
       if (hasStartTime) {
         lines.push(`DTEND:${addOneHour(formatDateTimeIcal(task.dueDate))}`);
       } else {
-        lines.push(
-          `DTEND;VALUE=DATE:${addOneDay(formatDateIcal(task.dueDate))}`,
-        );
+        lines.push(`DTEND;VALUE=DATE:${addOneDay(formatDateIcal(task.dueDate))}`);
       }
     }
   }

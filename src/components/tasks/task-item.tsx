@@ -426,7 +426,9 @@ export const TaskItem = memo(function TaskItem({
               deviceMatch && "bg-yellow-50 dark:bg-yellow-950/30",
               (fadingOut || externalFadingOut) && "opacity-0",
             )}
-            onMouseDown={(e) => { if (e.shiftKey) e.preventDefault(); }}
+            onMouseDown={(e) => {
+              if (e.shiftKey) e.preventDefault();
+            }}
             onClick={handleClick}
             onContextMenu={() => {
               if (!isSelected && taskSelection) {
@@ -497,22 +499,26 @@ export const TaskItem = memo(function TaskItem({
                     {task.title}
                   </span>
                 )}
-                {task.aiAnalysis && (task.aiAnalysis.suggestedTitle || task.aiAnalysis.decomposition?.length || task.aiAnalysis.duplicateTaskId || task.aiAnalysis.callIntent) && (
-                  <button
-                    type="button"
-                    title={task.aiAnalysis.suggestion ?? t("premium.aiNotActionable")}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const params = new URLSearchParams(searchParams.toString());
-                      params.set("task", task.id);
-                      params.set("ai", "1");
-                      router.push(`?${params.toString()}`, { scroll: false });
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Lightbulb className="h-5 w-5 shrink-0 text-yellow-500" />
-                  </button>
-                )}
+                {task.aiAnalysis &&
+                  (task.aiAnalysis.suggestedTitle ||
+                    task.aiAnalysis.decomposition?.length ||
+                    task.aiAnalysis.duplicateTaskId ||
+                    task.aiAnalysis.callIntent) && (
+                    <button
+                      type="button"
+                      title={task.aiAnalysis.suggestion ?? t("premium.aiNotActionable")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const params = new URLSearchParams(searchParams.toString());
+                        params.set("task", task.id);
+                        params.set("ai", "1");
+                        router.push(`?${params.toString()}`, { scroll: false });
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <Lightbulb className="h-5 w-5 shrink-0 text-yellow-500" />
+                    </button>
+                  )}
                 {analyzingTaskIds?.has(task.id) && !task.aiAnalysis && (
                   <span title={t("premium.aiAnalyzing")}>
                     <Lightbulb className="h-3.5 w-3.5 shrink-0 animate-pulse text-yellow-500/50" />

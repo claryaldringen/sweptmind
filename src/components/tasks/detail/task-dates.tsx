@@ -143,10 +143,7 @@ export function TaskDates({
           onOpenChange={setEndPickerOpen}
           title={t("datePicker.endDate")}
           trigger={
-            <Button
-              variant="ghost"
-              className={cn("w-full justify-start gap-2", "text-blue-500")}
-            >
+            <Button variant="ghost" className={cn("w-full justify-start gap-2", "text-blue-500")}>
               <CalendarRange className="h-4 w-4" />
               {t("datePicker.endDate")}:{" "}
               {format(
