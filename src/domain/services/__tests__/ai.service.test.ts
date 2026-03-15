@@ -211,7 +211,7 @@ describe("AiService", () => {
     const result = await service.analyzeTask("task-1", "user-1");
 
     expect(result).toEqual(newAnalysis);
-    expect(llm.analyzeTask).toHaveBeenCalledWith("Buy groceries");
+    expect(llm.analyzeTask).toHaveBeenCalledWith("Buy groceries", "en");
     expect(analysisRepo.upsert).toHaveBeenCalledWith({
       taskId: "task-1",
       isActionable: true,
@@ -235,7 +235,7 @@ describe("AiService", () => {
     const result = await service.analyzeTask("task-1", "user-1");
 
     expect(result).toEqual(updatedAnalysis);
-    expect(llm.analyzeTask).toHaveBeenCalledWith("Buy milk and eggs");
+    expect(llm.analyzeTask).toHaveBeenCalledWith("Buy milk and eggs", "en");
     expect(analysisRepo.upsert).toHaveBeenCalledWith({
       taskId: "task-1",
       isActionable: true,
@@ -292,7 +292,7 @@ describe("AiService", () => {
       baseUrl: "https://custom.api/v1",
       model: "custom-model",
     });
-    expect(customLlm.analyzeTask).toHaveBeenCalledWith("Handle project");
+    expect(customLlm.analyzeTask).toHaveBeenCalledWith("Handle project", "en");
     expect(llm.analyzeTask).not.toHaveBeenCalled();
   });
 

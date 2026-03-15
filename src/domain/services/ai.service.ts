@@ -39,7 +39,7 @@ export class AiService {
     return this.defaultLlm;
   }
 
-  async analyzeTask(taskId: string, userId: string): Promise<TaskAiAnalysis> {
+  async analyzeTask(taskId: string, userId: string, locale = "en"): Promise<TaskAiAnalysis> {
     const isPremium = await this.subscriptionService.isPremium(userId);
     if (!isPremium) {
       throw new Error("Premium subscription required");
@@ -60,7 +60,7 @@ export class AiService {
     const llm = await this.resolveProvider(userId);
 
     // Call LLM
-    const result = await llm.analyzeTask(task.title);
+    const result = await llm.analyzeTask(task.title, locale);
 
     // Cache result
     return this.analysisRepo.upsert({
@@ -71,7 +71,7 @@ export class AiService {
     });
   }
 
-  async decomposeTask(taskId: string, userId: string): Promise<DecomposeResponse> {
+  async decomposeTask(taskId: string, userId: string, locale = "en"): Promise<DecomposeResponse> {
     const isPremium = await this.subscriptionService.isPremium(userId);
     if (!isPremium) {
       throw new Error("Premium subscription required");
@@ -86,6 +86,6 @@ export class AiService {
     const listNames = lists.map((l) => l.name);
 
     const llm = await this.resolveProvider(userId);
-    return llm.decomposeTask(task.title, { lists: listNames, tags: [] });
+    return llm.decomposeTask(task.title, { lists: listNames, tags: [] }, locale);
   }
 }

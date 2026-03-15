@@ -9,8 +9,8 @@ import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const DECOMPOSE_TASK = gql`
-  mutation DecomposeTask($taskId: String!) {
-    decomposeTask(taskId: $taskId) {
+  mutation DecomposeTask($taskId: String!, $locale: String) {
+    decomposeTask(taskId: $taskId, locale: $locale) {
       projectName
       steps {
         title
@@ -45,7 +45,7 @@ export function TaskAiSection({
   onApplyDecomposition,
   onDismiss,
 }: TaskAiSectionProps) {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const [result, setResult] = useState<DecomposeResult | null>(null);
   const [error, setError] = useState(false);
   const [decomposeTask, { loading }] = useMutation<{
@@ -55,7 +55,7 @@ export function TaskAiSection({
   async function handleDecompose() {
     setError(false);
     try {
-      const res = await decomposeTask({ variables: { taskId } });
+      const res = await decomposeTask({ variables: { taskId, locale } });
       if (res.data?.decomposeTask) {
         setResult(res.data.decomposeTask);
       }

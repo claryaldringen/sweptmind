@@ -15,6 +15,6 @@ export interface DecomposeResponse {
 }
 
 export interface ILlmProvider {
-  analyzeTask(title: string): Promise<LlmResponse>;
-  decomposeTask(title: string, context: { lists: string[]; tags: string[] }): Promise<DecomposeResponse>;
+  analyzeTask(title: string, locale: string): Promise<LlmResponse>;
+  decomposeTask(title: string, context: { lists: string[]; tags: string[] }, locale: string): Promise<DecomposeResponse>;
 }

@@ -21,10 +21,11 @@ builder.mutationField("analyzeTask", (t) =>
     authScopes: { authenticated: true },
     args: {
       taskId: t.arg.string({ required: true }),
+      locale: t.arg.string({ required: false }),
     },
     resolve: async (_root, args, ctx) => {
       if (!ctx.userId) return null;
-      return ctx.services.ai.analyzeTask(args.taskId, ctx.userId);
+      return ctx.services.ai.analyzeTask(args.taskId, ctx.userId, args.locale ?? "en");
     },
   }),
 );
@@ -56,10 +57,11 @@ builder.mutationField("decomposeTask", (t) =>
     authScopes: { authenticated: true },
     args: {
       taskId: t.arg.string({ required: true }),
+      locale: t.arg.string({ required: false }),
     },
     resolve: async (_root, args, ctx) => {
       if (!ctx.userId) return { projectName: "", steps: [] };
-      return ctx.services.ai.decomposeTask(args.taskId, ctx.userId);
+      return ctx.services.ai.decomposeTask(args.taskId, ctx.userId, args.locale ?? "en");
     },
   }),
 );

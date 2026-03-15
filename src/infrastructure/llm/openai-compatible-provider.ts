@@ -1,5 +1,5 @@
 import type { ILlmProvider, LlmResponse, DecomposeResponse } from "@/domain/ports/llm-provider";
-import { GTD_SYSTEM_PROMPT, GTD_DECOMPOSE_PROMPT } from "./system-prompt";
+import { getAnalyzePrompt, getDecomposePrompt } from "./system-prompt";
 
 export class OpenAiCompatibleProvider implements ILlmProvider {
   private readonly baseUrl: string;
@@ -16,7 +16,7 @@ export class OpenAiCompatibleProvider implements ILlmProvider {
     this.model = model;
   }
 
-  async analyzeTask(title: string): Promise<LlmResponse> {
+  async analyzeTask(title: string, locale: string): Promise<LlmResponse> {
     const res = await fetch(`${this.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
@@ -26,7 +26,7 @@ export class OpenAiCompatibleProvider implements ILlmProvider {
       body: JSON.stringify({
         model: this.model,
         messages: [
-          { role: "system", content: GTD_SYSTEM_PROMPT },
+          { role: "system", content: getAnalyzePrompt(locale) },
           { role: "user", content: title },
         ],
         temperature: 0.3,
@@ -52,7 +52,7 @@ export class OpenAiCompatibleProvider implements ILlmProvider {
     };
   }
 
-  async decomposeTask(title: string, context: { lists: string[]; tags: string[] }): Promise<DecomposeResponse> {
+  async decomposeTask(title: string, context: { lists: string[]; tags: string[] }, locale: string): Promise<DecomposeResponse> {
     const userMessage = `Task: "${title}"\nUser's lists: ${context.lists.join(", ") || "(none)"}\nUser's tags: ${context.tags.join(", ") || "(none)"}`;
 
     const res = await fetch(`${this.baseUrl}/chat/completions`, {
@@ -64,7 +64,7 @@ export class OpenAiCompatibleProvider implements ILlmProvider {
       body: JSON.stringify({
         model: this.model,
         messages: [
-          { role: "system", content: GTD_DECOMPOSE_PROMPT },
+          { role: "system", content: getDecomposePrompt(locale) },
           { role: "user", content: userMessage },
         ],
         temperature: 0.3,

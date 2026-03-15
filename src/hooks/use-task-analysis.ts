@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
+import { useTranslations } from "@/lib/i18n";
 
 const ANALYZE_TASK = gql`
-  mutation AnalyzeTask($taskId: String!) {
-    analyzeTask(taskId: $taskId) {
+  mutation AnalyzeTask($taskId: String!, $locale: String) {
+    analyzeTask(taskId: $taskId, locale: $locale) {
       id
       taskId
       isActionable
@@ -33,6 +34,7 @@ interface AnalyzeTaskResult {
 }
 
 export function useTaskAnalysis(tasks: AnalyzableTask[], isPremium: boolean) {
+  const { locale } = useTranslations();
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
   const analyzedRef = useRef<Set<string>>(new Set());
   const tasksRef = useRef(tasks);
@@ -86,7 +88,7 @@ export function useTaskAnalysis(tasks: AnalyzableTask[], isPremium: boolean) {
       busyRef.current = true;
 
       try {
-        await analyzeTask({ variables: { taskId: task.id } });
+        await analyzeTask({ variables: { taskId: task.id, locale } });
       } catch {
         analyzedRef.current.delete(task.id);
       } finally {
