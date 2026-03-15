@@ -371,6 +371,12 @@ export const TaskItem = memo(function TaskItem({
         ctrlKey: e.ctrlKey,
         shiftKey: e.shiftKey,
       });
+      // Close detail panel when multi-selecting
+      const params = new URLSearchParams(searchParams.toString());
+      if (params.has("task")) {
+        params.delete("task");
+        router.replace(`?${params.toString()}`, { scroll: false });
+      }
       return;
     }
     // Original behavior: clear selection and open detail panel
