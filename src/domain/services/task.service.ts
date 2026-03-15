@@ -135,8 +135,8 @@ export class TaskService {
     if (input.dueDateEnd !== undefined) {
       updates.dueDateEnd = input.dueDateEnd ?? null;
     }
-    // When clearing dueDate, also clear dueDateEnd
-    if (input.dueDate !== undefined && input.dueDate === null) {
+    // Clearing dueDate always clears dueDateEnd (takes precedence over explicit dueDateEnd)
+    if (input.dueDate === null) {
       updates.dueDateEnd = null;
     }
     if (input.listId != null) updates.listId = input.listId;
@@ -358,6 +358,7 @@ export class TaskService {
         title: steps[i].title,
         notes: null,
         dueDate: null,
+        dueDateEnd: null,
         reminderAt: null,
         sortOrder: i,
       });
