@@ -381,6 +381,7 @@ export const cs: Dictionary = {
     passwordTooLong: "Heslo může mít maximálně 128 znaků",
   },
   bulkDeleteLists: "Smazat vybrané seznamy",
+  bulkDeleteSteps: "Smazat vybrané podúkoly",
   bulkDelete: "Smazat vybrané",
   bulkComplete: "Označit jako dokončené",
   bulkUncomplete: "Označit jako nedokončené",

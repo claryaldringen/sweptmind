@@ -1,16 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import { X, Plus } from "lucide-react";
+import { useMemo, useState } from "react";
+import { gql } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
+import { X, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import {
+  StepSelectionProvider,
+  useStepSelectionOptional,
+} from "@/components/providers/step-selection-provider";
+import { useTranslations } from "@/lib/i18n";
 
 function autoResize(el: HTMLTextAreaElement) {
   el.style.height = "auto";
   el.style.height = el.scrollHeight + "px";
 }
 import { cn } from "@/lib/utils";
+
+const DELETE_STEPS = gql`
+  mutation DeleteSteps($ids: [String!]!) {
+    deleteSteps(ids: $ids)
+  }
+`;
 
 interface StepItem {
   id: string;
@@ -27,28 +47,62 @@ interface TaskStepsProps {
   addStepLabel: string;
 }
 
-export function TaskSteps({
-  steps,
-  onAddStep,
+function StepRow({
+  step,
   onToggleStep,
   onUpdateStepTitle,
   onDeleteStep,
-  addStepLabel,
-}: TaskStepsProps) {
-  const [newStepTitle, setNewStepTitle] = useState("");
+}: {
+  step: StepItem;
+  onToggleStep: (id: string) => void;
+  onUpdateStepTitle: (id: string, title: string) => void;
+  onDeleteStep: (id: string) => void;
+}) {
+  const { t } = useTranslations();
+  const stepSelection = useStepSelectionOptional();
+  const isSelected = stepSelection?.selectedIds.has(step.id) ?? false;
+  const isBulkMode = isSelected && (stepSelection?.selectedIds.size ?? 0) >= 2;
+  const [deleteSteps] = useMutation(DELETE_STEPS);
 
-  async function handleAddStep(e: React.FormEvent) {
-    e.preventDefault();
-    const title = newStepTitle.trim();
-    if (!title) return;
-    setNewStepTitle("");
-    await onAddStep(title);
-  }
+  const handleBulkDelete = () => {
+    if (!stepSelection) return;
+    const ids = [...stepSelection.selectedIds];
+    deleteSteps({
+      variables: { ids },
+      update(cache) {
+        for (const id of ids) {
+          cache.evict({ id: cache.identify({ __typename: "Step", id }) });
+        }
+        cache.gc();
+      },
+    });
+    stepSelection.clear();
+  };
 
   return (
-    <div className="space-y-1">
-      {steps.map((step) => (
-        <div key={step.id} className="group flex min-w-0 items-center gap-2">
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          className={cn(
+            "group -mx-1 flex min-w-0 items-center gap-2 rounded-md px-1",
+            isSelected && "bg-accent",
+          )}
+          onClick={(e) => {
+            if ((e.metaKey || e.ctrlKey || e.shiftKey) && stepSelection) {
+              e.preventDefault();
+              stepSelection.handleClick(step.id, {
+                metaKey: e.metaKey,
+                ctrlKey: e.ctrlKey,
+                shiftKey: e.shiftKey,
+              });
+            }
+          }}
+          onContextMenu={() => {
+            if (!isSelected && stepSelection) {
+              stepSelection.handleClick(step.id, {});
+            }
+          }}
+        >
           <Checkbox
             checked={step.isCompleted}
             onCheckedChange={() => onToggleStep(step.id)}
@@ -93,16 +147,71 @@ export function TaskSteps({
             <X className="h-3 w-3" />
           </Button>
         </div>
-      ))}
-      <form onSubmit={handleAddStep} className="flex items-center gap-2">
-        <Plus className="text-muted-foreground h-4 w-4" />
-        <Input
-          value={newStepTitle}
-          onChange={(e) => setNewStepTitle(e.target.value)}
-          placeholder={addStepLabel}
-          className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
-        />
-      </form>
-    </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        {isBulkMode ? (
+          <>
+            <ContextMenuItem disabled className="text-muted-foreground text-xs">
+              {t("bulkSelectedCount", { count: String(stepSelection!.selectedIds.size) })}
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem variant="destructive" onClick={handleBulkDelete}>
+              <Trash2 className="h-4 w-4" />
+              {t("bulkDeleteSteps")}
+            </ContextMenuItem>
+          </>
+        ) : (
+          <ContextMenuItem variant="destructive" onClick={() => onDeleteStep(step.id)}>
+            <Trash2 className="h-4 w-4" />
+            {t("bulkDelete")}
+          </ContextMenuItem>
+        )}
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+}
+
+export function TaskSteps({
+  steps,
+  onAddStep,
+  onToggleStep,
+  onUpdateStepTitle,
+  onDeleteStep,
+  addStepLabel,
+}: TaskStepsProps) {
+  const [newStepTitle, setNewStepTitle] = useState("");
+  const stepIds = useMemo(() => steps.map((s) => s.id), [steps]);
+
+  async function handleAddStep(e: React.FormEvent) {
+    e.preventDefault();
+    const title = newStepTitle.trim();
+    if (!title) return;
+    setNewStepTitle("");
+    await onAddStep(title);
+  }
+
+  return (
+    <StepSelectionProvider stepIds={stepIds}>
+      <div className="space-y-1">
+        {steps.map((step) => (
+          <StepRow
+            key={step.id}
+            step={step}
+            onToggleStep={onToggleStep}
+            onUpdateStepTitle={onUpdateStepTitle}
+            onDeleteStep={onDeleteStep}
+          />
+        ))}
+        <form onSubmit={handleAddStep} className="flex items-center gap-2">
+          <Plus className="text-muted-foreground h-4 w-4" />
+          <Input
+            value={newStepTitle}
+            onChange={(e) => setNewStepTitle(e.target.value)}
+            placeholder={addStepLabel}
+            className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
+          />
+        </form>
+      </div>
+    </StepSelectionProvider>
   );
 }

@@ -359,6 +359,7 @@ export interface Dictionary {
     passwordTooLong: string;
   };
   bulkDeleteLists: string;
+  bulkDeleteSteps: string;
   bulkDelete: string;
   bulkComplete: string;
   bulkUncomplete: string;
