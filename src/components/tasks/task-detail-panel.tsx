@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, addHours, addDays } from "date-fns";
 import { cs } from "date-fns/locale/cs";
 import { enUS } from "date-fns/locale/en-US";
 import { useTranslations } from "@/lib/i18n";
@@ -683,6 +683,41 @@ export function TaskDetailPanel() {
     optimisticUpdate({ reminderAt });
   }
 
+  function handleEndDateSelect(date: Date | undefined) {
+    if (!date) return;
+    optimisticUpdate({ dueDateEnd: format(date, "yyyy-MM-dd") });
+  }
+
+  function handleEndTimeChange(time: string) {
+    if (!task || !task.dueDateEnd) return;
+    const dateStr = task.dueDateEnd.split("T")[0];
+    optimisticUpdate({ dueDateEnd: time ? `${dateStr}T${time}` : dateStr });
+  }
+
+  function handleClearEndDate() {
+    optimisticUpdate({ dueDateEnd: null });
+  }
+
+  function handleQuickEndDate(type: "1h" | "sunday") {
+    if (!task || !task.dueDate) return;
+    if (type === "1h") {
+      const hasTime = task.dueDate.includes("T");
+      if (hasTime) {
+        const start = parseISO(task.dueDate);
+        const end = addHours(start, 1);
+        optimisticUpdate({ dueDateEnd: format(end, "yyyy-MM-dd'T'HH:mm") });
+      } else {
+        optimisticUpdate({ dueDateEnd: task.dueDate + "T01:00" });
+      }
+    } else if (type === "sunday") {
+      const start = parseISO(task.dueDate.split("T")[0]);
+      const dayOfWeek = start.getDay();
+      const daysToSunday = dayOfWeek === 0 ? 7 : 7 - dayOfWeek;
+      const sunday = addDays(start, daysToSunday);
+      optimisticUpdate({ dueDateEnd: format(sunday, "yyyy-MM-dd") });
+    }
+  }
+
   function handleDelete() {
     deleteTask({ variables: { id: taskId } });
     closePanel();
@@ -1149,12 +1184,17 @@ export function TaskDetailPanel() {
           {/* Due date + Reminder */}
           <TaskDates
             dueDate={task.dueDate}
+            dueDateEnd={task.dueDateEnd}
             reminderAt={task.reminderAt}
             onDateSelect={handleDateSelect}
             onTimeChange={handleTimeChange}
             onClearDueDate={() => optimisticUpdate({ dueDate: null })}
             onReminderSelect={handleReminderSelect}
             onClearReminder={() => optimisticUpdate({ reminderAt: null })}
+            onEndDateSelect={handleEndDateSelect}
+            onEndTimeChange={handleEndTimeChange}
+            onClearEndDate={handleClearEndDate}
+            onQuickEndDate={handleQuickEndDate}
             t={t}
             dateFnsLocale={dateFnsLocale}
           />
