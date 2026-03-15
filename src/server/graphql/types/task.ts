@@ -352,6 +352,56 @@ builder.mutationField("convertTaskToList", (t) =>
   }),
 );
 
+// Bulk operations
+const BulkTaskUpdateInput = builder.inputType("BulkTaskUpdateInput", {
+  fields: (t) => ({
+    listId: t.string(),
+    dueDate: t.string(),
+    recurrence: t.string(),
+    deviceContext: t.string(),
+  }),
+});
+
+builder.mutationField("deleteTasks", (t) =>
+  t.field({
+    type: "Boolean",
+    authScopes: { authenticated: true },
+    args: { ids: t.arg.stringList({ required: true }) },
+    resolve: async (_root, args, ctx) => ctx.services.task.deleteMany(args.ids, ctx.userId!),
+  }),
+);
+
+builder.mutationField("updateTasks", (t) =>
+  t.field({
+    type: "Boolean",
+    authScopes: { authenticated: true },
+    args: {
+      ids: t.arg.stringList({ required: true }),
+      input: t.arg({ type: BulkTaskUpdateInput, required: true }),
+    },
+    resolve: async (_root, args, ctx) =>
+      ctx.services.task.updateMany(args.ids, ctx.userId!, {
+        listId: args.input.listId ?? undefined,
+        dueDate: args.input.dueDate ?? undefined,
+        recurrence: args.input.recurrence ?? undefined,
+        deviceContext: args.input.deviceContext ?? undefined,
+      }),
+  }),
+);
+
+builder.mutationField("setTasksCompleted", (t) =>
+  t.field({
+    type: "Boolean",
+    authScopes: { authenticated: true },
+    args: {
+      ids: t.arg.stringList({ required: true }),
+      isCompleted: t.arg.boolean({ required: true }),
+    },
+    resolve: async (_root, args, ctx) =>
+      ctx.services.task.setManyCompleted(args.ids, ctx.userId!, args.isCompleted),
+  }),
+);
+
 // Import tasks
 const ImportTaskInput = builder.inputType("ImportTaskInput", {
   fields: (t) => ({

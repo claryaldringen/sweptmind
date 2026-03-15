@@ -132,3 +132,12 @@ builder.mutationField("reorderLists", (t) =>
     resolve: async (_root, args, ctx) => ctx.services.list.reorder(ctx.userId!, args.input),
   }),
 );
+
+builder.mutationField("deleteLists", (t) =>
+  t.field({
+    type: "Boolean",
+    authScopes: { authenticated: true },
+    args: { ids: t.arg.stringList({ required: true }) },
+    resolve: async (_root, args, ctx) => ctx.services.list.deleteMany(args.ids, ctx.userId!),
+  }),
+);

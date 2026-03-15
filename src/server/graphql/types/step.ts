@@ -75,3 +75,12 @@ builder.mutationField("toggleStepCompleted", (t) =>
     resolve: async (_root, args, ctx) => ctx.services.step.toggleCompleted(ctx.userId!, args.id),
   }),
 );
+
+builder.mutationField("deleteSteps", (t) =>
+  t.field({
+    type: "Boolean",
+    authScopes: { authenticated: true },
+    args: { ids: t.arg.stringList({ required: true }) },
+    resolve: async (_root, args, ctx) => ctx.services.step.deleteMany(ctx.userId!, args.ids),
+  }),
+);
