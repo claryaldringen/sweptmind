@@ -62,4 +62,9 @@ export class DrizzleStepRepository implements IStepRepository {
   async delete(id: string): Promise<void> {
     await this.db.delete(schema.steps).where(eq(schema.steps.id, id));
   }
+
+  async deleteMany(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    await this.db.delete(schema.steps).where(inArray(schema.steps.id, ids));
+  }
 }

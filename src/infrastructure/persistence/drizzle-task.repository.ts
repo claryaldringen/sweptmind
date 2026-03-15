@@ -292,6 +292,21 @@ export class DrizzleTaskRepository implements ITaskRepository {
     });
   }
 
+  async deleteMany(ids: string[], userId: string): Promise<void> {
+    if (ids.length === 0) return;
+    await this.db
+      .delete(schema.tasks)
+      .where(and(inArray(schema.tasks.id, ids), eq(schema.tasks.userId, userId)));
+  }
+
+  async updateMany(ids: string[], userId: string, data: Partial<Task>): Promise<void> {
+    if (ids.length === 0) return;
+    await this.db
+      .update(schema.tasks)
+      .set(data)
+      .where(and(inArray(schema.tasks.id, ids), eq(schema.tasks.userId, userId)));
+  }
+
   async searchTasks(userId: string, query: string, tagIds?: string[]): Promise<Task[]> {
     const results = await this.db.query.tasks.findMany({
       where: and(

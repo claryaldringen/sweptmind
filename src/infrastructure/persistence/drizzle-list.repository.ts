@@ -77,6 +77,19 @@ export class DrizzleListRepository implements IListRepository {
       .where(and(eq(schema.lists.id, id), eq(schema.lists.userId, userId)));
   }
 
+  async deleteManyNonDefault(ids: string[], userId: string): Promise<void> {
+    if (ids.length === 0) return;
+    await this.db
+      .delete(schema.lists)
+      .where(
+        and(
+          inArray(schema.lists.id, ids),
+          eq(schema.lists.userId, userId),
+          eq(schema.lists.isDefault, false),
+        ),
+      );
+  }
+
   async ungroupByGroupId(groupId: string): Promise<void> {
     await this.db
       .update(schema.lists)
