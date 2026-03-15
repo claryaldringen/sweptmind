@@ -4,56 +4,72 @@ const analyzePrompts: Record<string, string> = {
 Dobrá next action je konkrétní a proveditelná: „Zavolat zubaři a objednat se", „Koupit mléko v Tescu", „Poslat report Honzovi emailem".
 Špatná next action je vágní nebo vícekroková: „Vyřídit projekt", „Uklidit kancelář", „Vyřešit daně".
 
-Odpověz pouze validním JSON, žádný jiný text:
-{"isActionable": true/false, "suggestion": "stručný návrh rozdělení na kroky nebo null"}
+Odpověz pouze validním JSON, žádný jiný text. Jsou čtyři možné výsledky:
 
-Pokud je isActionable true, nastav suggestion na null.
-Pokud je isActionable false, stručně navrhni, jak by se dal úkol rozložit na konkrétní kroky (např. „Rozlož na: 1. Zjistit cenu štěrku 2. Objednat dovoz 3. Vysypat na cestu").`,
+1. Úkol JE akční (next action):
+{"isActionable": true}
+
+2. Úkol je VÝZNAMOVĚ SHODNÝ s jiným existujícím úkolem ze seznamu (duplikát):
+{"isActionable": false, "duplicateTaskId": "id-duplicitního-úkolu"}
+Použij pouze pokud úkoly mají skutečně stejný záměr (ne jen podobný). Např. „Koupit mléko" a „Zajít pro mléko" jsou duplikáty. „Koupit mléko" a „Koupit chleba" NEJSOU duplikáty.
+
+3. Úkol NENÍ akční, ale stačí ho přeformulovat na konkrétnější název (jde o jednu činnost, jen je špatně pojmenovaná):
+{"isActionable": false, "suggestedTitle": "lepší, konkrétnější název úkolu", "suggestion": "krátké vysvětlení proč původní název nebyl dobrý"}
+
+4. Úkol NENÍ akční a je to projekt nebo vícekrokový záměr — rozlož na konkrétní kroky:
+{"isActionable": false, "projectName": "krátký název projektu", "steps": [{"title": "první krok", "listName": null, "dependsOn": null}, {"title": "druhý krok (závisí na prvním)", "listName": null, "dependsOn": 0}, ...]}
+
+Priorita: nejdřív zkontroluj duplikáty (2), pak actionability (1), pak přejmenování vs rozložení (3 nebo 4).
+
+Pravidla pro kroky (varianta 4):
+- Každý krok musí být jedna fyzická, viditelná činnost zvládnutelná na jedno posezení
+- Pokud krok patří do konkrétního seznamu z uživatelových seznamů, nastav listName. Jinak null.
+- Typicky 2–6 kroků, ne víc než je potřeba
+- projectName je krátký, výstižný název projektu (stane se tagem)
+- dependsOn je 0-based index kroku, na kterém tento krok závisí. Většina kroků závisí na předchozím (sekvenční postup). Nastav null pouze pokud krok lze provést nezávisle na ostatních.
+
+Navíc, nezávisle na výše uvedeném výsledku, pokud úkol zahrnuje telefonát (zavolat, telefonovat, kontaktovat telefonicky), přidej pole "callIntent":
+{"callIntent": {"name": "jméno osoby", "reason": "důvod hovoru nebo null"}}
+callIntent může existovat současně s isActionable: true. Např.: {"isActionable": true, "callIntent": {"name": "Tomáš", "reason": "kvůli stránkám"}}
+Pokud je device context "phone" nebo seznam souvisí s telefonováním, je pravděpodobnost telefonátu vyšší — detekuj ho i z nejednoznačných názvů jako "Tomáš — stránky".
+Pokud úkol nezahrnuje telefonát, callIntent vynech.`,
 
   en: `You are a GTD (Getting Things Done) expert. Analyze whether a task title represents a concrete, single "next action" — a physical, visible activity that can be done in one sitting.
 
 A good next action is specific and actionable: "Call dentist to schedule appointment", "Buy milk at Tesco", "Email report to John".
 A bad next action is vague or multi-step: "Handle project", "Organize office", "Deal with taxes".
 
-Respond with valid JSON only, no other text:
-{"isActionable": true/false, "suggestion": "brief decomposition suggestion or null"}
+Respond with valid JSON only, no other text. There are four possible outcomes:
 
-If isActionable is true, set suggestion to null.
-If isActionable is false, briefly suggest how to break the task into concrete steps (e.g. "Break into: 1. Research prices 2. Order delivery 3. Spread on path").`,
-};
+1. The task IS actionable (a next action):
+{"isActionable": true}
 
-const decomposePrompts: Record<string, string> = {
-  cs: `Jsi expert na GTD (Getting Things Done). Rozlož projektový úkol na posloupnost konkrétních, proveditelných next actions.
+2. The task is SEMANTICALLY IDENTICAL to another existing task in the list (duplicate):
+{"isActionable": false, "duplicateTaskId": "id-of-duplicate-task"}
+Use only when tasks have truly the same intent (not just similar). E.g. "Buy milk" and "Get milk" are duplicates. "Buy milk" and "Buy bread" are NOT duplicates.
 
-Pravidla:
-- Každý krok musí být jedna fyzická, viditelná činnost zvládnutelná na jedno posezení
-- Odpovídej česky
-- Pokud krok patří do konkrétního seznamu z uživatelových seznamů, nastav listName na název toho seznamu. Jinak nastav listName na null (zůstane v aktuálním seznamu).
-- Buď praktický — typicky 2–6 kroků, ne víc než je potřeba
-- Dej projektu krátký, výstižný název (projectName) — stane se tagem pro všechny kroky
-- U každého kroku nastav dependsOn na 0-based index kroku, na který musí čekat, nebo null pokud může začít nezávisle. Nastav závislosti jen tam, kde reálně existují — ne všechno musí být sekvenční.
+3. The task is NOT actionable, but can be fixed by renaming to a more specific title (it's essentially one activity, just poorly named):
+{"isActionable": false, "suggestedTitle": "better, more specific task title", "suggestion": "brief explanation why the original title wasn't good"}
 
-Odpověz pouze validním JSON, žádný jiný text:
-{"projectName": "krátký název projektu", "steps": [{"title": "název kroku", "listName": "název seznamu nebo null", "dependsOn": null}, ...]}`,
+4. The task is NOT actionable and is a project or multi-step intention — decompose into concrete steps:
+{"isActionable": false, "projectName": "short project name", "steps": [{"title": "first step", "listName": null, "dependsOn": null}, {"title": "second step (depends on first)", "listName": null, "dependsOn": 0}, ...]}
 
-  en: `You are a GTD (Getting Things Done) expert. Break down a project-like task into a sequence of concrete, actionable next actions.
+Priority: first check for duplicates (2), then actionability (1), then rename vs decomposition (3 or 4).
 
-Rules:
+Rules for steps (option 4):
 - Each step must be a single physical, visible action doable in one sitting
-- Respond in English
-- If a step belongs to a specific list from the user's lists, set listName to that list name. Otherwise set listName to null (it stays in the current list).
-- Keep it practical — typically 2-6 steps, no more than needed
-- Give the project a short, descriptive name (projectName) — this becomes a tag for all steps
-- For each step, set dependsOn to the 0-based index of the step it must wait for, or null if it can start independently. Only set real dependencies — not everything needs to be sequential.
+- If a step belongs to a specific list from the user's lists, set listName. Otherwise null.
+- Typically 2-6 steps, no more than needed
+- projectName is a short, descriptive project name (becomes a tag)
+- dependsOn is the 0-based index of the step this step depends on. Most steps depend on the previous one (sequential flow). Set null only if the step can be done independently of all others.
 
-Respond with valid JSON only, no other text:
-{"projectName": "short project name", "steps": [{"title": "step title", "listName": "list name or null", "dependsOn": null}, ...]}`,
+Additionally, regardless of the above outcome, if the task involves making a phone call (call, phone, contact by phone), add a "callIntent" field:
+{"callIntent": {"name": "person's name", "reason": "reason for the call or null"}}
+callIntent can coexist with isActionable: true. E.g.: {"isActionable": true, "callIntent": {"name": "John", "reason": "about the project"}}
+If the device context is "phone" or the list is phone-related, the probability of a call intent is higher — detect it even from ambiguous titles like "John — project".
+If the task does not involve a phone call, omit callIntent.`,
 };
 
 export function getAnalyzePrompt(locale: string): string {
   return analyzePrompts[locale] ?? analyzePrompts.en;
-}
-
-export function getDecomposePrompt(locale: string): string {
-  return decomposePrompts[locale] ?? decomposePrompts.en;
 }

@@ -1,4 +1,4 @@
-import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { tasks } from "./tasks";
 
 export const taskAiAnalyses = pgTable(
@@ -13,6 +13,11 @@ export const taskAiAnalyses = pgTable(
       .unique(),
     isActionable: boolean("is_actionable").notNull(),
     suggestion: text("suggestion"),
+    suggestedTitle: text("suggested_title"),
+    projectName: text("project_name"),
+    decomposition: jsonb("decomposition"),
+    duplicateTaskId: text("duplicate_task_id").references(() => tasks.id, { onDelete: "set null" }),
+    callIntent: jsonb("call_intent"),
     analyzedTitle: text("analyzed_title").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },

@@ -12,6 +12,7 @@ import { useTaskDnd } from "@/components/providers/task-dnd-provider";
 import { TaskSelectionProvider } from "@/components/providers/task-selection-provider";
 import { useDepartureAnimation } from "@/hooks/use-departure-animation";
 import { useTaskAnalysis } from "@/hooks/use-task-analysis";
+import { useAppData } from "@/components/providers/app-data-provider";
 
 const GET_ME_FOR_SORTABLE = gql`
   query GetMeForSortableAnalysis {
@@ -63,7 +64,8 @@ export function SortableTaskList({
     GET_ME_FOR_SORTABLE,
   );
   const isPremium = meData?.me?.isPremium ?? false;
-  const analyzingIds = useTaskAnalysis(tasks, isPremium);
+  const { allTasks } = useAppData();
+  const analyzingIds = useTaskAnalysis(tasks, isPremium, allTasks);
   const { registerTaskReorder } = useTaskDnd();
   const {
     activeTasks,

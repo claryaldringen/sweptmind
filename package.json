@@ -71,6 +71,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@capacitor-community/contacts": "^7.1.0",
     "@graphql-codegen/cli": "^6.1.2",
     "@graphql-codegen/typescript": "^5.0.8",
     "@graphql-codegen/typescript-operations": "^5.0.8",

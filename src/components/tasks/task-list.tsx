@@ -9,6 +9,7 @@ import { TaskSelectionProvider } from "@/components/providers/task-selection-pro
 import { useTranslations } from "@/lib/i18n";
 import { useDepartureAnimation } from "@/hooks/use-departure-animation";
 import { useTaskAnalysis } from "@/hooks/use-task-analysis";
+import { useAppData } from "@/components/providers/app-data-provider";
 
 const GET_ME = gql`
   query GetMeForAnalysis {
@@ -47,7 +48,8 @@ export function TaskList({ tasks, showListName = false, showCompleted = true }: 
   const { t } = useTranslations();
   const { data: meData } = useQuery<{ me: { id: string; isPremium: boolean } | null }>(GET_ME);
   const isPremium = meData?.me?.isPremium ?? false;
-  const analyzingIds = useTaskAnalysis(tasks, isPremium);
+  const { allTasks } = useAppData();
+  const analyzingIds = useTaskAnalysis(tasks, isPremium, allTasks);
   const {
     futureTasks,
     completedTasks,

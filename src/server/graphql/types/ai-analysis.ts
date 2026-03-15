@@ -1,12 +1,46 @@
 import { builder } from "../builder";
 import { TaskAiAnalysisRef } from "./refs";
 
+const CallIntentRef = builder.objectRef<{ name: string; reason: string | null }>("CallIntent");
+CallIntentRef.implement({
+  fields: (t) => ({
+    name: t.exposeString("name"),
+    reason: t.exposeString("reason", { nullable: true }),
+  }),
+});
+
+const DecompositionStepRef = builder.objectRef<{
+  title: string;
+  listName: string | null;
+  dependsOn: number | null;
+}>("DecompositionStep");
+DecompositionStepRef.implement({
+  fields: (t) => ({
+    title: t.exposeString("title"),
+    listName: t.exposeString("listName", { nullable: true }),
+    dependsOn: t.exposeInt("dependsOn", { nullable: true }),
+  }),
+});
+
 export const TaskAiAnalysisType = TaskAiAnalysisRef.implement({
   fields: (t) => ({
     id: t.exposeString("id"),
     taskId: t.exposeString("taskId"),
     isActionable: t.exposeBoolean("isActionable"),
     suggestion: t.exposeString("suggestion", { nullable: true }),
+    suggestedTitle: t.exposeString("suggestedTitle", { nullable: true }),
+    projectName: t.exposeString("projectName", { nullable: true }),
+    decomposition: t.field({
+      type: [DecompositionStepRef],
+      nullable: true,
+      resolve: (analysis) => analysis.decomposition ?? null,
+    }),
+    duplicateTaskId: t.exposeString("duplicateTaskId", { nullable: true }),
+    callIntent: t.field({
+      type: CallIntentRef,
+      nullable: true,
+      resolve: (analysis) => analysis.callIntent ?? null,
+    }),
     analyzedTitle: t.exposeString("analyzedTitle"),
     createdAt: t.string({
       resolve: (analysis) => analysis.createdAt.toISOString(),
@@ -30,38 +64,17 @@ builder.mutationField("analyzeTask", (t) =>
   }),
 );
 
-// Decomposition types
-const DecomposeStepRef = builder.objectRef<{ title: string; listName: string | null; dependsOn: number | null }>("DecomposeStep");
-DecomposeStepRef.implement({
-  fields: (t) => ({
-    title: t.exposeString("title"),
-    listName: t.exposeString("listName", { nullable: true }),
-    dependsOn: t.exposeInt("dependsOn", { nullable: true }),
-  }),
-});
-
-const DecomposeResultRef = builder.objectRef<{ projectName: string; steps: { title: string; listName: string | null; dependsOn: number | null }[] }>("DecomposeResult");
-DecomposeResultRef.implement({
-  fields: (t) => ({
-    projectName: t.exposeString("projectName"),
-    steps: t.field({
-      type: [DecomposeStepRef],
-      resolve: (parent) => parent.steps,
-    }),
-  }),
-});
-
-builder.mutationField("decomposeTask", (t) =>
+builder.mutationField("markTasksActionable", (t) =>
   t.field({
-    type: DecomposeResultRef,
+    type: "Boolean",
     authScopes: { authenticated: true },
     args: {
-      taskId: t.arg.string({ required: true }),
-      locale: t.arg.string({ required: false }),
+      taskIds: t.arg.stringList({ required: true }),
     },
     resolve: async (_root, args, ctx) => {
-      if (!ctx.userId) return { projectName: "", steps: [] };
-      return ctx.services.ai.decomposeTask(args.taskId, ctx.userId, args.locale ?? "en");
+      if (!ctx.userId) return false;
+      await ctx.services.ai.markActionable(args.taskIds, ctx.userId);
+      return true;
     },
   }),
 );

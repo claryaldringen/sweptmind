@@ -34,3 +34,8 @@ export interface TrackingConfig {
   intervalMs: number;
   distanceFilterMeters: number;
 }
+
+export interface Contact {
+  name: string;
+  phones: string[];
+}

@@ -1,7 +1,8 @@
 export { getPlatform } from "./platform";
-export { getPushAdapter, getLocationAdapter, resetAdapters } from "./factory";
+export { getPushAdapter, getLocationAdapter, getContactsAdapter, resetAdapters } from "./factory";
 export type { PushPort } from "./ports/push.port";
 export type { LocationPort } from "./ports/location.port";
+export type { ContactsPort } from "./ports/contacts.port";
 export type {
   Platform,
   Position,
@@ -10,4 +11,5 @@ export type {
   GeofenceConfig,
   GeofenceEvent,
   TrackingConfig,
+  Contact,
 } from "./types";

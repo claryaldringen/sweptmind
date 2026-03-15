@@ -1,20 +1,31 @@
-export interface LlmResponse {
-  isActionable: boolean;
-  suggestion: string | null;
-}
-
-export interface DecomposeStep {
+export interface LlmAnalysisStep {
   title: string;
   listName: string | null;
   dependsOn: number | null;
 }
 
-export interface DecomposeResponse {
-  projectName: string;
-  steps: DecomposeStep[];
+export interface LlmCallIntent {
+  name: string;
+  reason: string | null;
+}
+
+export interface LlmResponse {
+  isActionable: boolean;
+  suggestion: string | null;
+  suggestedTitle: string | null;
+  projectName: string | null;
+  steps: LlmAnalysisStep[] | null;
+  duplicateTaskId: string | null;
+  callIntent: LlmCallIntent | null;
+}
+
+export interface LlmContext {
+  lists: string[];
+  tasks: { id: string; title: string }[];
+  deviceContext: string | null;
+  listName: string | null;
 }
 
 export interface ILlmProvider {
-  analyzeTask(title: string, locale: string): Promise<LlmResponse>;
-  decomposeTask(title: string, context: { lists: string[]; tags: string[] }, locale: string): Promise<DecomposeResponse>;
+  analyzeTask(title: string, locale: string, context: LlmContext): Promise<LlmResponse>;
 }
