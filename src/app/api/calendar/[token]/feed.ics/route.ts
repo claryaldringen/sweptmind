@@ -10,7 +10,11 @@ export async function GET(
   const user = await repos.user.findByCalendarToken(token);
   if (!user) return new NextResponse("Unauthorized", { status: 401 });
 
-  const tasks = await services.calendar.getSyncableTasks(user.id, user.calendarSyncAll);
+  const tasks = await services.calendar.getSyncableTasks(
+    user.id,
+    user.calendarSyncAll,
+    user.calendarSyncDateRange,
+  );
 
   const vevents: string[] = [];
   for (const task of tasks) {

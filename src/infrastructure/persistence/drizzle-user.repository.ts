@@ -67,6 +67,21 @@ export class DrizzleUserRepository implements IUserRepository {
     return user?.calendarSyncAll ?? false;
   }
 
+  async updateCalendarSyncDateRange(userId: string, syncDateRange: boolean): Promise<void> {
+    await this.db
+      .update(schema.users)
+      .set({ calendarSyncDateRange: syncDateRange })
+      .where(eq(schema.users.id, userId));
+  }
+
+  async getCalendarSyncDateRange(userId: string): Promise<boolean> {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      columns: { calendarSyncDateRange: true },
+    });
+    return user?.calendarSyncDateRange ?? false;
+  }
+
   async updateOnboardingCompleted(userId: string, completed: boolean): Promise<void> {
     await this.db
       .update(schema.users)

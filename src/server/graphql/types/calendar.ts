@@ -37,3 +37,23 @@ builder.queryField("calendarSyncAll", (t) =>
     },
   }),
 );
+
+builder.mutationField("updateCalendarSyncDateRange", (t) =>
+  t.boolean({
+    authScopes: { authenticated: true },
+    args: { syncDateRange: t.arg.boolean({ required: true }) },
+    resolve: async (_root, args, ctx) => {
+      await ctx.services.user.updateCalendarSyncDateRange(ctx.userId!, args.syncDateRange);
+      return args.syncDateRange;
+    },
+  }),
+);
+
+builder.queryField("calendarSyncDateRange", (t) =>
+  t.boolean({
+    authScopes: { authenticated: true },
+    resolve: async (_root, _args, ctx) => {
+      return ctx.services.user.getCalendarSyncDateRange(ctx.userId!);
+    },
+  }),
+);

@@ -99,7 +99,9 @@ function StepRow({
             isSelected && stepsHaveFocus && "bg-accent",
             isSelected && !stepsHaveFocus && "bg-accent/50",
           )}
-          onMouseDown={(e) => { if (e.shiftKey) e.preventDefault(); }}
+          onMouseDown={(e) => {
+            if (e.shiftKey) e.preventDefault();
+          }}
           onClick={(e) => {
             setFocusArea("steps");
             if ((e.metaKey || e.ctrlKey || e.shiftKey) && stepSelection) {

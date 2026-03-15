@@ -93,7 +93,12 @@ export function TaskSelectionProvider({
         selection.selectAll();
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key === "Backspace" && getFocusArea() === "tasks" && selection.selectedIds.size > 0) {
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.key === "Backspace" &&
+        getFocusArea() === "tasks" &&
+        selection.selectedIds.size > 0
+      ) {
         e.preventDefault();
         const ids = [...selection.selectedIds];
         deleteTasks({

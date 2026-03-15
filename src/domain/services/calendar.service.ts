@@ -11,12 +11,19 @@ export class CalendarService {
     private readonly taskRepo: ITaskRepository,
   ) {}
 
-  async getSyncableTasks(userId: string, syncAll: boolean): Promise<Task[]> {
+  async getSyncableTasks(
+    userId: string,
+    syncAll: boolean,
+    syncDateRange: boolean = false,
+  ): Promise<Task[]> {
     const tasks = await this.taskRepo.findPlanned(userId);
     if (syncAll) {
       return tasks.filter((t) => t.dueDate != null);
     }
-    return tasks.filter((t) => t.dueDate != null && t.dueDate.includes("T"));
+    return tasks.filter(
+      (t) =>
+        t.dueDate != null && (t.dueDate.includes("T") || (syncDateRange && t.dueDateEnd != null)),
+    );
   }
 
   async getSyncEntry(taskId: string): Promise<CalendarSync | undefined> {

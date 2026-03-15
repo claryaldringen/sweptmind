@@ -10,6 +10,18 @@ const ANALYZE_TASK = gql`
       taskId
       isActionable
       suggestion
+      suggestedTitle
+      projectName
+      decomposition {
+        title
+        listName
+        dependsOn
+      }
+      duplicateTaskId
+      callIntent {
+        name
+        reason
+      }
       analyzedTitle
     }
   }
@@ -18,6 +30,7 @@ const ANALYZE_TASK = gql`
 interface AnalyzableTask {
   id: string;
   title: string;
+  isCompleted: boolean;
   aiAnalysis?: {
     analyzedTitle: string;
   } | null;
@@ -29,16 +42,27 @@ interface AnalyzeTaskResult {
     taskId: string;
     isActionable: boolean;
     suggestion: string | null;
+    suggestedTitle: string | null;
+    projectName: string | null;
+    decomposition: { title: string; listName: string | null; dependsOn: number | null }[] | null;
+    duplicateTaskId: string | null;
+    callIntent: { name: string; reason: string | null } | null;
     analyzedTitle: string;
   } | null;
 }
 
-export function useTaskAnalysis(tasks: AnalyzableTask[], isPremium: boolean) {
+export function useTaskAnalysis(
+  tasks: AnalyzableTask[],
+  isPremium: boolean,
+  allTasks?: AnalyzableTask[],
+) {
   const { locale } = useTranslations();
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
   const analyzedRef = useRef<Set<string>>(new Set());
   const tasksRef = useRef(tasks);
   tasksRef.current = tasks;
+  const allTasksRef = useRef(allTasks);
+  allTasksRef.current = allTasks;
   const busyRef = useRef(false);
 
   const [analyzeTask] = useMutation<AnalyzeTaskResult>(ANALYZE_TASK, {
@@ -57,6 +81,18 @@ export function useTaskAnalysis(tasks: AnalyzableTask[], isPremium: boolean) {
                   taskId
                   isActionable
                   suggestion
+                  suggestedTitle
+                  projectName
+                  decomposition {
+                    title
+                    listName
+                    dependsOn
+                  }
+                  duplicateTaskId
+                  callIntent {
+                    name
+                    reason
+                  }
                   analyzedTitle
                 }
               `,
@@ -73,12 +109,19 @@ export function useTaskAnalysis(tasks: AnalyzableTask[], isPremium: boolean) {
     const interval = setInterval(async () => {
       if (busyRef.current) return;
 
-      const currentTasks = tasksRef.current;
-      const needsAnalysis = currentTasks.filter(
-        (t) =>
-          !analyzedRef.current.has(t.id) &&
-          (!t.aiAnalysis || t.aiAnalysis.analyzedTitle !== t.title),
-      );
+      const filterNeedsAnalysis = (list: AnalyzableTask[]) =>
+        list.filter(
+          (t) =>
+            !t.isCompleted &&
+            !analyzedRef.current.has(t.id) &&
+            (!t.aiAnalysis || t.aiAnalysis.analyzedTitle !== t.title),
+        );
+
+      // Priority: current list first, then remaining tasks
+      let needsAnalysis = filterNeedsAnalysis(tasksRef.current);
+      if (needsAnalysis.length === 0 && allTasksRef.current) {
+        needsAnalysis = filterNeedsAnalysis(allTasksRef.current);
+      }
 
       if (needsAnalysis.length === 0) return;
 
@@ -102,7 +145,7 @@ export function useTaskAnalysis(tasks: AnalyzableTask[], isPremium: boolean) {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [isPremium, analyzeTask]);
+  }, [isPremium, analyzeTask, locale]);
 
   return analyzingIds;
 }

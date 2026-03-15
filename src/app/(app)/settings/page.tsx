@@ -83,6 +83,18 @@ const CALENDAR_SYNC_ALL = gql`
   }
 `;
 
+const UPDATE_CALENDAR_SYNC_DATE_RANGE = gql`
+  mutation UpdateCalendarSyncDateRange($syncDateRange: Boolean!) {
+    updateCalendarSyncDateRange(syncDateRange: $syncDateRange)
+  }
+`;
+
+const CALENDAR_SYNC_DATE_RANGE = gql`
+  query CalendarSyncDateRange {
+    calendarSyncDateRange
+  }
+`;
+
 const GET_ME = gql`
   query GetMe {
     me {
@@ -190,6 +202,10 @@ interface RegenerateCalendarTokenData {
 
 interface CalendarSyncAllData {
   calendarSyncAll: boolean;
+}
+
+interface CalendarSyncDateRangeData {
+  calendarSyncDateRange: boolean;
 }
 
 export default function SettingsPage() {
@@ -347,8 +363,11 @@ export default function SettingsPage() {
   const [regenerateToken] = useMutation<RegenerateCalendarTokenData>(REGENERATE_CALENDAR_TOKEN);
   const [updateSyncAllMutation] = useMutation(UPDATE_CALENDAR_SYNC_ALL);
   const { data: syncAllData } = useQuery<CalendarSyncAllData>(CALENDAR_SYNC_ALL);
+  const [updateSyncDateRangeMutation] = useMutation(UPDATE_CALENDAR_SYNC_DATE_RANGE);
+  const { data: syncDateRangeData } = useQuery<CalendarSyncDateRangeData>(CALENDAR_SYNC_DATE_RANGE);
 
   const syncAll = syncAllData?.calendarSyncAll ?? false;
+  const syncDateRange = syncDateRangeData?.calendarSyncDateRange ?? false;
 
   // Platform detection
   const [platform, setPlatform] = useState<ReturnType<typeof getPlatform>>("web");
@@ -548,6 +567,21 @@ export default function SettingsPage() {
       apolloClient.cache.writeQuery({
         query: CALENDAR_SYNC_ALL,
         data: { calendarSyncAll: !checked },
+      });
+    }
+  };
+
+  const handleSyncDateRangeToggle = async (checked: boolean) => {
+    apolloClient.cache.writeQuery({
+      query: CALENDAR_SYNC_DATE_RANGE,
+      data: { calendarSyncDateRange: checked },
+    });
+    try {
+      await updateSyncDateRangeMutation({ variables: { syncDateRange: checked } });
+    } catch {
+      apolloClient.cache.writeQuery({
+        query: CALENDAR_SYNC_DATE_RANGE,
+        data: { calendarSyncDateRange: !checked },
       });
     }
   };
@@ -1120,6 +1154,19 @@ export default function SettingsPage() {
               <p className="text-muted-foreground text-xs">{t("calendar.syncAllDescription")}</p>
             </div>
             <Switch checked={syncAll} onCheckedChange={handleSyncAllToggle} />
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">{t("calendar.syncDateRangeLabel")}</p>
+              <p className="text-muted-foreground text-xs">
+                {t("calendar.syncDateRangeDescription")}
+              </p>
+            </div>
+            <Switch
+              checked={syncAll || syncDateRange}
+              disabled={syncAll}
+              onCheckedChange={handleSyncDateRangeToggle}
+            />
           </div>
         </div>
       </div>

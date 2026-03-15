@@ -9,6 +9,7 @@ export interface User {
   updatedAt: Date;
   onboardingCompleted: boolean;
   calendarSyncAll: boolean;
+  calendarSyncDateRange: boolean;
   calendarToken: string | null;
   llmProvider: string | null;
   llmApiKey: string | null;

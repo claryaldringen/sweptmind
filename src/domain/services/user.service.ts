@@ -24,6 +24,14 @@ export class UserService {
     return this.userRepo.getCalendarSyncAll(userId);
   }
 
+  async updateCalendarSyncDateRange(userId: string, syncDateRange: boolean): Promise<void> {
+    return this.userRepo.updateCalendarSyncDateRange(userId, syncDateRange);
+  }
+
+  async getCalendarSyncDateRange(userId: string): Promise<boolean> {
+    return this.userRepo.getCalendarSyncDateRange(userId);
+  }
+
   async updateOnboardingCompleted(userId: string, completed: boolean): Promise<void> {
     return this.userRepo.updateOnboardingCompleted(userId, completed);
   }

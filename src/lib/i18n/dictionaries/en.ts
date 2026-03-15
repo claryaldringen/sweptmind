@@ -315,6 +315,9 @@ export const en: Dictionary = {
     syncAllLabel: "Sync all tasks with a due date",
     syncAllDescription:
       "Default: only tasks with an exact time. Enable to also sync date-only tasks.",
+    syncDateRangeLabel: "Sync tasks with a date range",
+    syncDateRangeDescription:
+      "Enable to also sync tasks that have an end date (weekend events, etc.).",
     generating: "Generating...",
     icsFeedUrl: "ICS Feed (read-only)",
     icsFeedDescription:

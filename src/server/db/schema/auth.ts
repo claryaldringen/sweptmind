@@ -17,6 +17,7 @@ export const users = pgTable("users", {
     .$onUpdateFn(() => new Date()),
   onboardingCompleted: boolean("onboarding_completed").notNull().default(true),
   calendarSyncAll: boolean("calendar_sync_all").notNull().default(false),
+  calendarSyncDateRange: boolean("calendar_sync_date_range").notNull().default(false),
   calendarToken: text("calendar_token").unique(),
   llmProvider: text("llm_provider"),
   llmApiKey: text("llm_api_key"),

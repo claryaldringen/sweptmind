@@ -48,11 +48,9 @@ export function TaskDates({
   const dueDateLabel = dueDate
     ? dueDateEnd
       ? `${format(parseISO(dueDate), dueDate.includes("T") ? "MMM d, yyyy h:mm a" : "MMM d, yyyy", { locale: dateFnsLocale })} – ${format(parseISO(dueDateEnd), dueDateEnd.includes("T") ? "MMM d, yyyy h:mm a" : "MMM d, yyyy", { locale: dateFnsLocale })}`
-      : format(
-          parseISO(dueDate),
-          dueDate.includes("T") ? "MMM d, yyyy h:mm a" : "MMM d, yyyy",
-          { locale: dateFnsLocale },
-        )
+      : format(parseISO(dueDate), dueDate.includes("T") ? "MMM d, yyyy h:mm a" : "MMM d, yyyy", {
+          locale: dateFnsLocale,
+        })
     : null;
 
   return (

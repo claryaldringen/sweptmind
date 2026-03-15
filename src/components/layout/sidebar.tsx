@@ -1,10 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useSyncExternalStore,
+  type ComponentType,
+  type ReactNode,
+} from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { gql } from "@apollo/client";
-import { useMutation, useApolloClient } from "@apollo/client/react";
+import { useMutation } from "@apollo/client/react";
 import {
   useLists,
   useAppData,
@@ -153,7 +161,8 @@ function SortableListItem({
   const listSelection = useListSelectionOptional();
   const isListSelected = listSelection?.selectedIds.has(list.id) ?? false;
   const isBulkMode = isListSelected && (listSelection?.selectedIds.size ?? 0) >= 2;
-  const hasSmartListInSelection = isBulkMode && [...(listSelection?.selectedIds ?? [])].some((id) => smartListIds.has(id));
+  const hasSmartListInSelection =
+    isBulkMode && [...(listSelection?.selectedIds ?? [])].some((id) => smartListIds.has(id));
 
   const handleBulkDelete = () => {
     if (!listSelection) return;
@@ -185,7 +194,9 @@ function SortableListItem({
         <ContextMenuTrigger asChild>
           <Link
             href={`/lists/${list.id}`}
-            onMouseDown={(e) => { if (e.shiftKey) e.preventDefault(); }}
+            onMouseDown={(e) => {
+              if (e.shiftKey) e.preventDefault();
+            }}
             onClick={(e) => {
               setFocusArea("sidebar");
               if ((e.metaKey || e.ctrlKey || e.shiftKey) && listSelection) {
@@ -238,7 +249,11 @@ function SortableListItem({
                 {t("bulkSelectedCount", { count: String(listSelection!.selectedIds.size) })}
               </ContextMenuItem>
               <ContextMenuSeparator />
-              <ContextMenuItem variant="destructive" disabled={hasSmartListInSelection} onClick={handleBulkDelete}>
+              <ContextMenuItem
+                variant="destructive"
+                disabled={hasSmartListInSelection}
+                onClick={handleBulkDelete}
+              >
                 <Trash2 className="h-4 w-4" />
                 {t("bulkDelete")}
               </ContextMenuItem>
@@ -269,7 +284,7 @@ function DroppableDefaultList({
   sidebarHasFocus,
   contextCount,
   isDropTarget,
-  smartListIds,
+  smartListIds: _smartListIds,
   onNavigate,
 }: {
   list: ListItem;
@@ -292,7 +307,9 @@ function DroppableDefaultList({
   const link = (
     <Link
       href="/context"
-      onMouseDown={(e) => { if (e.shiftKey) e.preventDefault(); }}
+      onMouseDown={(e) => {
+        if (e.shiftKey) e.preventDefault();
+      }}
       onClick={(e) => {
         setFocusArea("sidebar");
         if ((e.metaKey || e.ctrlKey || e.shiftKey) && listSelection) {
@@ -381,7 +398,8 @@ function SidebarTagItem({
   const listSelection = useListSelectionOptional();
   const isSelected = listSelection?.selectedIds.has(tag.id) ?? false;
   const isBulkMode = isSelected && (listSelection?.selectedIds.size ?? 0) >= 2;
-  const hasSmartListInSelection = isBulkMode && [...(listSelection?.selectedIds ?? [])].some((id) => smartListIds.has(id));
+  const hasSmartListInSelection =
+    isBulkMode && [...(listSelection?.selectedIds ?? [])].some((id) => smartListIds.has(id));
 
   const handleBulkDelete = () => {
     if (!listSelection) return;
@@ -394,7 +412,9 @@ function SidebarTagItem({
       <ContextMenuTrigger asChild>
         <Link
           href={`/tags/${tag.id}`}
-          onMouseDown={(e) => { if (e.shiftKey) e.preventDefault(); }}
+          onMouseDown={(e) => {
+            if (e.shiftKey) e.preventDefault();
+          }}
           onClick={(e) => {
             setFocusArea("sidebar");
             if ((e.metaKey || e.ctrlKey || e.shiftKey) && listSelection) {
@@ -445,7 +465,11 @@ function SidebarTagItem({
               {t("bulkSelectedCount", { count: String(listSelection!.selectedIds.size) })}
             </ContextMenuItem>
             <ContextMenuSeparator />
-            <ContextMenuItem variant="destructive" disabled={hasSmartListInSelection} onClick={handleBulkDelete}>
+            <ContextMenuItem
+              variant="destructive"
+              disabled={hasSmartListInSelection}
+              onClick={handleBulkDelete}
+            >
               <Trash2 className="h-4 w-4" />
               {t("bulkDelete")}
             </ContextMenuItem>
@@ -496,7 +520,9 @@ function SidebarSmartListItem({
   const link = (
     <Link
       href={href}
-      onMouseDown={(e) => { if (e.shiftKey) e.preventDefault(); }}
+      onMouseDown={(e) => {
+        if (e.shiftKey) e.preventDefault();
+      }}
       onClick={(e) => {
         setFocusArea("sidebar");
         if ((e.metaKey || e.ctrlKey || e.shiftKey) && listSelection) {
@@ -527,9 +553,7 @@ function SidebarSmartListItem({
         <Icon className={cn("h-5 w-5", color)} />
         {label}
       </div>
-      {count != null && count > 0 && (
-        <span className="text-muted-foreground text-xs">{count}</span>
-      )}
+      {count != null && count > 0 && <span className="text-muted-foreground text-xs">{count}</span>}
     </Link>
   );
 
@@ -698,7 +722,6 @@ export function Sidebar() {
     .sort((a, b) => a.sortOrder - b.sortOrder);
   const customLists = localOrder ?? serverCustomLists;
   const defaultList = allLists.find((l) => l.isDefault);
-  const listIds = useMemo(() => customLists.map((l) => l.id), [customLists]);
   const sidebarSelectableIds = useMemo(
     () => [...smartOrder, ...customLists.map((l) => l.id), ...allTags.map((t) => t.id)],
     [smartOrder, customLists, allTags],
@@ -911,7 +934,10 @@ export function Sidebar() {
         <UserMenu />
       </div>
       <ScrollArea className="min-h-0 flex-1 px-2">
-        <ListSelectionProvider listIds={sidebarSelectableIds} onBulkDelete={handleSidebarBulkDelete}>
+        <ListSelectionProvider
+          listIds={sidebarSelectableIds}
+          onBulkDelete={handleSidebarBulkDelete}
+        >
           <SortableContext items={smartOrder} strategy={verticalListSortingStrategy}>
             <nav className="space-y-1">
               {smartOrder.map((id) => {

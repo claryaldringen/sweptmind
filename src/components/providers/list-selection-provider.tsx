@@ -40,7 +40,8 @@ export function ListSelectionProvider({
       const listMatch = pathname.match(/^\/lists\/(.+)$/);
       const tagMatch = pathname.match(/^\/tags\/(.+)$/);
       const bareId = pathname.slice(1); // "/planned" → "planned"
-      const currentId = listMatch?.[1] ?? tagMatch?.[1] ?? (listIds.includes(bareId) ? bareId : null);
+      const currentId =
+        listMatch?.[1] ?? tagMatch?.[1] ?? (listIds.includes(bareId) ? bareId : null);
       if (!currentId || !listIds.includes(currentId)) return;
 
       e.preventDefault();

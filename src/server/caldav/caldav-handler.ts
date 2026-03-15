@@ -11,6 +11,7 @@ import {
 interface CalDavUser {
   id: string;
   calendarSyncAll: boolean;
+  calendarSyncDateRange: boolean;
 }
 
 export class CalDavHandler {
@@ -23,8 +24,11 @@ export class CalDavHandler {
   async authenticate(token: string): Promise<CalDavUser | null> {
     const user = await this.userRepo.findByCalendarToken(token);
     if (!user) return null;
-    const syncAll = await this.userRepo.getCalendarSyncAll(user.id);
-    return { id: user.id, calendarSyncAll: syncAll };
+    return {
+      id: user.id,
+      calendarSyncAll: user.calendarSyncAll,
+      calendarSyncDateRange: user.calendarSyncDateRange,
+    };
   }
 
   async handlePropfind(token: string, path: string): Promise<{ status: number; body: string }> {
@@ -79,7 +83,11 @@ export class CalDavHandler {
     body: string,
   ): Promise<{ status: number; body: string }> {
     const base = `/api/caldav/${token}`;
-    const tasks = await this.calendarService.getSyncableTasks(user.id, user.calendarSyncAll);
+    const tasks = await this.calendarService.getSyncableTasks(
+      user.id,
+      user.calendarSyncAll,
+      user.calendarSyncDateRange,
+    );
     const isMultiget = body.includes("calendar-multiget");
 
     if (isMultiget) {
@@ -129,7 +137,11 @@ export class CalDavHandler {
   ): Promise<{ status: number; body: string; etag?: string }> {
     const syncEntry = await this.calendarService.getSyncEntryByIcalUid(user.id, icalUid);
     const taskId = syncEntry?.taskId ?? icalUid;
-    const tasks = await this.calendarService.getSyncableTasks(user.id, user.calendarSyncAll);
+    const tasks = await this.calendarService.getSyncableTasks(
+      user.id,
+      user.calendarSyncAll,
+      user.calendarSyncDateRange,
+    );
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return { status: 404, body: "Not Found" };
 

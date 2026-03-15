@@ -293,6 +293,8 @@ export interface Dictionary {
     regenerateConfirm: string;
     syncAllLabel: string;
     syncAllDescription: string;
+    syncDateRangeLabel: string;
+    syncDateRangeDescription: string;
     generating: string;
     icsFeedUrl: string;
     icsFeedDescription: string;

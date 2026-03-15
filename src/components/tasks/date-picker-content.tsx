@@ -124,6 +124,41 @@ export function DatePickerContent({
             onSelect={handleCalendarSelect}
             defaultMonth={value}
           />
+          {/* Start date time toggle */}
+          {showTimeToggle && (
+            <>
+              <Separator />
+              <div className="flex items-center gap-2 px-3 py-2">
+                <Clock className="text-muted-foreground h-4 w-4" />
+                {hasTime ? (
+                  <>
+                    <input
+                      type="time"
+                      value={timeValue}
+                      onChange={(e) => onTimeChange?.(e.target.value)}
+                      className="text-foreground h-9 bg-transparent text-sm outline-none md:h-8"
+                    />
+                    <button
+                      onClick={() => onTimeChange?.("")}
+                      className="text-muted-foreground hover:text-foreground ml-auto"
+                      title={t("datePicker.removeTime")}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 md:h-8"
+                    onClick={() => onTimeChange?.(format(new Date(), "HH:mm"))}
+                  >
+                    {t("datePicker.addTime")}
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* End calendar */}
@@ -175,64 +210,9 @@ export function DatePickerContent({
                 </div>
               </>
             )}
-            {/* Remove end date */}
-            {endValue && onClearEndDate && (
-              <>
-                <Separator />
-                <div className="p-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-9 w-full text-red-500 hover:text-red-600 md:h-8"
-                    onClick={() => {
-                      onClearEndDate();
-                      setShowEndPicker(false);
-                    }}
-                  >
-                    {t("datePicker.removeEndDate")}
-                  </Button>
-                </div>
-              </>
-            )}
           </div>
         )}
       </div>
-
-      {/* Start date time toggle */}
-      {showTimeToggle && (
-        <>
-          <Separator />
-          <div className="flex items-center gap-2 px-3 py-2">
-            <Clock className="text-muted-foreground h-4 w-4" />
-            {hasTime ? (
-              <>
-                <input
-                  type="time"
-                  value={timeValue}
-                  onChange={(e) => onTimeChange?.(e.target.value)}
-                  className="text-foreground h-9 bg-transparent text-sm outline-none md:h-8"
-                />
-                <button
-                  onClick={() => onTimeChange?.("")}
-                  className="text-muted-foreground hover:text-foreground ml-auto"
-                  title={t("datePicker.removeTime")}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 md:h-8"
-                onClick={() => onTimeChange?.(format(new Date(), "HH:mm"))}
-              >
-                {t("datePicker.addTime")}
-              </Button>
-            )}
-          </div>
-        </>
-      )}
 
       {/* Add end date button + quick buttons */}
       {hasEndDateSupport && !showEndPicker && !endValue && value && (
@@ -279,19 +259,32 @@ export function DatePickerContent({
         </>
       )}
 
-      {/* Remove start date */}
+      {/* Remove date(s) */}
       {value && (
         <>
           <Separator />
-          <div className="p-3">
+          <div className="flex gap-2 p-3">
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 w-full text-red-500 hover:text-red-600 md:h-8"
+              className="h-9 flex-1 text-red-500 hover:text-red-600 md:h-8"
               onClick={handleClear}
             >
               {t("datePicker.removeDate")}
             </Button>
+            {endValue && onClearEndDate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 flex-1 text-red-500 hover:text-red-600 md:h-8"
+                onClick={() => {
+                  onClearEndDate();
+                  setShowEndPicker(false);
+                }}
+              >
+                {t("datePicker.removeEndDate")}
+              </Button>
+            )}
           </div>
         </>
       )}

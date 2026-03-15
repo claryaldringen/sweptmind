@@ -314,6 +314,9 @@ export const cs: Dictionary = {
     syncAllLabel: "Synchronizovat všechny úkoly s termínem",
     syncAllDescription:
       "Výchozí: pouze úkoly s přesným časem. Zapnutím se budou synchronizovat i úkoly pouze s datem.",
+    syncDateRangeLabel: "Synchronizovat úkoly s rozsahem dat",
+    syncDateRangeDescription:
+      "Zapnutím se budou do kalendáře synchronizovat i úkoly s koncovým datem (víkendové akce apod.).",
     generating: "Generuji...",
     icsFeedUrl: "ICS Feed (jen čtení)",
     icsFeedDescription:
