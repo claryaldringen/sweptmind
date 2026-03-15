@@ -569,15 +569,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@capacitor-community/contacts@npm:^7.1.0":
-  version: 7.1.0
-  resolution: "@capacitor-community/contacts@npm:7.1.0"
-  peerDependencies:
-    "@capacitor/core": ">=7.0.0"
-  checksum: 10c0/3bc37d996e0c105fdc4c842ebf675948232904b3d8c92774e49a56ab49446b9bd7553670e27e78a93f1e72b0c025d7a14dde4b99d4a5c558e993ad12def5fb0a
-  languageName: node
-  linkType: hard
-
 "@capacitor/android@npm:^6":
   version: 6.2.1
   resolution: "@capacitor/android@npm:6.2.1"
@@ -5591,8 +5582,8 @@ __metadata:
 
 "@sweptmind/native-bridge@file:packages/native-bridge::locator=sweptmind%40workspace%3A.":
   version: 0.0.1
-  resolution: "@sweptmind/native-bridge@file:packages/native-bridge#packages/native-bridge::hash=30f139&locator=sweptmind%40workspace%3A."
-  checksum: 10c0/c29b0a4219da4d35adf0b69656f00106b93c3387a3a1e454137cb487da38ebee0c1a7b91032ab44c15e95c63c6c830df175e361fc168510da191adf1159f9289
+  resolution: "@sweptmind/native-bridge@file:packages/native-bridge#packages/native-bridge::hash=51767f&locator=sweptmind%40workspace%3A."
+  checksum: 10c0/7bcd9cbe6ea25a6361c00eeb727aed3775b330f827475e5af82efaf8f582b433cbf7f9c98de9e875dd3280e85eb17da73614e210cc95905d61cb5921c9a17c3d
   languageName: node
   linkType: hard
 
@@ -5600,7 +5591,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@sweptmind/native-bridge@workspace:packages/native-bridge"
   dependencies:
-    "@capacitor-community/contacts": "npm:^7.1.0"
     "@capacitor/core": "npm:^8.2.0"
     "@capacitor/geolocation": "npm:^8.1.0"
     "@capacitor/push-notifications": "npm:^8.0.2"
@@ -16236,7 +16226,6 @@ __metadata:
     "@apollo/client-integration-nextjs": "npm:^0.14.4"
     "@auth/core": "npm:^0.41.0"
     "@auth/drizzle-adapter": "npm:^1.11.1"
-    "@capacitor-community/contacts": "npm:^7.1.0"
     "@dnd-kit/core": "npm:^6.3.1"
     "@dnd-kit/sortable": "npm:^10.0.0"
     "@dnd-kit/utilities": "npm:^3.2.2"
