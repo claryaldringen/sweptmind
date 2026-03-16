@@ -27,7 +27,9 @@ import { OnboardingService } from "@/domain/services/onboarding.service";
 import { SubscriptionService } from "@/domain/services/subscription.service";
 import { AttachmentService } from "@/domain/services/attachment.service";
 import { AiService } from "@/domain/services/ai.service";
+import { GoogleCalendarService } from "@/domain/services/google-calendar.service";
 import { LlmProviderFactory } from "./llm/provider-factory";
+import * as googleCalendarClient from "./google-calendar/google-calendar-client";
 
 const taskRepo = new DrizzleTaskRepository(db);
 const listRepo = new DrizzleListRepository(db);
@@ -56,6 +58,7 @@ const bcryptHasher: IPasswordHasher = {
   compare: (password, hashed) => compare(password, hashed),
 };
 
+const googleCalendarService = new GoogleCalendarService(userRepo, calendarSyncRepo, googleCalendarClient);
 const taskService = new TaskService(taskRepo, listRepo, stepRepo);
 
 export const repos = {
@@ -78,6 +81,7 @@ const subscriptionService = new SubscriptionService(subscriptionRepo);
 
 export const services = {
   task: taskService,
+  googleCalendar: googleCalendarService,
   list: new ListService(listRepo),
   step: new StepService(stepRepo, taskRepo),
   listGroup: new ListGroupService(groupRepo, listRepo),
