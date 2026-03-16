@@ -16,6 +16,7 @@ export const calendarSync = pgTable(
       .references(() => tasks.id, { onDelete: "cascade" }),
     icalUid: text("ical_uid").notNull(),
     etag: text("etag").notNull(),
+    googleCalendarEventId: text("google_calendar_event_id"),
     lastSyncedAt: timestamp("last_synced_at", { mode: "date" }).defaultNow().notNull(),
   },
   (table) => [
