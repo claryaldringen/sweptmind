@@ -25,4 +25,25 @@ export interface IUserRepository {
       llmModel: string | null;
     },
   ): Promise<void>;
+  updateGoogleCalendarEnabled(userId: string, enabled: boolean): Promise<void>;
+  getGoogleCalendarEnabled(userId: string): Promise<boolean>;
+  updateGoogleCalendarDirection(userId: string, direction: string): Promise<void>;
+  getGoogleCalendarDirection(userId: string): Promise<string>;
+  updateGoogleCalendarSyncToken(userId: string, syncToken: string | null): Promise<void>;
+  updateGoogleCalendarChannel(
+    userId: string,
+    channelId: string | null,
+    expiry: Date | null,
+  ): Promise<void>;
+  getGoogleCalendarSettings(userId: string): Promise<{
+    enabled: boolean;
+    direction: string;
+    calendarId: string;
+    syncToken: string | null;
+    channelId: string | null;
+    channelExpiry: Date | null;
+  }>;
+  findUsersWithExpiringChannels(
+    before: Date,
+  ): Promise<Array<{ id: string; googleCalendarChannelId: string }>>;
 }

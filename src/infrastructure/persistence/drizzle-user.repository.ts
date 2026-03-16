@@ -1,4 +1,4 @@
-import { eq, and, gt } from "drizzle-orm";
+import { eq, and, gt, lt } from "drizzle-orm";
 import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import type { User, CreateUserInput } from "@/domain/entities/user";
@@ -140,5 +140,98 @@ export class DrizzleUserRepository implements IUserRepository {
     },
   ): Promise<void> {
     await this.db.update(schema.users).set(config).where(eq(schema.users.id, userId));
+  }
+
+  async updateGoogleCalendarEnabled(userId: string, enabled: boolean): Promise<void> {
+    await this.db
+      .update(schema.users)
+      .set({ googleCalendarEnabled: enabled })
+      .where(eq(schema.users.id, userId));
+  }
+
+  async getGoogleCalendarEnabled(userId: string): Promise<boolean> {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      columns: { googleCalendarEnabled: true },
+    });
+    return user?.googleCalendarEnabled ?? false;
+  }
+
+  async updateGoogleCalendarDirection(userId: string, direction: string): Promise<void> {
+    await this.db
+      .update(schema.users)
+      .set({ googleCalendarDirection: direction })
+      .where(eq(schema.users.id, userId));
+  }
+
+  async getGoogleCalendarDirection(userId: string): Promise<string> {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      columns: { googleCalendarDirection: true },
+    });
+    return user?.googleCalendarDirection ?? "both";
+  }
+
+  async updateGoogleCalendarSyncToken(userId: string, syncToken: string | null): Promise<void> {
+    await this.db
+      .update(schema.users)
+      .set({ googleCalendarSyncToken: syncToken })
+      .where(eq(schema.users.id, userId));
+  }
+
+  async updateGoogleCalendarChannel(
+    userId: string,
+    channelId: string | null,
+    expiry: Date | null,
+  ): Promise<void> {
+    await this.db
+      .update(schema.users)
+      .set({ googleCalendarChannelId: channelId, googleCalendarChannelExpiry: expiry })
+      .where(eq(schema.users.id, userId));
+  }
+
+  async getGoogleCalendarSettings(userId: string): Promise<{
+    enabled: boolean;
+    direction: string;
+    calendarId: string;
+    syncToken: string | null;
+    channelId: string | null;
+    channelExpiry: Date | null;
+  }> {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      columns: {
+        googleCalendarEnabled: true,
+        googleCalendarDirection: true,
+        googleCalendarId: true,
+        googleCalendarSyncToken: true,
+        googleCalendarChannelId: true,
+        googleCalendarChannelExpiry: true,
+      },
+    });
+    return {
+      enabled: user?.googleCalendarEnabled ?? false,
+      direction: user?.googleCalendarDirection ?? "both",
+      calendarId: user?.googleCalendarId ?? "primary",
+      syncToken: user?.googleCalendarSyncToken ?? null,
+      channelId: user?.googleCalendarChannelId ?? null,
+      channelExpiry: user?.googleCalendarChannelExpiry ?? null,
+    };
+  }
+
+  async findUsersWithExpiringChannels(
+    before: Date,
+  ): Promise<Array<{ id: string; googleCalendarChannelId: string }>> {
+    const users = await this.db.query.users.findMany({
+      where: and(
+        eq(schema.users.googleCalendarEnabled, true),
+        lt(schema.users.googleCalendarChannelExpiry, before),
+      ),
+      columns: { id: true, googleCalendarChannelId: true },
+    });
+    return users.filter(
+      (u): u is { id: string; googleCalendarChannelId: string } =>
+        u.googleCalendarChannelId !== null,
+    );
   }
 }

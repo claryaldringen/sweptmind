@@ -47,4 +47,24 @@ export class UserService {
   ): Promise<void> {
     return this.userRepo.updateLlmConfig(userId, config);
   }
+
+  async updateGoogleCalendarEnabled(userId: string, enabled: boolean): Promise<void> {
+    await this.userRepo.updateGoogleCalendarEnabled(userId, enabled);
+  }
+
+  async getGoogleCalendarEnabled(userId: string): Promise<boolean> {
+    return this.userRepo.getGoogleCalendarEnabled(userId);
+  }
+
+  async updateGoogleCalendarDirection(userId: string, direction: string): Promise<void> {
+    await this.userRepo.updateGoogleCalendarDirection(userId, direction);
+  }
+
+  async getGoogleCalendarDirection(userId: string): Promise<string> {
+    return this.userRepo.getGoogleCalendarDirection(userId);
+  }
+
+  async getGoogleCalendarSettings(userId: string) {
+    return this.userRepo.getGoogleCalendarSettings(userId);
+  }
 }

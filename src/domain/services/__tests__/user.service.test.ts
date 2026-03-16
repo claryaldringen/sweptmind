@@ -49,6 +49,14 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     validatePasswordResetToken: vi.fn(),
     deletePasswordResetToken: vi.fn(),
     updateLlmConfig: vi.fn(),
+    updateGoogleCalendarEnabled: vi.fn(),
+    getGoogleCalendarEnabled: vi.fn(),
+    updateGoogleCalendarDirection: vi.fn(),
+    getGoogleCalendarDirection: vi.fn(),
+    updateGoogleCalendarSyncToken: vi.fn(),
+    updateGoogleCalendarChannel: vi.fn(),
+    getGoogleCalendarSettings: vi.fn(),
+    findUsersWithExpiringChannels: vi.fn(),
     ...overrides,
   };
 }
@@ -115,6 +123,55 @@ describe("UserService", () => {
       const result = await service.getCalendarSyncAll("user-1");
       expect(result).toBe(true);
       expect(userRepo.getCalendarSyncAll).toHaveBeenCalledWith("user-1");
+    });
+  });
+
+  describe("updateGoogleCalendarEnabled", () => {
+    it("deleguje na repo", async () => {
+      await service.updateGoogleCalendarEnabled("user-1", true);
+      expect(userRepo.updateGoogleCalendarEnabled).toHaveBeenCalledWith("user-1", true);
+    });
+  });
+
+  describe("getGoogleCalendarEnabled", () => {
+    it("deleguje na repo", async () => {
+      vi.mocked(userRepo.getGoogleCalendarEnabled).mockResolvedValue(true);
+      const result = await service.getGoogleCalendarEnabled("user-1");
+      expect(result).toBe(true);
+      expect(userRepo.getGoogleCalendarEnabled).toHaveBeenCalledWith("user-1");
+    });
+  });
+
+  describe("updateGoogleCalendarDirection", () => {
+    it("deleguje na repo", async () => {
+      await service.updateGoogleCalendarDirection("user-1", "push");
+      expect(userRepo.updateGoogleCalendarDirection).toHaveBeenCalledWith("user-1", "push");
+    });
+  });
+
+  describe("getGoogleCalendarDirection", () => {
+    it("deleguje na repo", async () => {
+      vi.mocked(userRepo.getGoogleCalendarDirection).mockResolvedValue("pull");
+      const result = await service.getGoogleCalendarDirection("user-1");
+      expect(result).toBe("pull");
+      expect(userRepo.getGoogleCalendarDirection).toHaveBeenCalledWith("user-1");
+    });
+  });
+
+  describe("getGoogleCalendarSettings", () => {
+    it("deleguje na repo", async () => {
+      const settings = {
+        enabled: true,
+        direction: "both",
+        calendarId: "primary",
+        syncToken: "token-123",
+        channelId: "channel-1",
+        channelExpiry: new Date("2026-04-01"),
+      };
+      vi.mocked(userRepo.getGoogleCalendarSettings).mockResolvedValue(settings);
+      const result = await service.getGoogleCalendarSettings("user-1");
+      expect(result).toEqual(settings);
+      expect(userRepo.getGoogleCalendarSettings).toHaveBeenCalledWith("user-1");
     });
   });
 });
