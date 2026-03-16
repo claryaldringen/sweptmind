@@ -321,6 +321,19 @@ export const cs: Dictionary = {
     icsFeedUrl: "ICS Feed (jen čtení)",
     icsFeedDescription:
       "Použij tuto URL v Google Kalendáři (Nastavení → Přidat kalendář → Z URL) nebo v jakékoli aplikaci podporující ICS feeds.",
+    googleCalendarTitle: "Google Calendar",
+    googleCalendarDescription:
+      "Synchronizuj úkoly s Google Kalendářem. Změny se projeví i v Apple Kalendáři propojeném s Google.",
+    googleCalendarConnect: "Připojit Google Calendar",
+    googleCalendarDisconnect: "Odpojit Google Calendar",
+    googleCalendarConnected: "Připojeno",
+    googleCalendarNotConnected: "Nepřipojeno",
+    googleCalendarDirection: "Směr synchronizace",
+    googleCalendarDirectionBoth: "Obousměrný",
+    googleCalendarDirectionPush: "Jen odesílat (push)",
+    googleCalendarDirectionPull: "Jen přijímat (pull)",
+    googleCalendarConnectSuccess: "Google Calendar úspěšně připojen",
+    googleCalendarConnectError: "Připojení ke Google Calendar selhalo",
   },
   context: {
     hereAndNow: "Tady & teď",

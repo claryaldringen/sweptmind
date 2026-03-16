@@ -298,6 +298,18 @@ export interface Dictionary {
     generating: string;
     icsFeedUrl: string;
     icsFeedDescription: string;
+    googleCalendarTitle: string;
+    googleCalendarDescription: string;
+    googleCalendarConnect: string;
+    googleCalendarDisconnect: string;
+    googleCalendarConnected: string;
+    googleCalendarNotConnected: string;
+    googleCalendarDirection: string;
+    googleCalendarDirectionBoth: string;
+    googleCalendarDirectionPush: string;
+    googleCalendarDirectionPull: string;
+    googleCalendarConnectSuccess: string;
+    googleCalendarConnectError: string;
   };
   context: {
     hereAndNow: string;

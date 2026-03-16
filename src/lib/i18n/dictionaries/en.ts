@@ -322,6 +322,19 @@ export const en: Dictionary = {
     icsFeedUrl: "ICS Feed (read-only)",
     icsFeedDescription:
       "Use this URL in Google Calendar (Settings → Add calendar → From URL) or any app that supports ICS feeds.",
+    googleCalendarTitle: "Google Calendar",
+    googleCalendarDescription:
+      "Sync tasks with Google Calendar. Changes will also appear in Apple Calendar connected to Google.",
+    googleCalendarConnect: "Connect Google Calendar",
+    googleCalendarDisconnect: "Disconnect Google Calendar",
+    googleCalendarConnected: "Connected",
+    googleCalendarNotConnected: "Not connected",
+    googleCalendarDirection: "Sync direction",
+    googleCalendarDirectionBoth: "Bidirectional",
+    googleCalendarDirectionPush: "Push only",
+    googleCalendarDirectionPull: "Pull only",
+    googleCalendarConnectSuccess: "Google Calendar connected successfully",
+    googleCalendarConnectError: "Failed to connect Google Calendar",
   },
   context: {
     hereAndNow: "Here & Now",
