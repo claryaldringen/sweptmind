@@ -26,6 +26,10 @@ export class TaskService {
     private readonly taskRepo: ITaskRepository,
     private readonly listRepo: IListRepository | null = null,
     private readonly stepRepo: IStepRepository | null = null,
+    private readonly googleCalendarService?: {
+      pushTask(userId: string, task: Task): Promise<void>;
+      deleteTaskEvent(userId: string, taskId: string): Promise<void>;
+    },
   ) {}
 
   async getByUser(userId: string): Promise<Task[]> {
@@ -85,7 +89,7 @@ export class TaskService {
     const sortOrder = (minSort ?? 1) - 1;
 
     const dueDate = input.dueDate ?? null;
-    return this.taskRepo.create({
+    const created = await this.taskRepo.create({
       ...(input.id ? { id: input.id } : {}),
       userId,
       listId: input.listId,
@@ -98,6 +102,12 @@ export class TaskService {
       deviceContext: input.deviceContext ?? null,
       sortOrder,
     });
+
+    if (this.googleCalendarService && created.dueDate) {
+      this.googleCalendarService.pushTask(userId, created).catch(() => {});
+    }
+
+    return created;
   }
 
   async update(id: string, userId: string, input: UpdateTaskInput): Promise<Task> {
@@ -146,11 +156,24 @@ export class TaskService {
     if (input.blockedByTaskId !== undefined)
       updates.blockedByTaskId = input.blockedByTaskId ?? null;
 
-    return this.taskRepo.update(id, userId, updates);
+    const updated = await this.taskRepo.update(id, userId, updates);
+
+    if (this.googleCalendarService && updated.dueDate) {
+      this.googleCalendarService.pushTask(userId, updated).catch(() => {});
+    } else if (this.googleCalendarService && !updated.dueDate) {
+      this.googleCalendarService.deleteTaskEvent(userId, id).catch(() => {});
+    }
+
+    return updated;
   }
 
   async delete(id: string, userId: string): Promise<boolean> {
     await this.taskRepo.delete(id, userId);
+
+    if (this.googleCalendarService) {
+      this.googleCalendarService.deleteTaskEvent(userId, id).catch(() => {});
+    }
+
     return true;
   }
 
@@ -184,13 +207,25 @@ export class TaskService {
         }
       }
 
-      return this.taskRepo.update(id, userId, recurrenceUpdates);
+      const toggled = await this.taskRepo.update(id, userId, recurrenceUpdates);
+
+      if (this.googleCalendarService && toggled.dueDate) {
+        this.googleCalendarService.pushTask(userId, toggled).catch(() => {});
+      }
+
+      return toggled;
     }
 
-    return this.taskRepo.update(id, userId, {
+    const toggled = await this.taskRepo.update(id, userId, {
       isCompleted: !task.isCompleted,
       completedAt: !task.isCompleted ? new Date() : null,
     });
+
+    if (this.googleCalendarService && toggled.dueDate) {
+      this.googleCalendarService.pushTask(userId, toggled).catch(() => {});
+    }
+
+    return toggled;
   }
 
   async reorder(userId: string, items: ReorderItem[]): Promise<boolean> {

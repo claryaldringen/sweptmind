@@ -59,7 +59,7 @@ const bcryptHasher: IPasswordHasher = {
 };
 
 const googleCalendarService = new GoogleCalendarService(userRepo, calendarSyncRepo, googleCalendarClient);
-const taskService = new TaskService(taskRepo, listRepo, stepRepo);
+const taskService = new TaskService(taskRepo, listRepo, stepRepo, googleCalendarService);
 
 export const repos = {
   task: taskRepo,
