@@ -34,11 +34,7 @@ export class GoogleCalendarService {
       );
     } else {
       // Create new event
-      const created = await this.gcalClient.insertEvent(
-        userId,
-        settings.calendarId,
-        event,
-      );
+      const created = await this.gcalClient.insertEvent(userId, settings.calendarId, event);
 
       // Upsert sync entry with icalUid derived from task id
       const entry = await this.syncRepo.upsert({
@@ -64,11 +60,7 @@ export class GoogleCalendarService {
     const syncEntry = await this.syncRepo.findByTaskId(taskId);
     if (!syncEntry?.googleCalendarEventId) return;
 
-    await this.gcalClient.deleteEvent(
-      userId,
-      settings.calendarId,
-      syncEntry.googleCalendarEventId,
-    );
+    await this.gcalClient.deleteEvent(userId, settings.calendarId, syncEntry.googleCalendarEventId);
     await this.syncRepo.deleteByTaskId(taskId);
   }
 

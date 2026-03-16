@@ -41,12 +41,7 @@ export async function GET(req: NextRequest) {
           : undefined,
         scope: tokens.scope,
       })
-      .where(
-        and(
-          eq(schema.accounts.userId, userId),
-          eq(schema.accounts.provider, "google"),
-        ),
-      );
+      .where(and(eq(schema.accounts.userId, userId), eq(schema.accounts.provider, "google")));
 
     await services.user.updateGoogleCalendarEnabled(userId, true);
 
@@ -54,9 +49,7 @@ export async function GET(req: NextRequest) {
     await services.googleCalendar.registerWatch(userId, webhookUrl);
     await services.googleCalendar.pullChanges(userId);
 
-    return NextResponse.redirect(
-      new URL("/settings?gcal=connected", req.url),
-    );
+    return NextResponse.redirect(new URL("/settings?gcal=connected", req.url));
   } catch {
     return NextResponse.redirect(new URL("/settings?gcal=error", req.url));
   }

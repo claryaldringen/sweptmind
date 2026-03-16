@@ -58,7 +58,11 @@ const bcryptHasher: IPasswordHasher = {
   compare: (password, hashed) => compare(password, hashed),
 };
 
-const googleCalendarService = new GoogleCalendarService(userRepo, calendarSyncRepo, googleCalendarClient);
+const googleCalendarService = new GoogleCalendarService(
+  userRepo,
+  calendarSyncRepo,
+  googleCalendarClient,
+);
 const taskService = new TaskService(taskRepo, listRepo, stepRepo, googleCalendarService);
 
 export const repos = {

@@ -86,9 +86,7 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
   };
 }
 
-function makeSyncRepo(
-  overrides: Partial<ICalendarSyncRepository> = {},
-): ICalendarSyncRepository {
+function makeSyncRepo(overrides: Partial<ICalendarSyncRepository> = {}): ICalendarSyncRepository {
   return {
     findByUserId: vi.fn().mockResolvedValue([]),
     findByTaskId: vi.fn().mockResolvedValue(undefined),
@@ -103,17 +101,13 @@ function makeSyncRepo(
   };
 }
 
-function makeGcalClient(
-  overrides: Partial<IGoogleCalendarClient> = {},
-): IGoogleCalendarClient {
+function makeGcalClient(overrides: Partial<IGoogleCalendarClient> = {}): IGoogleCalendarClient {
   return {
     insertEvent: vi.fn().mockResolvedValue({ id: "gcal-event-1", summary: "Test" }),
     patchEvent: vi.fn().mockResolvedValue({ id: "gcal-event-1", summary: "Test" }),
     deleteEvent: vi.fn(),
     listEvents: vi.fn().mockResolvedValue({ items: [], nextSyncToken: "token-1" }),
-    watchEvents: vi
-      .fn()
-      .mockResolvedValue({ expiration: String(Date.now() + 86400000) }),
+    watchEvents: vi.fn().mockResolvedValue({ expiration: String(Date.now() + 86400000) }),
     stopChannel: vi.fn(),
     ...overrides,
   };
@@ -236,11 +230,7 @@ describe("GoogleCalendarService", () => {
 
       await service.deleteTaskEvent("user-1", "task-1");
 
-      expect(gcalClient.deleteEvent).toHaveBeenCalledWith(
-        "user-1",
-        "primary",
-        "gcal-to-delete",
-      );
+      expect(gcalClient.deleteEvent).toHaveBeenCalledWith("user-1", "primary", "gcal-to-delete");
       expect(syncRepo.deleteByTaskId).toHaveBeenCalledWith("task-1");
     });
 
@@ -333,10 +323,7 @@ describe("GoogleCalendarService", () => {
 
       expect(gcalClient.listEvents).toHaveBeenCalledWith("user-1", "primary", undefined);
       expect(result.items).toHaveLength(1);
-      expect(userRepo.updateGoogleCalendarSyncToken).toHaveBeenCalledWith(
-        "user-1",
-        "new-token",
-      );
+      expect(userRepo.updateGoogleCalendarSyncToken).toHaveBeenCalledWith("user-1", "new-token");
     });
 
     it("použije existující syncToken", async () => {
@@ -347,11 +334,7 @@ describe("GoogleCalendarService", () => {
 
       await service.pullChanges("user-1");
 
-      expect(gcalClient.listEvents).toHaveBeenCalledWith(
-        "user-1",
-        "primary",
-        "existing-token",
-      );
+      expect(gcalClient.listEvents).toHaveBeenCalledWith("user-1", "primary", "existing-token");
     });
   });
 });

@@ -92,9 +92,7 @@ async function getValidAccessToken(userId: string): Promise<string> {
       access_token: tokens.access_token,
       expires_at: newExpiresAt,
     })
-    .where(
-      and(eq(schema.accounts.userId, userId), eq(schema.accounts.provider, "google")),
-    );
+    .where(and(eq(schema.accounts.userId, userId), eq(schema.accounts.provider, "google")));
 
   return tokens.access_token;
 }
@@ -126,9 +124,7 @@ async function calendarFetch(
     await db
       .update(schema.accounts)
       .set({ expires_at: 0 })
-      .where(
-        and(eq(schema.accounts.userId, userId), eq(schema.accounts.provider, "google")),
-      );
+      .where(and(eq(schema.accounts.userId, userId), eq(schema.accounts.provider, "google")));
     return calendarFetch(userId, path, options, true);
   }
 
@@ -144,14 +140,10 @@ export async function insertEvent(
   calendarId: string,
   event: GoogleCalendarEvent,
 ): Promise<GoogleCalendarEvent> {
-  const res = await calendarFetch(
-    userId,
-    `/calendars/${encodeURIComponent(calendarId)}/events`,
-    {
-      method: "POST",
-      body: JSON.stringify(event),
-    },
-  );
+  const res = await calendarFetch(userId, `/calendars/${encodeURIComponent(calendarId)}/events`, {
+    method: "POST",
+    body: JSON.stringify(event),
+  });
 
   if (!res.ok) {
     const text = await res.text();
