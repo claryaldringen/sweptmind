@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { format } from "date-fns";
-import { ArrowLeft, CalendarDays } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarDays } from "lucide-react";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { DraggableTaskItem } from "@/components/tasks/draggable-task-item";
@@ -55,7 +55,7 @@ const GROUP_COLORS: Record<GroupKey, string> = {
 export default function PlannedPage() {
   const { t } = useTranslations();
   const { open: openSidebar, isDesktop } = useSidebarContext();
-  const { allTasks, loading } = useAppData();
+  const { allTasks, loading, conflictingTaskIds } = useAppData();
 
   // Compute date strings outside useMemo so they update when the day changes
   const now = new Date();
@@ -137,11 +137,19 @@ export default function PlannedPage() {
                 if (items.length === 0) return null;
                 return (
                   <div key={key} className="mb-2">
-                    <h2
-                      className={`px-4 py-2 text-xs font-semibold tracking-wide uppercase ${GROUP_COLORS[key]}`}
-                    >
-                      {groupLabels[key]}
-                    </h2>
+                    {(() => {
+                      const groupHasConflict = items.some((task) =>
+                        conflictingTaskIds.has(task.id),
+                      );
+                      return (
+                        <h2
+                          className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold tracking-wide uppercase ${groupHasConflict ? "text-red-500" : GROUP_COLORS[key]}`}
+                        >
+                          {groupLabels[key]}
+                          {groupHasConflict && <AlertTriangle className="h-3.5 w-3.5" />}
+                        </h2>
+                      );
+                    })()}
                     <div className="space-y-0.5">
                       {items.map((task) => (
                         <DraggableTaskItem key={task.id} task={task} showListName />

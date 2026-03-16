@@ -34,6 +34,7 @@ import { useDeviceContext } from "@/hooks/use-device-context";
 import { useTranslations } from "@/lib/i18n";
 import { isFutureTask } from "@/domain/services/task-visibility";
 import {
+  AlertTriangle,
   CalendarDays,
   MapPin,
   Monitor,
@@ -138,6 +139,7 @@ function SortableListItem({
   isNearby,
   isDeviceMatch,
   isDropTarget,
+  hasConflict,
   smartListIds,
   onRename,
   onDelete,
@@ -151,6 +153,7 @@ function SortableListItem({
   isNearby: boolean;
   isDeviceMatch: boolean;
   isDropTarget: boolean;
+  hasConflict: boolean;
   smartListIds: Set<string>;
   onRename: (list: ListItemWithCounts) => void;
   onDelete: (list: ListItemWithCounts) => void;
@@ -239,7 +242,10 @@ function SortableListItem({
                   <Monitor className="h-3 w-3 animate-pulse text-yellow-500" />
                 ))}
             </div>
-            {count > 0 && <span className="text-muted-foreground text-xs">{count}</span>}
+            <div className="flex items-center gap-1.5">
+              {hasConflict && <AlertTriangle className="h-3.5 w-3.5 text-red-500" />}
+              {count > 0 && <span className="text-muted-foreground text-xs">{count}</span>}
+            </div>
           </Link>
         </ContextMenuTrigger>
         <ContextMenuContent>
@@ -500,6 +506,7 @@ function SidebarSmartListItem({
   isActive,
   sidebarHasFocus,
   count,
+  hasConflict,
   onNavigate,
 }: {
   id: string;
@@ -510,6 +517,7 @@ function SidebarSmartListItem({
   isActive: boolean;
   sidebarHasFocus: boolean;
   count?: number;
+  hasConflict?: boolean;
   onNavigate?: () => void;
 }) {
   const { t } = useTranslations();
@@ -553,7 +561,12 @@ function SidebarSmartListItem({
         <Icon className={cn("h-5 w-5", color)} />
         {label}
       </div>
-      {count != null && count > 0 && <span className="text-muted-foreground text-xs">{count}</span>}
+      <div className="flex items-center gap-1.5">
+        {hasConflict && <AlertTriangle className="h-3.5 w-3.5 text-red-500" />}
+        {count != null && count > 0 && (
+          <span className="text-muted-foreground text-xs">{count}</span>
+        )}
+      </div>
     </Link>
   );
 
@@ -630,7 +643,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { lists: allLists } = useLists();
-  const { allTasks, tags: allTags } = useAppData();
+  const { allTasks, tags: allTags, conflictingTaskIds } = useAppData();
   const [reorderLists] = useMutation(REORDER_LISTS);
   const [createListOpen, setCreateListOpen] = useState(false);
   const [localOrder, setLocalOrder] = useState<ListItemWithCounts[] | null>(null);
@@ -699,6 +712,20 @@ export function Sidebar() {
     }
     return counts;
   }, [allTasks]);
+
+  // Compute which lists contain conflicting tasks
+  const listsWithConflicts = useMemo(() => {
+    const ids = new Set<string>();
+    if (conflictingTaskIds.size === 0) return ids;
+    for (const task of allTasks) {
+      if (conflictingTaskIds.has(task.id)) {
+        ids.add(task.listId);
+      }
+    }
+    return ids;
+  }, [allTasks, conflictingTaskIds]);
+
+  const hasAnyConflict = conflictingTaskIds.size > 0;
 
   const { registerListReorder, registerSmartListReorder, overListId, activeType } = useTaskDnd();
 
@@ -969,6 +996,7 @@ export function Sidebar() {
                       isActive={isDesktop && pathname === def.href}
                       sidebarHasFocus={sidebarHasFocus}
                       count={id === "nearby" ? nearbyCount : undefined}
+                      hasConflict={id === "planned" && hasAnyConflict}
                       onNavigate={closeSidebar}
                     />
                   </SortableSmartItem>
@@ -1004,6 +1032,7 @@ export function Sidebar() {
                   }
                   isDeviceMatch={list.deviceContext === deviceContext}
                   isDropTarget={activeType === "task" && overListId === list.id}
+                  hasConflict={listsWithConflicts.has(list.id)}
                   onRename={(l) => {
                     setRenameListValue(l.name);
                     setRenameListIcon(l.icon ?? "list");
