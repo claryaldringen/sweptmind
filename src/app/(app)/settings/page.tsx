@@ -705,11 +705,11 @@ export default function SettingsPage() {
         {t("settings.title")}
       </h1>
 
-      <div className="max-w-md space-y-6">
+      <div className="grid max-w-3xl grid-cols-1 gap-6 md:grid-cols-2">
         {/* Checkout feedback */}
         {checkoutMessage && (
           <div
-            className={`flex items-center gap-2 rounded-md border p-3 text-sm ${
+            className={`flex items-center gap-2 rounded-md border p-3 text-sm md:col-span-2 ${
               checkoutMessage.type === "success"
                 ? "border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-400"
                 : "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-400"
@@ -725,7 +725,7 @@ export default function SettingsPage() {
         )}
 
         {/* Premium Section */}
-        <div className="rounded-lg border p-5">
+        <div className="rounded-lg border p-5 md:col-span-2">
           <div className="mb-4 flex items-center gap-2">
             <Crown className="h-5 w-5 text-amber-500" />
             <div>
@@ -875,95 +875,110 @@ export default function SettingsPage() {
           )}
         </div>
 
-        <div>
-          <h2 className="mb-3 text-lg font-semibold">{t("settings.appearance")}</h2>
-          <div className="flex gap-2">
-            <Button
-              variant={theme === "light" ? "default" : "outline"}
-              onClick={() => setTheme("light")}
-              className="gap-2"
-            >
-              <Sun className="h-4 w-4" />
-              {t("settings.light")}
-            </Button>
-            <Button
-              variant={theme === "dark" ? "default" : "outline"}
-              onClick={() => setTheme("dark")}
-              className="gap-2"
-            >
-              <Moon className="h-4 w-4" />
-              {t("settings.dark")}
-            </Button>
-            <Button
-              variant={theme === "system" ? "default" : "outline"}
-              onClick={() => setTheme("system")}
-              className="gap-2"
-            >
-              <Monitor className="h-4 w-4" />
-              {t("settings.system")}
-            </Button>
+        {/* General Settings */}
+        <div className="rounded-lg border p-5">
+          <div>
+            <h2 className="mb-3 text-sm font-semibold">{t("settings.appearance")}</h2>
+            <div className="flex gap-2">
+              <Button
+                variant={theme === "light" ? "default" : "outline"}
+                onClick={() => setTheme("light")}
+                className="gap-2"
+              >
+                <Sun className="h-4 w-4" />
+                {t("settings.light")}
+              </Button>
+              <Button
+                variant={theme === "dark" ? "default" : "outline"}
+                onClick={() => setTheme("dark")}
+                className="gap-2"
+              >
+                <Moon className="h-4 w-4" />
+                {t("settings.dark")}
+              </Button>
+              <Button
+                variant={theme === "system" ? "default" : "outline"}
+                onClick={() => setTheme("system")}
+                className="gap-2"
+              >
+                <Monitor className="h-4 w-4" />
+                {t("settings.system")}
+              </Button>
+            </div>
+          </div>
+
+          <Separator className="my-4" />
+
+          <div>
+            <h2 className="mb-3 text-sm font-semibold">{t("settings.taskCount")}</h2>
+            <p className="text-muted-foreground mb-3 text-xs">{t("settings.taskCountDesc")}</p>
+            <div className="flex gap-2">
+              <Button
+                variant={taskCountMode === "all" ? "default" : "outline"}
+                onClick={() => setTaskCountMode("all")}
+              >
+                {t("settings.allIncomplete")}
+              </Button>
+              <Button
+                variant={taskCountMode === "visible" ? "default" : "outline"}
+                onClick={() => setTaskCountMode("visible")}
+              >
+                {t("settings.onlyVisible")}
+              </Button>
+            </div>
+          </div>
+
+          <Separator className="my-4" />
+
+          <div>
+            <h2 className="mb-3 text-sm font-semibold">{t("settings.newTaskPosition")}</h2>
+            <p className="text-muted-foreground mb-3 text-xs">
+              {t("settings.newTaskPositionDesc")}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant={newTaskPosition === "top" ? "default" : "outline"}
+                onClick={() => setNewTaskPosition("top")}
+              >
+                {t("settings.newTaskTop")}
+              </Button>
+              <Button
+                variant={newTaskPosition === "bottom" ? "default" : "outline"}
+                onClick={() => setNewTaskPosition("bottom")}
+              >
+                {t("settings.newTaskBottom")}
+              </Button>
+            </div>
+          </div>
+
+          <Separator className="my-4" />
+
+          <div>
+            <h2 className="mb-3 text-sm font-semibold">{t("settings.language")}</h2>
+            <div className="flex gap-2">
+              <Button
+                variant={locale === "cs" ? "default" : "outline"}
+                onClick={() => setLocale("cs")}
+              >
+                Čeština
+              </Button>
+              <Button
+                variant={locale === "en" ? "default" : "outline"}
+                onClick={() => setLocale("en")}
+              >
+                English
+              </Button>
+            </div>
           </div>
         </div>
 
-        <div>
-          <h2 className="mb-3 text-lg font-semibold">{t("settings.taskCount")}</h2>
-          <p className="text-muted-foreground mb-3 text-sm">{t("settings.taskCountDesc")}</p>
-          <div className="flex gap-2">
-            <Button
-              variant={taskCountMode === "all" ? "default" : "outline"}
-              onClick={() => setTaskCountMode("all")}
-            >
-              {t("settings.allIncomplete")}
-            </Button>
-            <Button
-              variant={taskCountMode === "visible" ? "default" : "outline"}
-              onClick={() => setTaskCountMode("visible")}
-            >
-              {t("settings.onlyVisible")}
-            </Button>
-          </div>
-        </div>
-
-        <div>
-          <h2 className="mb-3 text-lg font-semibold">{t("settings.newTaskPosition")}</h2>
-          <p className="text-muted-foreground mb-3 text-sm">{t("settings.newTaskPositionDesc")}</p>
-          <div className="flex gap-2">
-            <Button
-              variant={newTaskPosition === "top" ? "default" : "outline"}
-              onClick={() => setNewTaskPosition("top")}
-            >
-              {t("settings.newTaskTop")}
-            </Button>
-            <Button
-              variant={newTaskPosition === "bottom" ? "default" : "outline"}
-              onClick={() => setNewTaskPosition("bottom")}
-            >
-              {t("settings.newTaskBottom")}
-            </Button>
-          </div>
-        </div>
-
-        <div>
-          <h2 className="mb-3 text-lg font-semibold">{t("settings.language")}</h2>
-          <div className="flex gap-2">
-            <Button
-              variant={locale === "cs" ? "default" : "outline"}
-              onClick={() => setLocale("cs")}
-            >
-              Čeština
-            </Button>
-            <Button
-              variant={locale === "en" ? "default" : "outline"}
-              onClick={() => setLocale("en")}
-            >
-              English
-            </Button>
-          </div>
-        </div>
-
-        <div>
-          <h2 className="mb-3 text-lg font-semibold">{t("settings.importTitle")}</h2>
-          <p className="text-muted-foreground mb-3 text-sm">{t("settings.importDescription")}</p>
+        {/* Import */}
+        <div className="rounded-lg border p-5">
+          <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold">
+            <Upload className="h-4 w-4" />
+            {t("settings.importTitle")}
+          </h2>
+          <p className="text-muted-foreground mb-3 text-xs">{t("settings.importDescription")}</p>
 
           <input
             ref={fileInputRef}
@@ -1081,9 +1096,9 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {/* Push Notifications */}
-        <div>
-          <h2 className="mb-3 text-lg font-semibold">{t("push.title")}</h2>
+        {/* Notifications */}
+        <div className="rounded-lg border p-5">
+          <h2 className="mb-1 text-sm font-semibold">{t("push.title")}</h2>
           <p className="text-muted-foreground mb-3 text-xs">{t("push.description")}</p>
           {pushSupported ? (
             <div className="space-y-3">
@@ -1130,32 +1145,35 @@ export default function SettingsPage() {
           ) : (
             <p className="text-muted-foreground text-sm">{t("push.unsupported")}</p>
           )}
+
+          {/* Location (Electron only) */}
+          {platform === "electron" && (
+            <>
+              <Separator className="my-4" />
+              <div>
+                <h2 className="mb-3 text-sm font-semibold">
+                  <MapPin className="mr-2 inline h-4 w-4" />
+                  {t("locations.myLocation")}
+                </h2>
+                <div className="space-y-3">
+                  <p className="text-muted-foreground text-sm">{t("locations.electronDesc")}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => getElectronAPI()?.openLocationSettings?.()}
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    {t("locations.openSettings")}
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Location (Electron only) */}
-        {platform === "electron" && (
-          <div>
-            <h2 className="mb-3 text-lg font-semibold">
-              <MapPin className="mr-2 inline h-5 w-5" />
-              {t("locations.myLocation")}
-            </h2>
-            <div className="space-y-3">
-              <p className="text-muted-foreground text-sm">{t("locations.electronDesc")}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => getElectronAPI()?.openLocationSettings?.()}
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                {t("locations.openSettings")}
-              </Button>
-            </div>
-          </div>
-        )}
-
         {/* Calendar */}
-        <div>
-          <h2 className="mb-3 text-lg font-semibold">{t("calendar.title")}</h2>
+        <div className="rounded-lg border p-5 md:col-span-2">
+          <h2 className="mb-3 text-sm font-semibold">{t("calendar.title")}</h2>
           <div className="space-y-2">
             <label className="text-sm font-medium">{t("calendar.caldavUrl")}</label>
             <p className="text-muted-foreground text-xs">{t("calendar.caldavDescription")}</p>
@@ -1286,98 +1304,98 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
-      </div>
 
-      {/* AI Model Settings — premium only */}
-      {isPremium && (
-        <div className="max-w-md">
-          <h2 className="mb-3 text-lg font-semibold">
-            <Brain className="mr-2 inline h-5 w-5" />
-            {t("settings.aiModel")}
-          </h2>
-          <p className="text-muted-foreground mb-4 text-sm">{t("settings.aiModelDesc")}</p>
-          <div className="space-y-3">
-            <div>
-              <label className="mb-1 block text-sm font-medium">{t("settings.aiProvider")}</label>
-              <select
-                value={aiProvider}
-                onChange={(e) => setAiProvider(e.target.value)}
-                className="border-input bg-background ring-offset-background focus:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
-              >
-                <option value="">{t("settings.aiProviderDefault")}</option>
-                <option value="openai">{t("settings.aiProviderOpenai")}</option>
-                <option value="ollama">{t("settings.aiProviderOllama")}</option>
-              </select>
-            </div>
-            {aiProvider && aiProvider !== "ollama" && (
+        {/* AI Model Settings — premium only */}
+        {isPremium && (
+          <div className="rounded-lg border p-5">
+            <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold">
+              <Brain className="h-4 w-4" />
+              {t("settings.aiModel")}
+            </h2>
+            <p className="text-muted-foreground mb-4 text-xs">{t("settings.aiModelDesc")}</p>
+            <div className="space-y-3">
               <div>
-                <label className="mb-1 block text-sm font-medium">{t("settings.aiApiKey")}</label>
-                <Input
-                  type="password"
-                  value={aiApiKey}
-                  onChange={(e) => setAiApiKey(e.target.value)}
-                  placeholder={t("settings.aiApiKeyPlaceholder")}
-                />
+                <label className="mb-1 block text-sm font-medium">{t("settings.aiProvider")}</label>
+                <select
+                  value={aiProvider}
+                  onChange={(e) => setAiProvider(e.target.value)}
+                  className="border-input bg-background ring-offset-background focus:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                >
+                  <option value="">{t("settings.aiProviderDefault")}</option>
+                  <option value="openai">{t("settings.aiProviderOpenai")}</option>
+                  <option value="ollama">{t("settings.aiProviderOllama")}</option>
+                </select>
               </div>
-            )}
-            {aiProvider && (
-              <>
+              {aiProvider && aiProvider !== "ollama" && (
                 <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    {t("settings.aiBaseUrl")}
-                  </label>
+                  <label className="mb-1 block text-sm font-medium">{t("settings.aiApiKey")}</label>
                   <Input
-                    value={aiBaseUrl}
-                    onChange={(e) => setAiBaseUrl(e.target.value)}
-                    placeholder={
-                      aiProvider === "ollama"
-                        ? "http://localhost:11434"
-                        : t("settings.aiBaseUrlPlaceholder")
-                    }
+                    type="password"
+                    value={aiApiKey}
+                    onChange={(e) => setAiApiKey(e.target.value)}
+                    placeholder={t("settings.aiApiKeyPlaceholder")}
                   />
                 </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    {t("settings.aiModelName")}
-                  </label>
-                  <Input
-                    value={aiModel}
-                    onChange={(e) => setAiModel(e.target.value)}
-                    placeholder={
-                      aiProvider === "ollama" ? "llama3.1" : t("settings.aiModelPlaceholder")
-                    }
-                  />
-                </div>
-              </>
-            )}
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={handleSaveAiConfig}>
-                {aiSaved ? (
-                  <>
-                    <Check className="mr-1 h-4 w-4" />
-                    {t("settings.aiSaved")}
-                  </>
-                ) : (
-                  t("lists.save")
-                )}
-              </Button>
-              {(aiProvider || aiApiKey || aiBaseUrl || aiModel) && (
-                <Button size="sm" variant="outline" onClick={handleResetAiConfig}>
-                  {t("settings.aiReset")}
-                </Button>
               )}
+              {aiProvider && (
+                <>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      {t("settings.aiBaseUrl")}
+                    </label>
+                    <Input
+                      value={aiBaseUrl}
+                      onChange={(e) => setAiBaseUrl(e.target.value)}
+                      placeholder={
+                        aiProvider === "ollama"
+                          ? "http://localhost:11434"
+                          : t("settings.aiBaseUrlPlaceholder")
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      {t("settings.aiModelName")}
+                    </label>
+                    <Input
+                      value={aiModel}
+                      onChange={(e) => setAiModel(e.target.value)}
+                      placeholder={
+                        aiProvider === "ollama" ? "llama3.1" : t("settings.aiModelPlaceholder")
+                      }
+                    />
+                  </div>
+                </>
+              )}
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={handleSaveAiConfig}>
+                  {aiSaved ? (
+                    <>
+                      <Check className="mr-1 h-4 w-4" />
+                      {t("settings.aiSaved")}
+                    </>
+                  ) : (
+                    t("lists.save")
+                  )}
+                </Button>
+                {(aiProvider || aiApiKey || aiBaseUrl || aiModel) && (
+                  <Button size="sm" variant="outline" onClick={handleResetAiConfig}>
+                    {t("settings.aiReset")}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="text-muted-foreground mt-12 max-w-md border-t pt-4 text-xs">
-        <p>
-          SweptMind &middot; {getPlatform()} &middot; Build{" "}
-          {process.env.NEXT_PUBLIC_BUILD_ID ?? "dev"}
-          {process.env.NEXT_PUBLIC_BUILD_TIME &&
-            ` (${new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString()})`}
-        </p>
+        <div className="text-muted-foreground border-t pt-4 text-xs md:col-span-2">
+          <p>
+            SweptMind &middot; {getPlatform()} &middot; Build{" "}
+            {process.env.NEXT_PUBLIC_BUILD_ID ?? "dev"}
+            {process.env.NEXT_PUBLIC_BUILD_TIME &&
+              ` (${new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString()})`}
+          </p>
+        </div>
       </div>
     </div>
   );
