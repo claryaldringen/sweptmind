@@ -23,6 +23,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     googleCalendarSyncToken: null,
     googleCalendarChannelId: null,
     googleCalendarChannelExpiry: null,
+    googleCalendarTargetListId: null,
     llmProvider: null,
     llmApiKey: null,
     llmBaseUrl: null,
@@ -55,6 +56,8 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     getGoogleCalendarDirection: vi.fn(),
     updateGoogleCalendarSyncToken: vi.fn(),
     updateGoogleCalendarChannel: vi.fn(),
+    updateGoogleCalendarTargetListId: vi.fn(),
+    getGoogleCalendarTargetListId: vi.fn(),
     getGoogleCalendarSettings: vi.fn(),
     findUsersWithExpiringChannels: vi.fn(),
     ...overrides,
@@ -167,6 +170,7 @@ describe("UserService", () => {
         syncToken: "token-123",
         channelId: "channel-1",
         channelExpiry: new Date("2026-04-01"),
+        targetListId: null,
       };
       vi.mocked(userRepo.getGoogleCalendarSettings).mockResolvedValue(settings);
       const result = await service.getGoogleCalendarSettings("user-1");

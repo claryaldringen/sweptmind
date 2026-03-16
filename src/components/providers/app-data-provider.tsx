@@ -91,6 +91,7 @@ export const APP_TASK_FIELDS = gql`
       }
       analyzedTitle
     }
+    isGoogleCalendarEvent
   }
 `;
 

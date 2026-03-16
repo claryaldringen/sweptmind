@@ -62,6 +62,8 @@ const googleCalendarService = new GoogleCalendarService(
   userRepo,
   calendarSyncRepo,
   googleCalendarClient,
+  taskRepo,
+  listRepo,
 );
 const taskService = new TaskService(taskRepo, listRepo, stepRepo, googleCalendarService);
 

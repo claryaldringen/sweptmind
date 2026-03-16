@@ -87,6 +87,28 @@ builder.mutationField("updateGoogleCalendarDirection", (t) =>
   }),
 );
 
+builder.queryField("googleCalendarTargetListId", (t) =>
+  t.string({
+    nullable: true,
+    authScopes: { authenticated: true },
+    resolve: async (_root, _args, ctx) => {
+      return ctx.services.user.getGoogleCalendarTargetListId(ctx.userId!);
+    },
+  }),
+);
+
+builder.mutationField("updateGoogleCalendarTargetListId", (t) =>
+  t.string({
+    nullable: true,
+    authScopes: { authenticated: true },
+    args: { listId: t.arg.string({ required: false }) },
+    resolve: async (_root, args, ctx) => {
+      await ctx.services.user.updateGoogleCalendarTargetListId(ctx.userId!, args.listId ?? null);
+      return args.listId ?? null;
+    },
+  }),
+);
+
 builder.mutationField("disconnectGoogleCalendar", (t) =>
   t.boolean({
     authScopes: { authenticated: true },

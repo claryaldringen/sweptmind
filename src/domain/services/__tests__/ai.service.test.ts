@@ -165,6 +165,7 @@ function makeUserRepo(overrides: Partial<User> = {}): IUserRepository {
     googleCalendarSyncToken: null,
     googleCalendarChannelId: null,
     googleCalendarChannelExpiry: null,
+    googleCalendarTargetListId: null,
     llmProvider: null,
     llmApiKey: null,
     llmBaseUrl: null,
@@ -194,6 +195,8 @@ function makeUserRepo(overrides: Partial<User> = {}): IUserRepository {
     getGoogleCalendarDirection: vi.fn().mockResolvedValue("both"),
     updateGoogleCalendarSyncToken: vi.fn(),
     updateGoogleCalendarChannel: vi.fn(),
+    updateGoogleCalendarTargetListId: vi.fn(),
+    getGoogleCalendarTargetListId: vi.fn().mockResolvedValue(null),
     getGoogleCalendarSettings: vi.fn().mockResolvedValue({
       enabled: false,
       direction: "both",
@@ -201,6 +204,7 @@ function makeUserRepo(overrides: Partial<User> = {}): IUserRepository {
       syncToken: null,
       channelId: null,
       channelExpiry: null,
+      targetListId: null,
     }),
     findUsersWithExpiringChannels: vi.fn().mockResolvedValue([]),
   };

@@ -1,17 +1,22 @@
 import type { Task } from "../entities/task";
 import type { IUserRepository } from "../repositories/user.repository";
 import type { ICalendarSyncRepository } from "../repositories/calendar-sync.repository";
+import type { ITaskRepository } from "../repositories/task.repository";
+import type { IListRepository } from "../repositories/list.repository";
 import type {
   IGoogleCalendarClient,
   GoogleCalendarEventData,
 } from "../ports/google-calendar-client";
 import { addDays, format } from "date-fns";
+import { computeDefaultReminder } from "./task-visibility";
 
 export class GoogleCalendarService {
   constructor(
     private readonly userRepo: IUserRepository,
     private readonly syncRepo: ICalendarSyncRepository,
     private readonly gcalClient: IGoogleCalendarClient,
+    private readonly taskRepo?: ITaskRepository,
+    private readonly listRepo?: IListRepository,
   ) {}
 
   /**
@@ -65,15 +70,12 @@ export class GoogleCalendarService {
   }
 
   /**
-   * Pull changes from Google Calendar using incremental sync.
+   * Pull changes from Google Calendar and create/update tasks.
    */
-  async pullChanges(
-    userId: string,
-  ): Promise<{ items: GoogleCalendarEventData[]; nextSyncToken?: string }> {
+  async pullChanges(userId: string): Promise<void> {
     const settings = await this.userRepo.getGoogleCalendarSettings(userId);
-    if (!settings.enabled || settings.direction === "push") {
-      return { items: [] };
-    }
+    if (!settings.enabled || settings.direction === "push") return;
+    if (!this.taskRepo || !this.listRepo) return;
 
     const result = await this.gcalClient.listEvents(
       userId,
@@ -85,7 +87,69 @@ export class GoogleCalendarService {
       await this.userRepo.updateGoogleCalendarSyncToken(userId, result.nextSyncToken);
     }
 
-    return result;
+    // Resolve target list: user setting → default list
+    let targetListId = settings.targetListId;
+    if (!targetListId) {
+      const lists = await this.listRepo.findByUser(userId);
+      const defaultList = lists.find((l) => l.isDefault);
+      targetListId = defaultList?.id ?? lists[0]?.id;
+    }
+    if (!targetListId) return;
+
+    for (const event of result.items) {
+      if (!event.id) continue;
+
+      // Skip events we pushed (our icalUid convention)
+      const existingByIcal = await this.syncRepo.findByIcalUid(userId, `sweptmind-${event.id}`);
+      if (existingByIcal) continue;
+
+      const cancelled = event.status === "cancelled";
+      const syncEntry = await this.syncRepo.findByGoogleEventId(userId, event.id);
+
+      if (cancelled) {
+        // Event deleted in Google Calendar → delete task
+        if (syncEntry) {
+          await this.taskRepo.delete(syncEntry.taskId, userId);
+          await this.syncRepo.deleteByTaskId(syncEntry.taskId);
+        }
+        continue;
+      }
+
+      const dueDate = this.eventToDueDate(event);
+      const dueDateEnd = this.eventToDueDateEnd(event);
+
+      if (syncEntry) {
+        // Update existing task
+        await this.taskRepo.update(syncEntry.taskId, userId, {
+          title: event.summary,
+          notes: event.description ?? null,
+          dueDate,
+          dueDateEnd,
+          reminderAt: computeDefaultReminder(dueDate),
+        });
+        await this.syncRepo.updateEtag(syncEntry.id, `"${Date.now()}"`);
+      } else {
+        // Create new task
+        const minSort = await this.taskRepo.findMinSortOrder(targetListId);
+        const task = await this.taskRepo.create({
+          userId,
+          listId: targetListId,
+          title: event.summary,
+          notes: event.description ?? null,
+          dueDate,
+          dueDateEnd,
+          reminderAt: computeDefaultReminder(dueDate),
+          sortOrder: (minSort ?? 1) - 1,
+        });
+        const entry = await this.syncRepo.upsert({
+          userId,
+          taskId: task.id,
+          icalUid: `gcal-${event.id}`,
+          etag: `"${task.updatedAt.getTime()}"`,
+        });
+        await this.syncRepo.updateGoogleEventId(entry.id, event.id);
+      }
+    }
   }
 
   /**
@@ -124,6 +188,31 @@ export class GoogleCalendarService {
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
+
+  private eventToDueDate(event: GoogleCalendarEventData): string | null {
+    if ("dateTime" in event.start && event.start.dateTime) {
+      return event.start.dateTime;
+    }
+    if ("date" in event.start && event.start.date) {
+      return event.start.date;
+    }
+    return null;
+  }
+
+  private eventToDueDateEnd(event: GoogleCalendarEventData): string | null {
+    if ("dateTime" in event.end && event.end.dateTime) {
+      return event.end.dateTime;
+    }
+    if ("date" in event.end && event.end.date) {
+      // Google uses exclusive end date for all-day events, subtract 1 day
+      const endDate = addDays(new Date(event.end.date), -1);
+      const endStr = format(endDate, "yyyy-MM-dd");
+      // If start == end (single day), no end date needed
+      if ("date" in event.start && event.start.date === endStr) return null;
+      return endStr;
+    }
+    return null;
+  }
 
   private taskToEvent(task: Task): GoogleCalendarEventData {
     const hasTime = task.dueDate?.includes("T") ?? false;

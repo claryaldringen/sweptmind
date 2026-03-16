@@ -27,6 +27,7 @@ fragment TaskFields on Task {
     mimeType
     createdAt
   }
+  isGoogleCalendarEvent
 }
 
 query TasksByList($listId: String!) {

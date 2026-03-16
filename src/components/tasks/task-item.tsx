@@ -155,6 +155,7 @@ interface Task {
   blockedByTaskId?: string | null;
   blockedByTaskIsCompleted?: boolean | null;
   dependentTaskCount?: number;
+  isGoogleCalendarEvent?: boolean;
   attachments?: { id: string }[];
   aiAnalysis?: {
     isActionable: boolean;
@@ -716,6 +717,26 @@ export const TaskItem = memo(function TaskItem({
                     <span className="text-muted-foreground flex items-center gap-0.5">
                       <Link2 className="h-3 w-3" />
                       {dependentCount}
+                    </span>
+                  )}
+                  {task.isGoogleCalendarEvent && (
+                    <span
+                      className="flex items-center gap-0.5 text-blue-400"
+                      title="Google Calendar"
+                    >
+                      <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 4h-1V3c0-.6-.4-1-1-1s-1 .4-1 1v1H8V3c0-.6-.4-1-1-1s-1 .4-1 1v1H5C3.3 4 2 5.3 2 7v12c0 1.7 1.3 3 3 3h14c1.7 0 3-1.3 3-3V7c0-1.7-1.3-3-3-3zm1 15c0 .6-.4 1-1 1H5c-.6 0-1-.4-1-1v-9h16v9zm0-11H4V7c0-.6.4-1 1-1h1v1c0 .6.4 1 1 1s1-.4 1-1V6h8v1c0 .6.4 1 1 1s1-.4 1-1V6h1c.6 0 1 .4 1 1v1z" />
+                        <text
+                          x="12"
+                          y="18"
+                          textAnchor="middle"
+                          fontSize="8"
+                          fontWeight="bold"
+                          fill="currentColor"
+                        >
+                          G
+                        </text>
+                      </svg>
                     </span>
                   )}
                 </div>

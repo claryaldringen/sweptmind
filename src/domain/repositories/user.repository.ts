@@ -35,6 +35,8 @@ export interface IUserRepository {
     channelId: string | null,
     expiry: Date | null,
   ): Promise<void>;
+  updateGoogleCalendarTargetListId(userId: string, listId: string | null): Promise<void>;
+  getGoogleCalendarTargetListId(userId: string): Promise<string | null>;
   getGoogleCalendarSettings(userId: string): Promise<{
     enabled: boolean;
     direction: string;
@@ -42,6 +44,7 @@ export interface IUserRepository {
     syncToken: string | null;
     channelId: string | null;
     channelExpiry: Date | null;
+    targetListId: string | null;
   }>;
   findUsersWithExpiringChannels(
     before: Date,

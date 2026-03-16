@@ -310,6 +310,8 @@ export interface Dictionary {
     googleCalendarDirectionPull: string;
     googleCalendarConnectSuccess: string;
     googleCalendarConnectError: string;
+    googleCalendarTargetList: string;
+    googleCalendarTargetListDefault: string;
   };
   context: {
     hereAndNow: string;

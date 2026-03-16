@@ -190,6 +190,21 @@ export class DrizzleUserRepository implements IUserRepository {
       .where(eq(schema.users.id, userId));
   }
 
+  async updateGoogleCalendarTargetListId(userId: string, listId: string | null): Promise<void> {
+    await this.db
+      .update(schema.users)
+      .set({ googleCalendarTargetListId: listId })
+      .where(eq(schema.users.id, userId));
+  }
+
+  async getGoogleCalendarTargetListId(userId: string): Promise<string | null> {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      columns: { googleCalendarTargetListId: true },
+    });
+    return user?.googleCalendarTargetListId ?? null;
+  }
+
   async getGoogleCalendarSettings(userId: string): Promise<{
     enabled: boolean;
     direction: string;
@@ -197,6 +212,7 @@ export class DrizzleUserRepository implements IUserRepository {
     syncToken: string | null;
     channelId: string | null;
     channelExpiry: Date | null;
+    targetListId: string | null;
   }> {
     const user = await this.db.query.users.findFirst({
       where: eq(schema.users.id, userId),
@@ -207,6 +223,7 @@ export class DrizzleUserRepository implements IUserRepository {
         googleCalendarSyncToken: true,
         googleCalendarChannelId: true,
         googleCalendarChannelExpiry: true,
+        googleCalendarTargetListId: true,
       },
     });
     return {
@@ -216,6 +233,7 @@ export class DrizzleUserRepository implements IUserRepository {
       syncToken: user?.googleCalendarSyncToken ?? null,
       channelId: user?.googleCalendarChannelId ?? null,
       channelExpiry: user?.googleCalendarChannelExpiry ?? null,
+      targetListId: user?.googleCalendarTargetListId ?? null,
     };
   }
 

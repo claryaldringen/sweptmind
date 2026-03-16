@@ -3,6 +3,8 @@ import { GoogleCalendarService } from "../google-calendar.service";
 import type { IUserRepository } from "../../repositories/user.repository";
 import type { ICalendarSyncRepository } from "../../repositories/calendar-sync.repository";
 import type { IGoogleCalendarClient } from "../../ports/google-calendar-client";
+import type { ITaskRepository } from "../../repositories/task.repository";
+import type { IListRepository } from "../../repositories/list.repository";
 import type { Task } from "../../entities/task";
 import type { CalendarSync } from "../../entities/calendar-sync";
 
@@ -54,6 +56,7 @@ const defaultSettings = {
   syncToken: null,
   channelId: null,
   channelExpiry: null,
+  targetListId: null,
 };
 
 function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository {
@@ -80,6 +83,8 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     getGoogleCalendarDirection: vi.fn().mockResolvedValue("both"),
     updateGoogleCalendarSyncToken: vi.fn(),
     updateGoogleCalendarChannel: vi.fn(),
+    updateGoogleCalendarTargetListId: vi.fn(),
+    getGoogleCalendarTargetListId: vi.fn().mockResolvedValue(null),
     getGoogleCalendarSettings: vi.fn().mockResolvedValue({ ...defaultSettings }),
     findUsersWithExpiringChannels: vi.fn().mockResolvedValue([]),
     ...overrides,
@@ -113,6 +118,69 @@ function makeGcalClient(overrides: Partial<IGoogleCalendarClient> = {}): IGoogle
   };
 }
 
+function makeTaskRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository {
+  return {
+    findById: vi.fn().mockResolvedValue(undefined),
+    findByList: vi.fn().mockResolvedValue([]),
+    findPlanned: vi.fn().mockResolvedValue([]),
+    findMaxSortOrder: vi.fn().mockResolvedValue(undefined),
+    findMinSortOrder: vi.fn().mockResolvedValue(undefined),
+    create: vi.fn().mockImplementation(async (values) => ({
+      ...makeTask(),
+      ...values,
+      id: `task-${Date.now()}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })),
+    update: vi.fn(),
+    delete: vi.fn(),
+    updateSortOrder: vi.fn(),
+    countActiveByList: vi.fn().mockResolvedValue(0),
+    countActiveByListIds: vi.fn().mockResolvedValue(new Map()),
+    countVisibleByList: vi.fn().mockResolvedValue(0),
+    countVisibleByListIds: vi.fn().mockResolvedValue(new Map()),
+    findByListId: vi.fn().mockResolvedValue([]),
+    findByTagId: vi.fn().mockResolvedValue([]),
+    findWithLocation: vi.fn().mockResolvedValue([]),
+    findContextTasks: vi.fn().mockResolvedValue([]),
+    findDependentTaskIds: vi.fn().mockResolvedValue([]),
+    searchTasks: vi.fn().mockResolvedValue([]),
+    findByUser: vi.fn().mockResolvedValue([]),
+    findActiveByUser: vi.fn().mockResolvedValue([]),
+    findCompletedByUser: vi.fn().mockResolvedValue([]),
+    deleteMany: vi.fn(),
+    updateMany: vi.fn(),
+    ...overrides,
+  };
+}
+
+function makeListRepo(overrides: Partial<IListRepository> = {}): IListRepository {
+  return {
+    findById: vi.fn().mockResolvedValue(undefined),
+    findByIds: vi.fn().mockResolvedValue([]),
+    findByUser: vi.fn().mockResolvedValue([
+      {
+        id: "list-1",
+        name: "Tasks",
+        userId: "user-1",
+        isDefault: true,
+        groupId: null,
+        sortOrder: 0,
+        createdAt: new Date(),
+      },
+    ]),
+    findByGroup: vi.fn().mockResolvedValue([]),
+    findMaxSortOrder: vi.fn().mockResolvedValue(undefined),
+    create: vi.fn(),
+    update: vi.fn(),
+    deleteNonDefault: vi.fn(),
+    updateSortOrder: vi.fn(),
+    ungroupByGroupId: vi.fn(),
+    deleteManyNonDefault: vi.fn(),
+    ...overrides,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -121,13 +189,17 @@ describe("GoogleCalendarService", () => {
   let userRepo: IUserRepository;
   let syncRepo: ICalendarSyncRepository;
   let gcalClient: IGoogleCalendarClient;
+  let taskRepo: ITaskRepository;
+  let listRepo: IListRepository;
   let service: GoogleCalendarService;
 
   beforeEach(() => {
     userRepo = makeUserRepo();
     syncRepo = makeSyncRepo();
     gcalClient = makeGcalClient();
-    service = new GoogleCalendarService(userRepo, syncRepo, gcalClient);
+    taskRepo = makeTaskRepo();
+    listRepo = makeListRepo();
+    service = new GoogleCalendarService(userRepo, syncRepo, gcalClient, taskRepo, listRepo);
   });
 
   // -------------------------------------------------------------------------
@@ -288,9 +360,8 @@ describe("GoogleCalendarService", () => {
         enabled: false,
       });
 
-      const result = await service.pullChanges("user-1");
+      await service.pullChanges("user-1");
 
-      expect(result.items).toEqual([]);
       expect(gcalClient.listEvents).not.toHaveBeenCalled();
     });
 
@@ -300,9 +371,8 @@ describe("GoogleCalendarService", () => {
         direction: "push",
       });
 
-      const result = await service.pullChanges("user-1");
+      await service.pullChanges("user-1");
 
-      expect(result.items).toEqual([]);
       expect(gcalClient.listEvents).not.toHaveBeenCalled();
     });
 
@@ -319,11 +389,11 @@ describe("GoogleCalendarService", () => {
         nextSyncToken: "new-token",
       });
 
-      const result = await service.pullChanges("user-1");
+      await service.pullChanges("user-1");
 
       expect(gcalClient.listEvents).toHaveBeenCalledWith("user-1", "primary", undefined);
-      expect(result.items).toHaveLength(1);
       expect(userRepo.updateGoogleCalendarSyncToken).toHaveBeenCalledWith("user-1", "new-token");
+      expect(taskRepo.create).toHaveBeenCalled();
     });
 
     it("použije existující syncToken", async () => {

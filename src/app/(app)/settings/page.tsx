@@ -121,6 +121,28 @@ const DISCONNECT_GOOGLE_CALENDAR = gql`
   }
 `;
 
+const GOOGLE_CALENDAR_TARGET_LIST_ID = gql`
+  query GoogleCalendarTargetListId {
+    googleCalendarTargetListId
+  }
+`;
+
+const UPDATE_GOOGLE_CALENDAR_TARGET_LIST_ID = gql`
+  mutation UpdateGoogleCalendarTargetListId($listId: String) {
+    updateGoogleCalendarTargetListId(listId: $listId)
+  }
+`;
+
+const USER_LISTS = gql`
+  query UserLists {
+    lists {
+      id
+      name
+      isDefault
+    }
+  }
+`;
+
 const GET_ME = gql`
   query GetMe {
     me {
@@ -404,8 +426,17 @@ export default function SettingsPage() {
   );
   const [updateGcalDirection] = useMutation(UPDATE_GOOGLE_CALENDAR_DIRECTION);
   const [disconnectGcal] = useMutation(DISCONNECT_GOOGLE_CALENDAR);
+  const { data: gcalTargetListData } = useQuery<{ googleCalendarTargetListId: string | null }>(
+    GOOGLE_CALENDAR_TARGET_LIST_ID,
+  );
+  const [updateGcalTargetList] = useMutation(UPDATE_GOOGLE_CALENDAR_TARGET_LIST_ID);
+  const { data: userListsData } = useQuery<{
+    lists: Array<{ id: string; name: string; isDefault: boolean }>;
+  }>(USER_LISTS);
   const gcalEnabled = gcalEnabledData?.googleCalendarEnabled ?? false;
   const gcalDirection = gcalDirectionData?.googleCalendarDirection ?? "both";
+  const gcalTargetListId = gcalTargetListData?.googleCalendarTargetListId ?? null;
+  const userLists = userListsData?.lists ?? [];
 
   // Handle ?gcal=connected|error URL params after Google Calendar OAuth
   useEffect(() => {
@@ -1287,6 +1318,28 @@ export default function SettingsPage() {
                     <option value="both">{t("calendar.googleCalendarDirectionBoth")}</option>
                     <option value="push">{t("calendar.googleCalendarDirectionPush")}</option>
                     <option value="pull">{t("calendar.googleCalendarDirectionPull")}</option>
+                  </select>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-sm font-medium">{t("calendar.googleCalendarTargetList")}</p>
+                  <select
+                    value={gcalTargetListId ?? ""}
+                    onChange={async (e) => {
+                      const listId = e.target.value || null;
+                      apolloClient.cache.writeQuery({
+                        query: GOOGLE_CALENDAR_TARGET_LIST_ID,
+                        data: { googleCalendarTargetListId: listId },
+                      });
+                      await updateGcalTargetList({ variables: { listId } });
+                    }}
+                    className="border-input bg-background ring-offset-background focus:ring-ring flex h-8 rounded-md border px-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  >
+                    <option value="">{t("calendar.googleCalendarTargetListDefault")}</option>
+                    {userLists.map((list) => (
+                      <option key={list.id} value={list.id}>
+                        {list.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <Button

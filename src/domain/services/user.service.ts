@@ -64,6 +64,14 @@ export class UserService {
     return this.userRepo.getGoogleCalendarDirection(userId);
   }
 
+  async updateGoogleCalendarTargetListId(userId: string, listId: string | null): Promise<void> {
+    await this.userRepo.updateGoogleCalendarTargetListId(userId, listId);
+  }
+
+  async getGoogleCalendarTargetListId(userId: string): Promise<string | null> {
+    return this.userRepo.getGoogleCalendarTargetListId(userId);
+  }
+
   async getGoogleCalendarSettings(userId: string) {
     return this.userRepo.getGoogleCalendarSettings(userId);
   }

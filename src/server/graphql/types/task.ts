@@ -101,6 +101,12 @@ export const TaskType = TaskRef.implement({
         return ctx.loaders.aiAnalysisByTaskId.load(task.id);
       },
     }),
+    isGoogleCalendarEvent: t.boolean({
+      resolve: async (task, _args, ctx) => {
+        const syncEntry = await ctx.services.calendar.getSyncEntry(task.id);
+        return syncEntry?.googleCalendarEventId != null;
+      },
+    }),
   }),
 });
 
