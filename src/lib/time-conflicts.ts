@@ -1,7 +1,11 @@
 /**
  * Detect time conflicts between tasks with overlapping time ranges.
- * Only considers incomplete tasks with time-based dueDates (containing "T").
- * Tasks without dueDateEnd are treated as 1-hour duration.
+ * Considers:
+ * - Time-based tasks (dueDate containing "T") — compared by exact time range
+ * - Date-range tasks (dueDate + dueDateEnd, both date-only) — compared by day overlap
+ * Tasks without dueDateEnd are treated as:
+ * - 1-hour duration for time-based tasks
+ * - single-day for date-only tasks
  * Returns a Set of task IDs that have at least one conflict.
  */
 export function detectTimeConflicts(
@@ -14,23 +18,37 @@ export function detectTimeConflicts(
 ): Set<string> {
   const conflicting = new Set<string>();
 
-  // Filter to incomplete tasks with time-based dueDate
-  const timeTasks = tasks.filter(
-    (t) => !t.isCompleted && t.dueDate != null && t.dueDate.includes("T"),
-  );
+  // Filter to incomplete tasks with dueDate
+  const eligible = tasks.filter((t) => !t.isCompleted && t.dueDate != null);
 
-  if (timeTasks.length < 2) return conflicting;
+  if (eligible.length < 2) return conflicting;
 
-  // Build intervals: [start, end, taskId]
-  const intervals = timeTasks.map((t) => {
-    const start = new Date(t.dueDate!).getTime();
+  // Build intervals in milliseconds
+  const intervals = eligible.map((t) => {
+    const hasTime = t.dueDate!.includes("T");
+    let start: number;
     let end: number;
-    if (t.dueDateEnd && t.dueDateEnd.includes("T")) {
-      end = new Date(t.dueDateEnd).getTime();
+
+    if (hasTime) {
+      start = new Date(t.dueDate!).getTime();
+      if (t.dueDateEnd && t.dueDateEnd.includes("T")) {
+        end = new Date(t.dueDateEnd).getTime();
+      } else {
+        // Default 1-hour duration
+        end = start + 60 * 60 * 1000;
+      }
     } else {
-      // Default 1-hour duration
-      end = start + 60 * 60 * 1000;
+      // Date-only: treat as full day (00:00 to 23:59:59.999)
+      start = new Date(t.dueDate! + "T00:00:00").getTime();
+      if (t.dueDateEnd) {
+        // End date is inclusive — end of that day
+        end = new Date(t.dueDateEnd + "T23:59:59.999").getTime();
+      } else {
+        // Single day
+        end = new Date(t.dueDate! + "T23:59:59.999").getTime();
+      }
     }
+
     return { start, end, id: t.id };
   });
 
