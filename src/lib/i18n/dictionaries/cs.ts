@@ -312,12 +312,10 @@ export const cs: Dictionary = {
     regenerateToken: "Přegenerovat token",
     regenerateConfirm:
       "Tím se zneplatní aktuální URL. Kalendářové aplikace budou potřebovat novou URL. Pokračovat?",
-    syncAllLabel: "Synchronizovat všechny úkoly s termínem",
-    syncAllDescription:
-      "Výchozí: pouze úkoly s přesným časem. Zapnutím se budou synchronizovat i úkoly pouze s datem.",
-    syncDateRangeLabel: "Synchronizovat úkoly s rozsahem dat",
-    syncDateRangeDescription:
-      "Zapnutím se budou do kalendáře synchronizovat i úkoly s koncovým datem (víkendové akce apod.).",
+    syncScopeLabel: "Které úkoly synchronizovat",
+    syncScopeTime: "Pouze s přesným časem",
+    syncScopeTimeAndRange: "S časem + vícedenní události",
+    syncScopeAll: "Všechny úkoly s termínem",
     generating: "Generuji...",
     icsFeedUrl: "ICS Feed (jen čtení)",
     icsFeedDescription:

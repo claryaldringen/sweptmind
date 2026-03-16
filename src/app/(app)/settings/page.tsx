@@ -428,6 +428,11 @@ export default function SettingsPage() {
 
   const syncAll = syncAllData?.calendarSyncAll ?? false;
   const syncDateRange = syncDateRangeData?.calendarSyncDateRange ?? false;
+  const syncScope: "time" | "time-and-range" | "all" = syncAll
+    ? "all"
+    : syncDateRange
+      ? "time-and-range"
+      : "time";
 
   // CalDAV target list
   const { data: caldavTargetListData } = useQuery<{ calendarTargetListId: string | null }>(
@@ -653,34 +658,32 @@ export default function SettingsPage() {
     if (data?.regenerateCalendarToken) setCalendarToken(data.regenerateCalendarToken);
   };
 
-  const handleSyncAllToggle = async (checked: boolean) => {
-    // Optimistic update — toggle UI immediately
+  const handleSyncScopeChange = async (value: string) => {
+    const newSyncAll = value === "all";
+    const newSyncDateRange = value === "time-and-range";
+    const prevSyncAll = syncAll;
+    const prevSyncDateRange = syncDateRange;
     apolloClient.cache.writeQuery({
       query: CALENDAR_SYNC_ALL,
-      data: { calendarSyncAll: checked },
+      data: { calendarSyncAll: newSyncAll },
     });
-    try {
-      await updateSyncAllMutation({ variables: { syncAll: checked } });
-    } catch {
-      // Revert on failure
-      apolloClient.cache.writeQuery({
-        query: CALENDAR_SYNC_ALL,
-        data: { calendarSyncAll: !checked },
-      });
-    }
-  };
-
-  const handleSyncDateRangeToggle = async (checked: boolean) => {
     apolloClient.cache.writeQuery({
       query: CALENDAR_SYNC_DATE_RANGE,
-      data: { calendarSyncDateRange: checked },
+      data: { calendarSyncDateRange: newSyncDateRange },
     });
     try {
-      await updateSyncDateRangeMutation({ variables: { syncDateRange: checked } });
+      await Promise.all([
+        updateSyncAllMutation({ variables: { syncAll: newSyncAll } }),
+        updateSyncDateRangeMutation({ variables: { syncDateRange: newSyncDateRange } }),
+      ]);
     } catch {
       apolloClient.cache.writeQuery({
+        query: CALENDAR_SYNC_ALL,
+        data: { calendarSyncAll: prevSyncAll },
+      });
+      apolloClient.cache.writeQuery({
         query: CALENDAR_SYNC_DATE_RANGE,
-        data: { calendarSyncDateRange: !checked },
+        data: { calendarSyncDateRange: prevSyncDateRange },
       });
     }
   };
@@ -1224,6 +1227,18 @@ export default function SettingsPage() {
         {/* Calendar */}
         <div className="rounded-lg border p-5 md:col-span-2">
           <h2 className="mb-3 text-sm font-semibold">{t("calendar.title")}</h2>
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <p className="text-sm font-medium">{t("calendar.syncScopeLabel")}</p>
+            <select
+              value={syncScope}
+              onChange={(e) => handleSyncScopeChange(e.target.value)}
+              className="border-input bg-background ring-offset-background focus:ring-ring flex h-8 rounded-md border px-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+            >
+              <option value="time">{t("calendar.syncScopeTime")}</option>
+              <option value="time-and-range">{t("calendar.syncScopeTimeAndRange")}</option>
+              <option value="all">{t("calendar.syncScopeAll")}</option>
+            </select>
+          </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">{t("calendar.caldavUrl")}</label>
             <p className="text-muted-foreground text-xs">{t("calendar.caldavDescription")}</p>
@@ -1264,26 +1279,6 @@ export default function SettingsPage() {
               <RefreshCw className="mr-2 h-4 w-4" />
               {t("calendar.regenerateToken")}
             </Button>
-          </div>
-          <div className="mt-4 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium">{t("calendar.syncAllLabel")}</p>
-              <p className="text-muted-foreground text-xs">{t("calendar.syncAllDescription")}</p>
-            </div>
-            <Switch checked={syncAll} onCheckedChange={handleSyncAllToggle} />
-          </div>
-          <div className="mt-4 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium">{t("calendar.syncDateRangeLabel")}</p>
-              <p className="text-muted-foreground text-xs">
-                {t("calendar.syncDateRangeDescription")}
-              </p>
-            </div>
-            <Switch
-              checked={syncAll || syncDateRange}
-              disabled={syncAll}
-              onCheckedChange={handleSyncDateRangeToggle}
-            />
           </div>
 
           {/* CalDAV target list */}

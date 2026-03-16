@@ -313,12 +313,10 @@ export const en: Dictionary = {
     regenerateToken: "Regenerate Token",
     regenerateConfirm:
       "This will invalidate the current URL. Calendar apps will need the new URL. Continue?",
-    syncAllLabel: "Sync all tasks with a due date",
-    syncAllDescription:
-      "Default: only tasks with an exact time. Enable to also sync date-only tasks.",
-    syncDateRangeLabel: "Sync tasks with a date range",
-    syncDateRangeDescription:
-      "Enable to also sync tasks that have an end date (weekend events, etc.).",
+    syncScopeLabel: "Which tasks to sync",
+    syncScopeTime: "Only with exact time",
+    syncScopeTimeAndRange: "With time + multi-day events",
+    syncScopeAll: "All tasks with a due date",
     generating: "Generating...",
     icsFeedUrl: "ICS Feed (read-only)",
     icsFeedDescription:

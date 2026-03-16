@@ -26,6 +26,9 @@ export class GoogleCalendarService {
     const settings = await this.userRepo.getGoogleCalendarSettings(userId);
     if (!settings.enabled || settings.direction === "pull") return;
 
+    // Respect sync scope setting
+    if (!this.taskMatchesSyncScope(task, settings.syncAll, settings.syncDateRange)) return;
+
     const event = this.taskToEvent(task);
     const syncEntry = await this.syncRepo.findByTaskId(task.id);
 
@@ -182,6 +185,14 @@ export class GoogleCalendarService {
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
+
+  private taskMatchesSyncScope(task: Task, syncAll: boolean, syncDateRange: boolean): boolean {
+    if (!task.dueDate) return false;
+    if (syncAll) return true;
+    const hasTime = task.dueDate.includes("T");
+    if (hasTime) return true;
+    return syncDateRange && task.dueDateEnd != null;
+  }
 
   private eventToDueDate(event: GoogleCalendarEventData): string | null {
     if ("dateTime" in event.start && event.start.dateTime) {

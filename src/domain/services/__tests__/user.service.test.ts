@@ -174,6 +174,8 @@ describe("UserService", () => {
         channelId: "channel-1",
         channelExpiry: new Date("2026-04-01"),
         targetListId: null,
+        syncAll: false,
+        syncDateRange: false,
       };
       vi.mocked(userRepo.getGoogleCalendarSettings).mockResolvedValue(settings);
       const result = await service.getGoogleCalendarSettings("user-1");

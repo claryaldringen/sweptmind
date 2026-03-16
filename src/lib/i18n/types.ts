@@ -292,10 +292,10 @@ export interface Dictionary {
     copy: string;
     regenerateToken: string;
     regenerateConfirm: string;
-    syncAllLabel: string;
-    syncAllDescription: string;
-    syncDateRangeLabel: string;
-    syncDateRangeDescription: string;
+    syncScopeLabel: string;
+    syncScopeTime: string;
+    syncScopeTimeAndRange: string;
+    syncScopeAll: string;
     generating: string;
     icsFeedUrl: string;
     icsFeedDescription: string;

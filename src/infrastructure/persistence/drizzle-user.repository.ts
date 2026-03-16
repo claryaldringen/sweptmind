@@ -228,6 +228,8 @@ export class DrizzleUserRepository implements IUserRepository {
     channelId: string | null;
     channelExpiry: Date | null;
     targetListId: string | null;
+    syncAll: boolean;
+    syncDateRange: boolean;
   }> {
     const user = await this.db.query.users.findFirst({
       where: eq(schema.users.id, userId),
@@ -239,6 +241,8 @@ export class DrizzleUserRepository implements IUserRepository {
         googleCalendarChannelId: true,
         googleCalendarChannelExpiry: true,
         googleCalendarTargetListId: true,
+        calendarSyncAll: true,
+        calendarSyncDateRange: true,
       },
     });
     return {
@@ -249,6 +253,8 @@ export class DrizzleUserRepository implements IUserRepository {
       channelId: user?.googleCalendarChannelId ?? null,
       channelExpiry: user?.googleCalendarChannelExpiry ?? null,
       targetListId: user?.googleCalendarTargetListId ?? null,
+      syncAll: user?.calendarSyncAll ?? false,
+      syncDateRange: user?.calendarSyncDateRange ?? false,
     };
   }
 

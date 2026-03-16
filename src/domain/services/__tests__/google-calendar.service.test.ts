@@ -57,6 +57,8 @@ const defaultSettings = {
   channelId: null,
   channelExpiry: null,
   targetListId: "list-1",
+  syncAll: false,
+  syncDateRange: false,
 };
 
 function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository {
@@ -276,6 +278,10 @@ describe("GoogleCalendarService", () => {
     });
 
     it("vytvoří all-day event pro date-only dueDate", async () => {
+      vi.mocked(userRepo.getGoogleCalendarSettings).mockResolvedValue({
+        ...defaultSettings,
+        syncAll: true,
+      });
       vi.mocked(syncRepo.findByTaskId).mockResolvedValue(undefined);
 
       const task = makeTask({ dueDate: "2025-06-15" });
@@ -289,6 +295,40 @@ describe("GoogleCalendarService", () => {
           end: { date: "2025-06-16" },
         }),
       );
+    });
+
+    it("přeskočí date-only task když syncAll=false", async () => {
+      const task = makeTask({ dueDate: "2025-06-15" });
+      await service.pushTask("user-1", task);
+
+      expect(gcalClient.insertEvent).not.toHaveBeenCalled();
+    });
+
+    it("přeskočí date-range task když syncDateRange=false", async () => {
+      const task = makeTask({ dueDate: "2025-06-15", dueDateEnd: "2025-06-17" });
+      await service.pushTask("user-1", task);
+
+      expect(gcalClient.insertEvent).not.toHaveBeenCalled();
+    });
+
+    it("pushne date-range task když syncDateRange=true", async () => {
+      vi.mocked(userRepo.getGoogleCalendarSettings).mockResolvedValue({
+        ...defaultSettings,
+        syncDateRange: true,
+      });
+      vi.mocked(syncRepo.findByTaskId).mockResolvedValue(undefined);
+
+      const task = makeTask({ dueDate: "2025-06-15", dueDateEnd: "2025-06-17" });
+      await service.pushTask("user-1", task);
+
+      expect(gcalClient.insertEvent).toHaveBeenCalled();
+    });
+
+    it("přeskočí task bez dueDate", async () => {
+      const task = makeTask({ dueDate: null });
+      await service.pushTask("user-1", task);
+
+      expect(gcalClient.insertEvent).not.toHaveBeenCalled();
     });
   });
 

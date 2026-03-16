@@ -47,6 +47,8 @@ export interface IUserRepository {
     channelId: string | null;
     channelExpiry: Date | null;
     targetListId: string | null;
+    syncAll: boolean;
+    syncDateRange: boolean;
   }>;
   findUsersWithExpiringChannels(
     before: Date,
