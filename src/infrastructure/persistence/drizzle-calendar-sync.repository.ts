@@ -60,4 +60,20 @@ export class DrizzleCalendarSyncRepository implements ICalendarSyncRepository {
       .delete(schema.calendarSync)
       .where(and(eq(schema.calendarSync.userId, userId), eq(schema.calendarSync.icalUid, icalUid)));
   }
+
+  async findByGoogleEventId(userId: string, eventId: string): Promise<CalendarSync | undefined> {
+    return this.db.query.calendarSync.findFirst({
+      where: and(
+        eq(schema.calendarSync.userId, userId),
+        eq(schema.calendarSync.googleCalendarEventId, eventId),
+      ),
+    });
+  }
+
+  async updateGoogleEventId(id: string, googleEventId: string | null): Promise<void> {
+    await this.db
+      .update(schema.calendarSync)
+      .set({ googleCalendarEventId: googleEventId })
+      .where(eq(schema.calendarSync.id, id));
+  }
 }

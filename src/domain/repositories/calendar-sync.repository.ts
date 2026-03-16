@@ -13,4 +13,6 @@ export interface ICalendarSyncRepository {
   updateEtag(id: string, etag: string): Promise<void>;
   deleteByTaskId(taskId: string): Promise<void>;
   deleteByIcalUid(userId: string, icalUid: string): Promise<void>;
+  findByGoogleEventId(userId: string, eventId: string): Promise<CalendarSync | undefined>;
+  updateGoogleEventId(id: string, googleEventId: string | null): Promise<void>;
 }
