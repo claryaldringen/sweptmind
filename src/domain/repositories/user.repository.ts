@@ -11,6 +11,8 @@ export interface IUserRepository {
   getCalendarSyncAll(userId: string): Promise<boolean>;
   updateCalendarSyncDateRange(userId: string, syncDateRange: boolean): Promise<void>;
   getCalendarSyncDateRange(userId: string): Promise<boolean>;
+  updateCalendarTargetListId(userId: string, listId: string | null): Promise<void>;
+  getCalendarTargetListId(userId: string): Promise<string | null>;
   updateOnboardingCompleted(userId: string, completed: boolean): Promise<void>;
   updatePassword(userId: string, hashedPassword: string): Promise<void>;
   createPasswordResetToken(email: string): Promise<string | null>;

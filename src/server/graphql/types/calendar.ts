@@ -58,6 +58,28 @@ builder.queryField("calendarSyncDateRange", (t) =>
   }),
 );
 
+builder.queryField("calendarTargetListId", (t) =>
+  t.string({
+    nullable: true,
+    authScopes: { authenticated: true },
+    resolve: async (_root, _args, ctx) => {
+      return ctx.services.user.getCalendarTargetListId(ctx.userId!);
+    },
+  }),
+);
+
+builder.mutationField("updateCalendarTargetListId", (t) =>
+  t.string({
+    nullable: true,
+    authScopes: { authenticated: true },
+    args: { listId: t.arg.string({ required: false }) },
+    resolve: async (_root, args, ctx) => {
+      await ctx.services.user.updateCalendarTargetListId(ctx.userId!, args.listId ?? null);
+      return args.listId ?? null;
+    },
+  }),
+);
+
 builder.queryField("googleCalendarEnabled", (t) =>
   t.boolean({
     authScopes: { authenticated: true },

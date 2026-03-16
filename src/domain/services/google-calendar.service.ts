@@ -87,13 +87,7 @@ export class GoogleCalendarService {
       await this.userRepo.updateGoogleCalendarSyncToken(userId, result.nextSyncToken);
     }
 
-    // Resolve target list: user setting → default list
-    let targetListId = settings.targetListId;
-    if (!targetListId) {
-      const lists = await this.listRepo.findByUser(userId);
-      const defaultList = lists.find((l) => l.isDefault);
-      targetListId = defaultList?.id ?? lists[0]?.id;
-    }
+    const targetListId = settings.targetListId;
     if (!targetListId) return;
 
     for (const event of result.items) {

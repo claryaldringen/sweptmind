@@ -1,6 +1,5 @@
 import type { CalendarService } from "@/domain/services/calendar.service";
 import type { IUserRepository } from "@/domain/repositories/user.repository";
-import type { IListRepository } from "@/domain/repositories/list.repository";
 import { taskToVevent, veventToTaskData } from "./ical-converter";
 import {
   buildPropfindResponse,
@@ -12,13 +11,13 @@ interface CalDavUser {
   id: string;
   calendarSyncAll: boolean;
   calendarSyncDateRange: boolean;
+  calendarTargetListId: string | null;
 }
 
 export class CalDavHandler {
   constructor(
     private readonly calendarService: CalendarService,
     private readonly userRepo: IUserRepository,
-    private readonly listRepo: IListRepository,
   ) {}
 
   async authenticate(token: string): Promise<CalDavUser | null> {
@@ -28,6 +27,7 @@ export class CalDavHandler {
       id: user.id,
       calendarSyncAll: user.calendarSyncAll,
       calendarSyncDateRange: user.calendarSyncDateRange,
+      calendarTargetListId: user.calendarTargetListId,
     };
   }
 
@@ -166,9 +166,9 @@ export class CalDavHandler {
     const data = veventToTaskData(body);
     if (!data) return { status: 400, body: "Invalid iCal data" };
 
-    const lists = await this.listRepo.findByUser(user.id);
-    const defaultList = lists.find((l) => l.isDefault);
-    if (!defaultList) return { status: 500, body: "No default list" };
+    if (!user.calendarTargetListId) {
+      return { status: 400, body: "No target list configured" };
+    }
 
     if (ifMatch) {
       const existing = await this.calendarService.getSyncEntryByIcalUid(user.id, data.icalUid);
@@ -177,7 +177,11 @@ export class CalDavHandler {
       }
     }
 
-    const { task } = await this.calendarService.upsertFromIcal(user.id, defaultList.id, data);
+    const { task } = await this.calendarService.upsertFromIcal(
+      user.id,
+      user.calendarTargetListId,
+      data,
+    );
 
     return {
       status: 201,

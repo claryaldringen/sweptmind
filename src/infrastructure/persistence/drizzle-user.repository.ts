@@ -142,6 +142,21 @@ export class DrizzleUserRepository implements IUserRepository {
     await this.db.update(schema.users).set(config).where(eq(schema.users.id, userId));
   }
 
+  async updateCalendarTargetListId(userId: string, listId: string | null): Promise<void> {
+    await this.db
+      .update(schema.users)
+      .set({ calendarTargetListId: listId })
+      .where(eq(schema.users.id, userId));
+  }
+
+  async getCalendarTargetListId(userId: string): Promise<string | null> {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      columns: { calendarTargetListId: true },
+    });
+    return user?.calendarTargetListId ?? null;
+  }
+
   async updateGoogleCalendarEnabled(userId: string, enabled: boolean): Promise<void> {
     await this.db
       .update(schema.users)

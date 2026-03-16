@@ -335,7 +335,8 @@ export const cs: Dictionary = {
     googleCalendarConnectSuccess: "Google Calendar úspěšně připojen",
     googleCalendarConnectError: "Připojení ke Google Calendar selhalo",
     googleCalendarTargetList: "Cílový seznam",
-    googleCalendarTargetListDefault: "Výchozí seznam",
+    calendarTargetList: "Cílový seznam pro nové události",
+    calendarTargetListPlaceholder: "Vyber seznam…",
   },
   context: {
     hereAndNow: "Tady & teď",

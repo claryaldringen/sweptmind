@@ -311,7 +311,8 @@ export interface Dictionary {
     googleCalendarConnectSuccess: string;
     googleCalendarConnectError: string;
     googleCalendarTargetList: string;
-    googleCalendarTargetListDefault: string;
+    calendarTargetList: string;
+    calendarTargetListPlaceholder: string;
   };
   context: {
     hereAndNow: string;

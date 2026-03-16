@@ -3,7 +3,7 @@ import { CalDavHandler } from "@/server/caldav/caldav-handler";
 import { services, repos } from "@/infrastructure/container";
 import { rateLimit } from "@/lib/rate-limit";
 
-const handler = new CalDavHandler(services.calendar, repos.user, repos.list);
+const handler = new CalDavHandler(services.calendar, repos.user);
 
 type Params = { params: Promise<{ token: string; path: string[] }> };
 

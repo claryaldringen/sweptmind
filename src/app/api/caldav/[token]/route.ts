@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CalDavHandler } from "@/server/caldav/caldav-handler";
 import { services, repos } from "@/infrastructure/container";
 
-const handler = new CalDavHandler(services.calendar, repos.user, repos.list);
+const handler = new CalDavHandler(services.calendar, repos.user);
 
 async function handleRequest(
   request: NextRequest,

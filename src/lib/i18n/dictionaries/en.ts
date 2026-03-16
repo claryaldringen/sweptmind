@@ -336,7 +336,8 @@ export const en: Dictionary = {
     googleCalendarConnectSuccess: "Google Calendar connected successfully",
     googleCalendarConnectError: "Failed to connect Google Calendar",
     googleCalendarTargetList: "Target list",
-    googleCalendarTargetListDefault: "Default list",
+    calendarTargetList: "Target list for new events",
+    calendarTargetListPlaceholder: "Select a list…",
   },
   context: {
     hereAndNow: "Here & Now",

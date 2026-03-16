@@ -56,7 +56,7 @@ const defaultSettings = {
   syncToken: null,
   channelId: null,
   channelExpiry: null,
-  targetListId: null,
+  targetListId: "list-1",
 };
 
 function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository {
@@ -71,6 +71,8 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     getCalendarSyncAll: vi.fn().mockResolvedValue(false),
     updateCalendarSyncDateRange: vi.fn(),
     getCalendarSyncDateRange: vi.fn().mockResolvedValue(false),
+    updateCalendarTargetListId: vi.fn(),
+    getCalendarTargetListId: vi.fn().mockResolvedValue(null),
     updateOnboardingCompleted: vi.fn(),
     updatePassword: vi.fn(),
     createPasswordResetToken: vi.fn().mockResolvedValue(null),

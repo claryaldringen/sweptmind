@@ -97,6 +97,18 @@ const CALENDAR_SYNC_DATE_RANGE = gql`
   }
 `;
 
+const CALENDAR_TARGET_LIST_ID = gql`
+  query CalendarTargetListId {
+    calendarTargetListId
+  }
+`;
+
+const UPDATE_CALENDAR_TARGET_LIST_ID = gql`
+  mutation UpdateCalendarTargetListId($listId: String) {
+    updateCalendarTargetListId(listId: $listId)
+  }
+`;
+
 const GOOGLE_CALENDAR_ENABLED = gql`
   query GoogleCalendarEnabled {
     googleCalendarEnabled
@@ -416,6 +428,13 @@ export default function SettingsPage() {
 
   const syncAll = syncAllData?.calendarSyncAll ?? false;
   const syncDateRange = syncDateRangeData?.calendarSyncDateRange ?? false;
+
+  // CalDAV target list
+  const { data: caldavTargetListData } = useQuery<{ calendarTargetListId: string | null }>(
+    CALENDAR_TARGET_LIST_ID,
+  );
+  const [updateCaldavTargetList] = useMutation(UPDATE_CALENDAR_TARGET_LIST_ID);
+  const caldavTargetListId = caldavTargetListData?.calendarTargetListId ?? null;
 
   // Google Calendar state
   const { data: gcalEnabledData, refetch: refetchGcalEnabled } = useQuery<{
@@ -1267,6 +1286,30 @@ export default function SettingsPage() {
             />
           </div>
 
+          {/* CalDAV target list */}
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm font-medium">{t("calendar.calendarTargetList")}</p>
+            <select
+              value={caldavTargetListId ?? ""}
+              onChange={async (e) => {
+                const listId = e.target.value || null;
+                apolloClient.cache.writeQuery({
+                  query: CALENDAR_TARGET_LIST_ID,
+                  data: { calendarTargetListId: listId },
+                });
+                await updateCaldavTargetList({ variables: { listId } });
+              }}
+              className="border-input bg-background ring-offset-background focus:ring-ring flex h-8 rounded-md border px-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+            >
+              <option value="">{t("calendar.calendarTargetListPlaceholder")}</option>
+              {userLists.map((list) => (
+                <option key={list.id} value={list.id}>
+                  {list.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Google Calendar */}
           <Separator className="my-4" />
           <div className="space-y-3">
@@ -1334,7 +1377,7 @@ export default function SettingsPage() {
                     }}
                     className="border-input bg-background ring-offset-background focus:ring-ring flex h-8 rounded-md border px-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
                   >
-                    <option value="">{t("calendar.googleCalendarTargetListDefault")}</option>
+                    <option value="">{t("calendar.calendarTargetListPlaceholder")}</option>
                     {userLists.map((list) => (
                       <option key={list.id} value={list.id}>
                         {list.name}

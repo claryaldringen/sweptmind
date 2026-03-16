@@ -19,6 +19,7 @@ export const users = pgTable("users", {
   calendarSyncAll: boolean("calendar_sync_all").notNull().default(false),
   calendarSyncDateRange: boolean("calendar_sync_date_range").notNull().default(false),
   calendarToken: text("calendar_token").unique(),
+  calendarTargetListId: text("calendar_target_list_id"),
   googleCalendarEnabled: boolean("google_calendar_enabled").notNull().default(false),
   googleCalendarDirection: text("google_calendar_direction").default("both"),
   googleCalendarId: text("google_calendar_id").default("primary"),

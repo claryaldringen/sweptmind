@@ -11,6 +11,7 @@ export interface User {
   calendarSyncAll: boolean;
   calendarSyncDateRange: boolean;
   calendarToken: string | null;
+  calendarTargetListId: string | null;
   googleCalendarEnabled: boolean;
   googleCalendarDirection: string | null;
   googleCalendarId: string | null;

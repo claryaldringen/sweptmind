@@ -32,6 +32,14 @@ export class UserService {
     return this.userRepo.getCalendarSyncDateRange(userId);
   }
 
+  async updateCalendarTargetListId(userId: string, listId: string | null): Promise<void> {
+    await this.userRepo.updateCalendarTargetListId(userId, listId);
+  }
+
+  async getCalendarTargetListId(userId: string): Promise<string | null> {
+    return this.userRepo.getCalendarTargetListId(userId);
+  }
+
   async updateOnboardingCompleted(userId: string, completed: boolean): Promise<void> {
     return this.userRepo.updateOnboardingCompleted(userId, completed);
   }
