@@ -12,6 +12,7 @@ import {
 } from "react";
 import { gql } from "@apollo/client";
 import { useQuery, useLazyQuery, useApolloClient } from "@apollo/client/react";
+import { detectTimeConflicts } from "@/lib/time-conflicts";
 
 // ---------------------------------------------------------------------------
 // Shared task fields fragment
@@ -335,6 +336,8 @@ interface AppDataContextValue {
   hasMoreCompleted: boolean;
   fetchMoreCompleted: () => void;
   refetch: () => void;
+  /** Set of task IDs that have time conflicts */
+  conflictingTaskIds: Set<string>;
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -444,6 +447,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     setHasMoreCompleted(true);
   }, [refetchAppData]);
 
+  const conflictingTaskIds = useMemo(() => detectTimeConflicts(allTasks), [allTasks]);
+
   const value = useMemo(
     () => ({
       lists: appData?.lists ?? [],
@@ -456,6 +461,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       hasMoreCompleted,
       fetchMoreCompleted,
       refetch,
+      conflictingTaskIds,
     }),
     [
       appData,
@@ -466,6 +472,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       hasMoreCompleted,
       fetchMoreCompleted,
       refetch,
+      conflictingTaskIds,
     ],
   );
 

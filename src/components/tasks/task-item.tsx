@@ -17,6 +17,7 @@ import {
   Lock,
   MapPin,
   Monitor,
+  AlertTriangle,
   Paperclip,
   Repeat,
   RotateCcw,
@@ -56,6 +57,7 @@ import { useTranslations } from "@/lib/i18n";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { useDeviceContext } from "@/hooks/use-device-context";
 import { useTaskSelectionOptional } from "@/components/providers/task-selection-provider";
+import { useAppData } from "@/components/providers/app-data-provider";
 
 const TOGGLE_COMPLETED = gql`
   mutation ToggleTaskCompleted($id: String!) {
@@ -192,6 +194,8 @@ export const TaskItem = memo(function TaskItem({
   const deviceContext = useDeviceContext();
   const taskSelection = useTaskSelectionOptional();
   const isSelected = taskSelection?.selectedIds.has(task.id) ?? false;
+  const { conflictingTaskIds } = useAppData();
+  const isConflicting = conflictingTaskIds.has(task.id);
   const focusArea = useSyncExternalStore(subscribeFocusArea, getFocusArea, getFocusArea);
   const tasksHaveFocus = focusArea === "tasks";
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -423,6 +427,7 @@ export const TaskItem = memo(function TaskItem({
               "group hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-4 py-2.5 transition-all duration-500",
               (selectedTaskId === task.id || isSelected) && tasksHaveFocus && "bg-accent",
               (selectedTaskId === task.id || isSelected) && !tasksHaveFocus && "bg-accent/50",
+              isConflicting && "bg-red-50 dark:bg-red-950/20",
               locationNearby && "bg-emerald-50 dark:bg-emerald-950/30",
               deviceMatch && "bg-yellow-50 dark:bg-yellow-950/30",
               (fadingOut || externalFadingOut) && "opacity-0",
@@ -717,6 +722,11 @@ export const TaskItem = memo(function TaskItem({
                     <span className="text-muted-foreground flex items-center gap-0.5">
                       <Link2 className="h-3 w-3" />
                       {dependentCount}
+                    </span>
+                  )}
+                  {isConflicting && (
+                    <span className="flex items-center gap-0.5 text-red-500">
+                      <AlertTriangle className="h-3 w-3" />
                     </span>
                   )}
                   {task.isGoogleCalendarEvent && (
