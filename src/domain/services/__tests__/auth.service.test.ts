@@ -49,6 +49,21 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     validatePasswordResetToken: vi.fn(),
     deletePasswordResetToken: vi.fn(),
     updateLlmConfig: vi.fn(),
+    updateGoogleCalendarEnabled: vi.fn(),
+    getGoogleCalendarEnabled: vi.fn().mockResolvedValue(false),
+    updateGoogleCalendarDirection: vi.fn(),
+    getGoogleCalendarDirection: vi.fn().mockResolvedValue("both"),
+    updateGoogleCalendarSyncToken: vi.fn(),
+    updateGoogleCalendarChannel: vi.fn(),
+    getGoogleCalendarSettings: vi.fn().mockResolvedValue({
+      enabled: false,
+      direction: "both",
+      calendarId: "primary",
+      syncToken: null,
+      channelId: null,
+      channelExpiry: null,
+    }),
+    findUsersWithExpiringChannels: vi.fn().mockResolvedValue([]),
     ...overrides,
   };
 }

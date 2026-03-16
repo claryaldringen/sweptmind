@@ -208,6 +208,7 @@ describe("CalendarService", () => {
         icalUid: "ext-uid-1",
         etag: "etag",
         lastSyncedAt: new Date(),
+        googleCalendarEventId: null,
       });
       await service.deleteFromIcal("user-1", "ext-uid-1");
       expect(taskRepo.delete).toHaveBeenCalledWith("task-1", "user-1");

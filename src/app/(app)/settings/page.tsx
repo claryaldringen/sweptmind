@@ -29,6 +29,8 @@ import {
   X,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { useTaskCountMode } from "@/hooks/use-task-count-mode";
 import { useNewTaskPosition } from "@/hooks/use-new-task-position";
@@ -92,6 +94,30 @@ const UPDATE_CALENDAR_SYNC_DATE_RANGE = gql`
 const CALENDAR_SYNC_DATE_RANGE = gql`
   query CalendarSyncDateRange {
     calendarSyncDateRange
+  }
+`;
+
+const GOOGLE_CALENDAR_ENABLED = gql`
+  query GoogleCalendarEnabled {
+    googleCalendarEnabled
+  }
+`;
+
+const GOOGLE_CALENDAR_DIRECTION = gql`
+  query GoogleCalendarDirection {
+    googleCalendarDirection
+  }
+`;
+
+const UPDATE_GOOGLE_CALENDAR_DIRECTION = gql`
+  mutation UpdateGoogleCalendarDirection($direction: String!) {
+    updateGoogleCalendarDirection(direction: $direction)
+  }
+`;
+
+const DISCONNECT_GOOGLE_CALENDAR = gql`
+  mutation DisconnectGoogleCalendar {
+    disconnectGoogleCalendar
   }
 `;
 
@@ -368,6 +394,29 @@ export default function SettingsPage() {
 
   const syncAll = syncAllData?.calendarSyncAll ?? false;
   const syncDateRange = syncDateRangeData?.calendarSyncDateRange ?? false;
+
+  // Google Calendar state
+  const { data: gcalEnabledData, refetch: refetchGcalEnabled } = useQuery<{
+    googleCalendarEnabled: boolean;
+  }>(GOOGLE_CALENDAR_ENABLED);
+  const { data: gcalDirectionData } = useQuery<{ googleCalendarDirection: string }>(
+    GOOGLE_CALENDAR_DIRECTION,
+  );
+  const [updateGcalDirection] = useMutation(UPDATE_GOOGLE_CALENDAR_DIRECTION);
+  const [disconnectGcal] = useMutation(DISCONNECT_GOOGLE_CALENDAR);
+  const gcalEnabled = gcalEnabledData?.googleCalendarEnabled ?? false;
+  const gcalDirection = gcalDirectionData?.googleCalendarDirection ?? "both";
+
+  // Handle ?gcal=connected|error URL params after Google Calendar OAuth
+  useEffect(() => {
+    const gcalStatus = searchParams.get("gcal");
+    if (gcalStatus === "connected") {
+      refetchGcalEnabled();
+      router.replace("/settings", { scroll: false });
+    } else if (gcalStatus === "error") {
+      router.replace("/settings", { scroll: false });
+    }
+  }, [searchParams, router, refetchGcalEnabled]);
 
   // Platform detection
   const [platform, setPlatform] = useState<ReturnType<typeof getPlatform>>("web");
@@ -1167,6 +1216,74 @@ export default function SettingsPage() {
               disabled={syncAll}
               onCheckedChange={handleSyncDateRangeToggle}
             />
+          </div>
+
+          {/* Google Calendar */}
+          <Separator className="my-4" />
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium">{t("calendar.googleCalendarTitle")}</h3>
+                <p className="text-muted-foreground text-xs">
+                  {t("calendar.googleCalendarDescription")}
+                </p>
+              </div>
+              <span
+                className={cn(
+                  "text-xs font-medium",
+                  gcalEnabled ? "text-green-600" : "text-muted-foreground",
+                )}
+              >
+                {gcalEnabled
+                  ? t("calendar.googleCalendarConnected")
+                  : t("calendar.googleCalendarNotConnected")}
+              </span>
+            </div>
+
+            {!gcalEnabled ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  window.location.href = "/api/google-calendar/connect";
+                }}
+              >
+                {t("calendar.googleCalendarConnect")}
+              </Button>
+            ) : (
+              <>
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-sm font-medium">{t("calendar.googleCalendarDirection")}</p>
+                  <select
+                    value={gcalDirection}
+                    onChange={async (e) => {
+                      const direction = e.target.value;
+                      apolloClient.cache.writeQuery({
+                        query: GOOGLE_CALENDAR_DIRECTION,
+                        data: { googleCalendarDirection: direction },
+                      });
+                      await updateGcalDirection({ variables: { direction } });
+                    }}
+                    className="border-input bg-background ring-offset-background focus:ring-ring flex h-8 rounded-md border px-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  >
+                    <option value="both">{t("calendar.googleCalendarDirectionBoth")}</option>
+                    <option value="push">{t("calendar.googleCalendarDirectionPush")}</option>
+                    <option value="pull">{t("calendar.googleCalendarDirectionPull")}</option>
+                  </select>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-500 hover:text-red-600"
+                  onClick={async () => {
+                    await disconnectGcal();
+                    await refetchGcalEnabled();
+                  }}
+                >
+                  {t("calendar.googleCalendarDisconnect")}
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
