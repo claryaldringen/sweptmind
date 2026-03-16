@@ -205,6 +205,7 @@ export const cs: Dictionary = {
     footerRights: "Všechna práva vyhrazena.",
     footerContact: "Kontakt",
     footerPrivacy: "Ochrana soukromí",
+    footerTerms: "Podmínky služby",
     gtdMethodLink: "Co je GTD?",
   },
   pages: {

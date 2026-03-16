@@ -98,6 +98,10 @@ export default function PrivacyPage() {
               and profile picture)
             </li>
             <li>
+              <strong>Google Calendar</strong> &mdash; bidirectional calendar synchronization (we
+              create, read, update, and delete calendar events that correspond to your tasks)
+            </li>
+            <li>
               <strong>Firebase Cloud Messaging</strong> &mdash; push notification delivery
             </li>
           </ul>

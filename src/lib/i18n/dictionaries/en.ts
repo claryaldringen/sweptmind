@@ -205,6 +205,7 @@ export const en: Dictionary = {
     footerRights: "All rights reserved.",
     footerContact: "Contact",
     footerPrivacy: "Privacy",
+    footerTerms: "Terms",
     gtdMethodLink: "What is GTD?",
   },
   pages: {

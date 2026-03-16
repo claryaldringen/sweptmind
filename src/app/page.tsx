@@ -304,6 +304,9 @@ export default async function HomePage() {
             <Link href="/privacy" className="hover:text-foreground transition-colors">
               {t.landing.footerPrivacy}
             </Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">
+              {t.landing.footerTerms}
+            </Link>
             <Link
               href="mailto:info@sweptmind.com"
               className="hover:text-foreground transition-colors"

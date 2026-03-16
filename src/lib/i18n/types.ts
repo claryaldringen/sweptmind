@@ -189,6 +189,7 @@ export interface Dictionary {
     footerRights: string;
     footerContact: string;
     footerPrivacy: string;
+    footerTerms: string;
     gtdMethodLink: string;
   };
   pages: {
