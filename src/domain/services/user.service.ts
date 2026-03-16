@@ -67,4 +67,16 @@ export class UserService {
   async getGoogleCalendarSettings(userId: string) {
     return this.userRepo.getGoogleCalendarSettings(userId);
   }
+
+  async updateGoogleCalendarSyncToken(userId: string, syncToken: string | null): Promise<void> {
+    await this.userRepo.updateGoogleCalendarSyncToken(userId, syncToken);
+  }
+
+  async updateGoogleCalendarChannel(
+    userId: string,
+    channelId: string | null,
+    expiry: Date | null,
+  ): Promise<void> {
+    await this.userRepo.updateGoogleCalendarChannel(userId, channelId, expiry);
+  }
 }

@@ -57,3 +57,46 @@ builder.queryField("calendarSyncDateRange", (t) =>
     },
   }),
 );
+
+builder.queryField("googleCalendarEnabled", (t) =>
+  t.boolean({
+    authScopes: { authenticated: true },
+    resolve: async (_root, _args, ctx) => {
+      return ctx.services.user.getGoogleCalendarEnabled(ctx.userId!);
+    },
+  }),
+);
+
+builder.queryField("googleCalendarDirection", (t) =>
+  t.string({
+    authScopes: { authenticated: true },
+    resolve: async (_root, _args, ctx) => {
+      return ctx.services.user.getGoogleCalendarDirection(ctx.userId!);
+    },
+  }),
+);
+
+builder.mutationField("updateGoogleCalendarDirection", (t) =>
+  t.string({
+    authScopes: { authenticated: true },
+    args: { direction: t.arg.string({ required: true }) },
+    resolve: async (_root, args, ctx) => {
+      await ctx.services.user.updateGoogleCalendarDirection(ctx.userId!, args.direction);
+      return args.direction;
+    },
+  }),
+);
+
+builder.mutationField("disconnectGoogleCalendar", (t) =>
+  t.boolean({
+    authScopes: { authenticated: true },
+    resolve: async (_root, _args, ctx) => {
+      // Clear channel settings (channel will expire on its own since we
+      // don't persist the resourceId needed to call stopChannel)
+      await ctx.services.user.updateGoogleCalendarChannel(ctx.userId!, null, null);
+      await ctx.services.user.updateGoogleCalendarEnabled(ctx.userId!, false);
+      await ctx.services.user.updateGoogleCalendarSyncToken(ctx.userId!, null);
+      return true;
+    },
+  }),
+);
