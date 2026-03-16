@@ -11,6 +11,12 @@ export interface User {
   calendarSyncAll: boolean;
   calendarSyncDateRange: boolean;
   calendarToken: string | null;
+  googleCalendarEnabled: boolean;
+  googleCalendarDirection: string | null;
+  googleCalendarId: string | null;
+  googleCalendarSyncToken: string | null;
+  googleCalendarChannelId: string | null;
+  googleCalendarChannelExpiry: Date | null;
   llmProvider: string | null;
   llmApiKey: string | null;
   llmBaseUrl: string | null;

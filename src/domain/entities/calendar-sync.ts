@@ -4,5 +4,6 @@ export interface CalendarSync {
   taskId: string;
   icalUid: string;
   etag: string;
+  googleCalendarEventId: string | null;
   lastSyncedAt: Date;
 }

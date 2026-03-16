@@ -39,6 +39,7 @@ function makeSyncRepo(overrides: Partial<ICalendarSyncRepository> = {}): ICalend
       taskId: "task-1",
       icalUid: "uid-1",
       etag: "etag-1",
+      googleCalendarEventId: null,
       lastSyncedAt: new Date(),
     }),
     updateEtag: vi.fn().mockResolvedValue(undefined),
@@ -136,6 +137,7 @@ describe("CalendarService", () => {
         taskId: "task-1",
         icalUid: "ext-uid-1",
         etag: "old-etag",
+        googleCalendarEventId: null,
         lastSyncedAt: new Date(),
       });
       await service.upsertFromIcal("user-1", "list-1", {
@@ -163,6 +165,7 @@ describe("CalendarService", () => {
         taskId: "task-1",
         icalUid: "uid-1",
         etag: "etag-1",
+        googleCalendarEventId: null,
         lastSyncedAt: new Date(),
       };
       vi.mocked(syncRepo.findByTaskId).mockResolvedValue(syncEntry);
@@ -182,6 +185,7 @@ describe("CalendarService", () => {
         taskId: "task-1",
         icalUid: "uid-1",
         etag: "etag-1",
+        googleCalendarEventId: null,
         lastSyncedAt: new Date(),
       };
       vi.mocked(syncRepo.findByIcalUid).mockResolvedValue(syncEntry);
@@ -256,6 +260,7 @@ describe("CalendarService", () => {
         taskId: "task-1",
         icalUid: "uid-1",
         etag: "old-etag",
+        googleCalendarEventId: null,
         lastSyncedAt: new Date(),
       });
 
