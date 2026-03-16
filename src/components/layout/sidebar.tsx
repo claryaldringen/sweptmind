@@ -995,7 +995,11 @@ export function Sidebar() {
                   onBulkDelete={handleSidebarBulkDelete}
                   isNearby={
                     list.location
-                      ? checkNearby(list.location.latitude, list.location.longitude)
+                      ? checkNearby(
+                          list.location.latitude,
+                          list.location.longitude,
+                          list.location.radius,
+                        )
                       : false
                   }
                   isDeviceMatch={list.deviceContext === deviceContext}
@@ -1024,7 +1028,11 @@ export function Sidebar() {
                     sidebarHasFocus={sidebarHasFocus}
                     isNearby={
                       tag.location
-                        ? checkNearby(tag.location.latitude, tag.location.longitude)
+                        ? checkNearby(
+                            tag.location.latitude,
+                            tag.location.longitude,
+                            tag.location.radius,
+                          )
                         : false
                     }
                     isDeviceMatch={tag.deviceContext === deviceContext}
