@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { gql } from "@apollo/client";
-import { useMutation, useQuery, useApolloClient } from "@apollo/client/react";
+import { useMutation, useApolloClient } from "@apollo/client/react";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import { TaskAiSection } from "./detail/task-ai-section";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 import { computeFirstOccurrence, parseRecurrence } from "@/domain/services/recurrence";
 import { pickNextTagColor } from "@/lib/tag-colors";
+import { useIsPremium } from "@/hooks/use-is-premium";
 import { useAppData } from "@/components/providers/app-data-provider";
 
 // ---------------------------------------------------------------------------
@@ -189,17 +190,6 @@ const DELETE_LOCATION = gql`
   }
 `;
 
-const GET_ME = gql`
-  query GetMe {
-    me {
-      id
-      name
-      email
-      image
-      isPremium
-    }
-  }
-`;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -272,16 +262,6 @@ interface TaskDetail {
   } | null;
 }
 
-interface GetMeData {
-  me: {
-    id: string;
-    name: string | null;
-    email: string | null;
-    image: string | null;
-    isPremium: boolean;
-  } | null;
-}
-
 interface UpdateTaskData {
   updateTask: {
     id: string;
@@ -351,8 +331,7 @@ export function TaskDetailPanel() {
     loading,
     conflictingTaskIds,
   } = useAppData();
-  const { data: meData } = useQuery<GetMeData>(GET_ME);
-  const isPremium = meData?.me?.isPremium ?? false;
+  const { isPremium } = useIsPremium();
   const task = taskId
     ? ((allTasks.find((t) => t.id === taskId) as TaskDetail | undefined) ?? null)
     : null;

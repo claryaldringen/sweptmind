@@ -38,6 +38,7 @@ import { useLocale } from "@/hooks/use-locale";
 import { useTranslations } from "@/lib/i18n";
 import { parseCSV, mapOutlookTaskRow, type MappedTask } from "@/lib/csv-import";
 import { getPlatform, getPushAdapter } from "@sweptmind/native-bridge";
+import { useIsPremium } from "@/hooks/use-is-premium";
 
 interface ElectronAPI {
   platform: string;
@@ -162,7 +163,6 @@ const GET_ME = gql`
       name
       email
       image
-      isPremium
       llmProvider
       llmApiKey
       llmBaseUrl
@@ -214,7 +214,6 @@ interface GetMeData {
     name: string | null;
     email: string | null;
     image: string | null;
-    isPremium: boolean;
     llmProvider: string | null;
     llmApiKey: string | null;
     llmBaseUrl: string | null;
@@ -296,7 +295,7 @@ export default function SettingsPage() {
   const [generateQR, { loading: qrLoading }] =
     useMutation<GenerateBankTransferQRData>(GENERATE_BANK_TRANSFER_QR);
 
-  const isPremium = meData?.me?.isPremium ?? false;
+  const { isPremium } = useIsPremium();
   const subscription = subData?.subscription ?? null;
 
   // AI LLM config
