@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useEffect, useRef, useSyncExternalStore, type MouseEvent } from "react";
+import { memo, useMemo, useState, useEffect, useRef, useSyncExternalStore, type MouseEvent } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { gql } from "@apollo/client";
 import { useMutation, useApolloClient } from "@apollo/client/react";
@@ -58,20 +58,12 @@ import { useNearby } from "@/components/providers/nearby-provider";
 import { useDeviceContext } from "@/hooks/use-device-context";
 import { useTaskSelectionOptional } from "@/components/providers/task-selection-provider";
 import { useAppData } from "@/components/providers/app-data-provider";
+import {
+  TOGGLE_TASK_COMPLETED as TOGGLE_COMPLETED,
+  DELETE_TASK,
+  DELETE_TASKS,
+} from "@/graphql/shared/task-mutations";
 import type { Task } from "./types";
-
-const TOGGLE_COMPLETED = gql`
-  mutation ToggleTaskCompleted($id: String!) {
-    toggleTaskCompleted(id: $id) {
-      id
-      isCompleted
-      completedAt
-      dueDate
-      dueDateEnd
-      reminderAt
-    }
-  }
-`;
 
 const UPDATE_TASK = gql`
   mutation UpdateTask($id: String!, $input: UpdateTaskInput!) {
@@ -94,24 +86,12 @@ const UPDATE_TASK = gql`
   }
 `;
 
-const DELETE_TASK = gql`
-  mutation DeleteTask($id: String!) {
-    deleteTask(id: $id)
-  }
-`;
-
 const CONVERT_TASK_TO_LIST = gql`
   mutation ConvertTaskToList($taskId: String!) {
     convertTaskToList(taskId: $taskId) {
       id
       name
     }
-  }
-`;
-
-const DELETE_TASKS = gql`
-  mutation DeleteTasks($ids: [String!]!) {
-    deleteTasks(ids: $ids)
   }
 `;
 
@@ -126,6 +106,9 @@ const SET_TASKS_COMPLETED = gql`
     setTasksCompleted(ids: $ids, isCompleted: $isCompleted)
   }
 `;
+
+/** Computed once per module load – stable for the lifetime of the page. */
+const LOCAL_TODAY = format(new Date(), "yyyy-MM-dd");
 
 interface TaskItemProps {
   task: Task;
@@ -304,42 +287,87 @@ export const TaskItem = memo(function TaskItem({
     },
   );
 
-  const completedSteps = task.steps?.filter((s) => s.isCompleted).length ?? 0;
-  const totalSteps = task.steps?.length ?? 0;
-  const hasTags = (task.tags?.length ?? 0) > 0;
-  const dueDateParsed = task.dueDate ? parseISO(task.dueDate) : null;
-  const localToday = format(new Date(), "yyyy-MM-dd");
-  const isDueToday = task.dueDate?.split("T")[0] === localToday;
-  const isOverdue =
-    dueDateParsed && !task.isCompleted && !isDueToday && isPast(startOfDay(dueDateParsed));
-  const hasReminder = !!task.reminderAt;
-  const isReminderToday = task.reminderAt?.split("T")[0] === localToday;
-  const hasRecurrence = !!task.recurrence;
-  const hasLocation = !!task.location;
-  const locationNearby = task.location
-    ? checkNearby(
-        task.location.latitude,
-        task.location.longitude,
-        task.locationRadius ?? task.location.radius,
-      )
-    : false;
-  const taskList = task.list ? lists.find((l) => l.id === task.list!.id) : undefined;
-  const deviceMatch = !locationNearby && taskList?.deviceContext === deviceContext;
-  const hasAttachments = (task.attachments?.length ?? 0) > 0;
-  const isBlocked = !!task.blockedByTaskId && task.blockedByTaskIsCompleted === false;
-  const dependentCount = task.dependentTaskCount ?? 0;
-  const hasMetadata =
-    isBlocked ||
-    dependentCount > 0 ||
-    (showListName && task.list) ||
-    task.dueDate ||
-    totalSteps > 0 ||
-    hasTags ||
-    hasReminder ||
-    hasRecurrence ||
-    hasLocation ||
-    hasAttachments ||
-    deviceMatch;
+  const listsMap = useMemo(() => {
+    const m = new Map<string, (typeof lists)[number]>();
+    for (const l of lists) m.set(l.id, l);
+    return m;
+  }, [lists]);
+
+  const {
+    completedSteps,
+    totalSteps,
+    hasTags,
+    dueDateParsed,
+    isDueToday,
+    isOverdue,
+    hasReminder,
+    isReminderToday,
+    hasRecurrence,
+    hasLocation,
+    locationNearby,
+    taskList,
+    deviceMatch,
+    hasAttachments,
+    isBlocked,
+    dependentCount,
+    hasMetadata,
+  } = useMemo(() => {
+    const completedSteps = task.steps?.filter((s) => s.isCompleted).length ?? 0;
+    const totalSteps = task.steps?.length ?? 0;
+    const hasTags = (task.tags?.length ?? 0) > 0;
+    const dueDateParsed = task.dueDate ? parseISO(task.dueDate) : null;
+    const isDueToday = task.dueDate?.split("T")[0] === LOCAL_TODAY;
+    const isOverdue =
+      dueDateParsed && !task.isCompleted && !isDueToday && isPast(startOfDay(dueDateParsed));
+    const hasReminder = !!task.reminderAt;
+    const isReminderToday = task.reminderAt?.split("T")[0] === LOCAL_TODAY;
+    const hasRecurrence = !!task.recurrence;
+    const hasLocation = !!task.location;
+    const locationNearby = task.location
+      ? checkNearby(
+          task.location.latitude,
+          task.location.longitude,
+          task.locationRadius ?? task.location.radius,
+        )
+      : false;
+    const taskList = task.list ? listsMap.get(task.list.id) : undefined;
+    const deviceMatch = !locationNearby && taskList?.deviceContext === deviceContext;
+    const hasAttachments = (task.attachments?.length ?? 0) > 0;
+    const isBlocked = !!task.blockedByTaskId && task.blockedByTaskIsCompleted === false;
+    const dependentCount = task.dependentTaskCount ?? 0;
+    const hasMetadata =
+      isBlocked ||
+      dependentCount > 0 ||
+      (showListName && task.list) ||
+      task.dueDate ||
+      totalSteps > 0 ||
+      hasTags ||
+      hasReminder ||
+      hasRecurrence ||
+      hasLocation ||
+      hasAttachments ||
+      deviceMatch;
+
+    return {
+      completedSteps,
+      totalSteps,
+      hasTags,
+      dueDateParsed,
+      isDueToday,
+      isOverdue,
+      hasReminder,
+      isReminderToday,
+      hasRecurrence,
+      hasLocation,
+      locationNearby,
+      taskList,
+      deviceMatch,
+      hasAttachments,
+      isBlocked,
+      dependentCount,
+      hasMetadata,
+    };
+  }, [task, listsMap, checkNearby, deviceContext, showListName]);
 
   const allLists = lists;
 
@@ -469,6 +497,7 @@ export const TaskItem = memo(function TaskItem({
                     task.aiAnalysis.callIntent) && (
                     <button
                       type="button"
+                      aria-label={task.aiAnalysis.suggestion ?? t("premium.aiNotActionable")}
                       title={task.aiAnalysis.suggestion ?? t("premium.aiNotActionable")}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -501,7 +530,7 @@ export const TaskItem = memo(function TaskItem({
                       className={cn(
                         "flex items-center gap-0.5",
                         isOverdue
-                          ? "text-red-500"
+                          ? "text-red-600"
                           : isDueToday
                             ? "text-blue-500"
                             : "text-muted-foreground",
@@ -603,6 +632,8 @@ export const TaskItem = memo(function TaskItem({
                       <MapPin className={cn("h-3 w-3", locationNearby && "animate-pulse")} />
                       {task.location!.name}
                       <button
+                        type="button"
+                        aria-label={t("tasks.removeLocation")}
                         onClick={(e) => {
                           e.stopPropagation();
                           updateTask({ variables: { id: task.id, input: { locationId: null } } });
@@ -682,13 +713,13 @@ export const TaskItem = memo(function TaskItem({
                     </span>
                   )}
                   {isConflicting && (
-                    <span className="flex items-center gap-0.5 text-red-500">
+                    <span className="flex items-center gap-0.5 text-red-600">
                       <AlertTriangle className="h-3 w-3" />
                     </span>
                   )}
                   {task.isGoogleCalendarEvent && (
                     <span
-                      className="flex items-center gap-0.5 text-blue-400"
+                      className="flex items-center gap-0.5 text-blue-600"
                       title="Google Calendar"
                     >
                       <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
@@ -709,16 +740,20 @@ export const TaskItem = memo(function TaskItem({
                 </div>
               )}
             </div>
-            <Trash2
+            <button
+              type="button"
+              aria-label={t("common.deleteConfirmAction")}
               className={cn(
-                "text-muted-foreground h-4 w-4 shrink-0 cursor-pointer transition-opacity",
+                "shrink-0 cursor-pointer transition-opacity",
                 isDesktop ? "opacity-0 group-hover:opacity-100" : "opacity-60",
               )}
               onClick={(e) => {
                 e.stopPropagation();
                 setDeleteOpen(true);
               }}
-            />
+            >
+              <Trash2 className="text-muted-foreground h-4 w-4" />
+            </button>
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent>
