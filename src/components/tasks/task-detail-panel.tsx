@@ -362,6 +362,8 @@ export function TaskDetailPanel() {
     isConflicting && task?.dueDate
       ? allTasks.filter((t) => {
           if (t.id === taskId || !t.dueDate || t.isCompleted) return false;
+          // Conflict only when both have a location and they differ
+          if (!task.locationId || !t.locationId || task.locationId === t.locationId) return false;
           const interval = (d: string, dEnd: string | null) => {
             if (d.includes("T")) {
               const s = new Date(d).getTime();

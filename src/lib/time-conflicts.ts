@@ -1,5 +1,7 @@
 /**
  * Detect time conflicts between tasks with overlapping time ranges.
+ * A conflict only occurs when both tasks have a location and those locations differ
+ * (i.e. the user would need to be in two places at once).
  * Considers:
  * - Time-based tasks (dueDate containing "T") — compared by exact time range
  * - Date-range tasks (dueDate + dueDateEnd, both date-only) — compared by day overlap
@@ -14,6 +16,7 @@ export function detectTimeConflicts(
     dueDate: string | null;
     dueDateEnd: string | null;
     isCompleted: boolean;
+    locationId: string | null;
   }>,
 ): Set<string> {
   const conflicting = new Set<string>();
@@ -49,7 +52,7 @@ export function detectTimeConflicts(
       }
     }
 
-    return { start, end, id: t.id };
+    return { start, end, id: t.id, locationId: t.locationId };
   });
 
   // Sort by start time for efficient sweep
@@ -60,9 +63,12 @@ export function detectTimeConflicts(
     for (let j = i + 1; j < intervals.length; j++) {
       // Since sorted by start, if j.start >= i.end, no more overlaps for i
       if (intervals[j].start >= intervals[i].end) break;
-      // Overlap detected
-      conflicting.add(intervals[i].id);
-      conflicting.add(intervals[j].id);
+      // Conflict only when both have a location and they differ
+      const a = intervals[i];
+      const b = intervals[j];
+      if (!a.locationId || !b.locationId || a.locationId === b.locationId) continue;
+      conflicting.add(a.id);
+      conflicting.add(b.id);
     }
   }
 
