@@ -3,21 +3,36 @@ import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import type { User, CreateUserInput } from "@/domain/entities/user";
 import type { IUserRepository } from "@/domain/repositories/user.repository";
-import { hashToken } from "@/lib/crypto";
+import { hashToken, encrypt, decrypt } from "@/lib/crypto";
 
 export class DrizzleUserRepository implements IUserRepository {
   constructor(private readonly db: Database) {}
 
+  /** Decrypts the llmApiKey field on a user row returned from DB. */
+  private decryptUserApiKey<T extends { llmApiKey?: string | null }>(
+    user: T | undefined,
+  ): T | undefined {
+    if (!user || !user.llmApiKey) return user;
+    try {
+      return { ...user, llmApiKey: decrypt(user.llmApiKey) };
+    } catch {
+      // If decryption fails (e.g. legacy plaintext value), return as-is
+      return user;
+    }
+  }
+
   async findById(id: string): Promise<User | undefined> {
-    return this.db.query.users.findFirst({
+    const user = await this.db.query.users.findFirst({
       where: eq(schema.users.id, id),
     });
+    return this.decryptUserApiKey(user);
   }
 
   async findByEmail(email: string): Promise<User | undefined> {
-    return this.db.query.users.findFirst({
+    const user = await this.db.query.users.findFirst({
       where: eq(schema.users.email, email),
     });
+    return this.decryptUserApiKey(user);
   }
 
   async create(input: CreateUserInput): Promise<User> {
@@ -26,9 +41,10 @@ export class DrizzleUserRepository implements IUserRepository {
   }
 
   async findByCalendarToken(token: string): Promise<User | undefined> {
-    return this.db.query.users.findFirst({
+    const user = await this.db.query.users.findFirst({
       where: eq(schema.users.calendarToken, token),
     });
+    return this.decryptUserApiKey(user);
   }
 
   async getCalendarToken(userId: string): Promise<string> {
@@ -144,7 +160,11 @@ export class DrizzleUserRepository implements IUserRepository {
       llmModel: string | null;
     },
   ): Promise<void> {
-    await this.db.update(schema.users).set(config).where(eq(schema.users.id, userId));
+    const encryptedConfig = {
+      ...config,
+      llmApiKey: config.llmApiKey ? encrypt(config.llmApiKey) : null,
+    };
+    await this.db.update(schema.users).set(encryptedConfig).where(eq(schema.users.id, userId));
   }
 
   async updateCalendarTargetListId(userId: string, listId: string | null): Promise<void> {
