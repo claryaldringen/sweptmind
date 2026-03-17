@@ -24,6 +24,7 @@ function makeList(overrides: Partial<List> = {}): List {
 
 function makeRepo(overrides: Partial<IListRepository> = {}): IListRepository {
   return {
+    findDefault: vi.fn().mockResolvedValue(undefined),
     findById: vi.fn(),
     findByIds: vi.fn().mockResolvedValue([]),
     findByUser: vi.fn().mockResolvedValue([]),

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db } from "@/server/db";
-import * as schema from "@/server/db/schema";
-import { eq, and } from "drizzle-orm";
+import { services } from "@/infrastructure/container";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -11,14 +9,7 @@ export async function POST(request: NextRequest) {
   const { endpoint } = await request.json();
   if (!endpoint) return NextResponse.json({ error: "Missing endpoint" }, { status: 400 });
 
-  await db
-    .delete(schema.pushSubscriptions)
-    .where(
-      and(
-        eq(schema.pushSubscriptions.userId, session.user.id),
-        eq(schema.pushSubscriptions.endpoint, endpoint),
-      ),
-    );
+  await services.pushSubscription.unsubscribe(session.user.id, endpoint);
 
   return NextResponse.json({ ok: true });
 }

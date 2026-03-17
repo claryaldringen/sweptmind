@@ -1,22 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db } from "@/server/db";
-import * as schema from "@/server/db/schema";
-import { eq, and } from "drizzle-orm";
-
-const VALID_PLATFORMS = ["web", "ios", "android"] as const;
-type PushPlatform = (typeof VALID_PLATFORMS)[number];
-
-function isValidPlatform(p: unknown): p is PushPlatform {
-  return typeof p === "string" && VALID_PLATFORMS.includes(p as PushPlatform);
-}
+import { services } from "@/infrastructure/container";
+import { PushSubscriptionService } from "@/domain/services/push-subscription.service";
+import type { PushPlatform } from "@/domain/entities/push-subscription";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const platform: PushPlatform = isValidPlatform(body?.platform) ? body.platform : "web";
+  const platform: PushPlatform = PushSubscriptionService.isValidPlatform(body?.platform)
+    ? body.platform
+    : "web";
 
   const endpoint = typeof body?.endpoint === "string" ? body.endpoint.slice(0, 2048) : null;
   if (!endpoint) {
@@ -37,20 +32,10 @@ export async function POST(request: NextRequest) {
     authKey = "_";
   }
 
-  await db
-    .delete(schema.pushSubscriptions)
-    .where(
-      and(
-        eq(schema.pushSubscriptions.userId, session.user.id),
-        eq(schema.pushSubscriptions.endpoint, endpoint),
-      ),
-    );
-
   const notifyDueDate = body?.notifyDueDate !== false;
   const notifyReminder = body?.notifyReminder !== false;
 
-  await db.insert(schema.pushSubscriptions).values({
-    userId: session.user.id,
+  await services.pushSubscription.subscribe(session.user.id, {
     endpoint,
     p256dh,
     auth: authKey,

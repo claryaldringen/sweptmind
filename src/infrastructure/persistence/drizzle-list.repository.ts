@@ -7,6 +7,12 @@ import type { IListRepository } from "@/domain/repositories/list.repository";
 export class DrizzleListRepository implements IListRepository {
   constructor(private readonly db: Database) {}
 
+  async findDefault(userId: string): Promise<List | undefined> {
+    return this.db.query.lists.findFirst({
+      where: and(eq(schema.lists.userId, userId), eq(schema.lists.isDefault, true)),
+    });
+  }
+
   async findById(id: string, userId: string): Promise<List | undefined> {
     return this.db.query.lists.findFirst({
       where: and(eq(schema.lists.id, id), eq(schema.lists.userId, userId)),

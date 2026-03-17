@@ -11,6 +11,7 @@ import { DrizzleCalendarSyncRepository } from "./persistence/drizzle-calendar-sy
 import { DrizzleSubscriptionRepository } from "./persistence/drizzle-subscription.repository";
 import { DrizzleAttachmentRepository } from "./persistence/drizzle-attachment.repository";
 import { DrizzleTaskAiAnalysisRepository } from "./persistence/drizzle-task-ai-analysis.repository";
+import { DrizzlePushSubscriptionRepository } from "./persistence/drizzle-push-subscription.repository";
 import { OllamaProvider } from "./llm/ollama-provider";
 import { OpenAiCompatibleProvider } from "./llm/openai-compatible-provider";
 import type { ILlmProvider } from "@/domain/ports/llm-provider";
@@ -28,6 +29,7 @@ import { SubscriptionService } from "@/domain/services/subscription.service";
 import { AttachmentService } from "@/domain/services/attachment.service";
 import { AiService } from "@/domain/services/ai.service";
 import { GoogleCalendarService } from "@/domain/services/google-calendar.service";
+import { PushSubscriptionService } from "@/domain/services/push-subscription.service";
 import { LlmProviderFactory } from "./llm/provider-factory";
 import * as googleCalendarClient from "./google-calendar/google-calendar-client";
 
@@ -42,6 +44,7 @@ const calendarSyncRepo = new DrizzleCalendarSyncRepository(db);
 const subscriptionRepo = new DrizzleSubscriptionRepository(db);
 const attachmentRepo = new DrizzleAttachmentRepository(db);
 const aiAnalysisRepo = new DrizzleTaskAiAnalysisRepository(db);
+const pushSubRepo = new DrizzlePushSubscriptionRepository(db);
 function createLlmProvider(): ILlmProvider {
   const provider = process.env.LLM_PROVIDER || "ollama";
   if (provider === "openai") {
@@ -78,6 +81,7 @@ export const repos = {
   subscription: subscriptionRepo,
   attachment: attachmentRepo,
   aiAnalysis: aiAnalysisRepo,
+  pushSubscription: pushSubRepo,
   user: userRepo,
 };
 
@@ -108,6 +112,7 @@ export const services = {
     userRepo,
     llmFactory,
   ),
+  pushSubscription: new PushSubscriptionService(pushSubRepo),
 };
 
 export type Services = typeof services;

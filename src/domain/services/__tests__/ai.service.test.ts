@@ -96,6 +96,7 @@ function makeTaskRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository
 
 function makeListRepo(): IListRepository {
   return {
+    findDefault: vi.fn().mockResolvedValue(undefined),
     findById: vi.fn().mockResolvedValue(undefined),
     findByIds: vi.fn().mockResolvedValue([]),
     findByUser: vi.fn().mockResolvedValue([

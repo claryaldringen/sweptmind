@@ -1,6 +1,7 @@
 import type { List } from "../entities/list";
 
 export interface IListRepository {
+  findDefault(userId: string): Promise<List | undefined>;
   findById(id: string, userId: string): Promise<List | undefined>;
   findByIds(ids: string[], userId: string): Promise<List[]>;
   findByUser(userId: string): Promise<List[]>;

@@ -5,6 +5,10 @@ import type { IListRepository } from "../repositories/list.repository";
 export class ListService {
   constructor(private readonly listRepo: IListRepository) {}
 
+  async getDefault(userId: string): Promise<List | undefined> {
+    return this.listRepo.findDefault(userId);
+  }
+
   async getById(id: string, userId: string): Promise<List | undefined> {
     return this.listRepo.findById(id, userId);
   }
