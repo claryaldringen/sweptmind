@@ -35,20 +35,20 @@ export function NearbyProvider({ children }: { children: ReactNode }) {
 
   const isNearby = useCallback(
     (lat: number, lon: number, radiusKm?: number) => {
-      if (!position || isApproximate) return false;
+      if (!position) return false;
       return checkNearby(position.latitude, position.longitude, lat, lon, radiusKm);
     },
-    [position, isApproximate],
+    [position],
   );
 
   const nearbyLocationIds = useMemo(() => {
-    if (!position || !locations || isApproximate) return [];
+    if (!position || !locations) return [];
     return locations
       .filter((loc) =>
         checkNearby(position.latitude, position.longitude, loc.latitude, loc.longitude, loc.radius),
       )
       .map((loc) => loc.id);
-  }, [position, locations, isApproximate]);
+  }, [position, locations]);
 
   // Start native background tracking on Capacitor
   useEffect(() => {
