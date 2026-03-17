@@ -690,23 +690,24 @@ export function Sidebar() {
     }).length;
   }, [allTasks, allLists, allTags, deviceContext, nearbyLocationIds]);
 
-  // Compute nearby count from allTasks
+  // Compute nearby count from allTasks (visible only)
   const nearbyCount = useMemo(() => {
     if (!isTracking) return 0;
     return allTasks.filter(
       (task) =>
         !task.isCompleted &&
+        !isFutureTask(task) &&
         task.location &&
         checkNearby(task.location.latitude, task.location.longitude, task.location.radius),
     ).length;
   }, [allTasks, isTracking, checkNearby]);
 
-  // Compute which lists contain tasks bound to a nearby location
+  // Compute which lists contain visible tasks bound to a nearby location
   const listsWithNearbyTasks = useMemo(() => {
     const ids = new Set<string>();
     if (nearbyLocationIds.length === 0) return ids;
     for (const task of allTasks) {
-      if (!task.isCompleted && task.locationId && nearbyLocationIds.includes(task.locationId)) {
+      if (!task.isCompleted && !isFutureTask(task) && task.locationId && nearbyLocationIds.includes(task.locationId)) {
         ids.add(task.listId);
       }
     }
