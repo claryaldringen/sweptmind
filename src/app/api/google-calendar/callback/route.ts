@@ -3,14 +3,22 @@ import { db } from "@/server/db";
 import * as schema from "@/server/db/schema/auth";
 import { eq, and } from "drizzle-orm";
 import { services } from "@/infrastructure/container";
+import { auth } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code");
-  const userId = req.nextUrl.searchParams.get("state");
+  const state = req.nextUrl.searchParams.get("state");
 
-  if (!code || !userId) {
+  if (!code || !state) {
     return NextResponse.redirect(new URL("/settings?gcal=error", req.url));
   }
+
+  const session = await auth();
+  if (!session?.user?.id || session.user.id !== state) {
+    return NextResponse.redirect(new URL("/settings?gcal=error", req.url));
+  }
+
+  const userId = session.user.id;
 
   try {
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
