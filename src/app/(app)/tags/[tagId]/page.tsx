@@ -27,6 +27,7 @@ import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 import { useGeocode } from "@/hooks/use-geocode";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { useAppData } from "@/components/providers/app-data-provider";
+import { DELETE_LOCATION } from "@/graphql/shared/location-mutations";
 
 const UPDATE_TAG = gql`
   mutation UpdateTag($id: String!, $input: UpdateTagInput!) {
@@ -57,12 +58,6 @@ const CREATE_LOCATION = gql`
       longitude
       address
     }
-  }
-`;
-
-const DELETE_LOCATION = gql`
-  mutation DeleteLocation($id: String!) {
-    deleteLocation(id: $id)
   }
 `;
 

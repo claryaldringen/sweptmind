@@ -56,6 +56,10 @@ import { useNearby } from "@/components/providers/nearby-provider";
 import { cn } from "@/lib/utils";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 import { RADIUS_OPTIONS } from "@/lib/constants";
+import {
+  DELETE_LOCATION,
+  CREATE_LOCATION,
+} from "@/graphql/shared/location-mutations";
 
 // Queries removed — data comes from useAppData()
 
@@ -76,25 +80,6 @@ const UPDATE_LIST = gql`
         radius
       }
     }
-  }
-`;
-
-const CREATE_LOCATION = gql`
-  mutation CreateLocation($input: CreateLocationInput!) {
-    createLocation(input: $input) {
-      id
-      name
-      latitude
-      longitude
-      radius
-      address
-    }
-  }
-`;
-
-const DELETE_LOCATION = gql`
-  mutation DeleteLocation($id: String!) {
-    deleteLocation(id: $id)
   }
 `;
 

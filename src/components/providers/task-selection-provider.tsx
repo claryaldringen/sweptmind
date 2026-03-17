@@ -2,16 +2,10 @@
 
 import { createContext, useContext, useEffect, useCallback, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
 import { useSelectionBehavior, type SelectionBehavior } from "@/hooks/use-selection-behavior";
 import { getFocusArea, setFocusArea, registerTasksFocusCallback } from "@/lib/focus-area";
-
-const DELETE_TASKS = gql`
-  mutation DeleteTasks($ids: [String!]!) {
-    deleteTasks(ids: $ids)
-  }
-`;
+import { DELETE_TASKS } from "@/graphql/shared/task-mutations";
 
 const TaskSelectionContext = createContext<SelectionBehavior | null>(null);
 

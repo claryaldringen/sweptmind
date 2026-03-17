@@ -28,6 +28,14 @@ import { computeFirstOccurrence, parseRecurrence } from "@/domain/services/recur
 import { pickNextTagColor } from "@/lib/tag-colors";
 import { useIsPremium } from "@/hooks/use-is-premium";
 import { useAppData } from "@/components/providers/app-data-provider";
+import {
+  TOGGLE_TASK_COMPLETED as TOGGLE_COMPLETED,
+  DELETE_TASK,
+} from "@/graphql/shared/task-mutations";
+import {
+  DELETE_LOCATION,
+  CREATE_LOCATION,
+} from "@/graphql/shared/location-mutations";
 
 // ---------------------------------------------------------------------------
 // GraphQL operations
@@ -60,25 +68,6 @@ const UPDATE_TASK = gql`
         title
       }
     }
-  }
-`;
-
-const TOGGLE_COMPLETED = gql`
-  mutation ToggleTaskCompleted($id: String!) {
-    toggleTaskCompleted(id: $id) {
-      id
-      isCompleted
-      completedAt
-      dueDate
-      dueDateEnd
-      reminderAt
-    }
-  }
-`;
-
-const DELETE_TASK = gql`
-  mutation DeleteTask($id: String!) {
-    deleteTask(id: $id)
   }
 `;
 
@@ -168,25 +157,6 @@ const ADD_TAG_TO_TASK = gql`
 const REMOVE_TAG_FROM_TASK = gql`
   mutation RemoveTagFromTask($taskId: String!, $tagId: String!) {
     removeTagFromTask(taskId: $taskId, tagId: $tagId)
-  }
-`;
-
-const CREATE_LOCATION = gql`
-  mutation CreateLocation($input: CreateLocationInput!) {
-    createLocation(input: $input) {
-      id
-      name
-      latitude
-      longitude
-      radius
-      address
-    }
-  }
-`;
-
-const DELETE_LOCATION = gql`
-  mutation DeleteLocation($id: String!) {
-    deleteLocation(id: $id)
   }
 `;
 
