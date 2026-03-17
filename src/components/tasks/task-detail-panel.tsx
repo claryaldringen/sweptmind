@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { format, parseISO, addHours, addDays } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { cs } from "date-fns/locale/cs";
 import { enUS } from "date-fns/locale/en-US";
 import { useTranslations } from "@/lib/i18n";
@@ -24,10 +24,12 @@ import { TaskDependency } from "./detail/task-dependency";
 import { TaskAttachments } from "./detail/task-attachments";
 import { TaskAiSection } from "./detail/task-ai-section";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
-import { computeFirstOccurrence, parseRecurrence } from "@/domain/services/recurrence";
+import { computeFirstOccurrence, parseRecurrence, formatRecurrenceLabel } from "@/domain/services/recurrence";
 import { pickNextTagColor } from "@/lib/tag-colors";
 import { useIsPremium } from "@/hooks/use-is-premium";
 import { useAppData } from "@/components/providers/app-data-provider";
+import { useTaskDates } from "@/hooks/use-task-dates";
+import { useApplyDecomposition } from "@/hooks/use-apply-decomposition";
 import {
   TOGGLE_TASK_COMPLETED as TOGGLE_COMPLETED,
   DELETE_TASK,
@@ -68,35 +70,6 @@ const UPDATE_TASK = gql`
         title
       }
     }
-  }
-`;
-
-const CREATE_TASK = gql`
-  mutation CreateTask($input: CreateTaskInput!) {
-    createTask(input: $input) {
-      id
-      listId
-      title
-      notes
-      isCompleted
-      dueDate
-      dueDateEnd
-      sortOrder
-      createdAt
-      steps {
-        id
-        taskId
-        title
-        isCompleted
-        sortOrder
-      }
-    }
-  }
-`;
-
-const MARK_TASKS_ACTIONABLE = gql`
-  mutation MarkTasksActionable($taskIds: [String!]!) {
-    markTasksActionable(taskIds: $taskIds)
   }
 `;
 
@@ -562,26 +535,41 @@ export function TaskDetailPanel() {
     },
   });
 
-  const [createTask] = useMutation<{
-    createTask: {
-      id: string;
-      listId: string;
-      title: string;
-      notes: string | null;
-      isCompleted: boolean;
-      dueDate: string | null;
-      dueDateEnd: string | null;
-      sortOrder: number;
-      createdAt: string;
-      steps: TaskStep[];
-    };
-  }>(CREATE_TASK);
-  const [markTasksActionable] = useMutation(MARK_TASKS_ACTIONABLE);
-
   // ---- Hooks ----
 
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const apolloClient = useApolloClient();
+
+  function optimisticUpdate(input: Record<string, unknown>) {
+    if (!task) return;
+    // Write to cache immediately (instant UI) then fire mutation (network)
+    apolloClient.cache.modify({
+      id: apolloClient.cache.identify({ __typename: "Task", id: task.id }),
+      fields: Object.fromEntries(Object.entries(input).map(([key, value]) => [key, () => value])),
+    });
+    updateTask({ variables: { id: task.id, input } });
+  }
+
+  const {
+    handleDateSelect,
+    handleTimeChange,
+    handleReminderSelect,
+    handleEndDateSelect,
+    handleEndTimeChange,
+    handleClearEndDate,
+    handleQuickEndDate,
+  } = useTaskDates({
+    dueDate: task?.dueDate ?? null,
+    dueDateEnd: task?.dueDateEnd ?? null,
+    optimisticUpdate,
+  });
+
+  const { handleApplyDecomposition } = useApplyDecomposition({
+    task,
+    allTags: allTagsFromProvider,
+    allLists,
+    optimisticUpdate,
+  });
 
   // ---- Early returns ----
 
@@ -611,83 +599,9 @@ export function TaskDetailPanel() {
     router.push(`?${params.toString()}`, { scroll: false });
   }
 
-  function optimisticUpdate(input: Record<string, unknown>) {
-    if (!task) return;
-    // Write to cache immediately (instant UI) then fire mutation (network)
-    apolloClient.cache.modify({
-      id: apolloClient.cache.identify({ __typename: "Task", id: task.id }),
-      fields: Object.fromEntries(Object.entries(input).map(([key, value]) => [key, () => value])),
-    });
-    updateTask({ variables: { id: task.id, input } });
-  }
-
   function handleNotesBlur(e: React.FocusEvent<HTMLTextAreaElement>) {
     if (task && e.target.value !== (task.notes ?? "")) {
       optimisticUpdate({ notes: e.target.value || null });
-    }
-  }
-
-  function handleDateSelect(date: Date | undefined) {
-    if (!task) return;
-    if (!date) {
-      optimisticUpdate({ dueDate: null });
-      return;
-    }
-    const existingTime = task.dueDate?.includes("T") ? task.dueDate.split("T")[1] : null;
-    const dateStr = format(date, "yyyy-MM-dd");
-    const dueDate = existingTime ? `${dateStr}T${existingTime}` : dateStr;
-    optimisticUpdate({ dueDate });
-  }
-
-  function handleTimeChange(time: string) {
-    if (!task || !task.dueDate) return;
-    const dateStr = task.dueDate.split("T")[0];
-    const dueDate = time ? `${dateStr}T${time}` : dateStr;
-    optimisticUpdate({ dueDate });
-  }
-
-  function handleReminderSelect(date: Date | undefined) {
-    if (!task) return;
-    if (!date) {
-      optimisticUpdate({ reminderAt: null });
-      return;
-    }
-    const reminderAt = format(date, "yyyy-MM-dd");
-    optimisticUpdate({ reminderAt });
-  }
-
-  function handleEndDateSelect(date: Date | undefined) {
-    if (!date) return;
-    optimisticUpdate({ dueDateEnd: format(date, "yyyy-MM-dd") });
-  }
-
-  function handleEndTimeChange(time: string) {
-    if (!task || !task.dueDateEnd) return;
-    const dateStr = task.dueDateEnd.split("T")[0];
-    optimisticUpdate({ dueDateEnd: time ? `${dateStr}T${time}` : dateStr });
-  }
-
-  function handleClearEndDate() {
-    optimisticUpdate({ dueDateEnd: null });
-  }
-
-  function handleQuickEndDate(type: "1h" | "sunday") {
-    if (!task || !task.dueDate) return;
-    if (type === "1h") {
-      const hasTime = task.dueDate.includes("T");
-      if (hasTime) {
-        const start = parseISO(task.dueDate);
-        const end = addHours(start, 1);
-        optimisticUpdate({ dueDateEnd: format(end, "yyyy-MM-dd'T'HH:mm") });
-      } else {
-        optimisticUpdate({ dueDateEnd: task.dueDate + "T01:00" });
-      }
-    } else if (type === "sunday") {
-      const start = parseISO(task.dueDate.split("T")[0]);
-      const dayOfWeek = start.getDay();
-      const daysToSunday = dayOfWeek === 0 ? 7 : 7 - dayOfWeek;
-      const sunday = addDays(start, daysToSunday);
-      optimisticUpdate({ dueDateEnd: format(sunday, "yyyy-MM-dd") });
     }
   }
 
@@ -769,264 +683,6 @@ export function TaskDetailPanel() {
     optimisticUpdate({ blockedByTaskId });
   }
 
-  // AI decomposition handler
-
-  async function handleApplyDecomposition(decomposition: {
-    projectName: string;
-    steps: { title: string; listName: string | null; dependsOn: number | null }[];
-  }) {
-    if (!task || decomposition.steps.length === 0) return;
-    const { projectName, steps } = decomposition;
-
-    // Step 1: Create project tag
-    let projectTag: TaskTag | null = null;
-    if (projectName) {
-      const existingTag = allTagsFromProvider.find(
-        (t) => t.name.toLowerCase() === projectName.toLowerCase(),
-      );
-      if (existingTag) {
-        projectTag = existingTag;
-      } else {
-        const existingColors = allTagsFromProvider.map((t) => t.color);
-        const color = pickNextTagColor(existingColors);
-        const tagResult = await createTag({ variables: { input: { name: projectName, color } } });
-        if (tagResult.data?.createTag) {
-          projectTag = tagResult.data.createTag;
-        }
-      }
-    }
-
-    // Step 2: Rename current task to first step
-    optimisticUpdate({ title: steps[0].title });
-    if (steps[0].listName) {
-      const targetList = allLists.find((l) => l.name === steps[0].listName);
-      if (targetList) optimisticUpdate({ listId: targetList.id });
-    }
-    // Add project tag to original task
-    if (projectTag) {
-      await addTagToTask({ variables: { taskId: task.id, tagId: projectTag.id } });
-      apolloClient.cache.modify({
-        id: apolloClient.cache.identify({ __typename: "Task", id: task.id }),
-        fields: {
-          tags(existing = []) {
-            const newRef = apolloClient.cache.writeFragment({
-              data: projectTag,
-              fragment: gql`
-                fragment ProjTag on Tag {
-                  id
-                  name
-                  color
-                }
-              `,
-            });
-            return [...existing, newRef];
-          },
-        },
-      });
-    }
-
-    // Step 3: Create remaining steps as new tasks
-    // Map step index → created task ID (index 0 = original task)
-    const taskIdByIndex: string[] = [task.id];
-
-    for (let i = 1; i < steps.length; i++) {
-      const step = steps[i];
-      const targetList = step.listName ? allLists.find((l) => l.name === step.listName) : null;
-      const newId = crypto.randomUUID();
-      const result = await createTask({
-        variables: {
-          input: {
-            id: newId,
-            listId: targetList?.id ?? task.listId,
-            title: step.title,
-          },
-        },
-        update(cache, { data }) {
-          if (!data?.createTask) return;
-          cache.modify({
-            fields: {
-              visibleTasks(existing = []) {
-                const newRef = cache.writeFragment({
-                  data: {
-                    ...data.createTask,
-                    __typename: "Task",
-                    reminderAt: null,
-                    recurrence: null,
-                    locationId: null,
-                    locationRadius: null,
-                    location: null,
-                    deviceContext: null,
-                    completedAt: null,
-                    tags: [],
-                    attachments: [],
-                    aiAnalysis: null,
-                    blockedByTaskId: null,
-                    blockedByTaskIsCompleted: null,
-                    dependentTaskCount: 0,
-                    list: targetList
-                      ? { __typename: "List", id: targetList.id, name: targetList.name }
-                      : task!.list,
-                  },
-                  fragment: gql`
-                    fragment NewDecomposedTask on Task {
-                      id
-                      listId
-                      title
-                      notes
-                      isCompleted
-                      dueDate
-                      dueDateEnd
-                      reminderAt
-                      recurrence
-                      sortOrder
-                      createdAt
-                      completedAt
-                      locationId
-                      locationRadius
-                      location {
-                        id
-                        name
-                        latitude
-                        longitude
-                        radius
-                      }
-                      deviceContext
-                      tags {
-                        id
-                        name
-                        color
-                      }
-                      steps {
-                        id
-                        taskId
-                        title
-                        isCompleted
-                        sortOrder
-                      }
-                      attachments {
-                        id
-                      }
-                      aiAnalysis {
-                        isActionable
-                        suggestion
-                        suggestedTitle
-                        projectName
-                        decomposition {
-                          title
-                          listName
-                          dependsOn
-                        }
-                        duplicateTaskId
-                        callIntent {
-                          name
-                          reason
-                        }
-                        analyzedTitle
-                      }
-                      blockedByTaskId
-                      blockedByTaskIsCompleted
-                      dependentTaskCount
-                      list {
-                        id
-                        name
-                      }
-                    }
-                  `,
-                });
-                return [...existing, newRef];
-              },
-            },
-          });
-        },
-      });
-
-      const createdId = result.data?.createTask?.id ?? newId;
-      taskIdByIndex.push(createdId);
-
-      // Add project tag
-      if (projectTag) {
-        await addTagToTask({
-          variables: { taskId: createdId, tagId: projectTag.id },
-          update(cache) {
-            cache.modify({
-              id: cache.identify({ __typename: "Task", id: createdId }),
-              fields: {
-                tags(existing = []) {
-                  const newRef = cache.writeFragment({
-                    data: projectTag,
-                    fragment: gql`
-                      fragment ProjTag2 on Tag {
-                        id
-                        name
-                        color
-                      }
-                    `,
-                  });
-                  return [...existing, newRef];
-                },
-              },
-            });
-          },
-        });
-      }
-
-      // Set dependency based on AI suggestion
-      if (step.dependsOn !== null && step.dependsOn >= 0 && step.dependsOn < taskIdByIndex.length) {
-        const blockedById = taskIdByIndex[step.dependsOn];
-        await updateTask({
-          variables: { id: createdId, input: { blockedByTaskId: blockedById } },
-        });
-        apolloClient.cache.modify({
-          id: apolloClient.cache.identify({ __typename: "Task", id: createdId }),
-          fields: {
-            blockedByTaskId: () => blockedById,
-            blockedByTaskIsCompleted: () => false,
-          },
-        });
-        apolloClient.cache.modify({
-          id: apolloClient.cache.identify({ __typename: "Task", id: blockedById }),
-          fields: {
-            dependentTaskCount(existing = 0) {
-              return existing + 1;
-            },
-          },
-        });
-      }
-    }
-
-    // Step 4: Mark all tasks (original + created) as actionable — prevents re-analysis
-    const allTaskIds = taskIdByIndex;
-    // Write to Apollo cache immediately (prevents lightbulb flicker)
-    for (const id of allTaskIds) {
-      const taskInCache = apolloClient.cache.identify({ __typename: "Task", id });
-      if (taskInCache) {
-        apolloClient.cache.modify({
-          id: taskInCache,
-          fields: {
-            aiAnalysis() {
-              return {
-                __typename: "TaskAiAnalysis",
-                isActionable: true,
-                suggestion: null,
-                suggestedTitle: null,
-                projectName: null,
-                decomposition: null,
-                analyzedTitle: "",
-              };
-            },
-          },
-        });
-      }
-    }
-    // Persist to DB (fire and forget)
-    markTasksActionable({ variables: { taskIds: allTaskIds } });
-
-    // Step 5: Remove ai param from URL
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("ai");
-    router.replace(`?${params.toString()}`, { scroll: false });
-  }
-
   function handleDismissAi() {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("ai");
@@ -1035,44 +691,17 @@ export function TaskDetailPanel() {
 
   // Recurrence handlers
 
-  function formatRecurrence(recurrence: string | null): string | null {
-    if (!recurrence) return null;
-    const parsed = parseRecurrence(recurrence);
-    if (!parsed) return null;
-
-    const dayNames = tArray("recurrence.daysShort");
-
-    switch (parsed.type) {
-      case "DAILY":
-        return parsed.interval === 1
-          ? t("recurrence.everyDay")
-          : t("recurrence.everyNDays", { n: parsed.interval });
-
-      case "WEEKLY": {
-        const daysLabel =
-          parsed.days.length === 7
-            ? t("recurrence.everyDay")
-            : parsed.days.map((d) => dayNames[d]).join(", ");
-        if (parsed.interval === 1) return daysLabel;
-        return `${t("recurrence.everyNWeeks", { n: parsed.interval })}: ${daysLabel}`;
-      }
-
-      case "MONTHLY":
-        return parsed.interval === 1
-          ? t("recurrence.everyMonth")
-          : t("recurrence.everyNMonths", { n: parsed.interval });
-
-      case "MONTHLY_LAST":
-        return parsed.interval === 1
-          ? t("recurrence.everyLastDay")
-          : `${t("recurrence.everyNMonths", { n: parsed.interval })}, ${t("recurrence.everyLastDay").toLowerCase()}`;
-
-      case "YEARLY":
-        return parsed.interval === 1
-          ? t("recurrence.everyYear")
-          : t("recurrence.everyNYears", { n: parsed.interval });
-    }
-  }
+  const recurrenceLabels = {
+    everyDay: t("recurrence.everyDay"),
+    everyNDays: (n: number) => t("recurrence.everyNDays", { n }),
+    everyNWeeks: (n: number) => t("recurrence.everyNWeeks", { n }),
+    everyMonth: t("recurrence.everyMonth"),
+    everyNMonths: (n: number) => t("recurrence.everyNMonths", { n }),
+    everyLastDay: t("recurrence.everyLastDay"),
+    everyYear: t("recurrence.everyYear"),
+    everyNYears: (n: number) => t("recurrence.everyNYears", { n }),
+    daysShort: tArray("recurrence.daysShort"),
+  };
 
   function handleSetRecurrence(value: string | null) {
     if (!task) return;
@@ -1260,7 +889,7 @@ export function TaskDetailPanel() {
             recurrence={task.recurrence}
             onSetRecurrence={handleSetRecurrence}
             onToggleWeeklyDay={handleToggleWeeklyDay}
-            formatRecurrence={formatRecurrence}
+            formatRecurrence={(r) => formatRecurrenceLabel(r, recurrenceLabels)}
             daysShort={tArray("recurrence.daysShort")}
             addRecurrenceLabel={t("recurrence.addRecurrence")}
             dailyLabel={t("recurrence.daily")}

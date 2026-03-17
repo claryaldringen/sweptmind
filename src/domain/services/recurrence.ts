@@ -139,6 +139,60 @@ export function computeFirstOccurrence(recurrence: string, todayOverride?: strin
   }
 }
 
+/**
+ * Format a recurrence string into a human-readable label.
+ * Pure function — all translated strings are passed as parameters.
+ */
+export function formatRecurrenceLabel(
+  recurrence: string | null,
+  labels: {
+    everyDay: string;
+    everyNDays: (n: number) => string;
+    everyNWeeks: (n: number) => string;
+    everyMonth: string;
+    everyNMonths: (n: number) => string;
+    everyLastDay: string;
+    everyYear: string;
+    everyNYears: (n: number) => string;
+    daysShort: string[];
+  },
+): string | null {
+  if (!recurrence) return null;
+  const parsed = parseRecurrence(recurrence);
+  if (!parsed) return null;
+
+  switch (parsed.type) {
+    case "DAILY":
+      return parsed.interval === 1
+        ? labels.everyDay
+        : labels.everyNDays(parsed.interval);
+
+    case "WEEKLY": {
+      const daysLabel =
+        parsed.days.length === 7
+          ? labels.everyDay
+          : parsed.days.map((d) => labels.daysShort[d]).join(", ");
+      if (parsed.interval === 1) return daysLabel;
+      return `${labels.everyNWeeks(parsed.interval)}: ${daysLabel}`;
+    }
+
+    case "MONTHLY":
+      return parsed.interval === 1
+        ? labels.everyMonth
+        : labels.everyNMonths(parsed.interval);
+
+    case "MONTHLY_LAST":
+      return parsed.interval === 1
+        ? labels.everyLastDay
+        : `${labels.everyNMonths(parsed.interval)}, ${labels.everyLastDay.toLowerCase()}`;
+
+    case "YEARLY":
+      return parsed.interval === 1
+        ? labels.everyYear
+        : labels.everyNYears(parsed.interval);
+  }
+}
+
 export function computeNextDueDate(recurrence: string, currentDueDate: string): string | null {
   if (!currentDueDate) return null;
 

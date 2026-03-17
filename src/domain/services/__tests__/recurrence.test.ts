@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { parseRecurrence, computeNextDueDate, computeFirstOccurrence } from "../recurrence";
+import { parseRecurrence, computeNextDueDate, computeFirstOccurrence, formatRecurrenceLabel } from "../recurrence";
 
 describe("parseRecurrence", () => {
   it("parses DAILY", () => {
@@ -256,5 +256,75 @@ describe("computeFirstOccurrence", () => {
   it("YEARLY:2 still returns today", () => {
     vi.useFakeTimers({ now: new Date(2026, 5, 1) });
     expect(computeFirstOccurrence("YEARLY:2")).toBe("2026-06-01");
+  });
+});
+
+describe("formatRecurrenceLabel", () => {
+  const labels = {
+    everyDay: "Every day",
+    everyNDays: (n: number) => `Every ${n} days`,
+    everyNWeeks: (n: number) => `Every ${n} weeks`,
+    everyMonth: "Every month",
+    everyNMonths: (n: number) => `Every ${n} months`,
+    everyLastDay: "Last day of month",
+    everyYear: "Every year",
+    everyNYears: (n: number) => `Every ${n} years`,
+    daysShort: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
+  };
+
+  it("returns null for null recurrence", () => {
+    expect(formatRecurrenceLabel(null, labels)).toBeNull();
+  });
+
+  it("returns null for invalid recurrence", () => {
+    expect(formatRecurrenceLabel("INVALID", labels)).toBeNull();
+  });
+
+  it("formats DAILY", () => {
+    expect(formatRecurrenceLabel("DAILY", labels)).toBe("Every day");
+  });
+
+  it("formats DAILY:3", () => {
+    expect(formatRecurrenceLabel("DAILY:3", labels)).toBe("Every 3 days");
+  });
+
+  it("formats WEEKLY with single day", () => {
+    expect(formatRecurrenceLabel("WEEKLY:1", labels)).toBe("Mo");
+  });
+
+  it("formats WEEKLY with multiple days", () => {
+    expect(formatRecurrenceLabel("WEEKLY:1,3,5", labels)).toBe("Mo, We, Fr");
+  });
+
+  it("formats WEEKLY with all 7 days as every day", () => {
+    expect(formatRecurrenceLabel("WEEKLY:0,1,2,3,4,5,6", labels)).toBe("Every day");
+  });
+
+  it("formats WEEKLY:2 with interval", () => {
+    expect(formatRecurrenceLabel("WEEKLY:2:1,5", labels)).toBe("Every 2 weeks: Mo, Fr");
+  });
+
+  it("formats MONTHLY", () => {
+    expect(formatRecurrenceLabel("MONTHLY", labels)).toBe("Every month");
+  });
+
+  it("formats MONTHLY:4", () => {
+    expect(formatRecurrenceLabel("MONTHLY:4", labels)).toBe("Every 4 months");
+  });
+
+  it("formats MONTHLY_LAST", () => {
+    expect(formatRecurrenceLabel("MONTHLY_LAST", labels)).toBe("Last day of month");
+  });
+
+  it("formats MONTHLY_LAST:2", () => {
+    expect(formatRecurrenceLabel("MONTHLY_LAST:2", labels)).toBe("Every 2 months, last day of month");
+  });
+
+  it("formats YEARLY", () => {
+    expect(formatRecurrenceLabel("YEARLY", labels)).toBe("Every year");
+  });
+
+  it("formats YEARLY:2", () => {
+    expect(formatRecurrenceLabel("YEARLY:2", labels)).toBe("Every 2 years");
   });
 });
