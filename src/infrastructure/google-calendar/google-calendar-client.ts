@@ -238,17 +238,23 @@ export async function watchEvents(
   calendarId: string,
   channelId: string,
   webhookUrl: string,
+  token?: string,
 ): Promise<{ expiration: string }> {
+  const body: Record<string, string> = {
+    id: channelId,
+    type: "web_hook",
+    address: webhookUrl,
+  };
+  if (token) {
+    body.token = token;
+  }
+
   const res = await calendarFetch(
     userId,
     `/calendars/${encodeURIComponent(calendarId)}/events/watch`,
     {
       method: "POST",
-      body: JSON.stringify({
-        id: channelId,
-        type: "web_hook",
-        address: webhookUrl,
-      }),
+      body: JSON.stringify(body),
     },
   );
 

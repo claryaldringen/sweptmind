@@ -30,6 +30,7 @@ export interface IGoogleCalendarClient {
     calendarId: string,
     channelId: string,
     webhookUrl: string,
+    token?: string,
   ): Promise<{ expiration: string }>;
   stopChannel(userId: string, channelId: string, resourceId: string): Promise<void>;
 }

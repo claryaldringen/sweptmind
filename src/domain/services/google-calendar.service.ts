@@ -1,3 +1,4 @@
+import { createHmac } from "crypto";
 import type { Task } from "../entities/task";
 import type { IUserRepository } from "../repositories/user.repository";
 import type { ICalendarSyncRepository } from "../repositories/calendar-sync.repository";
@@ -9,6 +10,19 @@ import type {
 } from "../ports/google-calendar-client";
 import { addDays, format } from "date-fns";
 import { computeDefaultReminder } from "./task-visibility";
+
+/**
+ * Compute an HMAC-SHA256 token for a Google Calendar webhook channel.
+ * Used both when registering a watch (to send the token to Google) and
+ * when receiving webhook notifications (to verify the echoed token).
+ */
+export function computeChannelToken(channelId: string): string {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    throw new Error("AUTH_SECRET is not set — cannot compute channel token");
+  }
+  return createHmac("sha256", secret).update(channelId).digest("hex");
+}
 
 export class GoogleCalendarService {
   constructor(
@@ -157,11 +171,13 @@ export class GoogleCalendarService {
     if (!settings.enabled) return;
 
     const channelId = crypto.randomUUID();
+    const token = computeChannelToken(channelId);
     const { expiration } = await this.gcalClient.watchEvents(
       userId,
       settings.calendarId,
       channelId,
       webhookUrl,
+      token,
     );
 
     await this.userRepo.updateGoogleCalendarChannel(
