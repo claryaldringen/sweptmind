@@ -701,6 +701,18 @@ export function Sidebar() {
     ).length;
   }, [allTasks, isTracking, checkNearby]);
 
+  // Compute which lists contain tasks bound to a nearby location
+  const listsWithNearbyTasks = useMemo(() => {
+    const ids = new Set<string>();
+    if (nearbyLocationIds.length === 0) return ids;
+    for (const task of allTasks) {
+      if (!task.isCompleted && task.locationId && nearbyLocationIds.includes(task.locationId)) {
+        ids.add(task.listId);
+      }
+    }
+    return ids;
+  }, [allTasks, nearbyLocationIds]);
+
   // Compute tag task counts from allTasks
   const tagTaskCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -1022,13 +1034,13 @@ export function Sidebar() {
                   smartListIds={smartListIdSet}
                   onBulkDelete={handleSidebarBulkDelete}
                   isNearby={
-                    list.location
+                    (list.location
                       ? checkNearby(
                           list.location.latitude,
                           list.location.longitude,
                           list.location.radius,
                         )
-                      : false
+                      : false) || listsWithNearbyTasks.has(list.id)
                   }
                   isDeviceMatch={list.deviceContext === deviceContext}
                   isDropTarget={activeType === "task" && overListId === list.id}
