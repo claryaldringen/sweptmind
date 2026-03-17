@@ -4,6 +4,7 @@ import { schema } from "@/server/graphql/schema";
 import { createContext } from "@/server/graphql/context";
 import { NextRequest } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
+import { auth } from "@/lib/auth";
 
 const yoga = createYoga({
   schema,
@@ -17,14 +18,21 @@ const yoga = createYoga({
   logging: process.env.NODE_ENV === "development" ? "debug" : "info",
 });
 
+async function getRateLimitKey(): Promise<string | undefined> {
+  const session = await auth();
+  return session?.user?.id ? `user:${session.user.id}` : undefined;
+}
+
 export async function GET(request: NextRequest) {
-  const limited = rateLimit(request, { maxRequests: 100 });
+  const key = await getRateLimitKey();
+  const limited = rateLimit(request, { maxRequests: 100, key });
   if (limited) return limited;
   return yoga.handleRequest(request, {});
 }
 
 export async function POST(request: NextRequest) {
-  const limited = rateLimit(request, { maxRequests: 100 });
+  const key = await getRateLimitKey();
+  const limited = rateLimit(request, { maxRequests: 100, key });
   if (limited) return limited;
   return yoga.handleRequest(request, {});
 }

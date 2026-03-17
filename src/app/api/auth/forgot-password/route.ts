@@ -3,13 +3,22 @@ import { rateLimit } from "@/lib/rate-limit";
 import { services } from "@/infrastructure/container";
 
 export async function POST(request: NextRequest) {
-  const limited = rateLimit(request, { maxRequests: 5, windowMs: 300_000 });
-  if (limited) return limited;
+  // IP-based rate limit as a first line of defense
+  const ipLimited = rateLimit(request, { maxRequests: 10, windowMs: 300_000 });
+  if (ipLimited) return ipLimited;
 
   const { email } = await request.json();
   if (!email || typeof email !== "string") {
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
   }
+
+  // Per-email rate limit to prevent abuse targeting a specific address
+  const emailLimited = rateLimit(request, {
+    maxRequests: 5,
+    windowMs: 300_000,
+    key: `email:${email.toLowerCase()}`,
+  });
+  if (emailLimited) return emailLimited;
 
   const token = await services.auth.requestPasswordReset(email);
 
