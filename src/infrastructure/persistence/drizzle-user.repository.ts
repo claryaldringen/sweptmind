@@ -3,6 +3,7 @@ import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import type { User, CreateUserInput } from "@/domain/entities/user";
 import type { IUserRepository } from "@/domain/repositories/user.repository";
+import { hashToken } from "@/lib/crypto";
 
 export class DrizzleUserRepository implements IUserRepository {
   constructor(private readonly db: Database) {}
@@ -98,6 +99,7 @@ export class DrizzleUserRepository implements IUserRepository {
     if (!user) return null;
 
     const token = crypto.randomUUID();
+    const hashedTokenValue = hashToken(token);
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     // Delete any existing tokens for this email
@@ -107,17 +109,19 @@ export class DrizzleUserRepository implements IUserRepository {
 
     await this.db.insert(schema.verificationTokens).values({
       identifier: email,
-      token,
+      token: hashedTokenValue,
       expires,
     });
 
+    // Return the plain token (for email link); only the hash is stored in DB
     return token;
   }
 
   async validatePasswordResetToken(token: string): Promise<string | null> {
+    const hashedTokenValue = hashToken(token);
     const result = await this.db.query.verificationTokens.findFirst({
       where: and(
-        eq(schema.verificationTokens.token, token),
+        eq(schema.verificationTokens.token, hashedTokenValue),
         gt(schema.verificationTokens.expires, new Date()),
       ),
     });
@@ -125,9 +129,10 @@ export class DrizzleUserRepository implements IUserRepository {
   }
 
   async deletePasswordResetToken(token: string): Promise<void> {
+    const hashedTokenValue = hashToken(token);
     await this.db
       .delete(schema.verificationTokens)
-      .where(eq(schema.verificationTokens.token, token));
+      .where(eq(schema.verificationTokens.token, hashedTokenValue));
   }
 
   async updateLlmConfig(
