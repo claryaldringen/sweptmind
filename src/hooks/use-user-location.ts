@@ -44,17 +44,36 @@ function cachePosition(pos: Position) {
 }
 
 async function fetchIpLocation(): Promise<Position | null> {
-  try {
-    const res = await fetch("https://ipapi.co/json/");
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (typeof data.latitude === "number" && typeof data.longitude === "number") {
-      return { latitude: data.latitude, longitude: data.longitude };
+  // Try multiple providers — ipapi.co has aggressive rate limits
+  const providers: Array<() => Promise<Position | null>> = [
+    async () => {
+      const res = await fetch("https://ipapi.co/json/");
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (typeof data.latitude === "number" && typeof data.longitude === "number") {
+        return { latitude: data.latitude, longitude: data.longitude };
+      }
+      return null;
+    },
+    async () => {
+      const res = await fetch("https://ip-api.com/json/?fields=lat,lon");
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (typeof data.lat === "number" && typeof data.lon === "number") {
+        return { latitude: data.lat, longitude: data.lon };
+      }
+      return null;
+    },
+  ];
+  for (const provider of providers) {
+    try {
+      const pos = await provider();
+      if (pos) return pos;
+    } catch {
+      /* try next */
     }
-    return null;
-  } catch {
-    return null;
   }
+  return null;
 }
 
 export function useUserLocation(): UseUserLocationReturn {
