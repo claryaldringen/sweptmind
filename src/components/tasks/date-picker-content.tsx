@@ -1,12 +1,68 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Clock, X } from "lucide-react";
 import { addDays, startOfDay, nextMonday, format, parseISO } from "date-fns";
 import type { Locale as DateFnsLocale } from "date-fns";
+import { parseTimeInput } from "@/lib/parse-time";
+
+function TimeInput({
+  value,
+  onChange,
+  onRemove,
+  removeTitle,
+}: {
+  value: string;
+  onChange: (time: string) => void;
+  onRemove: () => void;
+  removeTitle: string;
+}) {
+  const [draft, setDraft] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const commit = useCallback(() => {
+    const parsed = parseTimeInput(draft);
+    if (parsed) {
+      onChange(parsed);
+      setDraft(parsed);
+    } else {
+      // Revert to last valid value
+      setDraft(value);
+    }
+  }, [draft, onChange, value]);
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="numeric"
+        placeholder="HH:MM"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+            inputRef.current?.blur();
+          }
+        }}
+        className="text-foreground h-9 w-20 bg-transparent text-sm outline-none md:h-8"
+      />
+      <button
+        onClick={onRemove}
+        className="text-muted-foreground hover:text-foreground ml-auto"
+        title={removeTitle}
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </>
+  );
+}
 
 type TranslateFn = (key: string, params?: Record<string, string | number>) => string;
 
@@ -131,21 +187,12 @@ export function DatePickerContent({
               <div className="flex items-center gap-2 px-3 py-2">
                 <Clock className="text-muted-foreground h-4 w-4" />
                 {hasTime ? (
-                  <>
-                    <input
-                      type="time"
-                      value={timeValue}
-                      onChange={(e) => onTimeChange?.(e.target.value)}
-                      className="text-foreground h-9 bg-transparent text-sm outline-none md:h-8"
-                    />
-                    <button
-                      onClick={() => onTimeChange?.("")}
-                      className="text-muted-foreground hover:text-foreground ml-auto"
-                      title={t("datePicker.removeTime")}
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </>
+                  <TimeInput
+                    value={timeValue}
+                    onChange={(time) => onTimeChange?.(time)}
+                    onRemove={() => onTimeChange?.("")}
+                    removeTitle={t("datePicker.removeTime")}
+                  />
                 ) : (
                   <Button
                     variant="ghost"
@@ -182,21 +229,12 @@ export function DatePickerContent({
                 <div className="flex items-center gap-2 px-3 py-2">
                   <Clock className="text-muted-foreground h-4 w-4" />
                   {endHasTime ? (
-                    <>
-                      <input
-                        type="time"
-                        value={endTimeValue}
-                        onChange={(e) => onEndTimeChange(e.target.value)}
-                        className="text-foreground h-9 bg-transparent text-sm outline-none md:h-8"
-                      />
-                      <button
-                        onClick={() => onEndTimeChange("")}
-                        className="text-muted-foreground hover:text-foreground ml-auto"
-                        title={t("datePicker.removeTime")}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </>
+                    <TimeInput
+                      value={endTimeValue}
+                      onChange={(time) => onEndTimeChange(time)}
+                      onRemove={() => onEndTimeChange("")}
+                      removeTitle={t("datePicker.removeTime")}
+                    />
                   ) : (
                     <Button
                       variant="ghost"
