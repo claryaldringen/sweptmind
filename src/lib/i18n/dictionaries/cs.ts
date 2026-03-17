@@ -78,6 +78,7 @@ export const cs: Dictionary = {
     tomorrow: "Zítra",
     dayAfterTomorrow: "Pozítří",
     dueDateRange: "{start} – {end}",
+    conflictWarning: "Koliduje s: {tasks}",
   },
   lists: {
     newList: "Nový seznam",

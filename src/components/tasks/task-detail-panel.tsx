@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { gql } from "@apollo/client";
 import { useMutation, useQuery, useApolloClient } from "@apollo/client/react";
-import { ArrowLeft } from "lucide-react";
+import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -349,12 +349,34 @@ export function TaskDetailPanel() {
     tags: allTagsFromProvider,
     locations: allLocationsFromProvider,
     loading,
+    conflictingTaskIds,
   } = useAppData();
   const { data: meData } = useQuery<GetMeData>(GET_ME);
   const isPremium = meData?.me?.isPremium ?? false;
   const task = taskId
     ? ((allTasks.find((t) => t.id === taskId) as TaskDetail | undefined) ?? null)
     : null;
+
+  const isConflicting = taskId ? conflictingTaskIds.has(taskId) : false;
+  const conflictingWith =
+    isConflicting && task?.dueDate
+      ? allTasks.filter((t) => {
+          if (t.id === taskId || !t.dueDate || t.isCompleted) return false;
+          const interval = (d: string, dEnd: string | null) => {
+            if (d.includes("T")) {
+              const s = new Date(d).getTime();
+              return { s, e: dEnd?.includes("T") ? new Date(dEnd).getTime() : s + 3600000 };
+            }
+            return {
+              s: new Date(d + "T00:00:00").getTime(),
+              e: new Date((dEnd ?? d) + "T23:59:59.999").getTime(),
+            };
+          };
+          const a = interval(task.dueDate!, task.dueDateEnd ?? null);
+          const b = interval(t.dueDate, t.dueDateEnd);
+          return a.s < b.e && b.s < a.e;
+        })
+      : [];
 
   // ---- Mutations ----
 
@@ -1269,6 +1291,18 @@ export function TaskDetailPanel() {
             t={t}
             dateFnsLocale={dateFnsLocale}
           />
+
+          {/* Conflict warning */}
+          {conflictingWith.length > 0 && (
+            <div className="mx-4 flex items-start gap-2 rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-500">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>
+                {t("tasks.conflictWarning", {
+                  tasks: conflictingWith.map((t) => t.title).join(", "),
+                })}
+              </span>
+            </div>
+          )}
 
           {/* Recurrence */}
           <TaskRecurrence

@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import { TaskItem } from "./task-item";
 import { TaskSelectionProvider } from "@/components/providers/task-selection-provider";
 import { useTranslations } from "@/lib/i18n";
@@ -48,7 +48,7 @@ export function TaskList({ tasks, showListName = false, showCompleted = true }: 
   const { t } = useTranslations();
   const { data: meData } = useQuery<{ me: { id: string; isPremium: boolean } | null }>(GET_ME);
   const isPremium = meData?.me?.isPremium ?? false;
-  const { allTasks } = useAppData();
+  const { allTasks, conflictingTaskIds } = useAppData();
   const analyzingIds = useTaskAnalysis(tasks, isPremium, allTasks);
   const {
     futureTasks,
@@ -80,17 +80,25 @@ export function TaskList({ tasks, showListName = false, showCompleted = true }: 
         </ul>
         {futureTasks.length > 0 && (
           <div ref={futureSectionRef} className="mt-4">
-            <button
-              onClick={() => setFutureOpen(!futureOpen)}
-              className="text-muted-foreground flex w-full items-center gap-1 px-4 py-2 text-xs font-medium"
-            >
-              {futureOpen ? (
-                <ChevronDown className="h-3.5 w-3.5" />
-              ) : (
-                <ChevronRight className="h-3.5 w-3.5" />
-              )}
-              {t("tasks.future", { count: futureTasks.length })}
-            </button>
+            {(() => {
+              const futureHasConflict = futureTasks.some((task) =>
+                conflictingTaskIds.has(task.id),
+              );
+              return (
+                <button
+                  onClick={() => setFutureOpen(!futureOpen)}
+                  className={`flex w-full items-center gap-1 px-4 py-2 text-xs font-medium ${futureHasConflict ? "text-red-500" : "text-muted-foreground"}`}
+                >
+                  {futureOpen ? (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  )}
+                  {t("tasks.future", { count: futureTasks.length })}
+                  {futureHasConflict && <AlertTriangle className="h-3.5 w-3.5" />}
+                </button>
+              );
+            })()}
             {futureOpen && (
               <ul className="space-y-0.5">
                 {futureTasks.map((task) => (
