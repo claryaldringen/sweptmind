@@ -13,6 +13,15 @@ import {
 import { gql } from "@apollo/client";
 import { useQuery, useLazyQuery, useApolloClient } from "@apollo/client/react";
 import { detectTimeConflicts } from "@/lib/time-conflicts";
+import type {
+  TaskStep,
+  TaskTag,
+  TaskLocationInfo as TaskLocation,
+} from "@/components/tasks/types";
+
+// Re-export shared sub-types so existing consumers don't break
+export type { TaskStep, TaskTag };
+export type { TaskLocationInfo as TaskLocation } from "@/components/tasks/types";
 
 // ---------------------------------------------------------------------------
 // Shared task fields fragment
@@ -209,28 +218,6 @@ export interface ListItem {
   deviceContext: string | null;
   taskCount: number;
   visibleTaskCount: number;
-}
-
-export interface TaskStep {
-  id: string;
-  taskId: string;
-  title: string;
-  isCompleted: boolean;
-  sortOrder: number;
-}
-
-export interface TaskTag {
-  id: string;
-  name: string;
-  color: string;
-}
-
-export interface TaskLocation {
-  id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  radius: number;
 }
 
 export interface TaskAttachment {

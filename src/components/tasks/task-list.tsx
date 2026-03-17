@@ -1,42 +1,15 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
 import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import { TaskItem } from "./task-item";
 import { TaskSelectionProvider } from "@/components/providers/task-selection-provider";
 import { useTranslations } from "@/lib/i18n";
 import { useDepartureAnimation } from "@/hooks/use-departure-animation";
 import { useTaskAnalysis } from "@/hooks/use-task-analysis";
+import { useIsPremium } from "@/hooks/use-is-premium";
 import { useAppData } from "@/components/providers/app-data-provider";
-
-const GET_ME = gql`
-  query GetMeForAnalysis {
-    me {
-      id
-      isPremium
-    }
-  }
-`;
-
-interface Task {
-  id: string;
-  title: string;
-  isCompleted: boolean;
-  dueDate: string | null;
-  reminderAt: string | null;
-  list?: { id: string; name: string } | null;
-  steps?: { id: string; isCompleted: boolean }[];
-  blockedByTaskId?: string | null;
-  blockedByTaskIsCompleted?: boolean | null;
-  dependentTaskCount?: number;
-  aiAnalysis?: {
-    isActionable: boolean;
-    suggestion: string | null;
-    analyzedTitle: string;
-  } | null;
-}
+import type { Task } from "./types";
 
 interface TaskListProps {
   tasks: Task[];
@@ -46,8 +19,7 @@ interface TaskListProps {
 
 export function TaskList({ tasks, showListName = false, showCompleted = true }: TaskListProps) {
   const { t } = useTranslations();
-  const { data: meData } = useQuery<{ me: { id: string; isPremium: boolean } | null }>(GET_ME);
-  const isPremium = meData?.me?.isPremium ?? false;
+  const { isPremium } = useIsPremium();
   const { allTasks, conflictingTaskIds } = useAppData();
   const analyzingIds = useTaskAnalysis(tasks, isPremium, allTasks);
   const {

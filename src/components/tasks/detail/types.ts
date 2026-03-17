@@ -1,25 +1,5 @@
-export interface TaskStep {
-  id: string;
-  taskId: string;
-  title: string;
-  isCompleted: boolean;
-  sortOrder: number;
-}
-
-export interface TaskTag {
-  id: string;
-  name: string;
-  color: string;
-}
-
-export interface TaskLocation {
-  id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  radius: number;
-  address?: string | null;
-}
+export type { TaskStep, TaskTag, TaskLocationInfo as TaskLocation } from "../types";
+import type { TaskStep, TaskTag, TaskLocationInfo } from "../types";
 
 export interface TaskDetail {
   id: string;
@@ -37,6 +17,6 @@ export interface TaskDetail {
   createdAt: string;
   steps: TaskStep[];
   tags: TaskTag[];
-  location: TaskLocation | null;
+  location: TaskLocationInfo | null;
   list: { id: string; name: string } | null;
 }

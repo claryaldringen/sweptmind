@@ -2,24 +2,7 @@
 
 import { useDraggable } from "@dnd-kit/core";
 import { TaskItem } from "./task-item";
-
-interface Task {
-  id: string;
-  title: string;
-  isCompleted: boolean;
-  dueDate: string | null;
-  reminderAt: string | null;
-  list?: { id: string; name: string } | null;
-  steps?: { id: string; isCompleted: boolean }[];
-  blockedByTaskId?: string | null;
-  blockedByTaskIsCompleted?: boolean | null;
-  dependentTaskCount?: number;
-  aiAnalysis?: {
-    isActionable: boolean;
-    suggestion: string | null;
-    analyzedTitle: string;
-  } | null;
-}
+import type { Task } from "./types";
 
 interface DraggableTaskItemProps {
   task: Task;

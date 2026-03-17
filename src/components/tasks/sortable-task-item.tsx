@@ -5,24 +5,7 @@ import { useDndContext } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { TaskItem } from "./task-item";
 import { useTaskSelectionOptional } from "@/components/providers/task-selection-provider";
-
-interface Task {
-  id: string;
-  title: string;
-  isCompleted: boolean;
-  dueDate: string | null;
-  reminderAt: string | null;
-  list?: { id: string; name: string } | null;
-  steps?: { id: string; isCompleted: boolean }[];
-  blockedByTaskId?: string | null;
-  blockedByTaskIsCompleted?: boolean | null;
-  dependentTaskCount?: number;
-  aiAnalysis?: {
-    isActionable: boolean;
-    suggestion: string | null;
-    analyzedTitle: string;
-  } | null;
-}
+import type { Task } from "./types";
 
 interface SortableTaskItemProps {
   task: Task;

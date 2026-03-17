@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { gql } from "@apollo/client";
-import { useMutation, useQuery } from "@apollo/client/react";
+import { useMutation } from "@apollo/client/react";
 import { SortableTaskItem } from "./sortable-task-item";
 import { TaskItem } from "./task-item";
 import { useTranslations } from "@/lib/i18n";
@@ -12,41 +12,15 @@ import { useTaskDnd } from "@/components/providers/task-dnd-provider";
 import { TaskSelectionProvider } from "@/components/providers/task-selection-provider";
 import { useDepartureAnimation } from "@/hooks/use-departure-animation";
 import { useTaskAnalysis } from "@/hooks/use-task-analysis";
+import { useIsPremium } from "@/hooks/use-is-premium";
 import { useAppData } from "@/components/providers/app-data-provider";
-
-const GET_ME_FOR_SORTABLE = gql`
-  query GetMeForSortableAnalysis {
-    me {
-      id
-      isPremium
-    }
-  }
-`;
+import type { Task } from "./types";
 
 const REORDER_TASKS = gql`
   mutation ReorderTasks($input: [ReorderTaskInput!]!) {
     reorderTasks(input: $input)
   }
 `;
-
-interface Task {
-  id: string;
-  title: string;
-  isCompleted: boolean;
-  dueDate: string | null;
-  reminderAt: string | null;
-  sortOrder: number;
-  list?: { id: string; name: string } | null;
-  steps?: { id: string; isCompleted: boolean }[];
-  blockedByTaskId?: string | null;
-  blockedByTaskIsCompleted?: boolean | null;
-  dependentTaskCount?: number;
-  aiAnalysis?: {
-    isActionable: boolean;
-    suggestion: string | null;
-    analyzedTitle: string;
-  } | null;
-}
 
 interface SortableTaskListProps {
   tasks: Task[];
@@ -60,10 +34,7 @@ export function SortableTaskList({
   showCompleted = true,
 }: SortableTaskListProps) {
   const { t } = useTranslations();
-  const { data: meData } = useQuery<{ me: { id: string; isPremium: boolean } | null }>(
-    GET_ME_FOR_SORTABLE,
-  );
-  const isPremium = meData?.me?.isPremium ?? false;
+  const { isPremium } = useIsPremium();
   const { allTasks, conflictingTaskIds } = useAppData();
   const analyzingIds = useTaskAnalysis(tasks, isPremium, allTasks);
   const { registerTaskReorder } = useTaskDnd();

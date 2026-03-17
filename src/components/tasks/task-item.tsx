@@ -58,6 +58,7 @@ import { useNearby } from "@/components/providers/nearby-provider";
 import { useDeviceContext } from "@/hooks/use-device-context";
 import { useTaskSelectionOptional } from "@/components/providers/task-selection-provider";
 import { useAppData } from "@/components/providers/app-data-provider";
+import type { Task } from "./types";
 
 const TOGGLE_COMPLETED = gql`
   mutation ToggleTaskCompleted($id: String!) {
@@ -125,50 +126,6 @@ const SET_TASKS_COMPLETED = gql`
     setTasksCompleted(ids: $ids, isCompleted: $isCompleted)
   }
 `;
-
-interface TaskTag {
-  id: string;
-  name: string;
-  color: string;
-}
-
-interface TaskLocationInfo {
-  id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  radius: number;
-}
-
-interface Task {
-  id: string;
-  title: string;
-  isCompleted: boolean;
-  dueDate: string | null;
-  dueDateEnd?: string | null;
-  reminderAt: string | null;
-  recurrence?: string | null;
-  locationId?: string | null;
-  locationRadius?: number | null;
-  location?: TaskLocationInfo | null;
-  list?: { id: string; name: string } | null;
-  steps?: { id: string; isCompleted: boolean }[];
-  tags?: TaskTag[];
-  blockedByTaskId?: string | null;
-  blockedByTaskIsCompleted?: boolean | null;
-  dependentTaskCount?: number;
-  isGoogleCalendarEvent?: boolean;
-  attachments?: { id: string }[];
-  aiAnalysis?: {
-    isActionable: boolean;
-    suggestion: string | null;
-    suggestedTitle?: string | null;
-    decomposition?: { title: string }[] | null;
-    duplicateTaskId?: string | null;
-    callIntent?: { name: string } | null;
-    analyzedTitle: string;
-  } | null;
-}
 
 interface TaskItemProps {
   task: Task;
