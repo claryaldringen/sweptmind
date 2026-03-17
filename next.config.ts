@@ -54,20 +54,21 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(self)",
           },
-          // CSP temporarily disabled for OAuth debugging
-          // {
-          //   key: "Content-Security-Policy",
-          //   value: [
-          //     "default-src 'self'",
-          //     "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-          //     "style-src 'self' 'unsafe-inline'",
-          //     "img-src 'self' data: blob: https://*.googleusercontent.com https://*.fbcdn.net https://platform-lookaside.fbsbx.com",
-          //     "connect-src 'self' https://photon.komoot.io https://nominatim.openstreetmap.org https://ipwho.is https://get.geojs.io",
-          //     "font-src 'self'",
-          //     "worker-src 'self'",
-          //     "frame-ancestors 'none'",
-          //   ].join("; "),
-          // },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https://*.googleusercontent.com https://*.fbcdn.net https://platform-lookaside.fbsbx.com https://*.public.blob.vercel-storage.com",
+              "connect-src 'self' https://accounts.google.com https://*.googleapis.com https://*.google.com https://photon.komoot.io https://nominatim.openstreetmap.org https://ipwho.is https://get.geojs.io https://ip-api.com https://ipapi.co https://*.public.blob.vercel-storage.com",
+              "font-src 'self'",
+              "worker-src 'self'",
+              "frame-src 'self' https://accounts.google.com",
+              "frame-ancestors 'none'",
+              "form-action 'self' https://accounts.google.com",
+            ].join("; "),
+          },
         ],
       },
     ];

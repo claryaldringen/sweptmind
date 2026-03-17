@@ -1,4 +1,5 @@
 import { createYoga } from "graphql-yoga";
+import { useDepthLimit } from "@envelop/depth-limit";
 import { schema } from "@/server/graphql/schema";
 import { createContext } from "@/server/graphql/context";
 import { NextRequest } from "next/server";
@@ -9,6 +10,7 @@ const yoga = createYoga({
   context: createContext,
   graphqlEndpoint: "/api/graphql",
   fetchAPI: { Response },
+  plugins: [useDepthLimit({ maxDepth: 10 })],
   maskedErrors: {
     isDev: process.env.NODE_ENV === "development",
   },

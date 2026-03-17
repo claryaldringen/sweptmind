@@ -985,6 +985,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@envelop/depth-limit@npm:^7.1.1":
+  version: 7.1.1
+  resolution: "@envelop/depth-limit@npm:7.1.1"
+  dependencies:
+    graphql-depth-limit: "npm:^1.1.0"
+    tslib: "npm:^2.5.0"
+  peerDependencies:
+    "@envelop/core": ^5.5.1
+    graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
+  checksum: 10c0/6af1971f1439e67ca85b07d84e0466cfce2db53400733ed633866ee8e19d1dee7120521aa91396e4ccf9e4d93ddc41737bbf07cc50a94b5d32054521c45f27b2
+  languageName: node
+  linkType: hard
+
 "@envelop/instrumentation@npm:^1.0.0":
   version: 1.0.0
   resolution: "@envelop/instrumentation@npm:1.0.0"
@@ -7101,6 +7114,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"arrify@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "arrify@npm:1.0.1"
+  checksum: 10c0/c35c8d1a81bcd5474c0c57fe3f4bad1a4d46a5fa353cedcff7a54da315df60db71829e69104b859dff96c5d68af46bd2be259fe5e50dc6aa9df3b36bea0383ab
+  languageName: node
+  linkType: hard
+
 "arrify@npm:^2.0.0":
   version: 2.0.1
   resolution: "arrify@npm:2.0.1"
@@ -10806,6 +10826,17 @@ __metadata:
     cosmiconfig-toml-loader:
       optional: true
   checksum: 10c0/05e2a895dd899709da0a6f24c0248d858c23767c4848f27f68935a6fe44d00dfd804c38ef59157193ad30e54d4e0773d9ec562842fe00ce7aaa0330bca5053cd
+  languageName: node
+  linkType: hard
+
+"graphql-depth-limit@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "graphql-depth-limit@npm:1.1.0"
+  dependencies:
+    arrify: "npm:^1.0.1"
+  peerDependencies:
+    graphql: "*"
+  checksum: 10c0/8f50268ab3e2553cfe64fad532a3bd60068865217f113ac7388bfea1484d36a7e711a1c26f6a03e67969923967f2a84b62618c07732ca2ca603c295f8a19dbf9
   languageName: node
   linkType: hard
 
@@ -16240,6 +16271,7 @@ __metadata:
     "@dnd-kit/core": "npm:^6.3.1"
     "@dnd-kit/sortable": "npm:^10.0.0"
     "@dnd-kit/utilities": "npm:^3.2.2"
+    "@envelop/depth-limit": "npm:^7.1.1"
     "@graphql-codegen/cli": "npm:^6.1.2"
     "@graphql-codegen/typescript": "npm:^5.0.8"
     "@graphql-codegen/typescript-operations": "npm:^5.0.8"
