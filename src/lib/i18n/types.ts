@@ -432,6 +432,32 @@ export interface Dictionary {
     currentLocation: string;
     step: string;
   };
+  sharing: {
+    title: string;
+    description: string;
+    defaultList: string;
+    createInvite: string;
+    copyLink: string;
+    cancelInvite: string;
+    invitePending: string;
+    inviteExpires: string;
+    disconnect: string;
+    disconnectConfirm: string;
+    incomingTasks: string;
+    sharedTasks: string;
+    shareWith: string;
+    shareWithAnother: string;
+    sharedFrom: string;
+    unshare: string;
+    inviteTitle: string;
+    inviteAccept: string;
+    inviteLogin: string;
+    inviteRegister: string;
+    inviteExpired: string;
+    inviteInvalid: string;
+    alreadyConnected: string;
+    noConnections: string;
+  };
 }
 
 export type Locale = "cs" | "en";
