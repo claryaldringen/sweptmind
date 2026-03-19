@@ -56,3 +56,4 @@ apps/desktop/release/
 .env*.local
 .idea/
 .superpowers/
+.worktrees/
