@@ -46,4 +46,5 @@ export interface IUserRepository {
   findUsersWithExpiringChannels(
     before: Date,
   ): Promise<Array<{ id: string; googleCalendarChannelId: string }>>;
+  updateSharingDefaultList(userId: string, listId: string | null): Promise<void>;
 }

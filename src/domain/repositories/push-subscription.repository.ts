@@ -22,4 +22,7 @@ export interface IPushSubscriptionRepository {
 
   /** Update preferences (notifyDueDate, notifyReminder) on all subscriptions for a user. */
   updatePreferences(userId: string, prefs: Partial<PushPreferences>): Promise<void>;
+
+  /** Get all subscriptions for a user (across all devices). */
+  findAllByUser(userId: string): Promise<PushSubscription[]>;
 }

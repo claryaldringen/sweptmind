@@ -38,4 +38,6 @@ export interface ITaskRepository {
   findCompletedByUser(userId: string, limit: number, offset: number): Promise<Task[]>;
   deleteMany(ids: string[], userId: string): Promise<void>;
   updateMany(ids: string[], userId: string, data: Partial<Task>): Promise<void>;
+  findByIdUnchecked(id: string): Promise<Task | undefined>;
+  updateUnchecked(id: string, data: Partial<Task>): Promise<Task>;
 }
