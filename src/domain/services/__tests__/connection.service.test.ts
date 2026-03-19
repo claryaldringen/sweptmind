@@ -78,9 +78,7 @@ function makeListRepo(overrides: Partial<IListRepository> = {}): IListRepository
   };
 }
 
-function makeNotificationSender(
-  overrides: Partial<INotificationSender> = {},
-): INotificationSender {
+function makeNotificationSender(overrides: Partial<INotificationSender> = {}): INotificationSender {
   return {
     send: vi.fn().mockResolvedValue(undefined),
     ...overrides,
@@ -133,9 +131,7 @@ describe("ConnectionService", () => {
     });
 
     it("already accepted invite — throws 'Invite already used'", async () => {
-      vi.mocked(inviteRepo.findByToken).mockResolvedValue(
-        makeInvite({ status: "accepted" }),
-      );
+      vi.mocked(inviteRepo.findByToken).mockResolvedValue(makeInvite({ status: "accepted" }));
 
       await expect(service.acceptInvite("token-abc", "user-2")).rejects.toThrow(
         "Invite already used",
@@ -143,9 +139,7 @@ describe("ConnectionService", () => {
     });
 
     it("self-invite — throws 'Cannot connect with yourself'", async () => {
-      vi.mocked(inviteRepo.findByToken).mockResolvedValue(
-        makeInvite({ fromUserId: "user-1" }),
-      );
+      vi.mocked(inviteRepo.findByToken).mockResolvedValue(makeInvite({ fromUserId: "user-1" }));
 
       await expect(service.acceptInvite("token-abc", "user-1")).rejects.toThrow(
         "Cannot connect with yourself",
@@ -157,9 +151,7 @@ describe("ConnectionService", () => {
         makeInvite({ expiresAt: new Date(Date.now() - 1000) }),
       );
 
-      await expect(service.acceptInvite("token-abc", "user-2")).rejects.toThrow(
-        "Invite expired",
-      );
+      await expect(service.acceptInvite("token-abc", "user-2")).rejects.toThrow("Invite expired");
     });
 
     it("already connected — throws 'Already connected'", async () => {
@@ -174,9 +166,7 @@ describe("ConnectionService", () => {
     it("invalid token — throws 'Invite not found'", async () => {
       vi.mocked(inviteRepo.findByToken).mockResolvedValue(undefined);
 
-      await expect(service.acceptInvite("bad-token", "user-2")).rejects.toThrow(
-        "Invite not found",
-      );
+      await expect(service.acceptInvite("bad-token", "user-2")).rejects.toThrow("Invite not found");
     });
   });
 

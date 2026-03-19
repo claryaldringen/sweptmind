@@ -7,7 +7,11 @@ import type { ISharedTaskRepository } from "@/domain/repositories/shared-task.re
 export class DrizzleSharedTaskRepository implements ISharedTaskRepository {
   constructor(private readonly db: Database) {}
 
-  async create(connectionId: string, sourceTaskId: string, targetTaskId: string): Promise<SharedTask> {
+  async create(
+    connectionId: string,
+    sourceTaskId: string,
+    targetTaskId: string,
+  ): Promise<SharedTask> {
     const [sharedTask] = await this.db
       .insert(schema.sharedTasks)
       .values({ connectionId, sourceTaskId, targetTaskId })

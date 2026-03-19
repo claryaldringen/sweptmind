@@ -55,7 +55,11 @@ export class ConnectionService {
     await this.connectionRepo.delete(userId, connectedUserId);
   }
 
-  async updateTargetList(userId: string, connectionId: string, listId: string | null): Promise<void> {
+  async updateTargetList(
+    userId: string,
+    connectionId: string,
+    listId: string | null,
+  ): Promise<void> {
     await this.connectionRepo.updateTargetList(connectionId, userId, listId);
   }
 }

@@ -42,7 +42,7 @@ export function AcceptButton({ token, label, loadingLabel }: AcceptButtonProps) 
   return (
     <div className="space-y-3">
       {error && (
-        <div className="bg-destructive/10 text-destructive rounded-lg px-4 py-3 text-sm text-center">
+        <div className="bg-destructive/10 text-destructive rounded-lg px-4 py-3 text-center text-sm">
           {error}
         </div>
       )}

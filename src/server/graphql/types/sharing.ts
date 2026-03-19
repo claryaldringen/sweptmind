@@ -118,8 +118,7 @@ builder.queryField("connections", (t) =>
   t.field({
     type: [UserConnectionType],
     authScopes: { authenticated: true },
-    resolve: async (_root, _args, ctx) =>
-      ctx.services.connection.getConnections(ctx.userId!),
+    resolve: async (_root, _args, ctx) => ctx.services.connection.getConnections(ctx.userId!),
   }),
 );
 
@@ -127,8 +126,7 @@ builder.queryField("connectionInvites", (t) =>
   t.field({
     type: [ConnectionInviteType],
     authScopes: { authenticated: true },
-    resolve: async (_root, _args, ctx) =>
-      ctx.services.connection.getInvites(ctx.userId!),
+    resolve: async (_root, _args, ctx) => ctx.services.connection.getInvites(ctx.userId!),
   }),
 );
 
@@ -160,9 +158,7 @@ builder.queryField("taskShares", (t) =>
           };
         }),
       );
-      return results.filter(
-        (r): r is NonNullable<typeof r> => r !== null,
-      );
+      return results.filter((r): r is NonNullable<typeof r> => r !== null);
     },
   }),
 );
@@ -203,8 +199,7 @@ builder.mutationField("createConnectionInvite", (t) =>
   t.field({
     type: ConnectionInviteType,
     authScopes: { authenticated: true },
-    resolve: async (_root, _args, ctx) =>
-      ctx.services.connection.createInvite(ctx.userId!),
+    resolve: async (_root, _args, ctx) => ctx.services.connection.createInvite(ctx.userId!),
   }),
 );
 

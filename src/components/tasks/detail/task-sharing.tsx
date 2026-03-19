@@ -109,7 +109,9 @@ interface ConnectionEntry {
 function UserAvatar({ user }: { user: ShareUser }) {
   if (user.image) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={user.image} alt={user.name ?? ""} className="h-7 w-7 rounded-full object-cover" />;
+    return (
+      <img src={user.image} alt={user.name ?? ""} className="h-7 w-7 rounded-full object-cover" />
+    );
   }
   return (
     <div className="bg-muted flex h-7 w-7 items-center justify-center rounded-full">
@@ -184,7 +186,11 @@ export function TaskSharing({ taskId }: TaskSharingProps) {
     return (
       <div className="flex items-center gap-2 rounded-md bg-blue-500/10 px-3 py-2 text-sm text-blue-600 dark:text-blue-400">
         <Link2 className="h-4 w-4 shrink-0" />
-        <span>{t("sharing.sharedFrom", { name: shareSource.owner.name ?? shareSource.owner.email ?? "?" })}</span>
+        <span>
+          {t("sharing.sharedFrom", {
+            name: shareSource.owner.name ?? shareSource.owner.email ?? "?",
+          })}
+        </span>
       </div>
     );
   }
@@ -197,7 +203,7 @@ export function TaskSharing({ taskId }: TaskSharingProps) {
         <div key={share.id} className="flex items-center gap-2 rounded-md px-3 py-1">
           <Share2 className="text-muted-foreground h-4 w-4 shrink-0" />
           <UserAvatar user={share.sharedWith} />
-          <span className="text-sm min-w-0 flex-1 truncate">
+          <span className="min-w-0 flex-1 truncate text-sm">
             {share.sharedWith.name ?? share.sharedWith.email ?? "?"}
           </span>
           <Button

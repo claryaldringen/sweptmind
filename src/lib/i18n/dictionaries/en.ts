@@ -471,8 +471,7 @@ export const en: Dictionary = {
     invitePending: "Invite pending",
     inviteExpires: "Expires in {days} days",
     disconnect: "Disconnect",
-    disconnectConfirm:
-      "Are you sure you want to disconnect? Shared tasks will become independent.",
+    disconnectConfirm: "Are you sure you want to disconnect? Shared tasks will become independent.",
     incomingTasks: "Incoming tasks",
     sharedTasks: "shared tasks",
     shareWith: "Share with...",

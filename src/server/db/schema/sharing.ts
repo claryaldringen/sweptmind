@@ -20,9 +20,7 @@ export const connectionInvites = pgTable(
     expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   },
-  (table) => [
-    index("connection_invites_from_user_idx").on(table.fromUserId),
-  ],
+  (table) => [index("connection_invites_from_user_idx").on(table.fromUserId)],
 );
 
 export const userConnections = pgTable(

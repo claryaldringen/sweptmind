@@ -62,15 +62,15 @@ export class TaskSharingService {
     return shared;
   }
 
-  async unshareTask(sharedTaskId: string, userId: string): Promise<void> {
+  async unshareTask(sharedTaskId: string, _userId: string): Promise<void> {
     await this.sharedTaskRepo.delete(sharedTaskId);
   }
 
-  async getShareInfo(taskId: string, userId: string): Promise<SharedTask[]> {
+  async getShareInfo(taskId: string, _userId: string): Promise<SharedTask[]> {
     return this.sharedTaskRepo.findBySourceTask(taskId);
   }
 
-  async getShareSource(taskId: string, userId: string): Promise<SharedTask | undefined> {
+  async getShareSource(taskId: string, _userId: string): Promise<SharedTask | undefined> {
     return this.sharedTaskRepo.findByTargetTask(taskId);
   }
 

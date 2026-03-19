@@ -37,7 +37,10 @@ export default async function InvitePage({ params }: InvitePageProps) {
             <p className="font-medium">{t.inviteInvalid}</p>
           </div>
           <div className="mt-6 text-center">
-            <Link href="/" className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4">
+            <Link
+              href="/"
+              className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4"
+            >
               {dict.common.notFoundBackHome}
             </Link>
           </div>
@@ -82,19 +85,13 @@ export default async function InvitePage({ params }: InvitePageProps) {
 
         {!userId ? (
           <>
-            <p className="text-muted-foreground mb-8 text-center text-sm">
-              in SweptMind
-            </p>
+            <p className="text-muted-foreground mb-8 text-center text-sm">in SweptMind</p>
             <div className="space-y-3">
               <Button asChild className="h-11 w-full text-base font-semibold">
-                <Link href={`/login?callbackUrl=/invite/${token}`}>
-                  {t.inviteLogin}
-                </Link>
+                <Link href={`/login?callbackUrl=/invite/${token}`}>{t.inviteLogin}</Link>
               </Button>
               <Button asChild variant="outline" className="h-11 w-full text-base font-semibold">
-                <Link href={`/register?callbackUrl=/invite/${token}`}>
-                  {t.inviteRegister}
-                </Link>
+                <Link href={`/register?callbackUrl=/invite/${token}`}>{t.inviteRegister}</Link>
               </Button>
             </div>
           </>
@@ -104,7 +101,10 @@ export default async function InvitePage({ params }: InvitePageProps) {
               {errorMessage}
             </div>
             <div className="mt-6 text-center">
-              <Link href="/settings" className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4">
+              <Link
+                href="/settings"
+                className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4"
+              >
                 {dict.common.notFoundBackHome}
               </Link>
             </div>
@@ -114,11 +114,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
             <p className="text-muted-foreground mb-8 text-center text-sm">
               {dict.sharing.sharedTasks}
             </p>
-            <AcceptButton
-              token={token}
-              label={t.inviteAccept}
-              loadingLabel={dict.common.loading}
-            />
+            <AcceptButton token={token} label={t.inviteAccept} loadingLabel={dict.common.loading} />
           </>
         )}
       </div>

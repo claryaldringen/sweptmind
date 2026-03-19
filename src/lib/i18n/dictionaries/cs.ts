@@ -466,8 +466,7 @@ export const cs: Dictionary = {
     invitePending: "Pozvánka čeká na přijetí",
     inviteExpires: "Vyprší za {days} dní",
     disconnect: "Odpojit",
-    disconnectConfirm:
-      "Opravdu se chcete odpojit? Sdílené úkoly se stanou nezávislými.",
+    disconnectConfirm: "Opravdu se chcete odpojit? Sdílené úkoly se stanou nezávislými.",
     incomingTasks: "Příchozí úkoly",
     sharedTasks: "sdílených úkolů",
     shareWith: "Sdílet s...",

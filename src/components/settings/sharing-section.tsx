@@ -196,9 +196,12 @@ export function SharingSection({ userLists }: SharingSectionProps) {
 
   // Copy state: key = invite token or "new"
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [now] = useState(() => Date.now());
 
   const getInviteUrl = (token: string) =>
-    typeof window !== "undefined" ? `${window.location.origin}/invite/${token}` : `/invite/${token}`;
+    typeof window !== "undefined"
+      ? `${window.location.origin}/invite/${token}`
+      : `/invite/${token}`;
 
   const copyInviteLink = async (token: string, key: string) => {
     await navigator.clipboard.writeText(getInviteUrl(token));
@@ -282,9 +285,7 @@ export function SharingSection({ userLists }: SharingSectionProps) {
         <div className="mb-5 space-y-2">
           {invites.map((invite) => {
             const expiresAt = new Date(invite.expiresAt);
-            const daysUntilExpiry = Math.ceil(
-              (expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-            );
+            const daysUntilExpiry = Math.ceil((expiresAt.getTime() - now) / (1000 * 60 * 60 * 24));
             const isCopied = copiedKey === invite.id;
             return (
               <div

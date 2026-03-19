@@ -47,10 +47,7 @@ export class DrizzleConnectionInviteRepository implements IConnectionInviteRepos
     await this.db
       .delete(schema.connectionInvites)
       .where(
-        and(
-          eq(schema.connectionInvites.id, id),
-          eq(schema.connectionInvites.fromUserId, userId),
-        ),
+        and(eq(schema.connectionInvites.id, id), eq(schema.connectionInvites.fromUserId, userId)),
       );
   }
 }
