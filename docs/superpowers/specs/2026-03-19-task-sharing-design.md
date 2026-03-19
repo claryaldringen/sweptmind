@@ -122,10 +122,12 @@ interface SharedTask {
 #### `IUserConnectionRepository`
 
 - `create(userId: string, connectedUserId: string): Promise<UserConnection>` — creates both rows
-- `findByUser(userId: string): Promise<(UserConnection & { connectedUser: { id: string; name: string | null; email: string | null; image: string | null } })[]>`
+- `findByUser(userId: string): Promise<ConnectionWithUser[]>` — includes connectedUser info and sharedTaskCount
 - `findBetween(userId: string, otherUserId: string): Promise<UserConnection | undefined>`
+- `findById(id: string, userId: string): Promise<UserConnection | undefined>` — for authorization checks
 - `updateTargetList(id: string, userId: string, listId: string | null): Promise<void>`
 - `delete(userId: string, connectedUserId: string): Promise<void>` — deletes both rows
+- `countSharedTasks(connectionId: string): Promise<number>` — for sharedTaskCount field
 
 #### `ISharedTaskRepository`
 
@@ -140,32 +142,32 @@ interface SharedTask {
 
 #### `ConnectionService`
 
-Constructor: `IConnectionInviteRepository`, `IUserConnectionRepository`, `ISharedTaskRepository`, `IListRepository`
+Constructor: `IConnectionInviteRepository`, `IUserConnectionRepository`, `IListRepository`, `INotificationSender`
 
 - `createInvite(userId: string): Promise<ConnectionInvite>`
-- `acceptInvite(token: string, userId: string): Promise<UserConnection>` — validates: not self-invite, not expired, not already connected. Creates bidirectional connection.
+- `acceptInvite(token: string, userId: string): Promise<UserConnection>` — validates: not self-invite, not expired, not already accepted, not already connected. Creates bidirectional connection. Sends `invite_accepted` notification.
 - `getConnections(userId: string): Promise<ConnectionWithUser[]>` — list of connections with user info and shared task count
-- `disconnect(userId: string, connectedUserId: string): Promise<void>` — deletes shared_tasks records for the connection (target tasks become independent), then deletes both connection rows.
+- `disconnect(userId: string, connectedUserId: string): Promise<void>` — deletes both connection rows. CASCADE on `connectionId` FK automatically cleans up shared_tasks records. Target tasks remain independent.
 - `updateTargetList(userId: string, connectionId: string, listId: string | null): Promise<void>`
 - `getInvites(userId: string): Promise<ConnectionInvite[]>` — pending invites
 - `cancelInvite(inviteId: string, userId: string): Promise<void>`
 
 #### `TaskSharingService`
 
-Constructor: `ISharedTaskRepository`, `IUserConnectionRepository`, `ITaskRepository`, `IListRepository`, `INotificationSender`
+Constructor: `ISharedTaskRepository`, `IUserConnectionRepository`, `ITaskRepository`, `IListRepository`, `IUserRepository`, `INotificationSender`
 
 - `shareTask(taskId: string, userId: string, targetUserId: string): Promise<SharedTask>` — verifies task ownership, verifies connection exists, resolves target list (per-connection > global default > default list), creates task copy with synced fields, creates shared_task record, sends push notification.
 - `unshareTask(sharedTaskId: string, userId: string): Promise<void>` — verifies ownership of source task, deletes shared_task record (target task remains independent).
 - `getShareInfo(taskId: string, userId: string): Promise<ShareInfo[]>` — who the task is shared with (for owner view in detail panel).
 - `getShareSource(taskId: string, userId: string): Promise<ShareSourceInfo | null>` — who shared this task to me (for participant view).
-- `syncSharedFields(taskId: string): Promise<void>` — finds all linked target tasks via shared_tasks, batch updates dueDate/dueDateEnd/recurrence, sends push notifications to participants for changed fields.
+- `syncSharedFields(taskId: string, updatedFields: Partial<Task>): Promise<void>` — checks if any synced fields (dueDate/dueDateEnd/recurrence) changed, finds all linked target tasks via shared_tasks, batch updates changed synced fields, sends push notifications to participants.
 - `notifyOwnerAction(taskId: string, action: "completed" | "deleted"): Promise<void>` — sends push notification to all participants.
 
 ### Existing Service Changes
 
 #### `TaskService`
 
-- `update()` — after successful update, if dueDate, dueDateEnd, or recurrence changed, call `TaskSharingService.syncSharedFields(taskId)`.
+- `update()` — after successful update, if dueDate, dueDateEnd, or recurrence changed, call `TaskSharingService.syncSharedFields(taskId, updatedFields)`.
 - `delete()` — before deletion, call `TaskSharingService.notifyOwnerAction(taskId, "deleted")`.
 - `toggleCompleted()` — when completing, call `TaskSharingService.notifyOwnerAction(taskId, "completed")`.
 
