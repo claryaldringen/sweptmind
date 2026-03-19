@@ -80,6 +80,7 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     createPasswordResetToken: vi.fn().mockResolvedValue(null),
     validatePasswordResetToken: vi.fn().mockResolvedValue(null),
     deletePasswordResetToken: vi.fn(),
+    updateAiEnabled: vi.fn(),
     updateLlmConfig: vi.fn(),
     updateGoogleCalendarEnabled: vi.fn(),
     getGoogleCalendarEnabled: vi.fn().mockResolvedValue(true),

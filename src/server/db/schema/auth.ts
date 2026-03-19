@@ -27,6 +27,7 @@ export const users = pgTable("users", {
   googleCalendarChannelId: text("google_calendar_channel_id"),
   googleCalendarChannelExpiry: timestamp("google_calendar_channel_expiry", { mode: "date" }),
   googleCalendarTargetListId: text("google_calendar_target_list_id"),
+  aiEnabled: boolean("ai_enabled").notNull().default(true),
   llmProvider: text("llm_provider"),
   llmApiKey: text("llm_api_key"),
   llmBaseUrl: text("llm_base_url"),

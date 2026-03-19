@@ -19,9 +19,9 @@ interface TaskListProps {
 
 export function TaskList({ tasks, showListName = false, showCompleted = true }: TaskListProps) {
   const { t } = useTranslations();
-  const { isPremium } = useIsPremium();
+  const { isPremium, aiEnabled } = useIsPremium();
   const { allTasks, conflictingTaskIds } = useAppData();
-  const analyzingIds = useTaskAnalysis(tasks, isPremium, allTasks);
+  const analyzingIds = useTaskAnalysis(tasks, isPremium && aiEnabled, allTasks);
   const {
     futureTasks,
     completedTasks,

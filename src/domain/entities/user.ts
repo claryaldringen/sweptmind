@@ -19,6 +19,7 @@ export interface User {
   googleCalendarChannelId: string | null;
   googleCalendarChannelExpiry: Date | null;
   googleCalendarTargetListId: string | null;
+  aiEnabled: boolean;
   llmProvider: string | null;
   llmApiKey: string | null;
   llmBaseUrl: string | null;

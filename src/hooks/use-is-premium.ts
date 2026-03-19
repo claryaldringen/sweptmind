@@ -8,18 +8,24 @@ const GET_ME_FOR_PREMIUM = gql`
     me {
       id
       isPremium
+      aiEnabled
     }
   }
 `;
 
 interface GetMeForPremiumData {
-  me: { id: string; isPremium: boolean } | null;
+  me: { id: string; isPremium: boolean; aiEnabled: boolean } | null;
 }
 
-export function useIsPremium(): { isPremium: boolean; userId: string | null } {
+export function useIsPremium(): {
+  isPremium: boolean;
+  aiEnabled: boolean;
+  userId: string | null;
+} {
   const { data } = useQuery<GetMeForPremiumData>(GET_ME_FOR_PREMIUM);
   return {
     isPremium: data?.me?.isPremium ?? false,
+    aiEnabled: data?.me?.aiEnabled ?? true,
     userId: data?.me?.id ?? null,
   };
 }

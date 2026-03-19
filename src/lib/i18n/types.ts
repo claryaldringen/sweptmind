@@ -122,6 +122,8 @@ export interface Dictionary {
     newTaskPositionDesc: string;
     newTaskTop: string;
     newTaskBottom: string;
+    aiEnabled: string;
+    aiEnabledDesc: string;
     aiModel: string;
     aiModelDesc: string;
     aiProvider: string;

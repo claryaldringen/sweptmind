@@ -28,6 +28,9 @@ export class AiService {
 
   private async resolveProvider(userId: string): Promise<ILlmProvider> {
     const user = await this.userRepo.findById(userId);
+    if (user && !user.aiEnabled) {
+      throw new Error("AI is not configured");
+    }
     if (user?.llmProvider && user.llmApiKey) {
       return this.llmFactory.create({
         provider: user.llmProvider,

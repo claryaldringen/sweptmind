@@ -151,6 +151,13 @@ export class DrizzleUserRepository implements IUserRepository {
       .where(eq(schema.verificationTokens.token, hashedTokenValue));
   }
 
+  async updateAiEnabled(userId: string, enabled: boolean): Promise<void> {
+    await this.db
+      .update(schema.users)
+      .set({ aiEnabled: enabled })
+      .where(eq(schema.users.id, userId));
+  }
+
   async updateLlmConfig(
     userId: string,
     config: {

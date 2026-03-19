@@ -163,11 +163,18 @@ const GET_ME = gql`
       name
       email
       image
+      aiEnabled
       llmProvider
       llmApiKey
       llmBaseUrl
       llmModel
     }
+  }
+`;
+
+const UPDATE_AI_ENABLED = gql`
+  mutation UpdateAiEnabled($enabled: Boolean!) {
+    updateAiEnabled(enabled: $enabled)
   }
 `;
 
@@ -214,6 +221,7 @@ interface GetMeData {
     name: string | null;
     email: string | null;
     image: string | null;
+    aiEnabled: boolean;
     llmProvider: string | null;
     llmApiKey: string | null;
     llmBaseUrl: string | null;
@@ -299,7 +307,9 @@ export default function SettingsPage() {
   const subscription = subData?.subscription ?? null;
 
   // AI LLM config
+  const [updateAiEnabled] = useMutation(UPDATE_AI_ENABLED);
   const [updateLlmConfig] = useMutation(UPDATE_LLM_CONFIG);
+  const [aiEnabledState, setAiEnabledState] = useState(true);
   const [aiProvider, setAiProvider] = useState<string>("");
   const [aiApiKey, setAiApiKey] = useState("");
   const [aiBaseUrl, setAiBaseUrl] = useState("");
@@ -308,6 +318,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (meData?.me) {
+      setAiEnabledState(meData.me.aiEnabled ?? true);
       setAiProvider(meData.me.llmProvider ?? "");
       setAiBaseUrl(meData.me.llmBaseUrl ?? "");
       setAiModel(meData.me.llmModel ?? "");
@@ -1395,86 +1406,109 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* AI Model Settings — premium only */}
+        {/* AI Settings — premium only */}
         {isPremium && (
           <div className="rounded-lg border p-5">
-            <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold">
-              <Brain className="h-4 w-4" />
-              {t("settings.aiModel")}
-            </h2>
-            <p className="text-muted-foreground mb-4 text-xs">{t("settings.aiModelDesc")}</p>
-            <div className="space-y-3">
+            <div className="mb-4 flex items-center justify-between">
               <div>
-                <label className="mb-1 block text-sm font-medium">{t("settings.aiProvider")}</label>
-                <select
-                  value={aiProvider}
-                  onChange={(e) => setAiProvider(e.target.value)}
-                  className="border-input bg-background ring-offset-background focus:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
-                >
-                  <option value="">{t("settings.aiProviderDefault")}</option>
-                  <option value="openai">{t("settings.aiProviderOpenai")}</option>
-                  <option value="ollama">{t("settings.aiProviderOllama")}</option>
-                </select>
+                <h2 className="flex items-center gap-2 text-sm font-semibold">
+                  <Brain className="h-4 w-4" />
+                  {t("settings.aiEnabled")}
+                </h2>
+                <p className="text-muted-foreground text-xs">{t("settings.aiEnabledDesc")}</p>
               </div>
-              {aiProvider && aiProvider !== "ollama" && (
-                <div>
-                  <label className="mb-1 block text-sm font-medium">{t("settings.aiApiKey")}</label>
-                  <Input
-                    type="password"
-                    value={aiApiKey}
-                    onChange={(e) => setAiApiKey(e.target.value)}
-                    placeholder={t("settings.aiApiKeyPlaceholder")}
-                  />
-                </div>
-              )}
-              {aiProvider && (
-                <>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">
-                      {t("settings.aiBaseUrl")}
-                    </label>
-                    <Input
-                      value={aiBaseUrl}
-                      onChange={(e) => setAiBaseUrl(e.target.value)}
-                      placeholder={
-                        aiProvider === "ollama"
-                          ? "http://localhost:11434"
-                          : t("settings.aiBaseUrlPlaceholder")
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">
-                      {t("settings.aiModelName")}
-                    </label>
-                    <Input
-                      value={aiModel}
-                      onChange={(e) => setAiModel(e.target.value)}
-                      placeholder={
-                        aiProvider === "ollama" ? "llama3.1" : t("settings.aiModelPlaceholder")
-                      }
-                    />
-                  </div>
-                </>
-              )}
-              <div className="flex items-center gap-2">
-                <Button size="sm" onClick={handleSaveAiConfig}>
-                  {aiSaved ? (
-                    <>
-                      <Check className="mr-1 h-4 w-4" />
-                      {t("settings.aiSaved")}
-                    </>
-                  ) : (
-                    t("lists.save")
-                  )}
-                </Button>
-                {(aiProvider || aiApiKey || aiBaseUrl || aiModel) && (
-                  <Button size="sm" variant="outline" onClick={handleResetAiConfig}>
-                    {t("settings.aiReset")}
-                  </Button>
-                )}
-              </div>
+              <Switch
+                checked={aiEnabledState}
+                onCheckedChange={async (checked) => {
+                  setAiEnabledState(checked);
+                  await updateAiEnabled({ variables: { enabled: checked } });
+                }}
+              />
             </div>
+            {aiEnabledState && (
+              <>
+                <h3 className="mb-1 text-sm font-semibold">{t("settings.aiModel")}</h3>
+                <p className="text-muted-foreground mb-4 text-xs">{t("settings.aiModelDesc")}</p>
+              </>
+            )}
+            {aiEnabledState && (
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-sm font-medium">
+                    {t("settings.aiProvider")}
+                  </label>
+                  <select
+                    value={aiProvider}
+                    onChange={(e) => setAiProvider(e.target.value)}
+                    className="border-input bg-background ring-offset-background focus:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  >
+                    <option value="">{t("settings.aiProviderDefault")}</option>
+                    <option value="openai">{t("settings.aiProviderOpenai")}</option>
+                    <option value="ollama">{t("settings.aiProviderOllama")}</option>
+                  </select>
+                </div>
+                {aiProvider && aiProvider !== "ollama" && (
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      {t("settings.aiApiKey")}
+                    </label>
+                    <Input
+                      type="password"
+                      value={aiApiKey}
+                      onChange={(e) => setAiApiKey(e.target.value)}
+                      placeholder={t("settings.aiApiKeyPlaceholder")}
+                    />
+                  </div>
+                )}
+                {aiProvider && (
+                  <>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">
+                        {t("settings.aiBaseUrl")}
+                      </label>
+                      <Input
+                        value={aiBaseUrl}
+                        onChange={(e) => setAiBaseUrl(e.target.value)}
+                        placeholder={
+                          aiProvider === "ollama"
+                            ? "http://localhost:11434"
+                            : t("settings.aiBaseUrlPlaceholder")
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">
+                        {t("settings.aiModelName")}
+                      </label>
+                      <Input
+                        value={aiModel}
+                        onChange={(e) => setAiModel(e.target.value)}
+                        placeholder={
+                          aiProvider === "ollama" ? "llama3.1" : t("settings.aiModelPlaceholder")
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={handleSaveAiConfig}>
+                    {aiSaved ? (
+                      <>
+                        <Check className="mr-1 h-4 w-4" />
+                        {t("settings.aiSaved")}
+                      </>
+                    ) : (
+                      t("lists.save")
+                    )}
+                  </Button>
+                  {(aiProvider || aiApiKey || aiBaseUrl || aiModel) && (
+                    <Button size="sm" variant="outline" onClick={handleResetAiConfig}>
+                      {t("settings.aiReset")}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

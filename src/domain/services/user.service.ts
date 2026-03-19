@@ -44,6 +44,10 @@ export class UserService {
     return this.userRepo.updateOnboardingCompleted(userId, completed);
   }
 
+  async updateAiEnabled(userId: string, enabled: boolean): Promise<void> {
+    return this.userRepo.updateAiEnabled(userId, enabled);
+  }
+
   async updateLlmConfig(
     userId: string,
     config: {

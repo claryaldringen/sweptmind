@@ -126,6 +126,8 @@ export const en: Dictionary = {
     newTaskPositionDesc: "Where new tasks are added in the list.",
     newTaskTop: "Top",
     newTaskBottom: "Bottom",
+    aiEnabled: "AI task analysis",
+    aiEnabledDesc: "Automatic task analysis using AI",
     aiModel: "AI model",
     aiModelDesc: "Custom LLM for task analysis. Uses system default if not configured.",
     aiProvider: "Provider",

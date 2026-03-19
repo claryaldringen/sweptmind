@@ -18,6 +18,7 @@ export interface IUserRepository {
   createPasswordResetToken(email: string): Promise<string | null>;
   validatePasswordResetToken(token: string): Promise<string | null>;
   deletePasswordResetToken(token: string): Promise<void>;
+  updateAiEnabled(userId: string, enabled: boolean): Promise<void>;
   updateLlmConfig(
     userId: string,
     config: {

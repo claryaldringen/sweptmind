@@ -16,6 +16,7 @@ export const UserType = UserRef.implement({
         return ctx.services.subscription.isPremium(user.id);
       },
     }),
+    aiEnabled: t.exposeBoolean("aiEnabled"),
     llmProvider: t.exposeString("llmProvider", { nullable: true }),
     llmApiKey: t.string({
       nullable: true,
@@ -62,6 +63,21 @@ builder.mutationField("updateLlmConfig", (t) =>
         llmBaseUrl: input.llmBaseUrl ?? null,
         llmModel: input.llmModel ?? null,
       });
+      return true;
+    },
+  }),
+);
+
+builder.mutationField("updateAiEnabled", (t) =>
+  t.field({
+    type: "Boolean",
+    authScopes: { authenticated: true },
+    args: {
+      enabled: t.arg.boolean({ required: true }),
+    },
+    resolve: async (_root, { enabled }, ctx) => {
+      if (!ctx.userId) return false;
+      await ctx.services.user.updateAiEnabled(ctx.userId, enabled);
       return true;
     },
   }),

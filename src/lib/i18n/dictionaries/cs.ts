@@ -126,6 +126,8 @@ export const cs: Dictionary = {
     newTaskPositionDesc: "Kam se přidá nový úkol v seznamu.",
     newTaskTop: "Na začátek",
     newTaskBottom: "Na konec",
+    aiEnabled: "AI analýza úkolů",
+    aiEnabledDesc: "Automatická analýza úkolů pomocí AI",
     aiModel: "AI model",
     aiModelDesc: "Vlastní LLM pro analýzu úkolů. Bez nastavení se použije výchozí model.",
     aiProvider: "Poskytovatel",
