@@ -1,4 +1,4 @@
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, or, count } from "drizzle-orm";
 import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import type { UserConnection, ConnectionWithUser } from "@/domain/entities/user-connection";
@@ -72,17 +72,15 @@ export class DrizzleUserConnectionRepository implements IUserConnectionRepositor
     await this.db
       .delete(schema.userConnections)
       .where(
-        and(
-          eq(schema.userConnections.userId, userId),
-          eq(schema.userConnections.connectedUserId, connectedUserId),
-        ),
-      );
-    await this.db
-      .delete(schema.userConnections)
-      .where(
-        and(
-          eq(schema.userConnections.userId, connectedUserId),
-          eq(schema.userConnections.connectedUserId, userId),
+        or(
+          and(
+            eq(schema.userConnections.userId, userId),
+            eq(schema.userConnections.connectedUserId, connectedUserId),
+          ),
+          and(
+            eq(schema.userConnections.userId, connectedUserId),
+            eq(schema.userConnections.connectedUserId, userId),
+          ),
         ),
       );
   }

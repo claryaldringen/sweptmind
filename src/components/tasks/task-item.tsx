@@ -761,7 +761,7 @@ export const TaskItem = memo(function TaskItem({
                   {task.isSharedFrom && (
                     <span
                       className="flex items-center gap-0.5 text-amber-500"
-                      title={t("sharing.sharedFrom")}
+                      title={t("sharing.incomingTasks")}
                     >
                       <Link2 className="h-3 w-3" />
                     </span>

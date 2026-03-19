@@ -8,7 +8,7 @@ export class DrizzleConnectionInviteRepository implements IConnectionInviteRepos
   constructor(private readonly db: Database) {}
 
   async create(fromUserId: string): Promise<ConnectionInvite> {
-    const token = crypto.randomUUID().slice(0, 8);
+    const token = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const [invite] = await this.db
       .insert(schema.connectionInvites)
