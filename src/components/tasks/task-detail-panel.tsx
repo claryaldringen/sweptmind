@@ -24,7 +24,11 @@ import { TaskDependency } from "./detail/task-dependency";
 import { TaskAttachments } from "./detail/task-attachments";
 import { TaskAiSection } from "./detail/task-ai-section";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
-import { computeFirstOccurrence, parseRecurrence, formatRecurrenceLabel } from "@/domain/services/recurrence";
+import {
+  computeFirstOccurrence,
+  parseRecurrence,
+  formatRecurrenceLabel,
+} from "@/domain/services/recurrence";
 import { pickNextTagColor } from "@/lib/tag-colors";
 import { useIsPremium } from "@/hooks/use-is-premium";
 import { useAppData } from "@/components/providers/app-data-provider";
@@ -34,10 +38,7 @@ import {
   TOGGLE_TASK_COMPLETED as TOGGLE_COMPLETED,
   DELETE_TASK,
 } from "@/graphql/shared/task-mutations";
-import {
-  DELETE_LOCATION,
-  CREATE_LOCATION,
-} from "@/graphql/shared/location-mutations";
+import { DELETE_LOCATION, CREATE_LOCATION } from "@/graphql/shared/location-mutations";
 
 // ---------------------------------------------------------------------------
 // GraphQL operations
@@ -132,7 +133,6 @@ const REMOVE_TAG_FROM_TASK = gql`
     removeTagFromTask(taskId: $taskId, tagId: $tagId)
   }
 `;
-
 
 // ---------------------------------------------------------------------------
 // Types

@@ -195,9 +195,7 @@ export function useApplyDecomposition({
       // Step 1: Create project tag
       let projectTag: TaskTag | null = null;
       if (projectName) {
-        const existingTag = allTags.find(
-          (t) => t.name.toLowerCase() === projectName.toLowerCase(),
-        );
+        const existingTag = allTags.find((t) => t.name.toLowerCase() === projectName.toLowerCase());
         if (existingTag) {
           projectTag = existingTag;
         } else {
@@ -385,7 +383,11 @@ export function useApplyDecomposition({
         }
 
         // Set dependency based on AI suggestion
-        if (step.dependsOn !== null && step.dependsOn >= 0 && step.dependsOn < taskIdByIndex.length) {
+        if (
+          step.dependsOn !== null &&
+          step.dependsOn >= 0 &&
+          step.dependsOn < taskIdByIndex.length
+        ) {
           const blockedById = taskIdByIndex[step.dependsOn];
           await updateTask({
             variables: { id: createdId, input: { blockedByTaskId: blockedById } },

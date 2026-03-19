@@ -1,6 +1,14 @@
 "use client";
 
-import { memo, useMemo, useState, useEffect, useRef, useSyncExternalStore, type MouseEvent } from "react";
+import {
+  memo,
+  useMemo,
+  useState,
+  useEffect,
+  useRef,
+  useSyncExternalStore,
+  type MouseEvent,
+} from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { gql } from "@apollo/client";
 import { useMutation, useApolloClient } from "@apollo/client/react";
