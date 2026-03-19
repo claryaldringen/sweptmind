@@ -259,7 +259,7 @@ export function useApplyDecomposition({
             if (!data?.createTask) return;
             cache.modify({
               fields: {
-                visibleTasks(existing = []) {
+                activeTasks(existing = []) {
                   const newRef = cache.writeFragment({
                     data: {
                       ...data.createTask,

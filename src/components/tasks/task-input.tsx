@@ -76,15 +76,18 @@ export function TaskInput({ listId, placeholder, onTaskCreated }: TaskInputProps
         dependentTaskCount: 0,
         attachments: [],
         aiAnalysis: null,
+        isGoogleCalendarEvent: false,
       },
       fragment: APP_TASK_FIELDS,
       fragmentName: "AppTaskFields",
     });
 
-    // Add to visibleTasks cache (used by AppDataProvider)
+    // Add to activeTasks cache (used by AppDataProvider).
+    // Safe from race conditions: server returns ALL active tasks unfiltered,
+    // so cache-and-network refetch will include this task once mutation completes.
     client.cache.modify({
       fields: {
-        visibleTasks(existing = []) {
+        activeTasks(existing = []) {
           const newRef = { __ref: `Task:${id}` };
           return position === "top" ? [newRef, ...existing] : [...existing, newRef];
         },
@@ -109,28 +112,11 @@ export function TaskInput({ listId, placeholder, onTaskCreated }: TaskInputProps
     // Fire mutation — same ID means Apollo auto-merges server response
     createTask({
       variables: { input: { id, listId, title: trimmed } },
-      update(cache, { data }) {
-        if (!data?.createTask) return;
-        // Re-ensure task is in visibleTasks after mutation response.
-        // This guards against GET_APP_DATA refetch overwriting the optimistic cache.
-        cache.modify({
-          fields: {
-            visibleTasks(existing = [], { readField }) {
-              const alreadyExists = existing.some(
-                (ref: { __ref: string }) => readField("id", ref) === id,
-              );
-              if (alreadyExists) return existing;
-              const newRef = { __ref: `Task:${id}` };
-              return position === "top" ? [newRef, ...existing] : [...existing, newRef];
-            },
-          },
-        });
-      },
       onError() {
         client.cache.evict({ id: client.cache.identify({ __typename: "Task", id }) });
         client.cache.modify({
           fields: {
-            visibleTasks(existing = [], { readField }) {
+            activeTasks(existing = [], { readField }) {
               return existing.filter((ref: { __ref: string }) => readField("id", ref) !== id);
             },
           },

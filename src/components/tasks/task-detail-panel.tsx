@@ -322,7 +322,7 @@ export function TaskDetailPanel() {
       const { id: completedId, isCompleted } = data.toggleTaskCompleted;
       cache.modify({
         fields: {
-          visibleTasks(existing = [], { readField }) {
+          activeTasks(existing = [], { readField }) {
             for (const ref of existing) {
               if (readField("blockedByTaskId", ref) === completedId) {
                 cache.modify({

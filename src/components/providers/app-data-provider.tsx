@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { gql } from "@apollo/client";
-import { useQuery, useLazyQuery, useApolloClient } from "@apollo/client/react";
+import { useQuery, useApolloClient } from "@apollo/client/react";
 import { detectTimeConflicts } from "@/lib/time-conflicts";
 import type {
   TaskStep,
@@ -106,7 +106,7 @@ export const APP_TASK_FIELDS = gql`
 `;
 
 // ---------------------------------------------------------------------------
-// Phase 1: App metadata + visible tasks
+// Phase 1: App metadata + active tasks (all non-completed)
 // ---------------------------------------------------------------------------
 
 export const GET_APP_DATA = gql`
@@ -133,7 +133,7 @@ export const GET_APP_DATA = gql`
         radius
       }
     }
-    visibleTasks {
+    activeTasks {
       ...AppTaskFields
     }
     tags {
@@ -164,20 +164,7 @@ export const GET_APP_DATA = gql`
 `;
 
 // ---------------------------------------------------------------------------
-// Phase 2: Future tasks (loaded in background)
-// ---------------------------------------------------------------------------
-
-const GET_FUTURE_TASKS = gql`
-  ${APP_TASK_FIELDS}
-  query GetFutureTasks {
-    futureTasks {
-      ...AppTaskFields
-    }
-  }
-`;
-
-// ---------------------------------------------------------------------------
-// Phase 3: Completed tasks (loaded in background, paginated)
+// Phase 2: Completed tasks (loaded in background, paginated)
 // ---------------------------------------------------------------------------
 
 const GET_COMPLETED_TASKS = gql`
@@ -290,13 +277,9 @@ export interface LocationItem {
 
 interface GetAppDataResult {
   lists: ListItem[];
-  visibleTasks: AppTask[];
+  activeTasks: AppTask[];
   tags: TagItem[];
   locations: LocationItem[];
-}
-
-interface GetFutureTasksResult {
-  futureTasks: AppTask[];
 }
 
 interface GetCompletedTasksResult {
@@ -316,8 +299,6 @@ interface AppDataContextValue {
   tags: TagItem[];
   locations: LocationItem[];
   loading: boolean;
-  /** True once future tasks have been loaded */
-  futureTasksLoaded: boolean;
   /** True once initial completed tasks have been loaded */
   completedTasksLoaded: boolean;
   hasMoreCompleted: boolean;
@@ -334,18 +315,14 @@ const AppDataContext = createContext<AppDataContextValue | null>(null);
 // ---------------------------------------------------------------------------
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
-  // Phase 1: metadata + visible tasks
+  // Phase 1: metadata + active tasks (all non-completed)
   const {
     data: appData,
     loading: appLoading,
     refetch: refetchAppData,
   } = useQuery<GetAppDataResult>(GET_APP_DATA);
 
-  // Phase 2: future tasks (loaded after phase 1)
-  const [loadFuture, { data: futureData, called: futureCalled }] =
-    useLazyQuery<GetFutureTasksResult>(GET_FUTURE_TASKS);
-
-  // Phase 3: completed tasks (loaded after phase 2, accumulated manually)
+  // Phase 2: completed tasks (loaded after phase 1, paginated)
   const apolloClient = useApolloClient();
   const [completedTasks, setCompletedTasks] = useState<AppTask[]>([]);
   const [hasMoreCompleted, setHasMoreCompleted] = useState(true);
@@ -378,18 +355,12 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     [apolloClient],
   );
 
-  // Sequential loading: phase 1 → phase 2 → phase 3
+  // Sequential loading: phase 1 → phase 2
   useEffect(() => {
-    if (appData && !futureCalled) {
-      loadFuture();
-    }
-  }, [appData, futureCalled, loadFuture]);
-
-  useEffect(() => {
-    if (futureData && !completedLoaded) {
+    if (appData && !completedLoaded) {
       loadCompletedTasks(0);
     }
-  }, [futureData, completedLoaded, loadCompletedTasks]);
+  }, [appData, completedLoaded, loadCompletedTasks]);
 
   // Fetch more completed tasks (for infinite scroll)
   const fetchMoreCompleted = useCallback(() => {
@@ -397,22 +368,14 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     loadCompletedTasks(completedTasks.length);
   }, [hasMoreCompleted, completedTasks.length, loadCompletedTasks]);
 
-  // Merge all tasks into a single array
+  // Merge active + completed into a single array
   const allTasks = useMemo(() => {
-    const visible = appData?.visibleTasks ?? [];
-    const future = futureData?.futureTasks ?? [];
-
-    if (completedTasks.length === 0 && future.length === 0) return visible;
+    const active = appData?.activeTasks ?? [];
+    if (completedTasks.length === 0) return active;
 
     const seen = new Set<string>();
     const result: AppTask[] = [];
-    for (const task of visible) {
-      if (!seen.has(task.id)) {
-        seen.add(task.id);
-        result.push(task);
-      }
-    }
-    for (const task of future) {
+    for (const task of active) {
       if (!seen.has(task.id)) {
         seen.add(task.id);
         result.push(task);
@@ -425,7 +388,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       }
     }
     return result;
-  }, [appData?.visibleTasks, futureData?.futureTasks, completedTasks]);
+  }, [appData?.activeTasks, completedTasks]);
 
   const refetch = useCallback(() => {
     refetchAppData();
@@ -443,7 +406,6 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       tags: appData?.tags ?? [],
       locations: appData?.locations ?? [],
       loading: appLoading && !appData,
-      futureTasksLoaded: !!futureData,
       completedTasksLoaded: completedLoaded,
       hasMoreCompleted,
       fetchMoreCompleted,
@@ -454,7 +416,6 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       appData,
       allTasks,
       appLoading,
-      futureData,
       completedLoaded,
       hasMoreCompleted,
       fetchMoreCompleted,

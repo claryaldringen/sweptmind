@@ -195,23 +195,11 @@ builder.queryField("allTasks", (t) =>
   }),
 );
 
-builder.queryField("visibleTasks", (t) =>
+builder.queryField("activeTasks", (t) =>
   t.field({
     type: [TaskType],
     authScopes: { authenticated: true },
-    args: {
-      listId: t.arg.string({ required: false }),
-    },
-    resolve: async (_root, args, ctx) =>
-      ctx.services.task.getVisibleByUser(ctx.userId!, args.listId),
-  }),
-);
-
-builder.queryField("futureTasks", (t) =>
-  t.field({
-    type: [TaskType],
-    authScopes: { authenticated: true },
-    resolve: async (_root, _args, ctx) => ctx.services.task.getFutureByUser(ctx.userId!),
+    resolve: async (_root, _args, ctx) => ctx.services.task.getActiveByUser(ctx.userId!),
   }),
 );
 
