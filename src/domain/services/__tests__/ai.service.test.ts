@@ -91,6 +91,8 @@ function makeTaskRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository
     findCompletedByUser: vi.fn().mockResolvedValue([]),
     deleteMany: vi.fn(),
     updateMany: vi.fn(),
+    findByIdUnchecked: vi.fn(),
+    updateUnchecked: vi.fn(),
     ...overrides,
   };
 }
@@ -172,6 +174,7 @@ function makeUserRepo(overrides: Partial<User> = {}): IUserRepository {
     googleCalendarTargetListId: null,
     aiEnabled: true,
     llmModel: null,
+    sharingDefaultListId: null,
     ...overrides,
   };
   return {
@@ -212,6 +215,7 @@ function makeUserRepo(overrides: Partial<User> = {}): IUserRepository {
       targetListId: null,
     }),
     findUsersWithExpiringChannels: vi.fn().mockResolvedValue([]),
+    updateSharingDefaultList: vi.fn(),
   };
 }
 

@@ -92,6 +92,7 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     getGoogleCalendarTargetListId: vi.fn().mockResolvedValue(null),
     getGoogleCalendarSettings: vi.fn().mockResolvedValue({ ...defaultSettings }),
     findUsersWithExpiringChannels: vi.fn().mockResolvedValue([]),
+    updateSharingDefaultList: vi.fn(),
     ...overrides,
   };
 }
@@ -156,6 +157,8 @@ function makeTaskRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository
     findCompletedByUser: vi.fn().mockResolvedValue([]),
     deleteMany: vi.fn(),
     updateMany: vi.fn(),
+    findByIdUnchecked: vi.fn(),
+    updateUnchecked: vi.fn(),
     ...overrides,
   };
 }

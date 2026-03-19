@@ -27,6 +27,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     googleCalendarTargetListId: null,
     aiEnabled: true,
     llmModel: null,
+    sharingDefaultListId: null,
     ...overrides,
   };
 }
@@ -70,6 +71,7 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
       targetListId: null,
     }),
     findUsersWithExpiringChannels: vi.fn().mockResolvedValue([]),
+    updateSharingDefaultList: vi.fn(),
     ...overrides,
   };
 }

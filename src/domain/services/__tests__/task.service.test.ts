@@ -123,6 +123,8 @@ function makeRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository {
     findCompletedByUser: vi.fn().mockResolvedValue([]),
     deleteMany: vi.fn(),
     updateMany: vi.fn(),
+    findByIdUnchecked: vi.fn(),
+    updateUnchecked: vi.fn(),
     ...overrides,
   };
 }
