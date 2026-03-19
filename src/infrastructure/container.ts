@@ -14,6 +14,9 @@ import { DrizzleTaskAiAnalysisRepository } from "./persistence/drizzle-task-ai-a
 import { DrizzlePushSubscriptionRepository } from "./persistence/drizzle-push-subscription.repository";
 import { DrizzleAiUsageRepository } from "./persistence/drizzle-ai-usage.repository";
 import { OpenAiCompatibleProvider } from "./llm/openai-compatible-provider";
+import { StripePaymentGateway } from "./payment/stripe-payment-gateway";
+import { QrCodeGenerator } from "./payment/qrcode-generator";
+import { VercelBlobStorage } from "./blob/vercel-blob-storage";
 import { TaskService } from "@/domain/services/task.service";
 import { ListService } from "@/domain/services/list.service";
 import { StepService } from "@/domain/services/step.service";
@@ -26,6 +29,7 @@ import { UserService } from "@/domain/services/user.service";
 import { OnboardingService } from "@/domain/services/onboarding.service";
 import { SubscriptionService } from "@/domain/services/subscription.service";
 import { AttachmentService } from "@/domain/services/attachment.service";
+import { PaymentService } from "@/domain/services/payment.service";
 import { AiService } from "@/domain/services/ai.service";
 import { GoogleCalendarService } from "@/domain/services/google-calendar.service";
 import { PushSubscriptionService } from "@/domain/services/push-subscription.service";
@@ -46,6 +50,13 @@ const aiUsageRepo = new DrizzleAiUsageRepository(db);
 const pushSubRepo = new DrizzlePushSubscriptionRepository(db);
 
 const llmProvider = new OpenAiCompatibleProvider();
+const blobStorage = new VercelBlobStorage();
+const paymentGateway = new StripePaymentGateway(
+  process.env.STRIPE_SECRET_KEY ?? "",
+  process.env.STRIPE_PRICE_MONTHLY_ID ?? "",
+  process.env.STRIPE_PRICE_YEARLY_ID ?? "",
+);
+const qrGenerator = new QrCodeGenerator();
 
 const bcryptHasher: IPasswordHasher = {
   hash: (password) => hash(password, 12),
@@ -93,7 +104,8 @@ export const services = {
   user: new UserService(userRepo),
   onboarding: new OnboardingService(listRepo, locationRepo, userRepo),
   subscription: subscriptionService,
-  attachment: new AttachmentService(attachmentRepo, taskRepo, subscriptionService),
+  attachment: new AttachmentService(attachmentRepo, taskRepo, subscriptionService, blobStorage),
+  payment: new PaymentService(paymentGateway, qrGenerator, subscriptionRepo),
   ai: new AiService(
     aiAnalysisRepo,
     taskRepo,

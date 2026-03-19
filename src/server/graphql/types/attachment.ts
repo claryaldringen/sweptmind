@@ -48,9 +48,6 @@ builder.mutationField("deleteAttachment", (t) =>
       id: t.arg.string({ required: true }),
     },
     resolve: async (_root, args, ctx) => {
-      const blobUrl = await ctx.services.attachment.getAttachmentBlobUrl(args.id, ctx.userId!);
-      const { del } = await import("@vercel/blob");
-      await del(blobUrl);
       await ctx.services.attachment.deleteAttachment(args.id, ctx.userId!);
       return true;
     },

@@ -3,6 +3,7 @@ import { AttachmentService } from "../attachment.service";
 import { SubscriptionService } from "../subscription.service";
 import type { IAttachmentRepository } from "../../repositories/attachment.repository";
 import type { ITaskRepository } from "../../repositories/task.repository";
+import type { IBlobStorage } from "../../ports/blob-storage";
 import type { TaskAttachment } from "../../entities/task-attachment";
 import type { Task } from "../../entities/task";
 
@@ -96,17 +97,23 @@ function makeSubscriptionService(isPremium = true): SubscriptionService {
   return svc;
 }
 
+function makeBlobStorage(): IBlobStorage {
+  return { delete: vi.fn().mockResolvedValue(undefined) };
+}
+
 describe("AttachmentService", () => {
   let attachmentRepo: IAttachmentRepository;
   let taskRepo: ITaskRepository;
   let subscriptionService: SubscriptionService;
+  let blobStorage: IBlobStorage;
   let service: AttachmentService;
 
   beforeEach(() => {
     attachmentRepo = makeAttachmentRepo();
     taskRepo = makeTaskRepo();
     subscriptionService = makeSubscriptionService(true);
-    service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService);
+    blobStorage = makeBlobStorage();
+    service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService, blobStorage);
   });
 
   describe("getByTaskId", () => {
@@ -133,7 +140,7 @@ describe("AttachmentService", () => {
     it("vyhodi chybu pokud uzivatel neni premium", async () => {
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
       subscriptionService = makeSubscriptionService(false);
-      service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService);
+      service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService, blobStorage);
 
       await expect(
         service.validateUpload("user-1", "task-1", 1024, "application/pdf"),
@@ -202,7 +209,7 @@ describe("AttachmentService", () => {
       vi.mocked(attachmentRepo.findById).mockResolvedValue(makeAttachment());
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
       subscriptionService = makeSubscriptionService(false);
-      service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService);
+      service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService, blobStorage);
 
       await expect(service.download("att-1", "user-1")).rejects.toThrow(
         "Premium subscription required",
@@ -263,7 +270,7 @@ describe("AttachmentService", () => {
     it("vyhodi chybu pokud uzivatel neni premium", async () => {
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
       subscriptionService = makeSubscriptionService(false);
-      service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService);
+      service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService, blobStorage);
 
       const input = {
         taskId: "task-1",
@@ -298,19 +305,21 @@ describe("AttachmentService", () => {
       vi.mocked(attachmentRepo.findById).mockResolvedValue(makeAttachment());
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
       subscriptionService = makeSubscriptionService(false);
-      service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService);
+      service = new AttachmentService(attachmentRepo, taskRepo, subscriptionService, blobStorage);
 
       await expect(service.deleteAttachment("att-1", "user-1")).rejects.toThrow(
         "Premium subscription required",
       );
     });
 
-    it("smaze prilohu pro premium uzivatele", async () => {
-      vi.mocked(attachmentRepo.findById).mockResolvedValue(makeAttachment());
+    it("smaze prilohu pro premium uzivatele (blob + DB)", async () => {
+      const attachment = makeAttachment({ blobUrl: "https://blob.example.com/photo.jpg" });
+      vi.mocked(attachmentRepo.findById).mockResolvedValue(attachment);
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask());
 
       await service.deleteAttachment("att-1", "user-1");
 
+      expect(blobStorage.delete).toHaveBeenCalledWith("https://blob.example.com/photo.jpg");
       expect(attachmentRepo.delete).toHaveBeenCalledWith("att-1");
     });
   });

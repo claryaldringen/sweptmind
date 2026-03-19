@@ -1,6 +1,7 @@
 import type { TaskAttachment, CreateAttachmentInput } from "../entities/task-attachment";
 import type { IAttachmentRepository } from "../repositories/attachment.repository";
 import type { ITaskRepository } from "../repositories/task.repository";
+import type { IBlobStorage } from "../ports/blob-storage";
 import type { SubscriptionService } from "./subscription.service";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -29,6 +30,7 @@ export class AttachmentService {
     private readonly attachmentRepo: IAttachmentRepository,
     private readonly taskRepo: ITaskRepository,
     private readonly subscriptionService: SubscriptionService,
+    private readonly blobStorage: IBlobStorage,
   ) {}
 
   private async verifyTaskOwnership(taskId: string, userId: string): Promise<void> {
@@ -120,6 +122,7 @@ export class AttachmentService {
       throw new Error("Premium subscription required");
     }
 
+    await this.blobStorage.delete(attachment.blobUrl);
     await this.attachmentRepo.delete(attachmentId);
   }
 }

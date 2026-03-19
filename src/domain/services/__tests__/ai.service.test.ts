@@ -490,9 +490,7 @@ describe("AiService", () => {
     it("oznaci existujici tasky jako actionable", async () => {
       const task1 = makeTask({ id: "t1", title: "Task 1" });
       const task2 = makeTask({ id: "t2", title: "Task 2" });
-      vi.mocked(taskRepo.findById)
-        .mockResolvedValueOnce(task1)
-        .mockResolvedValueOnce(task2);
+      vi.mocked(taskRepo.findById).mockResolvedValueOnce(task1).mockResolvedValueOnce(task2);
 
       await service.markActionable(["t1", "t2"], "user-1");
 
@@ -536,9 +534,7 @@ describe("ai-models config", () => {
   it("getModelConfig vrati default pro neznamy model", async () => {
     const { getModelConfig } = await import("../../config/ai-models");
 
-    expect(getModelConfig("nonexistent")).toEqual(
-      expect.objectContaining({ id: "gpt-4o-mini" }),
-    );
+    expect(getModelConfig("nonexistent")).toEqual(expect.objectContaining({ id: "gpt-4o-mini" }));
     expect(getModelConfig(null)).toEqual(expect.objectContaining({ id: "gpt-4o-mini" }));
   });
 

@@ -39,28 +39,8 @@ builder.mutationField("createCheckoutSession", (t) =>
       plan: t.arg.string({ required: true }),
     },
     resolve: async (_root, args, ctx) => {
-      const { default: Stripe } = await import("stripe");
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-      const session = await stripe.checkout.sessions.create({
-        mode: "subscription",
-        payment_method_types: ["card"],
-        line_items: [
-          {
-            price:
-              args.plan === "yearly"
-                ? process.env.STRIPE_PRICE_YEARLY_ID!
-                : process.env.STRIPE_PRICE_MONTHLY_ID!,
-            quantity: 1,
-          },
-        ],
-        metadata: { userId: ctx.userId! },
-        success_url: `${process.env.AUTH_URL}/settings?checkout=success`,
-        cancel_url: `${process.env.AUTH_URL}/settings?checkout=cancel`,
-        automatic_tax: { enabled: true },
-      });
-
-      return session.url;
+      const plan = args.plan === "yearly" ? "yearly" : "monthly";
+      return ctx.services.payment.createCheckoutSession(ctx.userId!, plan, process.env.AUTH_URL!);
     },
   }),
 );
@@ -71,20 +51,7 @@ builder.mutationField("createCustomerPortalSession", (t) =>
     type: "String",
     authScopes: { authenticated: true },
     resolve: async (_root, _args, ctx) => {
-      const sub = await ctx.services.subscription.getSubscription(ctx.userId!);
-      if (!sub?.stripeCustomerId) {
-        throw new Error("No Stripe subscription found");
-      }
-
-      const { default: Stripe } = await import("stripe");
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-      const session = await stripe.billingPortal.sessions.create({
-        customer: sub.stripeCustomerId,
-        return_url: `${process.env.AUTH_URL}/settings`,
-      });
-
-      return session.url;
+      return ctx.services.payment.createCustomerPortalSession(ctx.userId!, process.env.AUTH_URL!);
     },
   }),
 );
@@ -98,22 +65,12 @@ builder.mutationField("generateBankTransferQR", (t) =>
       plan: t.arg.string({ required: true }),
     },
     resolve: async (_root, args, ctx) => {
-      const amount = args.plan === "yearly" ? 490 : 49;
-      const accountNumber = process.env.FIO_ACCOUNT_NUMBER!;
-      const userId = ctx.userId!;
-
-      // SPAYD format
-      const spayd = [
-        "SPD*1.0",
-        `ACC:${accountNumber}`,
-        `AM:${amount}.00`,
-        "CC:CZK",
-        `X-VS:${userId.replace(/-/g, "").slice(0, 10)}`,
-        "MSG:SweptMind Premium",
-      ].join("*");
-
-      const QRCode = (await import("qrcode")).default;
-      return QRCode.toDataURL(spayd);
+      const plan = args.plan === "yearly" ? "yearly" : "monthly";
+      return ctx.services.payment.generateBankTransferQR(
+        ctx.userId!,
+        plan,
+        process.env.FIO_ACCOUNT_NUMBER!,
+      );
     },
   }),
 );
