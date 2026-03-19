@@ -966,3 +966,12 @@ export type GetMeQuery = {
     image: string | null;
   } | null;
 };
+
+export type AcceptConnectionInviteMutationVariables = Exact<{
+  token: Scalars["String"]["input"];
+}>;
+
+export type AcceptConnectionInviteMutation = {
+  __typename?: "Mutation";
+  acceptConnectionInvite: boolean | null;
+};

@@ -1,0 +1,3 @@
+mutation AcceptConnectionInvite($token: String!) {
+  acceptConnectionInvite(token: $token)
+}
