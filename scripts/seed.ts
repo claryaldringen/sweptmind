@@ -1,7 +1,10 @@
+import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { hash } from "bcryptjs";
 import * as schema from "../src/server/db/schema";
+
+config({ path: ".env.local" });
 
 async function seed() {
   const pool = new Pool({

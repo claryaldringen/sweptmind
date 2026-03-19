@@ -11,6 +11,7 @@ const yoga = createYoga({
   context: createContext,
   graphqlEndpoint: "/api/graphql",
   fetchAPI: { Response },
+  // eslint-disable-next-line react-hooks/rules-of-hooks -- Envelop plugin factory, not a React hook
   plugins: [useDepthLimit({ maxDepth: 10 })],
   maskedErrors: {
     isDev: process.env.NODE_ENV === "development",
