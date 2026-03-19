@@ -10,6 +10,7 @@ import { subscriptions, bankPayments } from "./subscriptions";
 import { taskAttachments } from "./attachments";
 import { taskAiAnalyses } from "./ai-analyses";
 import { aiUsage } from "./ai-usage";
+import { connectionInvites, userConnections, sharedTasks } from "./sharing";
 
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
@@ -23,6 +24,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(subscriptions),
   bankPayments: many(bankPayments),
   aiUsage: many(aiUsage),
+  connectionInvites: many(connectionInvites),
+  acceptedInvites: many(connectionInvites, { relationName: "acceptedInvites" }),
+  connections: many(userConnections),
+  connectedTo: many(userConnections, { relationName: "connectedTo" }),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -76,6 +81,8 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
     fields: [tasks.id],
     references: [taskAiAnalyses.taskId],
   }),
+  sharedFrom: many(sharedTasks, { relationName: "sourceTask" }),
+  sharedTo: many(sharedTasks, { relationName: "targetTask" }),
 }));
 
 export const stepsRelations = relations(steps, ({ one }) => ({
@@ -163,5 +170,51 @@ export const taskAiAnalysesRelations = relations(taskAiAnalyses, ({ one }) => ({
   task: one(tasks, {
     fields: [taskAiAnalyses.taskId],
     references: [tasks.id],
+  }),
+}));
+
+export const connectionInvitesRelations = relations(connectionInvites, ({ one }) => ({
+  fromUser: one(users, {
+    fields: [connectionInvites.fromUserId],
+    references: [users.id],
+  }),
+  acceptedByUser: one(users, {
+    fields: [connectionInvites.acceptedByUserId],
+    references: [users.id],
+    relationName: "acceptedInvites",
+  }),
+}));
+
+export const userConnectionsRelations = relations(userConnections, ({ one, many }) => ({
+  user: one(users, {
+    fields: [userConnections.userId],
+    references: [users.id],
+  }),
+  connectedUser: one(users, {
+    fields: [userConnections.connectedUserId],
+    references: [users.id],
+    relationName: "connectedTo",
+  }),
+  targetList: one(lists, {
+    fields: [userConnections.targetListId],
+    references: [lists.id],
+  }),
+  sharedTasks: many(sharedTasks),
+}));
+
+export const sharedTasksRelations = relations(sharedTasks, ({ one }) => ({
+  connection: one(userConnections, {
+    fields: [sharedTasks.connectionId],
+    references: [userConnections.id],
+  }),
+  sourceTask: one(tasks, {
+    fields: [sharedTasks.sourceTaskId],
+    references: [tasks.id],
+    relationName: "sourceTask",
+  }),
+  targetTask: one(tasks, {
+    fields: [sharedTasks.targetTaskId],
+    references: [tasks.id],
+    relationName: "targetTask",
   }),
 }));

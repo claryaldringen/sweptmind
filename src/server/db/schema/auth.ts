@@ -29,6 +29,8 @@ export const users = pgTable("users", {
   googleCalendarTargetListId: text("google_calendar_target_list_id"),
   aiEnabled: boolean("ai_enabled").notNull().default(true),
   llmModel: text("llm_model"),
+  // FK to lists.id — omitting .references() to avoid circular import (lists.ts → auth.ts)
+  sharingDefaultListId: text("sharing_default_list_id"),
 });
 
 export const accounts = pgTable(

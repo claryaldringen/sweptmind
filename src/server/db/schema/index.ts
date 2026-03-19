@@ -9,4 +9,5 @@ export * from "./subscriptions";
 export * from "./attachments";
 export * from "./ai-analyses";
 export * from "./ai-usage";
+export * from "./sharing";
 export * from "./relations";
