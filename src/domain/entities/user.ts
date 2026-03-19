@@ -21,6 +21,7 @@ export interface User {
   googleCalendarTargetListId: string | null;
   aiEnabled: boolean;
   llmModel: string | null;
+  sharingDefaultListId: string | null;
 }
 
 export interface CreateUserInput {
