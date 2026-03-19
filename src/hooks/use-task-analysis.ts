@@ -135,8 +135,12 @@ export function useTaskAnalysis(
         await analyzeTask({ variables: { taskId: task.id, locale } });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes("AI is not configured") || msg.includes("not configured")) {
-          // Stop polling entirely — AI is not available
+        if (
+          msg.includes("AI is not configured") ||
+          msg.includes("not configured") ||
+          msg.includes("Monthly AI analysis limit reached")
+        ) {
+          // Stop polling entirely — AI is not available or budget exhausted
           disabledRef.current = true;
         } else {
           analyzedRef.current.delete(task.id);

@@ -3,17 +3,10 @@ import type { ITaskAiAnalysisRepository } from "../repositories/task-ai-analysis
 import type { ITaskRepository } from "../repositories/task.repository";
 import type { IListRepository } from "../repositories/list.repository";
 import type { IUserRepository } from "../repositories/user.repository";
+import type { IAiUsageRepository } from "../repositories/ai-usage.repository";
 import type { ILlmProvider } from "../ports/llm-provider";
 import type { SubscriptionService } from "./subscription.service";
-
-export interface ILlmProviderFactory {
-  create(config: {
-    provider: string;
-    apiKey: string;
-    baseUrl?: string | null;
-    model?: string | null;
-  }): ILlmProvider;
-}
+import { getModelConfig } from "../config/ai-models";
 
 export class AiService {
   constructor(
@@ -23,32 +16,47 @@ export class AiService {
     private readonly defaultLlm: ILlmProvider,
     private readonly subscriptionService: SubscriptionService,
     private readonly userRepo: IUserRepository,
-    private readonly llmFactory: ILlmProviderFactory,
+    private readonly aiUsageRepo: IAiUsageRepository,
   ) {}
 
-  private async resolveProvider(userId: string): Promise<ILlmProvider> {
+  private async checkBudget(userId: string, model: string): Promise<void> {
+    const config = getModelConfig(model);
+    const yearMonth = new Date().toISOString().slice(0, 7);
+    const usage = await this.aiUsageRepo.getByUserAndMonth(userId, yearMonth);
+    const currentCount = usage?.analysisCount ?? 0;
+    if (currentCount >= config.monthlyLimit) {
+      throw new Error(
+        `Monthly AI analysis limit reached (${config.monthlyLimit}/${config.monthlyLimit})`,
+      );
+    }
+  }
+
+  async getUsage(userId: string): Promise<{ used: number; limit: number; model: string }> {
     const user = await this.userRepo.findById(userId);
-    if (user && !user.aiEnabled) {
-      throw new Error("AI is not configured");
-    }
-    if (user?.llmProvider && user.llmApiKey) {
-      return this.llmFactory.create({
-        provider: user.llmProvider,
-        apiKey: user.llmApiKey,
-        baseUrl: user.llmBaseUrl,
-        model: user.llmModel,
-      });
-    }
-    if (!this.defaultLlm.isConfigured()) {
-      throw new Error("AI is not configured");
-    }
-    return this.defaultLlm;
+    const model = user?.llmModel ?? "gpt-4o-mini";
+    const config = getModelConfig(model);
+    const yearMonth = new Date().toISOString().slice(0, 7);
+    const usage = await this.aiUsageRepo.getByUserAndMonth(userId, yearMonth);
+    return {
+      used: usage?.analysisCount ?? 0,
+      limit: config.monthlyLimit,
+      model: config.id,
+    };
   }
 
   async analyzeTask(taskId: string, userId: string, locale = "en"): Promise<TaskAiAnalysis> {
     const isPremium = await this.subscriptionService.isPremium(userId);
     if (!isPremium) {
       throw new Error("Premium subscription required");
+    }
+
+    const user = await this.userRepo.findById(userId);
+    if (user && !user.aiEnabled) {
+      throw new Error("AI is not configured");
+    }
+
+    if (!this.defaultLlm.isConfigured()) {
+      throw new Error("AI is not configured");
     }
 
     const task = await this.taskRepo.findById(taskId, userId);
@@ -68,6 +76,10 @@ export class AiService {
       if (!needsReanalysis) return cached;
     }
 
+    // Check budget before making LLM call
+    const model = user?.llmModel ?? "gpt-4o-mini";
+    await this.checkBudget(userId, model);
+
     // Get user's lists and active tasks for context
     const [lists, activeTasks, taskList] = await Promise.all([
       this.listRepo.findByUser(userId),
@@ -79,16 +91,17 @@ export class AiService {
       .filter((t) => t.id !== taskId)
       .map((t) => ({ id: t.id, title: t.title }));
 
-    // Resolve provider (user-specific or default)
-    const llm = await this.resolveProvider(userId);
-
     // Call LLM — single prompt handles analysis, decomposition, duplicate detection, and call intent
-    const result = await llm.analyzeTask(task.title, locale, {
+    const result = await this.defaultLlm.analyzeTask(task.title, locale, {
       lists: listNames,
       tasks: otherTasks,
       deviceContext: task.deviceContext,
       listName: taskList?.name ?? null,
     });
+
+    // Increment usage counter after successful call
+    const yearMonth = new Date().toISOString().slice(0, 7);
+    await this.aiUsageRepo.increment(userId, yearMonth);
 
     // Cache result
     return this.analysisRepo.upsert({

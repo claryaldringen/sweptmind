@@ -28,7 +28,6 @@ import {
   Paperclip,
   X,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useSidebarContext } from "@/components/layout/app-shell";
@@ -164,9 +163,6 @@ const GET_ME = gql`
       email
       image
       aiEnabled
-      llmProvider
-      llmApiKey
-      llmBaseUrl
       llmModel
     }
   }
@@ -178,9 +174,29 @@ const UPDATE_AI_ENABLED = gql`
   }
 `;
 
-const UPDATE_LLM_CONFIG = gql`
-  mutation UpdateLlmConfig($input: UpdateLlmConfigInput!) {
-    updateLlmConfig(input: $input)
+const UPDATE_AI_MODEL = gql`
+  mutation UpdateAiModel($model: String!) {
+    updateAiModel(model: $model)
+  }
+`;
+
+const GET_AI_MODELS = gql`
+  query GetAiModels {
+    aiModels {
+      id
+      label
+      monthlyLimit
+    }
+  }
+`;
+
+const GET_AI_USAGE = gql`
+  query GetAiUsage {
+    aiUsage {
+      used
+      limit
+      model
+    }
   }
 `;
 
@@ -222,11 +238,26 @@ interface GetMeData {
     email: string | null;
     image: string | null;
     aiEnabled: boolean;
-    llmProvider: string | null;
-    llmApiKey: string | null;
-    llmBaseUrl: string | null;
-    llmModel: string | null;
+    llmModel: string;
   } | null;
+}
+
+interface AiModelOption {
+  id: string;
+  label: string;
+  monthlyLimit: number;
+}
+
+interface AiUsageData {
+  aiUsage: {
+    used: number;
+    limit: number;
+    model: string;
+  };
+}
+
+interface AiModelsData {
+  aiModels: AiModelOption[];
 }
 
 interface SubscriptionData {
@@ -308,57 +339,16 @@ export default function SettingsPage() {
 
   // AI LLM config
   const [updateAiEnabled] = useMutation(UPDATE_AI_ENABLED);
-  const [updateLlmConfig] = useMutation(UPDATE_LLM_CONFIG);
+  const [updateAiModel] = useMutation(UPDATE_AI_MODEL);
+  const { data: aiModelsData } = useQuery<AiModelsData>(GET_AI_MODELS);
+  const { data: aiUsageData, refetch: refetchAiUsage } = useQuery<AiUsageData>(GET_AI_USAGE);
   const [aiEnabledState, setAiEnabledState] = useState(true);
-  const [aiProvider, setAiProvider] = useState<string>("");
-  const [aiApiKey, setAiApiKey] = useState("");
-  const [aiBaseUrl, setAiBaseUrl] = useState("");
-  const [aiModel, setAiModel] = useState("");
-  const [aiSaved, setAiSaved] = useState(false);
 
   useEffect(() => {
     if (meData?.me) {
       setAiEnabledState(meData.me.aiEnabled ?? true);
-      setAiProvider(meData.me.llmProvider ?? "");
-      setAiBaseUrl(meData.me.llmBaseUrl ?? "");
-      setAiModel(meData.me.llmModel ?? "");
-      // Don't set apiKey from server (it's masked)
     }
   }, [meData]);
-
-  const handleSaveAiConfig = useCallback(async () => {
-    await updateLlmConfig({
-      variables: {
-        input: {
-          llmProvider: aiProvider || null,
-          llmApiKey: aiApiKey || null,
-          llmBaseUrl: aiBaseUrl || null,
-          llmModel: aiModel || null,
-        },
-      },
-    });
-    setAiSaved(true);
-    setTimeout(() => setAiSaved(false), 2000);
-  }, [aiProvider, aiApiKey, aiBaseUrl, aiModel, updateLlmConfig]);
-
-  const handleResetAiConfig = useCallback(async () => {
-    await updateLlmConfig({
-      variables: {
-        input: {
-          llmProvider: null,
-          llmApiKey: null,
-          llmBaseUrl: null,
-          llmModel: null,
-        },
-      },
-    });
-    setAiProvider("");
-    setAiApiKey("");
-    setAiBaseUrl("");
-    setAiModel("");
-    setAiSaved(true);
-    setTimeout(() => setAiSaved(false), 2000);
-  }, [updateLlmConfig]);
 
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("yearly");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -1426,87 +1416,47 @@ export default function SettingsPage() {
               />
             </div>
             {aiEnabledState && (
-              <>
-                <h3 className="mb-1 text-sm font-semibold">{t("settings.aiModel")}</h3>
-                <p className="text-muted-foreground mb-4 text-xs">{t("settings.aiModelDesc")}</p>
-              </>
-            )}
-            {aiEnabledState && (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    {t("settings.aiProvider")}
-                  </label>
+                  <label className="mb-1 block text-sm font-medium">{t("settings.aiModel")}</label>
+                  <p className="text-muted-foreground mb-2 text-xs">{t("settings.aiModelDesc")}</p>
                   <select
-                    value={aiProvider}
-                    onChange={(e) => setAiProvider(e.target.value)}
+                    value={meData?.me?.llmModel ?? "gpt-4o-mini"}
+                    onChange={async (e) => {
+                      await updateAiModel({ variables: { model: e.target.value } });
+                      refetchAiUsage();
+                    }}
                     className="border-input bg-background ring-offset-background focus:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
                   >
-                    <option value="">{t("settings.aiProviderDefault")}</option>
-                    <option value="openai">{t("settings.aiProviderOpenai")}</option>
-                    <option value="ollama">{t("settings.aiProviderOllama")}</option>
+                    {(aiModelsData?.aiModels ?? []).map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.label} ({t("settings.aiLimit", { count: String(m.monthlyLimit) })})
+                      </option>
+                    ))}
                   </select>
                 </div>
-                {aiProvider && aiProvider !== "ollama" && (
+                {aiUsageData?.aiUsage && (
                   <div>
-                    <label className="mb-1 block text-sm font-medium">
-                      {t("settings.aiApiKey")}
-                    </label>
-                    <Input
-                      type="password"
-                      value={aiApiKey}
-                      onChange={(e) => setAiApiKey(e.target.value)}
-                      placeholder={t("settings.aiApiKeyPlaceholder")}
-                    />
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">{t("settings.aiUsage")}</span>
+                      <span className="font-medium">
+                        {aiUsageData.aiUsage.used} / {aiUsageData.aiUsage.limit}
+                      </span>
+                    </div>
+                    <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+                      <div
+                        className="h-full rounded-full bg-blue-500 transition-all"
+                        style={{
+                          width: `${Math.min(100, (aiUsageData.aiUsage.used / aiUsageData.aiUsage.limit) * 100)}%`,
+                          backgroundColor:
+                            aiUsageData.aiUsage.used / aiUsageData.aiUsage.limit > 0.9
+                              ? "var(--color-red-500, #ef4444)"
+                              : undefined,
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
-                {aiProvider && (
-                  <>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium">
-                        {t("settings.aiBaseUrl")}
-                      </label>
-                      <Input
-                        value={aiBaseUrl}
-                        onChange={(e) => setAiBaseUrl(e.target.value)}
-                        placeholder={
-                          aiProvider === "ollama"
-                            ? "http://localhost:11434"
-                            : t("settings.aiBaseUrlPlaceholder")
-                        }
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium">
-                        {t("settings.aiModelName")}
-                      </label>
-                      <Input
-                        value={aiModel}
-                        onChange={(e) => setAiModel(e.target.value)}
-                        placeholder={
-                          aiProvider === "ollama" ? "llama3.1" : t("settings.aiModelPlaceholder")
-                        }
-                      />
-                    </div>
-                  </>
-                )}
-                <div className="flex items-center gap-2">
-                  <Button size="sm" onClick={handleSaveAiConfig}>
-                    {aiSaved ? (
-                      <>
-                        <Check className="mr-1 h-4 w-4" />
-                        {t("settings.aiSaved")}
-                      </>
-                    ) : (
-                      t("lists.save")
-                    )}
-                  </Button>
-                  {(aiProvider || aiApiKey || aiBaseUrl || aiModel) && (
-                    <Button size="sm" variant="outline" onClick={handleResetAiConfig}>
-                      {t("settings.aiReset")}
-                    </Button>
-                  )}
-                </div>
               </div>
             )}
           </div>

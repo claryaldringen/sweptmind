@@ -9,6 +9,7 @@ import { pushSubscriptions } from "./push-subscriptions";
 import { subscriptions, bankPayments } from "./subscriptions";
 import { taskAttachments } from "./attachments";
 import { taskAiAnalyses } from "./ai-analyses";
+import { aiUsage } from "./ai-usage";
 
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
@@ -21,6 +22,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   pushSubscriptions: many(pushSubscriptions),
   subscriptions: many(subscriptions),
   bankPayments: many(bankPayments),
+  aiUsage: many(aiUsage),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -147,6 +149,13 @@ export const taskAttachmentsRelations = relations(taskAttachments, ({ one }) => 
   task: one(tasks, {
     fields: [taskAttachments.taskId],
     references: [tasks.id],
+  }),
+}));
+
+export const aiUsageRelations = relations(aiUsage, ({ one }) => ({
+  user: one(users, {
+    fields: [aiUsage.userId],
+    references: [users.id],
   }),
 }));
 

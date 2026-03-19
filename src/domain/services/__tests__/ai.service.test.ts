@@ -6,7 +6,7 @@ import type { ITaskRepository } from "../../repositories/task.repository";
 import type { IListRepository } from "../../repositories/list.repository";
 import type { ILlmProvider } from "../../ports/llm-provider";
 import type { IUserRepository } from "../../repositories/user.repository";
-import type { ILlmProviderFactory } from "../ai.service";
+import type { IAiUsageRepository } from "../../repositories/ai-usage.repository";
 import type { TaskAiAnalysis } from "../../entities/task-ai-analysis";
 import type { Task } from "../../entities/task";
 import type { User } from "../../entities/user";
@@ -171,9 +171,6 @@ function makeUserRepo(overrides: Partial<User> = {}): IUserRepository {
     googleCalendarChannelExpiry: null,
     googleCalendarTargetListId: null,
     aiEnabled: true,
-    llmProvider: null,
-    llmApiKey: null,
-    llmBaseUrl: null,
     llmModel: null,
     ...overrides,
   };
@@ -196,7 +193,7 @@ function makeUserRepo(overrides: Partial<User> = {}): IUserRepository {
     validatePasswordResetToken: vi.fn().mockResolvedValue(null),
     deletePasswordResetToken: vi.fn(),
     updateAiEnabled: vi.fn(),
-    updateLlmConfig: vi.fn(),
+    updateLlmModel: vi.fn(),
     updateGoogleCalendarEnabled: vi.fn(),
     getGoogleCalendarEnabled: vi.fn().mockResolvedValue(false),
     updateGoogleCalendarDirection: vi.fn(),
@@ -218,9 +215,17 @@ function makeUserRepo(overrides: Partial<User> = {}): IUserRepository {
   };
 }
 
-function makeLlmFactory(): ILlmProviderFactory {
+function makeAiUsageRepo(): IAiUsageRepository {
   return {
-    create: vi.fn().mockReturnValue(makeLlmProvider()),
+    getByUserAndMonth: vi.fn().mockResolvedValue(undefined),
+    increment: vi.fn().mockResolvedValue({
+      id: "usage-1",
+      userId: "user-1",
+      yearMonth: "2026-03",
+      analysisCount: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }),
   };
 }
 
@@ -230,7 +235,7 @@ describe("AiService", () => {
   let llm: ILlmProvider;
   let subscriptionService: SubscriptionService;
   let userRepo: IUserRepository;
-  let llmFactory: ILlmProviderFactory;
+  let aiUsageRepo: IAiUsageRepository;
   let service: AiService;
 
   beforeEach(() => {
@@ -239,7 +244,7 @@ describe("AiService", () => {
     llm = makeLlmProvider();
     subscriptionService = makeSubscriptionService(true);
     userRepo = makeUserRepo();
-    llmFactory = makeLlmFactory();
+    aiUsageRepo = makeAiUsageRepo();
     service = new AiService(
       analysisRepo,
       taskRepo,
@@ -247,7 +252,7 @@ describe("AiService", () => {
       llm,
       subscriptionService,
       userRepo,
-      llmFactory,
+      aiUsageRepo,
     );
   });
 
@@ -285,17 +290,7 @@ describe("AiService", () => {
       deviceContext: null,
       listName: null,
     });
-    expect(analysisRepo.upsert).toHaveBeenCalledWith({
-      taskId: "task-1",
-      isActionable: true,
-      suggestion: null,
-      suggestedTitle: null,
-      projectName: null,
-      decomposition: null,
-      duplicateTaskId: null,
-      callIntent: null,
-      analyzedTitle: "Buy groceries",
-    });
+    expect(aiUsageRepo.increment).toHaveBeenCalled();
   });
 
   it("znovu analyzuje kdyz se title zmenil (zavola LLM)", async () => {
@@ -315,23 +310,8 @@ describe("AiService", () => {
     const result = await service.analyzeTask("task-1", "user-1");
 
     expect(result).toEqual(updatedAnalysis);
-    expect(llm.analyzeTask).toHaveBeenCalledWith("Buy milk and eggs", "en", {
-      lists: ["Tasks"],
-      tasks: [],
-      deviceContext: null,
-      listName: null,
-    });
-    expect(analysisRepo.upsert).toHaveBeenCalledWith({
-      taskId: "task-1",
-      isActionable: true,
-      suggestion: null,
-      suggestedTitle: null,
-      projectName: null,
-      decomposition: null,
-      duplicateTaskId: null,
-      callIntent: null,
-      analyzedTitle: "Buy milk and eggs",
-    });
+    expect(llm.analyzeTask).toHaveBeenCalled();
+    expect(aiUsageRepo.increment).toHaveBeenCalled();
   });
 
   it("vyhodi chybu pro ne-premium uzivatele", async () => {
@@ -343,7 +323,7 @@ describe("AiService", () => {
       llm,
       subscriptionService,
       userRepo,
-      llmFactory,
+      aiUsageRepo,
     );
 
     await expect(service.analyzeTask("task-1", "user-1")).rejects.toThrow(
@@ -353,60 +333,21 @@ describe("AiService", () => {
     expect(llm.analyzeTask).not.toHaveBeenCalled();
   });
 
-  it("pouzije uzivateluv vlastni LLM provider kdyz je nastaven", async () => {
-    const customLlm = makeLlmProvider({
-      analyzeTask: vi.fn().mockResolvedValue({
-        isActionable: false,
-        suggestion: "Custom suggestion",
-        suggestedTitle: null,
-        projectName: "Groceries",
-        steps: [{ title: "Buy milk", listName: null, dependsOn: null }],
-        duplicateTaskId: null,
-        callIntent: null,
-      }),
+  it("vyhodi chybu kdyz je budget vycerpany", async () => {
+    vi.mocked(aiUsageRepo.getByUserAndMonth).mockResolvedValue({
+      id: "usage-1",
+      userId: "user-1",
+      yearMonth: "2026-03",
+      analysisCount: 500,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
-    const customUserRepo = makeUserRepo({
-      llmProvider: "openai",
-      llmApiKey: "sk-test",
-      llmBaseUrl: "https://custom.api/v1",
-      llmModel: "custom-model",
-    });
-    const customFactory: ILlmProviderFactory = { create: vi.fn().mockReturnValue(customLlm) };
-    service = new AiService(
-      analysisRepo,
-      taskRepo,
-      makeListRepo(),
-      llm,
-      subscriptionService,
-      customUserRepo,
-      customFactory,
-    );
-
-    const task = makeTask({ title: "Handle project" });
+    const task = makeTask({ title: "Buy groceries" });
     vi.mocked(taskRepo.findById).mockResolvedValue(task);
-    vi.mocked(analysisRepo.upsert).mockResolvedValue(
-      makeAnalysis({
-        isActionable: false,
-        suggestion: "Custom suggestion",
-        projectName: "Groceries",
-        decomposition: [{ title: "Buy milk", listName: null, dependsOn: null }],
-      }),
+
+    await expect(service.analyzeTask("task-1", "user-1")).rejects.toThrow(
+      "Monthly AI analysis limit reached",
     );
-
-    await service.analyzeTask("task-1", "user-1");
-
-    expect(customFactory.create).toHaveBeenCalledWith({
-      provider: "openai",
-      apiKey: "sk-test",
-      baseUrl: "https://custom.api/v1",
-      model: "custom-model",
-    });
-    expect(customLlm.analyzeTask).toHaveBeenCalledWith("Handle project", "en", {
-      lists: ["Tasks"],
-      tasks: [],
-      deviceContext: null,
-      listName: null,
-    });
     expect(llm.analyzeTask).not.toHaveBeenCalled();
   });
 

@@ -48,16 +48,8 @@ export class UserService {
     return this.userRepo.updateAiEnabled(userId, enabled);
   }
 
-  async updateLlmConfig(
-    userId: string,
-    config: {
-      llmProvider: string | null;
-      llmApiKey: string | null;
-      llmBaseUrl: string | null;
-      llmModel: string | null;
-    },
-  ): Promise<void> {
-    return this.userRepo.updateLlmConfig(userId, config);
+  async updateLlmModel(userId: string, model: string): Promise<void> {
+    return this.userRepo.updateLlmModel(userId, model);
   }
 
   async updateGoogleCalendarEnabled(userId: string, enabled: boolean): Promise<void> {

@@ -126,18 +126,8 @@ export interface Dictionary {
     aiEnabledDesc: string;
     aiModel: string;
     aiModelDesc: string;
-    aiProvider: string;
-    aiProviderDefault: string;
-    aiProviderOpenai: string;
-    aiProviderOllama: string;
-    aiApiKey: string;
-    aiApiKeyPlaceholder: string;
-    aiBaseUrl: string;
-    aiBaseUrlPlaceholder: string;
-    aiModelName: string;
-    aiModelPlaceholder: string;
-    aiSaved: string;
-    aiReset: string;
+    aiUsage: string;
+    aiLimit: string;
   };
   common: {
     loading: string;

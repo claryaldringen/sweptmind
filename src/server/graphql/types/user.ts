@@ -1,5 +1,6 @@
 import { builder } from "../builder";
 import { UserRef } from "./refs";
+import { AI_MODELS, DEFAULT_AI_MODEL, isValidModel } from "@/domain/config/ai-models";
 
 export const UserType = UserRef.implement({
   fields: (t) => ({
@@ -17,13 +18,9 @@ export const UserType = UserRef.implement({
       },
     }),
     aiEnabled: t.exposeBoolean("aiEnabled"),
-    llmProvider: t.exposeString("llmProvider", { nullable: true }),
-    llmApiKey: t.string({
-      nullable: true,
-      resolve: (user) => (user.llmApiKey ? "••••••••" : null),
+    llmModel: t.string({
+      resolve: (user) => user.llmModel ?? DEFAULT_AI_MODEL,
     }),
-    llmBaseUrl: t.exposeString("llmBaseUrl", { nullable: true }),
-    llmModel: t.exposeString("llmModel", { nullable: true }),
   }),
 });
 
@@ -39,30 +36,62 @@ builder.queryField("me", (t) =>
   }),
 );
 
-const UpdateLlmConfigInput = builder.inputType("UpdateLlmConfigInput", {
-  fields: (t) => ({
-    llmProvider: t.string({ required: false }),
-    llmApiKey: t.string({ required: false }),
-    llmBaseUrl: t.string({ required: false }),
-    llmModel: t.string({ required: false }),
-  }),
-});
+// AI model options for settings UI
+const AiModelOptionType = builder.objectType(
+  builder.objectRef<{ id: string; label: string; monthlyLimit: number }>("AiModelOption"),
+  {
+    fields: (t) => ({
+      id: t.exposeString("id"),
+      label: t.exposeString("label"),
+      monthlyLimit: t.exposeInt("monthlyLimit"),
+    }),
+  },
+);
 
-builder.mutationField("updateLlmConfig", (t) =>
+builder.queryField("aiModels", (t) =>
+  t.field({
+    type: [AiModelOptionType],
+    authScopes: { authenticated: true },
+    resolve: () => AI_MODELS,
+  }),
+);
+
+// AI usage for current month
+const AiUsageType = builder.objectType(
+  builder.objectRef<{ used: number; limit: number; model: string }>("AiUsage"),
+  {
+    fields: (t) => ({
+      used: t.exposeInt("used"),
+      limit: t.exposeInt("limit"),
+      model: t.exposeString("model"),
+    }),
+  },
+);
+
+builder.queryField("aiUsage", (t) =>
+  t.field({
+    type: AiUsageType,
+    authScopes: { authenticated: true },
+    resolve: async (_root, _args, ctx) => {
+      if (!ctx.userId) throw new Error("Not authenticated");
+      return ctx.services.ai.getUsage(ctx.userId);
+    },
+  }),
+);
+
+builder.mutationField("updateAiModel", (t) =>
   t.field({
     type: "Boolean",
     authScopes: { authenticated: true },
     args: {
-      input: t.arg({ type: UpdateLlmConfigInput, required: true }),
+      model: t.arg.string({ required: true }),
     },
-    resolve: async (_root, { input }, ctx) => {
+    resolve: async (_root, { model }, ctx) => {
       if (!ctx.userId) return false;
-      await ctx.services.user.updateLlmConfig(ctx.userId, {
-        llmProvider: input.llmProvider ?? null,
-        llmApiKey: input.llmApiKey ?? null,
-        llmBaseUrl: input.llmBaseUrl ?? null,
-        llmModel: input.llmModel ?? null,
-      });
+      if (!isValidModel(model)) {
+        throw new Error(`Invalid model: ${model}`);
+      }
+      await ctx.services.user.updateLlmModel(ctx.userId, model);
       return true;
     },
   }),

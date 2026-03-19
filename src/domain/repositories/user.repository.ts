@@ -19,15 +19,7 @@ export interface IUserRepository {
   validatePasswordResetToken(token: string): Promise<string | null>;
   deletePasswordResetToken(token: string): Promise<void>;
   updateAiEnabled(userId: string, enabled: boolean): Promise<void>;
-  updateLlmConfig(
-    userId: string,
-    config: {
-      llmProvider: string | null;
-      llmApiKey: string | null;
-      llmBaseUrl: string | null;
-      llmModel: string | null;
-    },
-  ): Promise<void>;
+  updateLlmModel(userId: string, model: string): Promise<void>;
   updateGoogleCalendarEnabled(userId: string, enabled: boolean): Promise<void>;
   getGoogleCalendarEnabled(userId: string): Promise<boolean>;
   updateGoogleCalendarDirection(userId: string, direction: string): Promise<void>;

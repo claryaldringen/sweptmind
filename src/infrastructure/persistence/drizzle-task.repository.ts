@@ -278,10 +278,7 @@ export class DrizzleTaskRepository implements ITaskRepository {
       })
       .from(schema.tasks)
       .where(
-        and(
-          inArray(schema.tasks.blockedByTaskId, taskIds),
-          eq(schema.tasks.isCompleted, false),
-        ),
+        and(inArray(schema.tasks.blockedByTaskId, taskIds), eq(schema.tasks.isCompleted, false)),
       )
       .groupBy(schema.tasks.blockedByTaskId);
     const map = new Map<string, number>();

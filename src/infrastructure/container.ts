@@ -12,9 +12,8 @@ import { DrizzleSubscriptionRepository } from "./persistence/drizzle-subscriptio
 import { DrizzleAttachmentRepository } from "./persistence/drizzle-attachment.repository";
 import { DrizzleTaskAiAnalysisRepository } from "./persistence/drizzle-task-ai-analysis.repository";
 import { DrizzlePushSubscriptionRepository } from "./persistence/drizzle-push-subscription.repository";
-import { OllamaProvider } from "./llm/ollama-provider";
+import { DrizzleAiUsageRepository } from "./persistence/drizzle-ai-usage.repository";
 import { OpenAiCompatibleProvider } from "./llm/openai-compatible-provider";
-import type { ILlmProvider } from "@/domain/ports/llm-provider";
 import { TaskService } from "@/domain/services/task.service";
 import { ListService } from "@/domain/services/list.service";
 import { StepService } from "@/domain/services/step.service";
@@ -30,7 +29,6 @@ import { AttachmentService } from "@/domain/services/attachment.service";
 import { AiService } from "@/domain/services/ai.service";
 import { GoogleCalendarService } from "@/domain/services/google-calendar.service";
 import { PushSubscriptionService } from "@/domain/services/push-subscription.service";
-import { LlmProviderFactory } from "./llm/provider-factory";
 import * as googleCalendarClient from "./google-calendar/google-calendar-client";
 
 const taskRepo = new DrizzleTaskRepository(db);
@@ -44,17 +42,10 @@ const calendarSyncRepo = new DrizzleCalendarSyncRepository(db);
 const subscriptionRepo = new DrizzleSubscriptionRepository(db);
 const attachmentRepo = new DrizzleAttachmentRepository(db);
 const aiAnalysisRepo = new DrizzleTaskAiAnalysisRepository(db);
+const aiUsageRepo = new DrizzleAiUsageRepository(db);
 const pushSubRepo = new DrizzlePushSubscriptionRepository(db);
-function createLlmProvider(): ILlmProvider {
-  const provider = process.env.LLM_PROVIDER || "ollama";
-  if (provider === "openai") {
-    return new OpenAiCompatibleProvider();
-  }
-  return new OllamaProvider();
-}
 
-const llmProvider = createLlmProvider();
-const llmFactory = new LlmProviderFactory();
+const llmProvider = new OpenAiCompatibleProvider();
 
 const bcryptHasher: IPasswordHasher = {
   hash: (password) => hash(password, 12),
@@ -110,7 +101,7 @@ export const services = {
     llmProvider,
     subscriptionService,
     userRepo,
-    llmFactory,
+    aiUsageRepo,
   ),
   pushSubscription: new PushSubscriptionService(pushSubRepo),
 };

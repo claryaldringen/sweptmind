@@ -26,9 +26,6 @@ function makeUser(overrides: Partial<User> = {}): User {
     googleCalendarChannelExpiry: null,
     googleCalendarTargetListId: null,
     aiEnabled: true,
-    llmProvider: null,
-    llmApiKey: null,
-    llmBaseUrl: null,
     llmModel: null,
     ...overrides,
   };
@@ -54,7 +51,7 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     validatePasswordResetToken: vi.fn(),
     deletePasswordResetToken: vi.fn(),
     updateAiEnabled: vi.fn(),
-    updateLlmConfig: vi.fn(),
+    updateLlmModel: vi.fn(),
     updateGoogleCalendarEnabled: vi.fn(),
     getGoogleCalendarEnabled: vi.fn(),
     updateGoogleCalendarDirection: vi.fn(),
