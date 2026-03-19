@@ -362,4 +362,193 @@ describe("AiService", () => {
     await expect(service.analyzeTask("nonexistent", "user-1")).rejects.toThrow("Task not found");
     expect(llm.analyzeTask).not.toHaveBeenCalled();
   });
+
+  it("vyhodi chybu kdyz je AI zakazano na uzivateli", async () => {
+    userRepo = makeUserRepo({ aiEnabled: false });
+    service = new AiService(
+      analysisRepo,
+      taskRepo,
+      makeListRepo(),
+      llm,
+      subscriptionService,
+      userRepo,
+      aiUsageRepo,
+    );
+
+    await expect(service.analyzeTask("task-1", "user-1")).rejects.toThrow("AI is not configured");
+    expect(llm.analyzeTask).not.toHaveBeenCalled();
+  });
+
+  it("vyhodi chybu kdyz LLM neni nakonfigurovano", async () => {
+    llm = makeLlmProvider({ isConfigured: vi.fn().mockReturnValue(false) });
+    service = new AiService(
+      analysisRepo,
+      taskRepo,
+      makeListRepo(),
+      llm,
+      subscriptionService,
+      userRepo,
+      aiUsageRepo,
+    );
+
+    await expect(service.analyzeTask("task-1", "user-1")).rejects.toThrow("AI is not configured");
+    expect(llm.analyzeTask).not.toHaveBeenCalled();
+  });
+
+  it("pouzije uzivateluv zvoleny model pro LLM volani", async () => {
+    userRepo = makeUserRepo({ llmModel: "gpt-4.1" });
+    aiUsageRepo = makeAiUsageRepo();
+    service = new AiService(
+      analysisRepo,
+      taskRepo,
+      makeListRepo(),
+      llm,
+      subscriptionService,
+      userRepo,
+      aiUsageRepo,
+    );
+
+    const task = makeTask({ title: "Buy groceries" });
+    vi.mocked(taskRepo.findById).mockResolvedValue(task);
+    vi.mocked(analysisRepo.findByTaskId).mockResolvedValue(undefined);
+    vi.mocked(analysisRepo.upsert).mockResolvedValue(makeAnalysis({ isActionable: true }));
+
+    await service.analyzeTask("task-1", "user-1");
+
+    expect(llm.analyzeTask).toHaveBeenCalledWith(
+      "Buy groceries",
+      "en",
+      expect.any(Object),
+      "gpt-4.1",
+    );
+  });
+
+  it("budget respektuje limit zvoleneho modelu", async () => {
+    userRepo = makeUserRepo({ llmModel: "gpt-4.1" });
+    aiUsageRepo = makeAiUsageRepo();
+    vi.mocked(aiUsageRepo.getByUserAndMonth).mockResolvedValue({
+      id: "usage-1",
+      userId: "user-1",
+      yearMonth: "2026-03",
+      analysisCount: 50,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    service = new AiService(
+      analysisRepo,
+      taskRepo,
+      makeListRepo(),
+      llm,
+      subscriptionService,
+      userRepo,
+      aiUsageRepo,
+    );
+
+    const task = makeTask({ title: "Buy groceries" });
+    vi.mocked(taskRepo.findById).mockResolvedValue(task);
+
+    await expect(service.analyzeTask("task-1", "user-1")).rejects.toThrow(
+      "Monthly AI analysis limit reached",
+    );
+    expect(llm.analyzeTask).not.toHaveBeenCalled();
+  });
+
+  describe("getUsage", () => {
+    it("vrati usage pro default model kdyz uzivatel nema zvoleny", async () => {
+      const result = await service.getUsage("user-1");
+
+      expect(result).toEqual({ used: 0, limit: 500, model: "gpt-4o-mini" });
+    });
+
+    it("vrati usage s limitem dle zvoleneho modelu", async () => {
+      userRepo = makeUserRepo({ llmModel: "gpt-4.1-mini" });
+      vi.mocked(aiUsageRepo.getByUserAndMonth).mockResolvedValue({
+        id: "usage-1",
+        userId: "user-1",
+        yearMonth: "2026-03",
+        analysisCount: 42,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      service = new AiService(
+        analysisRepo,
+        taskRepo,
+        makeListRepo(),
+        llm,
+        subscriptionService,
+        userRepo,
+        aiUsageRepo,
+      );
+
+      const result = await service.getUsage("user-1");
+
+      expect(result).toEqual({ used: 42, limit: 200, model: "gpt-4.1-mini" });
+    });
+  });
+
+  describe("markActionable", () => {
+    it("oznaci existujici tasky jako actionable", async () => {
+      const task1 = makeTask({ id: "t1", title: "Task 1" });
+      const task2 = makeTask({ id: "t2", title: "Task 2" });
+      vi.mocked(taskRepo.findById)
+        .mockResolvedValueOnce(task1)
+        .mockResolvedValueOnce(task2);
+
+      await service.markActionable(["t1", "t2"], "user-1");
+
+      expect(analysisRepo.upsert).toHaveBeenCalledTimes(2);
+      expect(analysisRepo.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ taskId: "t1", isActionable: true }),
+      );
+      expect(analysisRepo.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ taskId: "t2", isActionable: true }),
+      );
+    });
+
+    it("preskoci neexistujici tasky", async () => {
+      vi.mocked(taskRepo.findById)
+        .mockResolvedValueOnce(makeTask({ id: "t1" }))
+        .mockResolvedValueOnce(undefined);
+
+      await service.markActionable(["t1", "t2"], "user-1");
+
+      expect(analysisRepo.upsert).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+
+describe("ai-models config", () => {
+  it("getModelConfig vrati spravny config pro zname modely", async () => {
+    const { getModelConfig } = await import("../../config/ai-models");
+
+    expect(getModelConfig("gpt-4o-mini")).toEqual({
+      id: "gpt-4o-mini",
+      label: "GPT-4o Mini",
+      monthlyLimit: 500,
+    });
+    expect(getModelConfig("gpt-4.1")).toEqual({
+      id: "gpt-4.1",
+      label: "GPT-4.1",
+      monthlyLimit: 50,
+    });
+  });
+
+  it("getModelConfig vrati default pro neznamy model", async () => {
+    const { getModelConfig } = await import("../../config/ai-models");
+
+    expect(getModelConfig("nonexistent")).toEqual(
+      expect.objectContaining({ id: "gpt-4o-mini" }),
+    );
+    expect(getModelConfig(null)).toEqual(expect.objectContaining({ id: "gpt-4o-mini" }));
+  });
+
+  it("isValidModel rozpozna platne a neplatne modely", async () => {
+    const { isValidModel } = await import("../../config/ai-models");
+
+    expect(isValidModel("gpt-4o-mini")).toBe(true);
+    expect(isValidModel("gpt-4.1-mini")).toBe(true);
+    expect(isValidModel("gpt-4.1")).toBe(true);
+    expect(isValidModel("nonexistent")).toBe(false);
+    expect(isValidModel("")).toBe(false);
+  });
 });
