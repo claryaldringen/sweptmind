@@ -5,6 +5,7 @@ import type { IListRepository } from "../../repositories/list.repository";
 import type { IStepRepository } from "../../repositories/step.repository";
 import type { Task, Step } from "../../entities/task";
 import type { List } from "../../entities/list";
+import type { TaskSharingService } from "../task-sharing.service";
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {
@@ -464,6 +465,64 @@ describe("TaskService", () => {
 
       expect(repo.delete).toHaveBeenCalledWith("task-1", "user-1");
       expect(result).toBe(true);
+    });
+  });
+
+  describe("TaskSharingService sync hooks", () => {
+    let sharingService: TaskSharingService;
+    let serviceWithSharing: TaskService;
+
+    beforeEach(() => {
+      sharingService = {
+        syncSharedFields: vi.fn().mockResolvedValue(undefined),
+        notifyOwnerAction: vi.fn().mockResolvedValue(undefined),
+        shareTask: vi.fn(),
+        unshareTask: vi.fn(),
+        getShareInfo: vi.fn(),
+        getShareSource: vi.fn(),
+      } as unknown as TaskSharingService;
+
+      serviceWithSharing = new TaskService(repo, null, null, undefined, sharingService);
+    });
+
+    it("update() se změnou dueDate → zavolá taskSharingService.syncSharedFields", async () => {
+      vi.mocked(repo.update).mockResolvedValue(makeTask({ dueDate: "2026-05-01" }));
+
+      await serviceWithSharing.update("task-1", "user-1", { dueDate: "2026-05-01" });
+
+      expect(sharingService.syncSharedFields).toHaveBeenCalledWith(
+        "task-1",
+        expect.objectContaining({ dueDate: "2026-05-01" }),
+      );
+    });
+
+    it("update() se změnou title → zavolá syncSharedFields bez synced polí (žádné dueDate/dueDateEnd/recurrence)", async () => {
+      vi.mocked(repo.update).mockResolvedValue(makeTask({ title: "new" }));
+
+      await serviceWithSharing.update("task-1", "user-1", { title: "new" });
+
+      expect(sharingService.syncSharedFields).toHaveBeenCalledWith(
+        "task-1",
+        expect.not.objectContaining({ dueDate: expect.anything() }),
+      );
+    });
+
+    it("delete() → zavolá taskSharingService.notifyOwnerAction('deleted')", async () => {
+      vi.mocked(repo.delete).mockResolvedValue(undefined);
+
+      await serviceWithSharing.delete("task-1", "user-1");
+
+      expect(sharingService.notifyOwnerAction).toHaveBeenCalledWith("task-1", "deleted");
+    });
+
+    it("toggleCompleted() (dokončení) → zavolá taskSharingService.notifyOwnerAction('completed')", async () => {
+      const task = makeTask({ isCompleted: false });
+      vi.mocked(repo.findById).mockResolvedValue(task);
+      vi.mocked(repo.update).mockResolvedValue(makeTask({ isCompleted: true }));
+
+      await serviceWithSharing.toggleCompleted("task-1", "user-1");
+
+      expect(sharingService.notifyOwnerAction).toHaveBeenCalledWith("task-1", "completed");
     });
   });
 
