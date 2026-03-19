@@ -23,6 +23,7 @@ import { TaskActions } from "./detail/task-actions";
 import { TaskDependency } from "./detail/task-dependency";
 import { TaskAttachments } from "./detail/task-attachments";
 import { TaskAiSection } from "./detail/task-ai-section";
+import { TaskSharing } from "./detail/task-sharing";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 import {
   computeFirstOccurrence,
@@ -965,6 +966,11 @@ export function TaskDetailPanel() {
             }}
           />
         </div>
+
+        <Separator />
+
+        {/* Sharing */}
+        <TaskSharing taskId={task.id} />
 
         <Separator />
 

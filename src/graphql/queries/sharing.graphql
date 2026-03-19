@@ -1,0 +1,57 @@
+query GetTaskShares($taskId: String!) {
+  taskShares(taskId: $taskId) {
+    id
+    sharedWith {
+      id
+      name
+      email
+      image
+    }
+    createdAt
+  }
+}
+
+query GetTaskShareSource($taskId: String!) {
+  taskShareSource(taskId: $taskId) {
+    id
+    owner {
+      id
+      name
+      email
+      image
+    }
+    createdAt
+  }
+}
+
+query GetConnections {
+  connections {
+    id
+    connectedUser {
+      id
+      name
+      email
+      image
+    }
+    targetList {
+      id
+      name
+    }
+    sharedTaskCount
+    createdAt
+  }
+}
+
+query GetConnectionInvites {
+  connectionInvites {
+    id
+    token
+    status
+    expiresAt
+    createdAt
+  }
+}
+
+query GetSharingDefaultListId {
+  sharingDefaultListId
+}

@@ -1,0 +1,31 @@
+mutation ShareTask($taskId: String!, $targetUserId: String!) {
+  shareTask(taskId: $taskId, targetUserId: $targetUserId)
+}
+
+mutation UnshareTask($sharedTaskId: String!) {
+  unshareTask(sharedTaskId: $sharedTaskId)
+}
+
+mutation CreateConnectionInvite {
+  createConnectionInvite {
+    id
+    token
+    expiresAt
+  }
+}
+
+mutation CancelConnectionInvite($inviteId: ID!) {
+  cancelConnectionInvite(inviteId: $inviteId)
+}
+
+mutation Disconnect($connectedUserId: ID!) {
+  disconnect(connectedUserId: $connectedUserId)
+}
+
+mutation UpdateConnectionTargetList($connectionId: ID!, $listId: ID) {
+  updateConnectionTargetList(connectionId: $connectionId, listId: $listId)
+}
+
+mutation UpdateSharingDefaultList($listId: ID) {
+  updateSharingDefaultList(listId: $listId)
+}
