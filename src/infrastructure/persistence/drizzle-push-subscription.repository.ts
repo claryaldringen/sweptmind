@@ -51,6 +51,12 @@ export class DrizzlePushSubscriptionRepository implements IPushSubscriptionRepos
     });
   }
 
+  async findAllByUser(userId: string): Promise<PushSubscription[]> {
+    return this.db.query.pushSubscriptions.findMany({
+      where: eq(schema.pushSubscriptions.userId, userId),
+    });
+  }
+
   async updatePreferences(userId: string, prefs: Partial<PushPreferences>): Promise<void> {
     await this.db
       .update(schema.pushSubscriptions)

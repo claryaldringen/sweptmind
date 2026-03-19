@@ -328,6 +328,21 @@ export class DrizzleTaskRepository implements ITaskRepository {
       .where(and(inArray(schema.tasks.id, ids), eq(schema.tasks.userId, userId)));
   }
 
+  async findByIdUnchecked(id: string): Promise<Task | undefined> {
+    return this.db.query.tasks.findFirst({
+      where: eq(schema.tasks.id, id),
+    });
+  }
+
+  async updateUnchecked(id: string, data: Partial<Task>): Promise<Task> {
+    const [task] = await this.db
+      .update(schema.tasks)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(schema.tasks.id, id))
+      .returning();
+    return task;
+  }
+
   async searchTasks(userId: string, query: string, tagIds?: string[]): Promise<Task[]> {
     const results = await this.db.query.tasks.findMany({
       where: and(

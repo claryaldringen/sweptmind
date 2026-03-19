@@ -262,6 +262,13 @@ export class DrizzleUserRepository implements IUserRepository {
     };
   }
 
+  async updateSharingDefaultList(userId: string, listId: string | null): Promise<void> {
+    await this.db
+      .update(schema.users)
+      .set({ sharingDefaultListId: listId })
+      .where(eq(schema.users.id, userId));
+  }
+
   async findUsersWithExpiringChannels(
     before: Date,
   ): Promise<Array<{ id: string; googleCalendarChannelId: string }>> {
