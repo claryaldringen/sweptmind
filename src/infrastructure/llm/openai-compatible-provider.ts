@@ -80,6 +80,10 @@ export class OpenAiCompatibleProvider implements ILlmProvider {
     this.model = model;
   }
 
+  isConfigured(): boolean {
+    return this.apiKey.length > 0;
+  }
+
   async analyzeTask(title: string, locale: string, context: LlmContext): Promise<LlmResponse> {
     const res = await fetch(`${this.baseUrl}/chat/completions`, {
       method: "POST",

@@ -77,6 +77,10 @@ export class OllamaProvider implements ILlmProvider {
     this.model = model;
   }
 
+  isConfigured(): boolean {
+    return true; // Ollama is local, always available if configured
+  }
+
   async analyzeTask(title: string, locale: string, context: LlmContext): Promise<LlmResponse> {
     const res = await fetch(`${this.baseUrl}/api/chat`, {
       method: "POST",

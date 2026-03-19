@@ -28,4 +28,6 @@ export interface LlmContext {
 
 export interface ILlmProvider {
   analyzeTask(title: string, locale: string, context: LlmContext): Promise<LlmResponse>;
+  /** Returns true if the provider has a valid API key / endpoint configured. */
+  isConfigured(): boolean;
 }

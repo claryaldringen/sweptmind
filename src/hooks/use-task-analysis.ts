@@ -64,6 +64,7 @@ export function useTaskAnalysis(
   const allTasksRef = useRef(allTasks);
   allTasksRef.current = allTasks;
   const busyRef = useRef(false);
+  const disabledRef = useRef(false);
 
   const [analyzeTask] = useMutation<AnalyzeTaskResult>(ANALYZE_TASK, {
     update(cache, { data }) {
@@ -107,7 +108,7 @@ export function useTaskAnalysis(
     if (!isPremium) return;
 
     const interval = setInterval(async () => {
-      if (busyRef.current) return;
+      if (busyRef.current || disabledRef.current) return;
 
       const filterNeedsAnalysis = (list: AnalyzableTask[]) =>
         list.filter(
@@ -132,8 +133,14 @@ export function useTaskAnalysis(
 
       try {
         await analyzeTask({ variables: { taskId: task.id, locale } });
-      } catch {
-        analyzedRef.current.delete(task.id);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("AI is not configured") || msg.includes("not configured")) {
+          // Stop polling entirely — AI is not available
+          disabledRef.current = true;
+        } else {
+          analyzedRef.current.delete(task.id);
+        }
       } finally {
         busyRef.current = false;
         setAnalyzingIds((prev) => {

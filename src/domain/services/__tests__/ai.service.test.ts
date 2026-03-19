@@ -132,6 +132,7 @@ function makeLlmProvider(overrides: Partial<ILlmProvider> = {}): ILlmProvider {
       duplicateTaskId: null,
       callIntent: null,
     }),
+    isConfigured: vi.fn().mockReturnValue(true),
     ...overrides,
   };
 }

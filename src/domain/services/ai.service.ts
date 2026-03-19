@@ -36,6 +36,9 @@ export class AiService {
         model: user.llmModel,
       });
     }
+    if (!this.defaultLlm.isConfigured()) {
+      throw new Error("AI is not configured");
+    }
     return this.defaultLlm;
   }
 
