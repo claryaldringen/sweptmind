@@ -103,6 +103,17 @@ export const IncomingShareInfoType = IncomingShareInfoRef.implement({
 
 // ── Queries ────────────────────────────────────────────────────────────────
 
+builder.queryField("sharingDefaultListId", (t) =>
+  t.string({
+    nullable: true,
+    authScopes: { authenticated: true },
+    resolve: async (_root, _args, ctx) => {
+      const user = await ctx.services.user.getById(ctx.userId!);
+      return user?.sharingDefaultListId ?? null;
+    },
+  }),
+);
+
 builder.queryField("connections", (t) =>
   t.field({
     type: [UserConnectionType],
