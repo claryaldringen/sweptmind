@@ -141,7 +141,7 @@ builder.queryField("taskShares", (t) =>
       const shares = await ctx.services.taskSharing.getShareInfo(args.taskId, ctx.userId!);
       const results = await Promise.all(
         shares.map(async (share) => {
-          const targetTask = await ctx.services.task.getById(share.targetTaskId, ctx.userId!);
+          const targetTask = await ctx.services.taskSharing.getTaskUnchecked(share.targetTaskId);
           if (!targetTask) return null;
           const targetUser = await ctx.services.user.getById(targetTask.userId);
           if (!targetUser) return null;
@@ -174,7 +174,7 @@ builder.queryField("taskShareSource", (t) =>
     resolve: async (_root, args, ctx) => {
       const share = await ctx.services.taskSharing.getShareSource(args.taskId, ctx.userId!);
       if (!share) return null;
-      const sourceTask = await ctx.services.task.getById(share.sourceTaskId, ctx.userId!);
+      const sourceTask = await ctx.services.taskSharing.getTaskUnchecked(share.sourceTaskId);
       if (!sourceTask) return null;
       const owner = await ctx.services.user.getById(sourceTask.userId);
       if (!owner) return null;

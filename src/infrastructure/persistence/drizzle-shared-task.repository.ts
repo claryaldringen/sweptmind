@@ -19,6 +19,12 @@ export class DrizzleSharedTaskRepository implements ISharedTaskRepository {
     return sharedTask;
   }
 
+  async findById(id: string): Promise<SharedTask | undefined> {
+    return this.db.query.sharedTasks.findFirst({
+      where: eq(schema.sharedTasks.id, id),
+    });
+  }
+
   async findBySourceTask(taskId: string): Promise<SharedTask[]> {
     return this.db.query.sharedTasks.findMany({
       where: eq(schema.sharedTasks.sourceTaskId, taskId),

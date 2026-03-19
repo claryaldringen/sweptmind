@@ -100,6 +100,7 @@ const makeUser = (overrides: Partial<User> = {}): User => ({
 function makeMocks() {
   const sharedTaskRepo: ISharedTaskRepository = {
     create: vi.fn(),
+    findById: vi.fn(),
     findBySourceTask: vi.fn(),
     findByTargetTask: vi.fn(),
     findByConnection: vi.fn(),
@@ -374,12 +375,39 @@ describe("TaskSharingService", () => {
   });
 
   describe("unshareTask", () => {
-    it("deletes the shared_task record", async () => {
+    it("deletes the shared_task record when user owns source task", async () => {
+      const shared = makeSharedTask();
+      const sourceTask = makeTask({ id: "task-1", userId: "user-1" });
+
+      vi.mocked(mocks.sharedTaskRepo.findById).mockResolvedValue(shared);
+      vi.mocked(mocks.taskRepo.findById).mockResolvedValue(sourceTask);
       vi.mocked(mocks.sharedTaskRepo.delete).mockResolvedValue(undefined);
 
       await service.unshareTask("shared-1", "user-1");
 
+      expect(mocks.sharedTaskRepo.findById).toHaveBeenCalledWith("shared-1");
+      expect(mocks.taskRepo.findById).toHaveBeenCalledWith("task-1", "user-1");
       expect(mocks.sharedTaskRepo.delete).toHaveBeenCalledWith("shared-1");
+    });
+
+    it("throws if shared task not found", async () => {
+      vi.mocked(mocks.sharedTaskRepo.findById).mockResolvedValue(undefined);
+
+      await expect(service.unshareTask("shared-1", "user-1")).rejects.toThrow(
+        "Shared task not found",
+      );
+    });
+
+    it("throws if user does not own source task", async () => {
+      const shared = makeSharedTask({ sourceTaskId: "task-1" });
+      vi.mocked(mocks.sharedTaskRepo.findById).mockResolvedValue(shared);
+      vi.mocked(mocks.taskRepo.findById).mockResolvedValue(undefined);
+
+      await expect(service.unshareTask("shared-1", "other-user")).rejects.toThrow(
+        "Not authorized to unshare this task",
+      );
+
+      expect(mocks.sharedTaskRepo.delete).not.toHaveBeenCalled();
     });
   });
 
@@ -463,26 +491,50 @@ describe("TaskSharingService", () => {
   });
 
   describe("getShareInfo", () => {
-    it("returns shares by source task", async () => {
+    it("returns shares by source task when user owns it", async () => {
+      const task = makeTask({ id: "task-1", userId: "user-1" });
       const shares = [makeSharedTask()];
+      vi.mocked(mocks.taskRepo.findById).mockResolvedValue(task);
       vi.mocked(mocks.sharedTaskRepo.findBySourceTask).mockResolvedValue(shares);
 
       const result = await service.getShareInfo("task-1", "user-1");
 
+      expect(mocks.taskRepo.findById).toHaveBeenCalledWith("task-1", "user-1");
       expect(mocks.sharedTaskRepo.findBySourceTask).toHaveBeenCalledWith("task-1");
       expect(result).toEqual(shares);
+    });
+
+    it("throws if user does not own the task", async () => {
+      vi.mocked(mocks.taskRepo.findById).mockResolvedValue(undefined);
+
+      await expect(service.getShareInfo("task-1", "other-user")).rejects.toThrow("Task not found");
+
+      expect(mocks.sharedTaskRepo.findBySourceTask).not.toHaveBeenCalled();
     });
   });
 
   describe("getShareSource", () => {
-    it("returns share by target task", async () => {
+    it("returns share by target task when user owns it", async () => {
+      const task = makeTask({ id: "task-2", userId: "user-2" });
       const shared = makeSharedTask();
+      vi.mocked(mocks.taskRepo.findById).mockResolvedValue(task);
       vi.mocked(mocks.sharedTaskRepo.findByTargetTask).mockResolvedValue(shared);
 
       const result = await service.getShareSource("task-2", "user-2");
 
+      expect(mocks.taskRepo.findById).toHaveBeenCalledWith("task-2", "user-2");
       expect(mocks.sharedTaskRepo.findByTargetTask).toHaveBeenCalledWith("task-2");
       expect(result).toEqual(shared);
+    });
+
+    it("throws if user does not own the task", async () => {
+      vi.mocked(mocks.taskRepo.findById).mockResolvedValue(undefined);
+
+      await expect(service.getShareSource("task-2", "other-user")).rejects.toThrow(
+        "Task not found",
+      );
+
+      expect(mocks.sharedTaskRepo.findByTargetTask).not.toHaveBeenCalled();
     });
   });
 });

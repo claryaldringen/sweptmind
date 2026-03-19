@@ -62,16 +62,32 @@ export class TaskSharingService {
     return shared;
   }
 
-  async unshareTask(sharedTaskId: string, _userId: string): Promise<void> {
+  async unshareTask(sharedTaskId: string, userId: string): Promise<void> {
+    const sharedTask = await this.sharedTaskRepo.findById(sharedTaskId);
+    if (!sharedTask) throw new Error("Shared task not found");
+
+    const sourceTask = await this.taskRepo.findById(sharedTask.sourceTaskId, userId);
+    if (!sourceTask) throw new Error("Not authorized to unshare this task");
+
     await this.sharedTaskRepo.delete(sharedTaskId);
   }
 
-  async getShareInfo(taskId: string, _userId: string): Promise<SharedTask[]> {
+  async getShareInfo(taskId: string, userId: string): Promise<SharedTask[]> {
+    const task = await this.taskRepo.findById(taskId, userId);
+    if (!task) throw new Error("Task not found");
+
     return this.sharedTaskRepo.findBySourceTask(taskId);
   }
 
-  async getShareSource(taskId: string, _userId: string): Promise<SharedTask | undefined> {
+  async getShareSource(taskId: string, userId: string): Promise<SharedTask | undefined> {
+    const task = await this.taskRepo.findById(taskId, userId);
+    if (!task) throw new Error("Task not found");
+
     return this.sharedTaskRepo.findByTargetTask(taskId);
+  }
+
+  async getTaskUnchecked(taskId: string): Promise<Task | undefined> {
+    return this.taskRepo.findByIdUnchecked(taskId);
   }
 
   async syncSharedFields(taskId: string, updatedFields: Partial<Task>): Promise<void> {

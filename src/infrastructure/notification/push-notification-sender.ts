@@ -31,16 +31,21 @@ export class PushNotificationSender implements INotificationSender {
       }
     }
 
+    const hasWeb = subscriptions.some((s) => s.platform === "web");
+    let webpushLib: Awaited<typeof import("web-push")> | null = null;
+    if (hasWeb) {
+      webpushLib = await import("web-push");
+      webpushLib.setVapidDetails(
+        "mailto:noreply@sweptmind.com",
+        process.env.VAPID_PUBLIC_KEY!,
+        process.env.VAPID_PRIVATE_KEY!,
+      );
+    }
+
     for (const sub of subscriptions) {
       try {
-        if (sub.platform === "web") {
-          const webpush = await import("web-push");
-          webpush.default.setVapidDetails(
-            "mailto:noreply@sweptmind.com",
-            process.env.VAPID_PUBLIC_KEY!,
-            process.env.VAPID_PRIVATE_KEY!,
-          );
-          await webpush.default.sendNotification(
+        if (sub.platform === "web" && webpushLib) {
+          await webpushLib.sendNotification(
             { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
             payload,
           );
