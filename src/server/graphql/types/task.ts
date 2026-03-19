@@ -107,6 +107,20 @@ export const TaskType = TaskRef.implement({
         return syncEntry?.googleCalendarEventId != null;
       },
     }),
+    isSharedTo: t.boolean({
+      resolve: async (task, _args, ctx) => {
+        if (!ctx.userId) return false;
+        const shares = await ctx.services.taskSharing.getShareInfo(task.id, ctx.userId);
+        return shares.length > 0;
+      },
+    }),
+    isSharedFrom: t.boolean({
+      resolve: async (task, _args, ctx) => {
+        if (!ctx.userId) return false;
+        const source = await ctx.services.taskSharing.getShareSource(task.id, ctx.userId);
+        return !!source;
+      },
+    }),
   }),
 });
 

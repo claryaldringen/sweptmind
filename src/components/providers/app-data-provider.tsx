@@ -98,6 +98,8 @@ export const APP_TASK_FIELDS = gql`
       analyzedTitle
     }
     isGoogleCalendarEvent
+    isSharedTo
+    isSharedFrom
   }
 `;
 
@@ -249,7 +251,11 @@ export interface AppTask {
     callIntent: { name: string; reason: string | null } | null;
     analyzedTitle: string;
   } | null;
+  isGoogleCalendarEvent?: boolean;
+  isSharedTo?: boolean;
+  isSharedFrom?: boolean;
 }
+
 
 export interface TagItem {
   id: string;

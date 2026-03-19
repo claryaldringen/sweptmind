@@ -473,6 +473,7 @@ export const cs: Dictionary = {
     shareWith: "Sdílet s...",
     shareWithAnother: "Sdílet s dalším...",
     sharedFrom: "Sdílený od {name}",
+    sharedTo: "Sdílený s ostatními",
     unshare: "Zrušit sdílení",
     inviteTitle: "{name} tě zve k propojení",
     inviteAccept: "Přijmout pozvánku",

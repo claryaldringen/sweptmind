@@ -68,4 +68,6 @@ export interface Task {
   isGoogleCalendarEvent?: boolean;
   attachments?: TaskAttachment[];
   aiAnalysis?: TaskAiAnalysis | null;
+  isSharedTo?: boolean;
+  isSharedFrom?: boolean;
 }

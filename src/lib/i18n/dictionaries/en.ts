@@ -478,6 +478,7 @@ export const en: Dictionary = {
     shareWith: "Share with...",
     shareWithAnother: "Share with another...",
     sharedFrom: "Shared from {name}",
+    sharedTo: "Shared with others",
     unshare: "Unshare",
     inviteTitle: "{name} invites you to connect",
     inviteAccept: "Accept invite",

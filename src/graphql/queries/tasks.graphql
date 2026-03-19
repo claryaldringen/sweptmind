@@ -28,6 +28,8 @@ fragment TaskFields on Task {
     createdAt
   }
   isGoogleCalendarEvent
+  isSharedTo
+  isSharedFrom
 }
 
 query TasksByList($listId: String!) {

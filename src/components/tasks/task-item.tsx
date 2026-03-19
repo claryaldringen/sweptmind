@@ -31,6 +31,7 @@ import {
   RotateCcw,
   Smartphone,
   Trash2,
+  Users,
   X,
 } from "lucide-react";
 import {
@@ -356,7 +357,9 @@ export const TaskItem = memo(function TaskItem({
       hasRecurrence ||
       hasLocation ||
       hasAttachments ||
-      deviceMatch;
+      deviceMatch ||
+      task.isSharedTo ||
+      task.isSharedFrom;
 
     return {
       completedSteps,
@@ -745,6 +748,22 @@ export const TaskItem = memo(function TaskItem({
                           G
                         </text>
                       </svg>
+                    </span>
+                  )}
+                  {task.isSharedTo && (
+                    <span
+                      className="flex items-center gap-0.5 text-blue-500"
+                      title={t("sharing.sharedTo")}
+                    >
+                      <Users className="h-3 w-3" />
+                    </span>
+                  )}
+                  {task.isSharedFrom && (
+                    <span
+                      className="flex items-center gap-0.5 text-amber-500"
+                      title={t("sharing.sharedFrom")}
+                    >
+                      <Link2 className="h-3 w-3" />
                     </span>
                   )}
                 </div>

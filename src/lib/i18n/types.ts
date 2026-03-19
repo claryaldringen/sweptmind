@@ -448,6 +448,7 @@ export interface Dictionary {
     shareWith: string;
     shareWithAnother: string;
     sharedFrom: string;
+    sharedTo: string;
     unshare: string;
     inviteTitle: string;
     inviteAccept: string;
