@@ -13,5 +13,6 @@ import "./types/calendar";
 import "./types/subscription";
 import "./types/attachment";
 import "./types/ai-analysis";
+import "./types/sharing";
 
 export const schema = builder.toSchema();
