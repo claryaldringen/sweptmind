@@ -92,12 +92,17 @@ export class AiService {
       .map((t) => ({ id: t.id, title: t.title }));
 
     // Call LLM — single prompt handles analysis, decomposition, duplicate detection, and call intent
-    const result = await this.defaultLlm.analyzeTask(task.title, locale, {
-      lists: listNames,
-      tasks: otherTasks,
-      deviceContext: task.deviceContext,
-      listName: taskList?.name ?? null,
-    });
+    const result = await this.defaultLlm.analyzeTask(
+      task.title,
+      locale,
+      {
+        lists: listNames,
+        tasks: otherTasks,
+        deviceContext: task.deviceContext,
+        listName: taskList?.name ?? null,
+      },
+      model,
+    );
 
     // Increment usage counter after successful call
     const yearMonth = new Date().toISOString().slice(0, 7);

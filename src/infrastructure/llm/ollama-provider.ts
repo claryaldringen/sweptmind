@@ -81,12 +81,17 @@ export class OllamaProvider implements ILlmProvider {
     return true; // Ollama is local, always available if configured
   }
 
-  async analyzeTask(title: string, locale: string, context: LlmContext): Promise<LlmResponse> {
+  async analyzeTask(
+    title: string,
+    locale: string,
+    context: LlmContext,
+    model?: string,
+  ): Promise<LlmResponse> {
     const res = await fetch(`${this.baseUrl}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: this.model,
+        model: model ?? this.model,
         messages: [
           { role: "system", content: getAnalyzePrompt(locale) },
           { role: "user", content: formatUserMessage(title, context) },

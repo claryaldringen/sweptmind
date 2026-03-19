@@ -84,7 +84,12 @@ export class OpenAiCompatibleProvider implements ILlmProvider {
     return this.apiKey.length > 0;
   }
 
-  async analyzeTask(title: string, locale: string, context: LlmContext): Promise<LlmResponse> {
+  async analyzeTask(
+    title: string,
+    locale: string,
+    context: LlmContext,
+    model?: string,
+  ): Promise<LlmResponse> {
     const res = await fetch(`${this.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
@@ -92,7 +97,7 @@ export class OpenAiCompatibleProvider implements ILlmProvider {
         Authorization: `Bearer ${this.apiKey}`,
       },
       body: JSON.stringify({
-        model: this.model,
+        model: model ?? this.model,
         messages: [
           { role: "system", content: getAnalyzePrompt(locale) },
           { role: "user", content: formatUserMessage(title, context) },

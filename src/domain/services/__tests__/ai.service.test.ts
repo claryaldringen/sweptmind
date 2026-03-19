@@ -284,12 +284,17 @@ describe("AiService", () => {
     const result = await service.analyzeTask("task-1", "user-1");
 
     expect(result).toEqual(newAnalysis);
-    expect(llm.analyzeTask).toHaveBeenCalledWith("Buy groceries", "en", {
-      lists: ["Tasks"],
-      tasks: [],
-      deviceContext: null,
-      listName: null,
-    });
+    expect(llm.analyzeTask).toHaveBeenCalledWith(
+      "Buy groceries",
+      "en",
+      {
+        lists: ["Tasks"],
+        tasks: [],
+        deviceContext: null,
+        listName: null,
+      },
+      "gpt-4o-mini",
+    );
     expect(aiUsageRepo.increment).toHaveBeenCalled();
   });
 
