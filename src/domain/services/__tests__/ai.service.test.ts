@@ -84,6 +84,7 @@ function makeTaskRepo(overrides: Partial<ITaskRepository> = {}): ITaskRepository
     findWithLocation: vi.fn().mockResolvedValue([]),
     findContextTasks: vi.fn().mockResolvedValue([]),
     findDependentTaskIds: vi.fn().mockResolvedValue([]),
+    countDependentByTaskIds: vi.fn().mockResolvedValue(new Map()),
     searchTasks: vi.fn().mockResolvedValue([]),
     findByUser: vi.fn().mockResolvedValue([]),
     findActiveByUser: vi.fn().mockResolvedValue([]),

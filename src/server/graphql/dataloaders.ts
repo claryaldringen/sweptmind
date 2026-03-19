@@ -61,13 +61,8 @@ export function createDataLoaders(repos: Repos, userId: string): DataLoaders {
     }),
 
     dependentTaskCountByTaskId: new DataLoader(async (taskIds) => {
-      const counts = await Promise.all(
-        [...taskIds].map(async (id) => {
-          const deps = await repos.task.findDependentTaskIds(id);
-          return deps.length;
-        }),
-      );
-      return taskIds.map((_, i) => counts[i]);
+      const map = await repos.task.countDependentByTaskIds([...taskIds]);
+      return taskIds.map((id) => map.get(id) ?? 0);
     }),
 
     attachmentsByTaskId: new DataLoader(async (taskIds) => {

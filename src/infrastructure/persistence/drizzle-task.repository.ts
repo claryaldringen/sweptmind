@@ -269,6 +269,30 @@ export class DrizzleTaskRepository implements ITaskRepository {
     return rows.map((r) => r.id);
   }
 
+  async countDependentByTaskIds(taskIds: string[]): Promise<Map<string, number>> {
+    if (taskIds.length === 0) return new Map();
+    const rows = await this.db
+      .select({
+        blockedByTaskId: schema.tasks.blockedByTaskId,
+        count: count(),
+      })
+      .from(schema.tasks)
+      .where(
+        and(
+          inArray(schema.tasks.blockedByTaskId, taskIds),
+          eq(schema.tasks.isCompleted, false),
+        ),
+      )
+      .groupBy(schema.tasks.blockedByTaskId);
+    const map = new Map<string, number>();
+    for (const row of rows) {
+      if (row.blockedByTaskId) {
+        map.set(row.blockedByTaskId, row.count);
+      }
+    }
+    return map;
+  }
+
   async findByUser(userId: string): Promise<Task[]> {
     return this.db.query.tasks.findMany({
       where: eq(schema.tasks.userId, userId),

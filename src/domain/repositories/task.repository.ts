@@ -31,6 +31,7 @@ export interface ITaskRepository {
     locationIds: string[],
   ): Promise<Task[]>;
   findDependentTaskIds(taskId: string): Promise<string[]>;
+  countDependentByTaskIds(taskIds: string[]): Promise<Map<string, number>>;
   searchTasks(userId: string, query: string, tagIds?: string[]): Promise<Task[]>;
   findByUser(userId: string): Promise<Task[]>;
   findActiveByUser(userId: string): Promise<Task[]>;
