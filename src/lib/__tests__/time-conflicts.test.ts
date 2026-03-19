@@ -1,7 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { detectTimeConflicts } from "../time-conflicts";
 
-function makeTask(overrides: Partial<{ id: string; dueDate: string | null; dueDateEnd: string | null; isCompleted: boolean; locationId: string | null }> = {}) {
+function makeTask(
+  overrides: Partial<{
+    id: string;
+    dueDate: string | null;
+    dueDateEnd: string | null;
+    isCompleted: boolean;
+    locationId: string | null;
+  }> = {},
+) {
   return {
     id: overrides.id ?? "t-1",
     dueDate: overrides.dueDate ?? null,

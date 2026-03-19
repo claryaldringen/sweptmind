@@ -707,7 +707,12 @@ export function Sidebar() {
     const ids = new Set<string>();
     if (nearbyLocationIds.length === 0) return ids;
     for (const task of allTasks) {
-      if (!task.isCompleted && !isFutureTask(task) && task.locationId && nearbyLocationIds.includes(task.locationId)) {
+      if (
+        !task.isCompleted &&
+        !isFutureTask(task) &&
+        task.locationId &&
+        nearbyLocationIds.includes(task.locationId)
+      ) {
         ids.add(task.listId);
       }
     }

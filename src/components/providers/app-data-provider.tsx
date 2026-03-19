@@ -13,11 +13,7 @@ import {
 import { gql } from "@apollo/client";
 import { useQuery, useApolloClient } from "@apollo/client/react";
 import { detectTimeConflicts } from "@/lib/time-conflicts";
-import type {
-  TaskStep,
-  TaskTag,
-  TaskLocationInfo as TaskLocation,
-} from "@/components/tasks/types";
+import type { TaskStep, TaskTag, TaskLocationInfo as TaskLocation } from "@/components/tasks/types";
 
 // Re-export shared sub-types so existing consumers don't break
 export type { TaskStep, TaskTag };

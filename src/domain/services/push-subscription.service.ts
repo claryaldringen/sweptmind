@@ -1,9 +1,5 @@
 import type { IPushSubscriptionRepository } from "../repositories/push-subscription.repository";
-import type {
-  PushPlatform,
-  SubscribeInput,
-  PushPreferences,
-} from "../entities/push-subscription";
+import type { PushPlatform, SubscribeInput, PushPreferences } from "../entities/push-subscription";
 
 const VALID_PLATFORMS: PushPlatform[] = ["web", "ios", "android"];
 

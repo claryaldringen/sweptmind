@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { parseRecurrence, computeNextDueDate, computeFirstOccurrence, formatRecurrenceLabel } from "../recurrence";
+import {
+  parseRecurrence,
+  computeNextDueDate,
+  computeFirstOccurrence,
+  formatRecurrenceLabel,
+} from "../recurrence";
 
 describe("parseRecurrence", () => {
   it("parses DAILY", () => {
@@ -317,7 +322,9 @@ describe("formatRecurrenceLabel", () => {
   });
 
   it("formats MONTHLY_LAST:2", () => {
-    expect(formatRecurrenceLabel("MONTHLY_LAST:2", labels)).toBe("Every 2 months, last day of month");
+    expect(formatRecurrenceLabel("MONTHLY_LAST:2", labels)).toBe(
+      "Every 2 months, last day of month",
+    );
   });
 
   it("formats YEARLY", () => {

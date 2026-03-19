@@ -133,9 +133,7 @@ export function SortableTaskList({
         {futureTasks.length > 0 && (
           <div ref={futureSectionRef} className="mt-4">
             {(() => {
-              const futureHasConflict = futureTasks.some((task) =>
-                conflictingTaskIds.has(task.id),
-              );
+              const futureHasConflict = futureTasks.some((task) => conflictingTaskIds.has(task.id));
               return (
                 <button
                   onClick={() => setFutureOpen(!futureOpen)}

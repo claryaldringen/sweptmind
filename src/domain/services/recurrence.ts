@@ -163,9 +163,7 @@ export function formatRecurrenceLabel(
 
   switch (parsed.type) {
     case "DAILY":
-      return parsed.interval === 1
-        ? labels.everyDay
-        : labels.everyNDays(parsed.interval);
+      return parsed.interval === 1 ? labels.everyDay : labels.everyNDays(parsed.interval);
 
     case "WEEKLY": {
       const daysLabel =
@@ -177,9 +175,7 @@ export function formatRecurrenceLabel(
     }
 
     case "MONTHLY":
-      return parsed.interval === 1
-        ? labels.everyMonth
-        : labels.everyNMonths(parsed.interval);
+      return parsed.interval === 1 ? labels.everyMonth : labels.everyNMonths(parsed.interval);
 
     case "MONTHLY_LAST":
       return parsed.interval === 1
@@ -187,9 +183,7 @@ export function formatRecurrenceLabel(
         : `${labels.everyNMonths(parsed.interval)}, ${labels.everyLastDay.toLowerCase()}`;
 
     case "YEARLY":
-      return parsed.interval === 1
-        ? labels.everyYear
-        : labels.everyNYears(parsed.interval);
+      return parsed.interval === 1 ? labels.everyYear : labels.everyNYears(parsed.interval);
   }
 }
 

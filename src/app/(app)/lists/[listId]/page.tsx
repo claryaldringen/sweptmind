@@ -56,10 +56,7 @@ import { useNearby } from "@/components/providers/nearby-provider";
 import { cn } from "@/lib/utils";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 import { RADIUS_OPTIONS } from "@/lib/constants";
-import {
-  DELETE_LOCATION,
-  CREATE_LOCATION,
-} from "@/graphql/shared/location-mutations";
+import { DELETE_LOCATION, CREATE_LOCATION } from "@/graphql/shared/location-mutations";
 
 // Queries removed — data comes from useAppData()
 

@@ -35,11 +35,7 @@ function getClientIp(request: NextRequest): string {
  */
 export function rateLimit(
   request: NextRequest,
-  {
-    maxRequests,
-    windowMs = 60_000,
-    key,
-  }: { maxRequests: number; windowMs?: number; key?: string },
+  { maxRequests, windowMs = 60_000, key }: { maxRequests: number; windowMs?: number; key?: string },
 ): NextResponse | null {
   const identifier = key ?? getClientIp(request);
   const now = Date.now();
