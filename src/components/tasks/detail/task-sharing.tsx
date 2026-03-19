@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { Link2, Share2, UserRound, X } from "lucide-react";
+import { Check, Link2, Share2, UserPlus, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -71,6 +71,15 @@ const SHARE_TASK = gql`
 const UNSHARE_TASK = gql`
   mutation UnshareTask($sharedTaskId: String!) {
     unshareTask(sharedTaskId: $sharedTaskId)
+  }
+`;
+
+const CREATE_CONNECTION_INVITE = gql`
+  mutation CreateConnectionInviteFromTask {
+    createConnectionInvite {
+      id
+      token
+    }
   }
 `;
 
@@ -155,6 +164,11 @@ export function TaskSharing({ taskId }: TaskSharingProps) {
 
   const [shareTask, { loading: sharing }] = useMutation(SHARE_TASK);
   const [unshareTask] = useMutation(UNSHARE_TASK);
+  const [createInvite, { loading: creatingInvite }] = useMutation<{
+    createConnectionInvite: { id: string; token: string };
+  }>(CREATE_CONNECTION_INVITE);
+
+  const [copied, setCopied] = useState(false);
 
   const shares = sharesData?.taskShares ?? [];
   const shareSource = sourceData?.taskShareSource ?? null;
@@ -179,6 +193,19 @@ export function TaskSharing({ taskId }: TaskSharingProps) {
   async function handleUnshare(sharedTaskId: string) {
     await unshareTask({ variables: { sharedTaskId } });
     await refetchShares();
+  }
+
+  async function handleCreateInvite() {
+    const { data } = await createInvite();
+    if (data?.createConnectionInvite) {
+      const url =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/invite/${data.createConnectionInvite.token}`
+          : `/invite/${data.createConnectionInvite.token}`;
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   }
 
   // ---- Participant view ----
@@ -231,11 +258,6 @@ export function TaskSharing({ taskId }: TaskSharingProps) {
             <DialogTitle>{t("sharing.shareWith")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-1 py-2">
-            {availableConnections.length === 0 && (
-              <p className="text-muted-foreground px-1 py-2 text-sm">
-                {t("sharing.noConnections")}
-              </p>
-            )}
             {availableConnections.map((conn) => (
               <button
                 key={conn.id}
@@ -256,6 +278,33 @@ export function TaskSharing({ taskId }: TaskSharingProps) {
                 </div>
               </button>
             ))}
+
+            {/* Create invite for new user */}
+            <div className="border-t pt-1">
+              <button
+                disabled={creatingInvite}
+                onClick={handleCreateInvite}
+                className="hover:bg-accent flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors disabled:opacity-50"
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded-full border border-dashed">
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <UserPlus className="text-muted-foreground h-4 w-4" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">
+                    {copied ? t("sharing.copyLink") : t("sharing.createInvite")}
+                  </p>
+                  {copied && (
+                    <p className="text-muted-foreground text-xs">
+                      {t("sharing.inviteCopied")}
+                    </p>
+                  )}
+                </div>
+              </button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

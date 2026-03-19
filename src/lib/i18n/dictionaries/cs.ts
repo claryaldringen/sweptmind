@@ -462,6 +462,7 @@ export const cs: Dictionary = {
     defaultList: "Výchozí seznam pro sdílené úkoly",
     createInvite: "Vytvořit pozvánku",
     copyLink: "Kopírovat odkaz",
+    inviteCopied: "Odkaz zkopírován do schránky",
     cancelInvite: "Zrušit",
     invitePending: "Pozvánka čeká na přijetí",
     inviteExpires: "Vyprší za {days} dní",

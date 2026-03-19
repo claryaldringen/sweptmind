@@ -467,6 +467,7 @@ export const en: Dictionary = {
     defaultList: "Default list for shared tasks",
     createInvite: "Create invite",
     copyLink: "Copy link",
+    inviteCopied: "Link copied to clipboard",
     cancelInvite: "Cancel",
     invitePending: "Invite pending",
     inviteExpires: "Expires in {days} days",
