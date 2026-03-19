@@ -54,6 +54,7 @@ export interface Task {
   dueDateEnd?: string | null;
   reminderAt: string | null;
   recurrence?: string | null;
+  deviceContext?: string | null;
   sortOrder?: number;
   locationId?: string | null;
   locationRadius?: number | null;

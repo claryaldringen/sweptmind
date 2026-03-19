@@ -339,7 +339,9 @@ export const TaskItem = memo(function TaskItem({
         )
       : false;
     const taskList = task.list ? listsMap.get(task.list.id) : undefined;
-    const deviceMatch = !locationNearby && taskList?.deviceContext === deviceContext;
+    const deviceMatch =
+      !locationNearby &&
+      (task.deviceContext === deviceContext || taskList?.deviceContext === deviceContext);
     const hasAttachments = (task.attachments?.length ?? 0) > 0;
     const isBlocked = !!task.blockedByTaskId && task.blockedByTaskIsCompleted === false;
     const dependentCount = task.dependentTaskCount ?? 0;

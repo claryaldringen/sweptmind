@@ -11,6 +11,30 @@ import type {
 import { addDays, format } from "date-fns";
 import { computeDefaultReminder } from "./task-visibility";
 
+/** Convert Google RRULE array to SweptMind recurrence string. */
+function rruleToRecurrence(recurrence?: string[]): string | null {
+  if (!recurrence || recurrence.length === 0) return null;
+  const rrule = recurrence.find((r) => r.startsWith("RRULE:"));
+  if (!rrule) return null;
+  const freqMatch = rrule.match(/FREQ=(\w+)/);
+  if (!freqMatch) return null;
+  const intervalMatch = rrule.match(/INTERVAL=(\d+)/);
+  const interval = intervalMatch ? parseInt(intervalMatch[1], 10) : 1;
+  const freq = freqMatch[1];
+  const type =
+    freq === "DAILY"
+      ? "DAILY"
+      : freq === "WEEKLY"
+        ? "WEEKLY"
+        : freq === "MONTHLY"
+          ? "MONTHLY"
+          : freq === "YEARLY"
+            ? "YEARLY"
+            : null;
+  if (!type) return null;
+  return interval > 1 ? `${type}:${interval}` : type;
+}
+
 /**
  * Compute an HMAC-SHA256 token for a Google Calendar webhook channel.
  * Used both when registering a watch (to send the token to Google) and
@@ -129,6 +153,8 @@ export class GoogleCalendarService {
       const dueDate = this.eventToDueDate(event);
       const dueDateEnd = this.eventToDueDateEnd(event);
 
+      const recurrence = rruleToRecurrence(event.recurrence);
+
       if (syncEntry) {
         // Update existing task
         await this.taskRepo.update(syncEntry.taskId, userId, {
@@ -137,6 +163,7 @@ export class GoogleCalendarService {
           dueDate,
           dueDateEnd,
           reminderAt: computeDefaultReminder(dueDate),
+          recurrence,
         });
         await this.syncRepo.updateEtag(syncEntry.id, `"${Date.now()}"`);
       } else {
@@ -150,6 +177,7 @@ export class GoogleCalendarService {
           dueDate,
           dueDateEnd,
           reminderAt: computeDefaultReminder(dueDate),
+          recurrence,
           sortOrder: (minSort ?? 1) - 1,
         });
         const entry = await this.syncRepo.upsert({

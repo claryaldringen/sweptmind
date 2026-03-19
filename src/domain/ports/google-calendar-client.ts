@@ -5,6 +5,8 @@ export interface GoogleCalendarEventData {
   start: { dateTime: string; timeZone?: string } | { date: string };
   end: { dateTime: string; timeZone?: string } | { date: string };
   status?: string;
+  /** RRULE strings from Google Calendar (e.g. ["RRULE:FREQ=YEARLY"]) */
+  recurrence?: string[];
 }
 
 export interface IGoogleCalendarClient {

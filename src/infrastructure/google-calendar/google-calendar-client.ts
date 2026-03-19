@@ -205,9 +205,8 @@ export async function listEvents(
   if (syncToken) {
     params.set("syncToken", syncToken);
   } else {
-    // Full sync — only future events
+    // Full sync — only future events, keep recurring events as single entries
     params.set("timeMin", new Date().toISOString());
-    params.set("singleEvents", "true");
   }
   params.set("maxResults", "2500");
 
