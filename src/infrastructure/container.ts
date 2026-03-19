@@ -13,6 +13,10 @@ import { DrizzleAttachmentRepository } from "./persistence/drizzle-attachment.re
 import { DrizzleTaskAiAnalysisRepository } from "./persistence/drizzle-task-ai-analysis.repository";
 import { DrizzlePushSubscriptionRepository } from "./persistence/drizzle-push-subscription.repository";
 import { DrizzleAiUsageRepository } from "./persistence/drizzle-ai-usage.repository";
+import { DrizzleConnectionInviteRepository } from "./persistence/drizzle-connection-invite.repository";
+import { DrizzleUserConnectionRepository } from "./persistence/drizzle-user-connection.repository";
+import { DrizzleSharedTaskRepository } from "./persistence/drizzle-shared-task.repository";
+import { PushNotificationSender } from "./notification/push-notification-sender";
 import { OpenAiCompatibleProvider } from "./llm/openai-compatible-provider";
 import { StripePaymentGateway } from "./payment/stripe-payment-gateway";
 import { QrCodeGenerator } from "./payment/qrcode-generator";
@@ -33,6 +37,8 @@ import { PaymentService } from "@/domain/services/payment.service";
 import { AiService } from "@/domain/services/ai.service";
 import { GoogleCalendarService } from "@/domain/services/google-calendar.service";
 import { PushSubscriptionService } from "@/domain/services/push-subscription.service";
+import { ConnectionService } from "@/domain/services/connection.service";
+import { TaskSharingService } from "@/domain/services/task-sharing.service";
 import * as googleCalendarClient from "./google-calendar/google-calendar-client";
 
 const taskRepo = new DrizzleTaskRepository(db);
@@ -48,6 +54,11 @@ const attachmentRepo = new DrizzleAttachmentRepository(db);
 const aiAnalysisRepo = new DrizzleTaskAiAnalysisRepository(db);
 const aiUsageRepo = new DrizzleAiUsageRepository(db);
 const pushSubRepo = new DrizzlePushSubscriptionRepository(db);
+
+const connectionInviteRepo = new DrizzleConnectionInviteRepository(db);
+const userConnectionRepo = new DrizzleUserConnectionRepository(db);
+const sharedTaskRepo = new DrizzleSharedTaskRepository(db);
+const notificationSender = new PushNotificationSender(pushSubRepo);
 
 const llmProvider = new OpenAiCompatibleProvider();
 const blobStorage = new VercelBlobStorage();
@@ -70,7 +81,23 @@ const googleCalendarService = new GoogleCalendarService(
   taskRepo,
   listRepo,
 );
-const taskService = new TaskService(taskRepo, listRepo, stepRepo, googleCalendarService);
+
+const taskSharingService = new TaskSharingService(
+  sharedTaskRepo,
+  userConnectionRepo,
+  taskRepo,
+  listRepo,
+  userRepo,
+  notificationSender,
+);
+
+const taskService = new TaskService(
+  taskRepo,
+  listRepo,
+  stepRepo,
+  googleCalendarService,
+  taskSharingService,
+);
 
 export const repos = {
   task: taskRepo,
@@ -85,6 +112,9 @@ export const repos = {
   aiAnalysis: aiAnalysisRepo,
   pushSubscription: pushSubRepo,
   user: userRepo,
+  connectionInvite: connectionInviteRepo,
+  userConnection: userConnectionRepo,
+  sharedTask: sharedTaskRepo,
 };
 
 export type Repos = typeof repos;
@@ -116,6 +146,13 @@ export const services = {
     aiUsageRepo,
   ),
   pushSubscription: new PushSubscriptionService(pushSubRepo),
+  connection: new ConnectionService(
+    connectionInviteRepo,
+    userConnectionRepo,
+    listRepo,
+    notificationSender,
+  ),
+  taskSharing: taskSharingService,
 };
 
 export type Services = typeof services;

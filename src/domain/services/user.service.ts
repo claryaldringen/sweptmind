@@ -91,4 +91,8 @@ export class UserService {
   ): Promise<void> {
     await this.userRepo.updateGoogleCalendarChannel(userId, channelId, expiry);
   }
+
+  async updateSharingDefaultList(userId: string, listId: string | null): Promise<void> {
+    await this.userRepo.updateSharingDefaultList(userId, listId);
+  }
 }

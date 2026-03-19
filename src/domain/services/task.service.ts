@@ -7,6 +7,7 @@ import type { List } from "../entities/list";
 import { computeNextDueDate, computeFirstOccurrence } from "./recurrence";
 import { computeDefaultReminder } from "./task-visibility";
 import { format } from "date-fns";
+import type { TaskSharingService } from "./task-sharing.service";
 
 export interface ImportTaskInput {
   title: string;
@@ -30,6 +31,7 @@ export class TaskService {
       pushTask(userId: string, task: Task): Promise<void>;
       deleteTaskEvent(userId: string, taskId: string): Promise<void>;
     },
+    private readonly taskSharingService?: TaskSharingService,
   ) {}
 
   async getByUser(userId: string): Promise<Task[]> {
@@ -154,6 +156,10 @@ export class TaskService {
       this.googleCalendarService.deleteTaskEvent(userId, id).catch(() => {});
     }
 
+    if (this.taskSharingService) {
+      this.taskSharingService.syncSharedFields(id, updates).catch(() => {});
+    }
+
     return updated;
   }
 
@@ -162,6 +168,10 @@ export class TaskService {
 
     if (this.googleCalendarService) {
       this.googleCalendarService.deleteTaskEvent(userId, id).catch(() => {});
+    }
+
+    if (this.taskSharingService) {
+      this.taskSharingService.notifyOwnerAction(id, "deleted").catch(() => {});
     }
 
     return true;
@@ -213,6 +223,10 @@ export class TaskService {
 
     if (this.googleCalendarService && toggled.dueDate) {
       this.googleCalendarService.pushTask(userId, toggled).catch(() => {});
+    }
+
+    if (this.taskSharingService && toggled.isCompleted) {
+      this.taskSharingService.notifyOwnerAction(id, "completed").catch(() => {});
     }
 
     return toggled;
