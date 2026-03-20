@@ -108,6 +108,7 @@ function makeSyncRepo(overrides: Partial<ICalendarSyncRepository> = {}): ICalend
     updateGoogleEventId: vi.fn(),
     deleteByTaskId: vi.fn(),
     deleteByIcalUid: vi.fn(),
+    findByTaskIds: vi.fn().mockResolvedValue(new Map()),
     ...overrides,
   };
 }

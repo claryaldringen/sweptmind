@@ -5,6 +5,8 @@ import type { Step } from "@/domain/entities/task";
 import type { Tag } from "@/domain/entities/tag";
 import type { TaskAttachment } from "@/domain/entities/task-attachment";
 import type { TaskAiAnalysis } from "@/domain/entities/task-ai-analysis";
+import type { CalendarSync } from "@/domain/entities/calendar-sync";
+import type { SharedTask } from "@/domain/entities/shared-task";
 import type { Repos } from "@/infrastructure/container";
 
 export interface DataLoaders {
@@ -18,6 +20,9 @@ export interface DataLoaders {
   dependentTaskCountByTaskId: DataLoader<string, number>;
   attachmentsByTaskId: DataLoader<string, TaskAttachment[]>;
   aiAnalysisByTaskId: DataLoader<string, TaskAiAnalysis | null>;
+  calendarSyncByTaskId: DataLoader<string, CalendarSync | null>;
+  sharedTasksBySourceTaskId: DataLoader<string, SharedTask[]>;
+  sharedTaskByTargetTaskId: DataLoader<string, SharedTask | undefined>;
 }
 
 export function createDataLoaders(repos: Repos, userId: string): DataLoaders {
@@ -73,6 +78,21 @@ export function createDataLoaders(repos: Repos, userId: string): DataLoaders {
     aiAnalysisByTaskId: new DataLoader(async (taskIds) => {
       const map = await repos.aiAnalysis.findByTaskIds([...taskIds]);
       return taskIds.map((id) => map.get(id) ?? null);
+    }),
+
+    calendarSyncByTaskId: new DataLoader(async (taskIds) => {
+      const map = await repos.calendarSync.findByTaskIds([...taskIds]);
+      return taskIds.map((id) => map.get(id) ?? null);
+    }),
+
+    sharedTasksBySourceTaskId: new DataLoader(async (taskIds) => {
+      const map = await repos.sharedTask.findBySourceTaskIds([...taskIds]);
+      return taskIds.map((id) => map.get(id) ?? []);
+    }),
+
+    sharedTaskByTargetTaskId: new DataLoader(async (taskIds) => {
+      const map = await repos.sharedTask.findByTargetTaskIds([...taskIds]);
+      return taskIds.map((id) => map.get(id));
     }),
   };
 }

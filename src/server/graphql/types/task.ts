@@ -103,21 +103,21 @@ export const TaskType = TaskRef.implement({
     }),
     isGoogleCalendarEvent: t.boolean({
       resolve: async (task, _args, ctx) => {
-        const syncEntry = await ctx.services.calendar.getSyncEntry(task.id);
+        const syncEntry = await ctx.loaders.calendarSyncByTaskId.load(task.id);
         return syncEntry?.googleCalendarEventId != null;
       },
     }),
     isSharedTo: t.boolean({
       resolve: async (task, _args, ctx) => {
         if (!ctx.userId) return false;
-        const shares = await ctx.services.taskSharing.getShareInfo(task.id, ctx.userId);
+        const shares = await ctx.loaders.sharedTasksBySourceTaskId.load(task.id);
         return shares.length > 0;
       },
     }),
     isSharedFrom: t.boolean({
       resolve: async (task, _args, ctx) => {
         if (!ctx.userId) return false;
-        const source = await ctx.services.taskSharing.getShareSource(task.id, ctx.userId);
+        const source = await ctx.loaders.sharedTaskByTargetTaskId.load(task.id);
         return !!source;
       },
     }),

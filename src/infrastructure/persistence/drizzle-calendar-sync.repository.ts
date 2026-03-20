@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import type { CalendarSync } from "@/domain/entities/calendar-sync";
@@ -75,5 +75,13 @@ export class DrizzleCalendarSyncRepository implements ICalendarSyncRepository {
       .update(schema.calendarSync)
       .set({ googleCalendarEventId: googleEventId })
       .where(eq(schema.calendarSync.id, id));
+  }
+
+  async findByTaskIds(taskIds: string[]): Promise<Map<string, CalendarSync>> {
+    if (taskIds.length === 0) return new Map();
+    const rows = await this.db.query.calendarSync.findMany({
+      where: inArray(schema.calendarSync.taskId, taskIds),
+    });
+    return new Map(rows.map((r) => [r.taskId, r]));
   }
 }

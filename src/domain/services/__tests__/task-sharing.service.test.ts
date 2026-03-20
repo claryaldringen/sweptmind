@@ -106,6 +106,8 @@ function makeMocks() {
     findByConnection: vi.fn(),
     deleteByConnection: vi.fn(),
     delete: vi.fn(),
+    findBySourceTaskIds: vi.fn().mockResolvedValue(new Map()),
+    findByTargetTaskIds: vi.fn().mockResolvedValue(new Map()),
   };
   const connectionRepo: IUserConnectionRepository = {
     create: vi.fn(),

@@ -15,4 +15,5 @@ export interface ICalendarSyncRepository {
   deleteByIcalUid(userId: string, icalUid: string): Promise<void>;
   findByGoogleEventId(userId: string, eventId: string): Promise<CalendarSync | undefined>;
   updateGoogleEventId(id: string, googleEventId: string | null): Promise<void>;
+  findByTaskIds(taskIds: string[]): Promise<Map<string, CalendarSync>>;
 }

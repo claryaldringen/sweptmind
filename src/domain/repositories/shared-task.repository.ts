@@ -8,4 +8,6 @@ export interface ISharedTaskRepository {
   findByConnection(connectionId: string): Promise<SharedTask[]>;
   deleteByConnection(connectionId: string): Promise<void>;
   delete(id: string): Promise<void>;
+  findBySourceTaskIds(taskIds: string[]): Promise<Map<string, SharedTask[]>>;
+  findByTargetTaskIds(taskIds: string[]): Promise<Map<string, SharedTask | undefined>>;
 }
