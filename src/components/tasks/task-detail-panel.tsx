@@ -111,6 +111,12 @@ const DELETE_STEP = gql`
   }
 `;
 
+const REORDER_STEPS = gql`
+  mutation ReorderSteps($taskId: String!, $input: [ReorderStepInput!]!) {
+    reorderSteps(taskId: $taskId, input: $input)
+  }
+`;
+
 // Tags and locations come from useAppData()
 
 const CREATE_TAG = gql`
@@ -415,6 +421,8 @@ export function TaskDetailPanel() {
       cache.gc();
     },
   });
+  const [reorderSteps] = useMutation(REORDER_STEPS);
+
   const [createTag] = useMutation<{ createTag: TaskTag }>(CREATE_TAG, {
     update(cache, { data }) {
       if (!data?.createTag) return;
@@ -617,6 +625,22 @@ export function TaskDetailPanel() {
     if (!task) return;
     await createStep({
       variables: { input: { id: crypto.randomUUID(), taskId: task.id, title } },
+    });
+  }
+
+  function handleReorderSteps(items: { id: string; sortOrder: number }[]) {
+    if (!task) return;
+    reorderSteps({
+      variables: { taskId: task.id, input: items },
+      optimisticResponse: { reorderSteps: true },
+      update(cache) {
+        for (const { id, sortOrder } of items) {
+          cache.modify({
+            id: cache.identify({ __typename: "Step", id }),
+            fields: { sortOrder: () => sortOrder },
+          });
+        }
+      },
     });
   }
 
@@ -848,6 +872,7 @@ export function TaskDetailPanel() {
           onToggleStep={(id) => toggleStep({ variables: { id } })}
           onUpdateStepTitle={(id, title) => updateStepTitle({ variables: { id, title } })}
           onDeleteStep={(id) => deleteStep({ variables: { id } })}
+          onReorderSteps={handleReorderSteps}
           addStepLabel={t("tasks.addStep")}
         />
 

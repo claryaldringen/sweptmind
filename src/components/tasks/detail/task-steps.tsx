@@ -20,6 +20,22 @@ import {
 } from "@/components/providers/step-selection-provider";
 import { setFocusArea, subscribeFocusArea, getFocusArea } from "@/lib/focus-area";
 import { useTranslations } from "@/lib/i18n";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 function autoResize(el: HTMLTextAreaElement) {
   el.style.height = "auto";
@@ -37,6 +53,7 @@ interface StepItem {
   id: string;
   title: string;
   isCompleted: boolean;
+  sortOrder: number;
 }
 
 interface TaskStepsProps {
@@ -45,6 +62,7 @@ interface TaskStepsProps {
   onToggleStep: (id: string) => void;
   onUpdateStepTitle: (id: string, title: string) => void;
   onDeleteStep: (id: string) => void;
+  onReorderSteps: (items: { id: string; sortOrder: number }[]) => void;
   addStepLabel: string;
 }
 
@@ -68,6 +86,16 @@ function StepRow({
   const [deleteSteps] = useMutation(DELETE_STEPS);
   const rowRef = useRef<HTMLDivElement>(null);
 
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: step.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   useEffect(() => {
     if (isSelected && rowRef.current) {
       rowRef.current.scrollIntoView({ block: "nearest" });
@@ -89,13 +117,23 @@ function StepRow({
     stepSelection.clear();
   };
 
+  // Merge refs: useSortable's setNodeRef + our rowRef
+  const mergedRef = (node: HTMLDivElement | null) => {
+    setNodeRef(node);
+    (rowRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+  };
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
-          ref={rowRef}
+          ref={mergedRef}
+          style={style}
+          {...attributes}
+          {...listeners}
           className={cn(
             "group -mx-1 flex min-w-0 items-center gap-2 rounded-md px-1",
+            isDragging ? "cursor-grabbing" : "cursor-grab",
             isSelected && stepsHaveFocus && "bg-accent",
             isSelected && !stepsHaveFocus && "bg-accent/50",
           )}
@@ -193,10 +231,46 @@ export function TaskSteps({
   onToggleStep,
   onUpdateStepTitle,
   onDeleteStep,
+  onReorderSteps,
   addStepLabel,
 }: TaskStepsProps) {
   const [newStepTitle, setNewStepTitle] = useState("");
   const stepIds = useMemo(() => steps.map((s) => s.id), [steps]);
+
+  const [orderedIds, setOrderedIds] = useState(() => steps.map((s) => s.id));
+
+  // Keep orderedIds in sync with props
+  if (
+    orderedIds.length !== stepIds.length ||
+    orderedIds.some((id, i) => id !== stepIds[i])
+  ) {
+    setOrderedIds(stepIds);
+  }
+
+  const stepMap = useMemo(() => new Map(steps.map((s) => [s.id, s])), [steps]);
+  const orderedSteps = orderedIds
+    .map((id) => stepMap.get(id))
+    .filter((s): s is StepItem => s != null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = orderedIds.indexOf(String(active.id));
+    const newIndex = orderedIds.indexOf(String(over.id));
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newIds = arrayMove(orderedIds, oldIndex, newIndex);
+    setOrderedIds(newIds);
+
+    const input = newIds.map((id, i) => ({ id, sortOrder: i }));
+    onReorderSteps(input);
+  }
 
   async function handleAddStep(e: React.FormEvent) {
     e.preventDefault();
@@ -208,26 +282,34 @@ export function TaskSteps({
 
   return (
     <StepSelectionProvider stepIds={stepIds}>
-      <div className="space-y-1">
-        {steps.map((step) => (
-          <StepRow
-            key={step.id}
-            step={step}
-            onToggleStep={onToggleStep}
-            onUpdateStepTitle={onUpdateStepTitle}
-            onDeleteStep={onDeleteStep}
-          />
-        ))}
-        <form onSubmit={handleAddStep} className="flex items-center gap-2">
-          <Plus className="text-muted-foreground h-4 w-4" />
-          <Input
-            value={newStepTitle}
-            onChange={(e) => setNewStepTitle(e.target.value)}
-            placeholder={addStepLabel}
-            className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
-          />
-        </form>
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={orderedIds} strategy={verticalListSortingStrategy}>
+          <div className="space-y-1">
+            {orderedSteps.map((step) => (
+              <StepRow
+                key={step.id}
+                step={step}
+                onToggleStep={onToggleStep}
+                onUpdateStepTitle={onUpdateStepTitle}
+                onDeleteStep={onDeleteStep}
+              />
+            ))}
+            <form onSubmit={handleAddStep} className="flex items-center gap-2">
+              <Plus className="text-muted-foreground h-4 w-4" />
+              <Input
+                value={newStepTitle}
+                onChange={(e) => setNewStepTitle(e.target.value)}
+                placeholder={addStepLabel}
+                className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
+              />
+            </form>
+          </div>
+        </SortableContext>
+      </DndContext>
     </StepSelectionProvider>
   );
 }
