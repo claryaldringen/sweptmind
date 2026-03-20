@@ -38,6 +38,11 @@ export const tasks = pgTable(
     deviceContext: text("device_context"), // 'phone' | 'computer' | null
     notifiedAt: timestamp("notified_at", { mode: "date" }),
     blockedByTaskId: text("blocked_by_task_id"),
+    shareCompletionMode: text("share_completion_mode"), // 'any' | 'all'
+    shareCompletionAction: text("share_completion_action"), // 'complete' | 'move'
+    shareCompletionListId: text("share_completion_list_id").references(() => lists.id, {
+      onDelete: "set null",
+    }),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
