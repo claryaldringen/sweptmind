@@ -6,7 +6,8 @@ import { tags, taskTags } from "./tags";
 import { locations } from "./locations";
 import { calendarSync } from "./calendar-sync";
 import { pushSubscriptions } from "./push-subscriptions";
-import { subscriptions, bankPayments } from "./subscriptions";
+import { subscriptions, bankPayments, fioApiCalls } from "./subscriptions";
+void fioApiCalls; // registered for Drizzle query builder
 import { taskAttachments } from "./attachments";
 import { taskAiAnalyses } from "./ai-analyses";
 import { aiUsage } from "./ai-usage";

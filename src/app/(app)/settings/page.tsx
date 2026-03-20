@@ -232,6 +232,22 @@ const GENERATE_BANK_TRANSFER_QR = gql`
   }
 `;
 
+const VERIFY_BANK_PAYMENT = gql`
+  mutation VerifyBankPayment {
+    verifyBankPayment {
+      found
+      nextCheckAvailableAt
+    }
+  }
+`;
+
+interface VerifyBankPaymentData {
+  verifyBankPayment: {
+    found: boolean;
+    nextCheckAvailableAt: string;
+  };
+}
+
 interface GetMeData {
   me: {
     id: string;
@@ -334,8 +350,10 @@ export default function SettingsPage() {
     useMutation<CreateCustomerPortalSessionData>(CREATE_CUSTOMER_PORTAL_SESSION);
   const [generateQR, { loading: qrLoading }] =
     useMutation<GenerateBankTransferQRData>(GENERATE_BANK_TRANSFER_QR);
+  const [verifyBankPayment, { loading: verifyLoading }] =
+    useMutation<VerifyBankPaymentData>(VERIFY_BANK_PAYMENT);
 
-  const { isPremium } = useIsPremium();
+  const { isPremium, refetch: refetchPremium } = useIsPremium();
   const subscription = subData?.subscription ?? null;
 
   // AI LLM config
@@ -353,6 +371,9 @@ export default function SettingsPage() {
 
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("yearly");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [verifyCooldownEnd, setVerifyCooldownEnd] = useState<number | null>(null);
+  const [verifyCooldownLeft, setVerifyCooldownLeft] = useState(0);
+  const [verifyResult, setVerifyResult] = useState<"found" | "not_found" | null>(null);
   const [checkoutMessage, setCheckoutMessage] = useState<{
     type: "success" | "cancel";
     text: string;
@@ -413,6 +434,41 @@ export default function SettingsPage() {
       // Portal error — silently fail
     }
   }, [createPortalSession]);
+
+  const handleVerifyPayment = useCallback(async () => {
+    setVerifyResult(null);
+    try {
+      const { data } = await verifyBankPayment();
+      if (data?.verifyBankPayment) {
+        const { found, nextCheckAvailableAt } = data.verifyBankPayment;
+        const cooldownMs = new Date(nextCheckAvailableAt).getTime() - Date.now();
+        if (cooldownMs > 0) {
+          setVerifyCooldownEnd(Date.now() + cooldownMs);
+        }
+        if (found) {
+          setVerifyResult("found");
+          refetchPremium();
+        } else {
+          setVerifyResult("not_found");
+        }
+      }
+    } catch {
+      // verification error — silently fail
+    }
+  }, [verifyBankPayment, refetchPremium]);
+
+  // Countdown timer for FIO rate limit
+  useEffect(() => {
+    if (!verifyCooldownEnd) return;
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((verifyCooldownEnd - Date.now()) / 1000));
+      setVerifyCooldownLeft(left);
+      if (left <= 0) setVerifyCooldownEnd(null);
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [verifyCooldownEnd]);
 
   // Calendar state
   const [calendarToken, setCalendarToken] = useState<string | null>(null);
@@ -920,6 +976,43 @@ export default function SettingsPage() {
                       alt="QR code for bank transfer"
                       className="h-48 w-48 rounded-md"
                     />
+                  </div>
+
+                  {/* Verify payment button + cooldown */}
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={handleVerifyPayment}
+                      disabled={verifyLoading || verifyCooldownLeft > 0}
+                    >
+                      <Check className="h-4 w-4" />
+                      {verifyLoading
+                        ? t("premium.verifying")
+                        : verifyCooldownLeft > 0
+                          ? t("premium.nextCheckIn", { seconds: String(verifyCooldownLeft) })
+                          : t("premium.alreadyPaid")}
+                    </Button>
+
+                    {verifyCooldownLeft > 0 && (
+                      <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+                        <div
+                          className="bg-primary h-full rounded-full transition-all duration-1000 ease-linear"
+                          style={{ width: `${(1 - verifyCooldownLeft / 60) * 100}%` }}
+                        />
+                      </div>
+                    )}
+
+                    {verifyResult === "found" && (
+                      <p className="text-sm font-medium text-green-600">
+                        {t("premium.paymentFound")}
+                      </p>
+                    )}
+                    {verifyResult === "not_found" && (
+                      <p className="text-muted-foreground text-sm">
+                        {t("premium.paymentNotFound")}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

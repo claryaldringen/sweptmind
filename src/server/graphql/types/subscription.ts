@@ -1,5 +1,17 @@
 import { builder } from "../builder";
 import { SubscriptionRef } from "./refs";
+import type { BankPaymentVerificationResult } from "@/domain/services/payment.service";
+
+const BankPaymentVerificationRef = builder.objectRef<BankPaymentVerificationResult>(
+  "BankPaymentVerification",
+);
+
+BankPaymentVerificationRef.implement({
+  fields: (t) => ({
+    found: t.exposeBoolean("found"),
+    nextCheckAvailableAt: t.exposeString("nextCheckAvailableAt"),
+  }),
+});
 
 export const SubscriptionType = SubscriptionRef.implement({
   fields: (t) => ({
@@ -71,6 +83,17 @@ builder.mutationField("generateBankTransferQR", (t) =>
         plan,
         process.env.FIO_ACCOUNT_NUMBER!,
       );
+    },
+  }),
+);
+
+// Mutation: verify bank payment via FIO API
+builder.mutationField("verifyBankPayment", (t) =>
+  t.field({
+    type: BankPaymentVerificationRef,
+    authScopes: { authenticated: true },
+    resolve: async (_root, _args, ctx) => {
+      return ctx.services.payment.verifyBankPayment(ctx.userId!);
     },
   }),
 );

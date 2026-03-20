@@ -5,10 +5,6 @@
       "schedule": "0 8 * * *"
     },
     {
-      "path": "/api/cron/check-payments",
-      "schedule": "0 9 * * *"
-    },
-    {
       "path": "/api/cron/renew-google-watches",
       "schedule": "0 3 * * *"
     }

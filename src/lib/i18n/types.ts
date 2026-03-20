@@ -372,6 +372,11 @@ export interface Dictionary {
     activeSubscription: string;
     redirecting: string;
     closeQR: string;
+    alreadyPaid: string;
+    verifying: string;
+    paymentFound: string;
+    paymentNotFound: string;
+    nextCheckIn: string;
     aiAnalyzing: string;
     aiNotActionable: string;
     aiSuggestion: string;

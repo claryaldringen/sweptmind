@@ -9,3 +9,10 @@ mutation CreateCustomerPortalSession {
 mutation GenerateBankTransferQR($plan: String!) {
   generateBankTransferQR(plan: $plan)
 }
+
+mutation VerifyBankPayment {
+  verifyBankPayment {
+    found
+    nextCheckAvailableAt
+  }
+}

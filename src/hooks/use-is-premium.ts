@@ -21,11 +21,13 @@ export function useIsPremium(): {
   isPremium: boolean;
   aiEnabled: boolean;
   userId: string | null;
+  refetch: () => void;
 } {
-  const { data } = useQuery<GetMeForPremiumData>(GET_ME_FOR_PREMIUM);
+  const { data, refetch } = useQuery<GetMeForPremiumData>(GET_ME_FOR_PREMIUM);
   return {
     isPremium: data?.me?.isPremium ?? false,
     aiEnabled: data?.me?.aiEnabled ?? true,
     userId: data?.me?.id ?? null,
+    refetch,
   };
 }

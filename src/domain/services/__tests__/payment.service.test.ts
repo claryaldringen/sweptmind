@@ -45,6 +45,10 @@ function makeSubscriptionRepo(
     create: vi.fn(),
     updateStatus: vi.fn(),
     updateStripeIds: vi.fn(),
+    findBankPaymentByFioId: vi.fn().mockResolvedValue(undefined),
+    createBankPayment: vi.fn(),
+    getFioLastCallAt: vi.fn().mockResolvedValue(null),
+    setFioLastCallAt: vi.fn(),
     ...overrides,
   };
 }
@@ -59,7 +63,7 @@ describe("PaymentService", () => {
     gateway = makePaymentGateway();
     qr = makeQrGenerator();
     subRepo = makeSubscriptionRepo();
-    service = new PaymentService(gateway, qr, subRepo);
+    service = new PaymentService(gateway, qr, subRepo, null, null as never);
   });
 
   describe("createCheckoutSession", () => {

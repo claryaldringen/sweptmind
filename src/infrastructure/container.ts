@@ -20,6 +20,7 @@ import { PushNotificationSender } from "./notification/push-notification-sender"
 import { OpenAiCompatibleProvider } from "./llm/openai-compatible-provider";
 import { StripePaymentGateway } from "./payment/stripe-payment-gateway";
 import { QrCodeGenerator } from "./payment/qrcode-generator";
+import { FioBankGateway } from "./fio/fio-bank-gateway";
 import { VercelBlobStorage } from "./blob/vercel-blob-storage";
 import { TaskService } from "@/domain/services/task.service";
 import { ListService } from "@/domain/services/list.service";
@@ -68,6 +69,9 @@ const paymentGateway = new StripePaymentGateway(
   process.env.STRIPE_PRICE_YEARLY_ID ?? "",
 );
 const qrGenerator = new QrCodeGenerator();
+const fioBankGateway = process.env.FIO_API_TOKEN
+  ? new FioBankGateway(process.env.FIO_API_TOKEN)
+  : null;
 
 const bcryptHasher: IPasswordHasher = {
   hash: (password) => hash(password, 12),
@@ -135,7 +139,7 @@ export const services = {
   onboarding: new OnboardingService(listRepo, locationRepo, userRepo),
   subscription: subscriptionService,
   attachment: new AttachmentService(attachmentRepo, taskRepo, subscriptionService, blobStorage),
-  payment: new PaymentService(paymentGateway, qrGenerator, subscriptionRepo),
+  payment: new PaymentService(paymentGateway, qrGenerator, subscriptionRepo, fioBankGateway, subscriptionService),
   ai: new AiService(
     aiAnalysisRepo,
     taskRepo,

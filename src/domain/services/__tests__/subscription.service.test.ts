@@ -28,6 +28,10 @@ function makeSubRepo(overrides: Partial<ISubscriptionRepository> = {}): ISubscri
     create: vi.fn(),
     updateStatus: vi.fn(),
     updateStripeIds: vi.fn(),
+    findBankPaymentByFioId: vi.fn().mockResolvedValue(undefined),
+    createBankPayment: vi.fn(),
+    getFioLastCallAt: vi.fn().mockResolvedValue(null),
+    setFioLastCallAt: vi.fn(),
     ...overrides,
   };
 }

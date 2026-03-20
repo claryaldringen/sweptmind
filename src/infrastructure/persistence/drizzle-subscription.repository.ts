@@ -1,7 +1,10 @@
 import { eq, and } from "drizzle-orm";
 import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
-import type { ISubscriptionRepository } from "@/domain/repositories/subscription.repository";
+import type {
+  ISubscriptionRepository,
+  BankPaymentRecord,
+} from "@/domain/repositories/subscription.repository";
 import type { Subscription, CreateSubscriptionInput } from "@/domain/entities/subscription";
 
 export class DrizzleSubscriptionRepository implements ISubscriptionRepository {
@@ -59,5 +62,33 @@ export class DrizzleSubscriptionRepository implements ISubscriptionRepository {
       .where(eq(schema.subscriptions.id, id))
       .returning();
     return sub;
+  }
+
+  async findBankPaymentByFioId(fioTransactionId: string): Promise<{ id: string } | undefined> {
+    return this.db.query.bankPayments.findFirst({
+      where: eq(schema.bankPayments.fioTransactionId, fioTransactionId),
+      columns: { id: true },
+    });
+  }
+
+  async createBankPayment(record: BankPaymentRecord): Promise<void> {
+    await this.db.insert(schema.bankPayments).values(record);
+  }
+
+  async getFioLastCallAt(): Promise<Date | null> {
+    const row = await this.db.query.fioApiCalls.findFirst({
+      where: eq(schema.fioApiCalls.id, "singleton"),
+    });
+    return row?.lastCallAt ?? null;
+  }
+
+  async setFioLastCallAt(at: Date): Promise<void> {
+    await this.db
+      .insert(schema.fioApiCalls)
+      .values({ id: "singleton", lastCallAt: at })
+      .onConflictDoUpdate({
+        target: schema.fioApiCalls.id,
+        set: { lastCallAt: at },
+      });
   }
 }

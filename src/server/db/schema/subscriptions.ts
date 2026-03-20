@@ -1,4 +1,5 @@
 import { index, pgEnum, pgTable, text, timestamp, numeric } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { users } from "./auth";
 
 export const subscriptionStatusEnum = pgEnum("subscription_status", [
@@ -67,3 +68,10 @@ export const bankPayments = pgTable(
     index("bank_payments_fio_transaction_id_idx").on(table.fioTransactionId),
   ],
 );
+
+export const fioApiCalls = pgTable("fio_api_calls", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`'singleton'`),
+  lastCallAt: timestamp("last_call_at", { withTimezone: true }).notNull(),
+});
