@@ -121,6 +121,9 @@ export const TaskType = TaskRef.implement({
         return !!source;
       },
     }),
+    shareCompletionMode: t.exposeString("shareCompletionMode", { nullable: true }),
+    shareCompletionAction: t.exposeString("shareCompletionAction", { nullable: true }),
+    shareCompletionListId: t.exposeString("shareCompletionListId", { nullable: true }),
   }),
 });
 
@@ -289,6 +292,9 @@ const UpdateTaskInput = builder.inputType("UpdateTaskInput", {
     locationRadius: t.float({ required: false }),
     deviceContext: t.string(),
     blockedByTaskId: t.string(),
+    shareCompletionMode: t.string(),
+    shareCompletionAction: t.string(),
+    shareCompletionListId: t.string(),
   }),
 });
 
