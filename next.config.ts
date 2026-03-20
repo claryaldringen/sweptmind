@@ -4,7 +4,7 @@ import { withSerwist } from "@serwist/turbopack";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  transpilePackages: ["@sweptmind/native-bridge"],
+  transpilePackages: ["@sweptmind/native-bridge", "@sweptmind/capacitor-geofence"],
   turbopack: {},
   env: {
     NEXT_PUBLIC_BUILD_ID:
