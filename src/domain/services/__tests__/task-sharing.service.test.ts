@@ -28,6 +28,9 @@ const makeTask = (overrides: Partial<Task> = {}): Task => ({
   recurrence: null,
   deviceContext: null,
   blockedByTaskId: null,
+  shareCompletionMode: null,
+  shareCompletionAction: null,
+  shareCompletionListId: null,
   sortOrder: 1,
   createdAt: new Date("2026-01-01"),
   updatedAt: new Date("2026-01-01"),
@@ -537,6 +540,199 @@ describe("TaskSharingService", () => {
       );
 
       expect(mocks.sharedTaskRepo.findByTargetTask).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("evaluateCompletionRule", () => {
+    it("mode=any, action=complete — marks all non-completed copies as completed", async () => {
+      const sourceTask = makeTask({
+        id: "task-1",
+        userId: "user-1",
+        isCompleted: false,
+        shareCompletionMode: "any",
+        shareCompletionAction: "complete",
+      });
+      const targetTask = makeTask({
+        id: "task-2",
+        userId: "user-2",
+        isCompleted: false,
+      });
+      const shares = [makeSharedTask({ sourceTaskId: "task-1", targetTaskId: "task-2" })];
+
+      vi.mocked(mocks.sharedTaskRepo.findByTargetTask).mockResolvedValue(undefined);
+      vi.mocked(mocks.sharedTaskRepo.findBySourceTask).mockResolvedValue(shares);
+      vi.mocked(mocks.taskRepo.findByIdUnchecked).mockImplementation((id) => {
+        if (id === "task-1") return Promise.resolve(sourceTask);
+        if (id === "task-2") return Promise.resolve(targetTask);
+        return Promise.resolve(undefined);
+      });
+      vi.mocked(mocks.taskRepo.updateUnchecked).mockResolvedValue(sourceTask);
+
+      await service.evaluateCompletionRule("task-1", "user-1");
+
+      // Source task should be marked completed
+      expect(mocks.taskRepo.updateUnchecked).toHaveBeenCalledWith(
+        "task-1",
+        expect.objectContaining({ isCompleted: true }),
+      );
+      // Target task should be marked completed
+      expect(mocks.taskRepo.updateUnchecked).toHaveBeenCalledWith(
+        "task-2",
+        expect.objectContaining({ isCompleted: true }),
+      );
+    });
+
+    it("mode=all, not all completed — does nothing", async () => {
+      const sourceTask = makeTask({
+        id: "task-1",
+        userId: "user-1",
+        isCompleted: true,
+        shareCompletionMode: "all",
+        shareCompletionAction: "complete",
+      });
+      const targetTask = makeTask({
+        id: "task-2",
+        userId: "user-2",
+        isCompleted: false,
+      });
+      const shares = [makeSharedTask({ sourceTaskId: "task-1", targetTaskId: "task-2" })];
+
+      vi.mocked(mocks.sharedTaskRepo.findByTargetTask).mockResolvedValue(undefined);
+      vi.mocked(mocks.sharedTaskRepo.findBySourceTask).mockResolvedValue(shares);
+      vi.mocked(mocks.taskRepo.findByIdUnchecked).mockImplementation((id) => {
+        if (id === "task-1") return Promise.resolve(sourceTask);
+        if (id === "task-2") return Promise.resolve(targetTask);
+        return Promise.resolve(undefined);
+      });
+
+      await service.evaluateCompletionRule("task-1", "user-1");
+
+      expect(mocks.taskRepo.updateUnchecked).not.toHaveBeenCalled();
+    });
+
+    it("mode=all, all completed — no updates needed (all already done)", async () => {
+      const sourceTask = makeTask({
+        id: "task-1",
+        userId: "user-1",
+        isCompleted: true,
+        shareCompletionMode: "all",
+        shareCompletionAction: "complete",
+      });
+      const targetTask = makeTask({
+        id: "task-2",
+        userId: "user-2",
+        isCompleted: true,
+      });
+      const shares = [makeSharedTask({ sourceTaskId: "task-1", targetTaskId: "task-2" })];
+
+      vi.mocked(mocks.sharedTaskRepo.findByTargetTask).mockResolvedValue(undefined);
+      vi.mocked(mocks.sharedTaskRepo.findBySourceTask).mockResolvedValue(shares);
+      vi.mocked(mocks.taskRepo.findByIdUnchecked).mockImplementation((id) => {
+        if (id === "task-1") return Promise.resolve(sourceTask);
+        if (id === "task-2") return Promise.resolve(targetTask);
+        return Promise.resolve(undefined);
+      });
+      vi.mocked(mocks.taskRepo.updateUnchecked).mockResolvedValue(sourceTask);
+
+      await service.evaluateCompletionRule("task-1", "user-1");
+
+      // Source is already completed, target is already completed — no updateUnchecked calls
+      expect(mocks.taskRepo.updateUnchecked).not.toHaveBeenCalled();
+    });
+
+    it("mode=any, action=move — moves source to configured list + marks targets complete", async () => {
+      const sourceTask = makeTask({
+        id: "task-1",
+        userId: "user-1",
+        isCompleted: false,
+        shareCompletionMode: "any",
+        shareCompletionAction: "move",
+        shareCompletionListId: "list-done",
+      });
+      const targetTask = makeTask({
+        id: "task-2",
+        userId: "user-2",
+        isCompleted: false,
+      });
+      const shares = [makeSharedTask({ sourceTaskId: "task-1", targetTaskId: "task-2" })];
+
+      vi.mocked(mocks.sharedTaskRepo.findByTargetTask).mockResolvedValue(undefined);
+      vi.mocked(mocks.sharedTaskRepo.findBySourceTask).mockResolvedValue(shares);
+      vi.mocked(mocks.taskRepo.findByIdUnchecked).mockImplementation((id) => {
+        if (id === "task-1") return Promise.resolve(sourceTask);
+        if (id === "task-2") return Promise.resolve(targetTask);
+        return Promise.resolve(undefined);
+      });
+      vi.mocked(mocks.taskRepo.updateUnchecked).mockResolvedValue(sourceTask);
+
+      await service.evaluateCompletionRule("task-1", "user-1");
+
+      // Source task should be moved and completed
+      expect(mocks.taskRepo.updateUnchecked).toHaveBeenCalledWith(
+        "task-1",
+        expect.objectContaining({
+          listId: "list-done",
+          isCompleted: true,
+        }),
+      );
+      // Target task should be marked completed
+      expect(mocks.taskRepo.updateUnchecked).toHaveBeenCalledWith(
+        "task-2",
+        expect.objectContaining({ isCompleted: true }),
+      );
+    });
+
+    it("no rule configured — does nothing", async () => {
+      const sourceTask = makeTask({
+        id: "task-1",
+        userId: "user-1",
+        shareCompletionMode: null,
+      });
+      const shares = [makeSharedTask({ sourceTaskId: "task-1", targetTaskId: "task-2" })];
+
+      vi.mocked(mocks.sharedTaskRepo.findByTargetTask).mockResolvedValue(undefined);
+      vi.mocked(mocks.sharedTaskRepo.findBySourceTask).mockResolvedValue(shares);
+      vi.mocked(mocks.taskRepo.findByIdUnchecked).mockResolvedValue(sourceTask);
+
+      await service.evaluateCompletionRule("task-1", "user-1");
+
+      expect(mocks.taskRepo.updateUnchecked).not.toHaveBeenCalled();
+    });
+
+    it("called from target task — resolves source task and evaluates correctly", async () => {
+      const sourceTask = makeTask({
+        id: "task-1",
+        userId: "user-1",
+        isCompleted: false,
+        shareCompletionMode: "any",
+        shareCompletionAction: "complete",
+      });
+      const targetTask = makeTask({
+        id: "task-2",
+        userId: "user-2",
+        isCompleted: true,
+      });
+      const shared = makeSharedTask({ sourceTaskId: "task-1", targetTaskId: "task-2" });
+      const shares = [shared];
+
+      // Called with target task ID — findByTargetTask returns the share
+      vi.mocked(mocks.sharedTaskRepo.findByTargetTask).mockResolvedValue(shared);
+      vi.mocked(mocks.sharedTaskRepo.findBySourceTask).mockResolvedValue(shares);
+      vi.mocked(mocks.taskRepo.findByIdUnchecked).mockImplementation((id) => {
+        if (id === "task-1") return Promise.resolve(sourceTask);
+        if (id === "task-2") return Promise.resolve(targetTask);
+        return Promise.resolve(undefined);
+      });
+      vi.mocked(mocks.taskRepo.updateUnchecked).mockResolvedValue(sourceTask);
+
+      await service.evaluateCompletionRule("task-2", "user-2");
+
+      // Should resolve source task and mark it completed
+      expect(mocks.taskRepo.updateUnchecked).toHaveBeenCalledWith(
+        "task-1",
+        expect.objectContaining({ isCompleted: true }),
+      );
+      // Target is already completed, no update needed for it
     });
   });
 });

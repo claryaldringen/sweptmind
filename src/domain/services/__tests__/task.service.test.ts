@@ -483,6 +483,7 @@ describe("TaskService", () => {
         unshareTask: vi.fn(),
         getShareInfo: vi.fn(),
         getShareSource: vi.fn(),
+        evaluateCompletionRule: vi.fn().mockResolvedValue(undefined),
       } as unknown as TaskSharingService;
 
       serviceWithSharing = new TaskService(repo, null, null, undefined, sharingService);
