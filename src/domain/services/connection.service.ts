@@ -4,8 +4,11 @@ import type { IConnectionInviteRepository } from "../repositories/connection-inv
 import type { IUserConnectionRepository } from "../repositories/user-connection.repository";
 import type { IListRepository } from "../repositories/list.repository";
 import type { INotificationSender } from "../ports/notification-sender";
+import type { TaskSharingService } from "./task-sharing.service";
 
 export class ConnectionService {
+  private taskSharingService: TaskSharingService | null = null;
+
   constructor(
     private readonly inviteRepo: IConnectionInviteRepository,
     private readonly connectionRepo: IUserConnectionRepository,
@@ -13,8 +16,12 @@ export class ConnectionService {
     private readonly notificationSender: INotificationSender,
   ) {}
 
-  async createInvite(userId: string): Promise<ConnectionInvite> {
-    return this.inviteRepo.create(userId);
+  setTaskSharingService(service: TaskSharingService): void {
+    this.taskSharingService = service;
+  }
+
+  async createInvite(userId: string, taskId?: string): Promise<ConnectionInvite> {
+    return this.inviteRepo.create(userId, taskId);
   }
 
   async getInvites(userId: string): Promise<ConnectionInvite[]> {
@@ -43,6 +50,15 @@ export class ConnectionService {
       title: "Invite accepted",
       body: "Your connection invite was accepted",
     });
+
+    // Auto-share the task that triggered the invite
+    if (invite.taskId && this.taskSharingService) {
+      try {
+        await this.taskSharingService.shareTask(invite.taskId, invite.fromUserId, userId);
+      } catch {
+        // Task may have been deleted — don't fail the connection
+      }
+    }
 
     return connection;
   }

@@ -475,6 +475,7 @@ export const en: Dictionary = {
     createInvite: "Create invite",
     copyLink: "Copy link",
     inviteCopied: "Link copied to clipboard",
+    sendLinkHint: "Send this link to the person you want to share the task with",
     cancelInvite: "Cancel",
     invitePending: "Invite pending",
     inviteExpires: "Expires in {days} days",

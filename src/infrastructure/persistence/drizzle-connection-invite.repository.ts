@@ -7,12 +7,12 @@ import type { IConnectionInviteRepository } from "@/domain/repositories/connecti
 export class DrizzleConnectionInviteRepository implements IConnectionInviteRepository {
   constructor(private readonly db: Database) {}
 
-  async create(fromUserId: string): Promise<ConnectionInvite> {
+  async create(fromUserId: string, taskId?: string): Promise<ConnectionInvite> {
     const token = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const [invite] = await this.db
       .insert(schema.connectionInvites)
-      .values({ fromUserId, token, expiresAt })
+      .values({ fromUserId, token, expiresAt, ...(taskId ? { taskId } : {}) })
       .returning();
     return invite as ConnectionInvite;
   }

@@ -155,4 +155,7 @@ export const services = {
   taskSharing: taskSharingService,
 };
 
+// Wire circular dependency: connection ↔ taskSharing
+services.connection.setTaskSharingService(taskSharingService);
+
 export type Services = typeof services;

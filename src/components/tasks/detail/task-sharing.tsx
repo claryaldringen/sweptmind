@@ -75,8 +75,8 @@ const UNSHARE_TASK = gql`
 `;
 
 const CREATE_CONNECTION_INVITE = gql`
-  mutation CreateConnectionInviteFromTask {
-    createConnectionInvite {
+  mutation CreateConnectionInviteFromTask($taskId: String) {
+    createConnectionInvite(taskId: $taskId) {
       id
       token
     }
@@ -169,6 +169,7 @@ export function TaskSharing({ taskId }: TaskSharingProps) {
   }>(CREATE_CONNECTION_INVITE);
 
   const [copied, setCopied] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
 
   const shares = sharesData?.taskShares ?? [];
   const shareSource = sourceData?.taskShareSource ?? null;
@@ -196,12 +197,13 @@ export function TaskSharing({ taskId }: TaskSharingProps) {
   }
 
   async function handleCreateInvite() {
-    const { data } = await createInvite();
+    const { data } = await createInvite({ variables: { taskId } });
     if (data?.createConnectionInvite) {
       const url =
         typeof window !== "undefined"
           ? `${window.location.origin}/invite/${data.createConnectionInvite.token}`
           : `/invite/${data.createConnectionInvite.token}`;
+      setInviteUrl(url);
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -304,6 +306,24 @@ export function TaskSharing({ taskId }: TaskSharingProps) {
                   )}
                 </div>
               </button>
+              {inviteUrl && (
+                <div className="mt-1 space-y-1 px-3 py-2">
+                  <p className="text-muted-foreground text-xs">
+                    {t("sharing.sendLinkHint")}
+                  </p>
+                  <div
+                    className="bg-muted cursor-pointer rounded-md px-2 py-1.5 text-xs break-all select-all"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(inviteUrl);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    title={t("sharing.copyLink")}
+                  >
+                    {inviteUrl}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>

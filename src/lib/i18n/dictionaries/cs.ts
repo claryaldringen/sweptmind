@@ -470,6 +470,7 @@ export const cs: Dictionary = {
     createInvite: "Vytvořit pozvánku",
     copyLink: "Kopírovat odkaz",
     inviteCopied: "Odkaz zkopírován do schránky",
+    sendLinkHint: "Pošli tento odkaz tomu, s kým chceš úkol sdílet",
     cancelInvite: "Zrušit",
     invitePending: "Pozvánka čeká na přijetí",
     inviteExpires: "Vyprší za {days} dní",

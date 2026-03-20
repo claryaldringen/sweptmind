@@ -199,7 +199,11 @@ builder.mutationField("createConnectionInvite", (t) =>
   t.field({
     type: ConnectionInviteType,
     authScopes: { authenticated: true },
-    resolve: async (_root, _args, ctx) => ctx.services.connection.createInvite(ctx.userId!),
+    args: {
+      taskId: t.arg.string({ required: false }),
+    },
+    resolve: async (_root, args, ctx) =>
+      ctx.services.connection.createInvite(ctx.userId!, args.taskId ?? undefined),
   }),
 );
 

@@ -17,6 +17,7 @@ export const connectionInvites = pgTable(
     acceptedByUserId: text("accepted_by_user_id").references(() => users.id, {
       onDelete: "set null",
     }),
+    taskId: text("task_id").references(() => tasks.id, { onDelete: "set null" }),
     expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   },

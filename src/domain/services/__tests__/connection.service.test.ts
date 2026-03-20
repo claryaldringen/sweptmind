@@ -107,7 +107,7 @@ describe("ConnectionService", () => {
 
       const result = await service.createInvite("user-1");
 
-      expect(inviteRepo.create).toHaveBeenCalledWith("user-1");
+      expect(inviteRepo.create).toHaveBeenCalledWith("user-1", undefined);
       expect(result).toEqual(invite);
     });
   });
