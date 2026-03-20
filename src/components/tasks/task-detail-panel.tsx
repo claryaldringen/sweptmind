@@ -207,6 +207,7 @@ interface TaskDetail {
   shareCompletionMode: string | null;
   shareCompletionAction: string | null;
   shareCompletionListId: string | null;
+  isSharedTo: boolean;
   attachments: TaskAttachment[];
   aiAnalysis: {
     isActionable: boolean;
@@ -1021,7 +1022,7 @@ export function TaskDetailPanel() {
         <TaskSharing taskId={task.id} />
 
         {/* Completion rules — only for tasks shared to others */}
-        {(task as any).isSharedTo && (
+        {task.isSharedTo && (
           <TaskCompletionRules
             mode={task.shareCompletionMode}
             action={task.shareCompletionAction}
