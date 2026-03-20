@@ -1,4 +1,4 @@
-import type { Position, GeofenceConfig, GeofenceEvent, TrackingConfig } from "../types";
+import type { Position, GeofenceConfig, GeofenceEvent, GeofenceRegistration, TrackingConfig } from "../types";
 
 export interface LocationPort {
   isSupported(): boolean;
@@ -8,4 +8,8 @@ export interface LocationPort {
   addGeofence(fence: GeofenceConfig): Promise<void>;
   removeGeofence(id: string): Promise<void>;
   onGeofenceEvent(cb: (event: GeofenceEvent) => void): () => void;
+  requestAlwaysPermission(): Promise<"always" | "whenInUse" | "denied">;
+  getPermissionStatus(): Promise<"always" | "whenInUse" | "denied" | "notDetermined">;
+  syncGeofences(fences: GeofenceRegistration[]): Promise<void>;
+  removeAllGeofences(): Promise<void>;
 }

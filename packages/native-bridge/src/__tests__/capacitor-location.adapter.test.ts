@@ -1,17 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+const mockGeofence = {
+  addGeofences: vi.fn().mockResolvedValue(undefined),
+  removeGeofences: vi.fn().mockResolvedValue(undefined),
+  removeAllGeofences: vi.fn().mockResolvedValue(undefined),
+  getMonitoredGeofences: vi.fn().mockResolvedValue({ geofences: [] }),
+  requestAlwaysPermission: vi.fn().mockResolvedValue({ status: "always" }),
+  getPermissionStatus: vi.fn().mockResolvedValue({ status: "always" }),
+  addListener: vi.fn().mockResolvedValue({ remove: vi.fn() }),
+  removeAllListeners: vi.fn().mockResolvedValue(undefined),
+};
+
 vi.mock("@capacitor/geolocation", () => ({
   Geolocation: {
     getCurrentPosition: vi.fn(),
   },
 }));
 
-vi.mock("@capacitor/core", () => ({
-  registerPlugin: vi.fn(() => ({
-    addWatcher: vi.fn(),
-    removeWatcher: vi.fn(),
-  })),
+vi.mock("@sweptmind/capacitor-geofence", () => ({
+  Geofence: mockGeofence,
 }));
 
 import { CapacitorLocationAdapter } from "../adapters/capacitor/capacitor-location.adapter";
@@ -48,45 +56,130 @@ describe("CapacitorLocationAdapter", () => {
     expect(pos.longitude).toBe(14.42);
   });
 
-  it("manages geofences", async () => {
-    const events: any[] = [];
-    adapter.onGeofenceEvent((e) => events.push(e));
-
+  it("addGeofence delegates to native plugin", async () => {
     await adapter.addGeofence({
       id: "home",
       latitude: 50.08,
       longitude: 14.42,
       radiusKm: 0.5,
+      name: "Home",
     });
 
-    // Access private method via any cast for testing
-    (adapter as any).checkGeofences({ latitude: 50.08, longitude: 14.42 });
-    expect(events).toHaveLength(1);
-    expect(events[0].type).toBe("enter");
-    expect(events[0].fenceId).toBe("home");
-
-    // Same position — no new event
-    (adapter as any).checkGeofences({ latitude: 50.08, longitude: 14.42 });
-    expect(events).toHaveLength(1);
-
-    // Far away — exit event
-    (adapter as any).checkGeofences({ latitude: 51.0, longitude: 15.0 });
-    expect(events).toHaveLength(2);
-    expect(events[1].type).toBe("exit");
+    expect(mockGeofence.addGeofences).toHaveBeenCalledWith({
+      geofences: [
+        {
+          identifier: "home",
+          latitude: 50.08,
+          longitude: 14.42,
+          radiusMeters: 500,
+          notifyOnEntry: true,
+          notifyOnExit: false,
+          notificationTitle: "Home",
+        },
+      ],
+    });
   });
 
-  it("removes geofences", async () => {
+  it("addGeofence enforces minimum 200m radius", async () => {
     await adapter.addGeofence({
-      id: "work",
-      latitude: 50.1,
-      longitude: 14.5,
-      radiusKm: 1,
+      id: "tiny",
+      latitude: 50.08,
+      longitude: 14.42,
+      radiusKm: 0.05, // 50m — below minimum
     });
-    await adapter.removeGeofence("work");
 
-    const events: any[] = [];
-    adapter.onGeofenceEvent((e) => events.push(e));
-    (adapter as any).checkGeofences({ latitude: 50.1, longitude: 14.5 });
-    expect(events).toHaveLength(0);
+    expect(mockGeofence.addGeofences).toHaveBeenCalledWith({
+      geofences: [
+        expect.objectContaining({
+          radiusMeters: 200,
+        }),
+      ],
+    });
+  });
+
+  it("removeGeofence delegates to native plugin", async () => {
+    await adapter.removeGeofence("work");
+    expect(mockGeofence.removeGeofences).toHaveBeenCalledWith({
+      identifiers: ["work"],
+    });
+  });
+
+  it("syncGeofences removes all and adds new", async () => {
+    await adapter.syncGeofences([
+      {
+        identifier: "location:abc",
+        latitude: 50.0,
+        longitude: 14.0,
+        radiusMeters: 500,
+        notificationTitle: "Office",
+        notificationBody: "Buy coffee",
+      },
+    ]);
+
+    expect(mockGeofence.removeAllGeofences).toHaveBeenCalled();
+    expect(mockGeofence.addGeofences).toHaveBeenCalledWith({
+      geofences: [
+        {
+          identifier: "location:abc",
+          latitude: 50.0,
+          longitude: 14.0,
+          radiusMeters: 500,
+          notifyOnEntry: true,
+          notifyOnExit: false,
+          notificationTitle: "Office",
+          notificationBody: "Buy coffee",
+        },
+      ],
+    });
+  });
+
+  it("syncGeofences with empty array only removes", async () => {
+    await adapter.syncGeofences([]);
+    expect(mockGeofence.removeAllGeofences).toHaveBeenCalled();
+    expect(mockGeofence.addGeofences).not.toHaveBeenCalled();
+  });
+
+  it("requestAlwaysPermission delegates to native plugin", async () => {
+    const result = await adapter.requestAlwaysPermission();
+    expect(result).toBe("always");
+    expect(mockGeofence.requestAlwaysPermission).toHaveBeenCalled();
+  });
+
+  it("getPermissionStatus delegates to native plugin", async () => {
+    const result = await adapter.getPermissionStatus();
+    expect(result).toBe("always");
+    expect(mockGeofence.getPermissionStatus).toHaveBeenCalled();
+  });
+
+  it("onGeofenceEvent sets up native listener", async () => {
+    const cb = vi.fn();
+    const unsub = adapter.onGeofenceEvent(cb);
+
+    // setupNativeListener is async — wait for it to complete
+    await vi.waitFor(() => {
+      expect(mockGeofence.addListener).toHaveBeenCalledWith(
+        "geofenceTransition",
+        expect.any(Function),
+      );
+    });
+    expect(typeof unsub).toBe("function");
+  });
+
+  it("startBackgroundTracking is no-op", async () => {
+    await adapter.startBackgroundTracking({
+      intervalMs: 60000,
+      distanceFilterMeters: 100,
+    });
+    // Should not throw or call any native methods
+  });
+
+  it("stopBackgroundTracking is no-op", async () => {
+    await adapter.stopBackgroundTracking();
+    // Should not throw
+  });
+
+  it("removeAllGeofences delegates to native plugin", async () => {
+    await adapter.removeAllGeofences();
+    expect(mockGeofence.removeAllGeofences).toHaveBeenCalled();
   });
 });

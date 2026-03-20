@@ -3,14 +3,13 @@ import type {
   Position,
   GeofenceConfig,
   GeofenceEvent,
+  GeofenceRegistration,
   TrackingConfig,
 } from "../../types";
 
 export class CapacitorLocationAdapter implements LocationPort {
-  private watcherId: string | null = null;
   private geofenceCallbacks: ((event: GeofenceEvent) => void)[] = [];
-  private geofences = new Map<string, GeofenceConfig>();
-  private insideFences = new Set<string>();
+  private listenerRemoveFn: (() => Promise<void>) | null = null;
 
   isSupported(): boolean {
     return true;
@@ -28,111 +27,111 @@ export class CapacitorLocationAdapter implements LocationPort {
     };
   }
 
-  async startBackgroundTracking(config: TrackingConfig): Promise<void> {
-    const { registerPlugin } = await import("@capacitor/core");
-    interface BgGeoPlugin {
-      addWatcher(
-        opts: Record<string, unknown>,
-        cb: (
-          location: { latitude: number; longitude: number } | null,
-          error: unknown,
-        ) => void,
-      ): Promise<string>;
-      removeWatcher(opts: { id: string }): Promise<void>;
-    }
-    const BackgroundGeolocation =
-      registerPlugin<BgGeoPlugin>("BackgroundGeolocation");
-
-    this.watcherId = await BackgroundGeolocation.addWatcher(
-      {
-        backgroundMessage: "SweptMind sleduje polohu pro upozornění na úkoly",
-        backgroundTitle: "SweptMind",
-        requestPermissions: true,
-        stale: false,
-        distanceFilter: config.distanceFilterMeters,
-      },
-      (location, error) => {
-        if (error) {
-          console.error("Background location error:", error);
-          return;
-        }
-        if (location) {
-          this.checkGeofences({
-            latitude: location.latitude,
-            longitude: location.longitude,
-          });
-        }
-      },
-    );
+  async startBackgroundTracking(_config: TrackingConfig): Promise<void> {
+    // No-op — native geofencing handles background monitoring via OS APIs.
+    // Continuous GPS tracking is not needed and would drain battery.
   }
 
   async stopBackgroundTracking(): Promise<void> {
-    if (this.watcherId) {
-      const { registerPlugin } = await import("@capacitor/core");
-      interface BgGeoPlugin {
-        removeWatcher(opts: { id: string }): Promise<void>;
-      }
-      const BackgroundGeolocation =
-        registerPlugin<BgGeoPlugin>("BackgroundGeolocation");
-      await BackgroundGeolocation.removeWatcher({ id: this.watcherId });
-      this.watcherId = null;
-    }
+    // No-op — see startBackgroundTracking
   }
 
   async addGeofence(fence: GeofenceConfig): Promise<void> {
-    this.geofences.set(fence.id, fence);
+    const { Geofence } = await import("@sweptmind/capacitor-geofence");
+    await Geofence.addGeofences({
+      geofences: [
+        {
+          identifier: fence.id,
+          latitude: fence.latitude,
+          longitude: fence.longitude,
+          radiusMeters: Math.max(fence.radiusKm * 1000, 200),
+          notifyOnEntry: true,
+          notifyOnExit: false,
+          notificationTitle: fence.name ?? undefined,
+        },
+      ],
+    });
   }
 
   async removeGeofence(id: string): Promise<void> {
-    this.geofences.delete(id);
+    const { Geofence } = await import("@sweptmind/capacitor-geofence");
+    await Geofence.removeGeofences({ identifiers: [id] });
   }
 
   onGeofenceEvent(cb: (event: GeofenceEvent) => void): () => void {
     this.geofenceCallbacks.push(cb);
+
+    // Set up native listener if this is the first callback
+    if (this.geofenceCallbacks.length === 1) {
+      this.setupNativeListener();
+    }
+
     return () => {
       this.geofenceCallbacks = this.geofenceCallbacks.filter((c) => c !== cb);
+      if (this.geofenceCallbacks.length === 0) {
+        this.teardownNativeListener();
+      }
     };
   }
 
-  private checkGeofences(position: Position): void {
-    for (const [id, fence] of this.geofences) {
-      const distance = haversineKm(
-        position.latitude,
-        position.longitude,
-        fence.latitude,
-        fence.longitude,
-      );
-      const inside = distance <= fence.radiusKm;
-      const wasInside = this.insideFences.has(id);
+  async requestAlwaysPermission(): Promise<"always" | "whenInUse" | "denied"> {
+    const { Geofence } = await import("@sweptmind/capacitor-geofence");
+    const result = await Geofence.requestAlwaysPermission();
+    return result.status;
+  }
 
-      if (inside && !wasInside) {
-        this.insideFences.add(id);
-        this.geofenceCallbacks.forEach((cb) =>
-          cb({ fenceId: id, type: "enter", position }),
-        );
-      } else if (!inside && wasInside) {
-        this.insideFences.delete(id);
-        this.geofenceCallbacks.forEach((cb) =>
-          cb({ fenceId: id, type: "exit", position }),
-        );
-      }
+  async getPermissionStatus(): Promise<
+    "always" | "whenInUse" | "denied" | "notDetermined"
+  > {
+    const { Geofence } = await import("@sweptmind/capacitor-geofence");
+    const result = await Geofence.getPermissionStatus();
+    return result.status;
+  }
+
+  async syncGeofences(fences: GeofenceRegistration[]): Promise<void> {
+    const { Geofence } = await import("@sweptmind/capacitor-geofence");
+    await Geofence.removeAllGeofences();
+    if (fences.length > 0) {
+      await Geofence.addGeofences({
+        geofences: fences.map((f) => ({
+          identifier: f.identifier,
+          latitude: f.latitude,
+          longitude: f.longitude,
+          radiusMeters: Math.max(f.radiusMeters, 200),
+          notifyOnEntry: true,
+          notifyOnExit: false,
+          notificationTitle: f.notificationTitle,
+          notificationBody: f.notificationBody,
+        })),
+      });
     }
   }
-}
 
-function haversineKm(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  async removeAllGeofences(): Promise<void> {
+    const { Geofence } = await import("@sweptmind/capacitor-geofence");
+    await Geofence.removeAllGeofences();
+  }
+
+  private async setupNativeListener(): Promise<void> {
+    const { Geofence } = await import("@sweptmind/capacitor-geofence");
+    const handle = await Geofence.addListener(
+      "geofenceTransition",
+      (event) => {
+        const mapped: GeofenceEvent = {
+          fenceId: event.identifier,
+          type: event.type,
+          position: { latitude: event.latitude, longitude: event.longitude },
+        };
+        this.geofenceCallbacks.forEach((cb) => cb(mapped));
+      },
+    );
+    this.listenerRemoveFn = handle.remove;
+  }
+
+  private async teardownNativeListener(): Promise<void> {
+    if (this.listenerRemoveFn) {
+      await this.listenerRemoveFn();
+      this.listenerRemoveFn = null;
+    }
+  }
 }

@@ -13,7 +13,8 @@
     "@capacitor/core": "^6",
     "@capacitor/geolocation": "^6",
     "@capacitor/ios": "^6",
-    "@capacitor/push-notifications": "^6"
+    "@capacitor/push-notifications": "^6",
+    "@sweptmind/capacitor-geofence": "file:../../packages/capacitor-geofence"
   },
   "devDependencies": {
     "@capacitor/cli": "^6"

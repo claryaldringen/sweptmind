@@ -226,6 +226,13 @@ export const cs: Dictionary = {
     electronDesc:
       "Přístup k poloze spravuje macOS. Povol polohu pro SweptMind v Nastavení systému.",
     openSettings: "Otevřít Nastavení systému",
+    geofenceNotificationTitle: "{location}",
+    geofenceNotificationBodyOne: "{title}",
+    geofenceNotificationBodyMany: "{title} (+{remaining})",
+    backgroundPermissionTitle: "Poloha na pozadí",
+    backgroundPermissionDescription:
+      'Povolte přístup k poloze "Vždy" pro upozornění na úkoly v blízkosti.',
+    backgroundPermissionButton: "Otevřít nastavení",
   },
   recurrence: {
     addRecurrence: "Přidat opakování",

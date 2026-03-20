@@ -9,9 +9,10 @@
   },
   "devDependencies": {
     "@capacitor-community/contacts": "^7.1.0",
-    "@capacitor/core": "^8.2.0",
-    "@capacitor/geolocation": "^8.1.0",
-    "@capacitor/push-notifications": "^8.0.2",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/geolocation": "^6.0.0",
+    "@capacitor/push-notifications": "^6.0.0",
+    "@sweptmind/capacitor-geofence": "file:../capacitor-geofence",
     "typescript": "^5"
   }
 }

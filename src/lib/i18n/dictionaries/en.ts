@@ -227,6 +227,13 @@ export const en: Dictionary = {
     electronDesc:
       "Location access is managed by macOS. Allow location for SweptMind in System Settings.",
     openSettings: "Open System Settings",
+    geofenceNotificationTitle: "{location}",
+    geofenceNotificationBodyOne: "{title}",
+    geofenceNotificationBodyMany: "{title} (+{remaining})",
+    backgroundPermissionTitle: "Background Location",
+    backgroundPermissionDescription:
+      'Allow "Always" location access to receive notifications about nearby tasks.',
+    backgroundPermissionButton: "Open Settings",
   },
   recurrence: {
     addRecurrence: "Add recurrence",

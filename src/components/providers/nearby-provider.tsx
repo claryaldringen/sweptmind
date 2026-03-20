@@ -1,10 +1,12 @@
 "use client";
 
-import { createContext, useContext, useCallback, useEffect, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useCallback, useMemo, useEffect, type ReactNode } from "react";
 import { useUserLocation } from "@/hooks/use-user-location";
 import { useAppData } from "@/components/providers/app-data-provider";
 import { isNearby as checkNearby } from "@/lib/geo";
-import { getPlatform, getLocationAdapter } from "@sweptmind/native-bridge";
+import { getPlatform } from "@sweptmind/native-bridge";
+import { useGeofenceSync } from "@/hooks/use-geofence-sync";
+import { useGeofenceEvents } from "@/hooks/use-geofence-events";
 
 interface NearbyContextValue {
   userLatitude: number | null;
@@ -31,7 +33,7 @@ export function NearbyProvider({ children }: { children: ReactNode }) {
     }
   }, [isSupported, isTracking, startTracking]);
 
-  const { locations } = useAppData();
+  const { locations, allTasks } = useAppData();
 
   const isNearby = useCallback(
     (lat: number, lon: number, radiusKm?: number) => {
@@ -50,21 +52,11 @@ export function NearbyProvider({ children }: { children: ReactNode }) {
       .map((loc) => loc.id);
   }, [position, locations]);
 
-  // Start native background tracking on Capacitor
-  useEffect(() => {
-    const platform = getPlatform();
-    if (platform !== "ios" && platform !== "android") return;
-
-    const locationAdapter = getLocationAdapter();
-    locationAdapter.startBackgroundTracking({
-      intervalMs: 10 * 60 * 1000,
-      distanceFilterMeters: 100,
-    });
-
-    return () => {
-      locationAdapter.stopBackgroundTracking();
-    };
-  }, []);
+  // Native geofence sync — registers OS-level geofences for task locations
+  // so notifications are shown even when the app is not running
+  const platform = getPlatform();
+  useGeofenceSync(locations, allTasks, platform);
+  useGeofenceEvents(platform);
 
   return (
     <NearbyContext.Provider

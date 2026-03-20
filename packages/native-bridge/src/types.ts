@@ -30,6 +30,15 @@ export interface GeofenceEvent {
   position: Position;
 }
 
+export interface GeofenceRegistration {
+  identifier: string;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+  notificationTitle?: string;
+  notificationBody?: string;
+}
+
 export interface TrackingConfig {
   intervalMs: number;
   distanceFilterMeters: number;

@@ -615,7 +615,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@capacitor/core@npm:^6":
+"@capacitor/core@npm:^6, @capacitor/core@npm:^6.0.0":
   version: 6.2.1
   resolution: "@capacitor/core@npm:6.2.1"
   dependencies:
@@ -624,32 +624,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@capacitor/core@npm:^8.2.0":
-  version: 8.2.0
-  resolution: "@capacitor/core@npm:8.2.0"
-  dependencies:
-    tslib: "npm:^2.1.0"
-  checksum: 10c0/9cb050f76adfd300f82a5cf4e8c48d266db2dc70889e5b342b6439aa8f7edcf87e98ff946d98be42aed01ea6cfe8660a6e5a153097c3df898de47554d04ab00b
-  languageName: node
-  linkType: hard
-
-"@capacitor/geolocation@npm:^6":
+"@capacitor/geolocation@npm:^6, @capacitor/geolocation@npm:^6.0.0":
   version: 6.1.1
   resolution: "@capacitor/geolocation@npm:6.1.1"
   peerDependencies:
     "@capacitor/core": ^6.0.0
   checksum: 10c0/d99d1ae50692f2109cd100233cf2409711339f9e31b14fbb93319aacc1a5eec2fb81afa2de1dcb0ad7133242045a53bb16945f19f58b73a595eb171ee204cfea
-  languageName: node
-  linkType: hard
-
-"@capacitor/geolocation@npm:^8.1.0":
-  version: 8.1.0
-  resolution: "@capacitor/geolocation@npm:8.1.0"
-  dependencies:
-    "@capacitor/synapse": "npm:^1.0.4"
-  peerDependencies:
-    "@capacitor/core": ">=8.0.0"
-  checksum: 10c0/e067c3ff56cf3a413510b802b3dcf69a6cf34df6b7c7fe49300f77450c346ab8b58850d3493037436ee4189a94cf5ddf40a9f57e47e6afdaae6d58cc13a464d3
   languageName: node
   linkType: hard
 
@@ -662,28 +642,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@capacitor/push-notifications@npm:^6":
+"@capacitor/push-notifications@npm:^6, @capacitor/push-notifications@npm:^6.0.0":
   version: 6.0.5
   resolution: "@capacitor/push-notifications@npm:6.0.5"
   peerDependencies:
     "@capacitor/core": ^6.0.0
   checksum: 10c0/6efd52e0778abe5bc8389d73e3afd44d10614f9a5a2b26e829e0822b7dcc74771267c5e860ba2b5264711cc2fa9058881cb7fd5f6887aded3a85096679960014
-  languageName: node
-  linkType: hard
-
-"@capacitor/push-notifications@npm:^8.0.2":
-  version: 8.0.2
-  resolution: "@capacitor/push-notifications@npm:8.0.2"
-  peerDependencies:
-    "@capacitor/core": ">=8.0.0"
-  checksum: 10c0/656266ecb42f6bc944bd689be3704c2d1cda83e167df20f1278d28183f90961fbf1fe716e0ccd9e714ea194cb6d0c405af4f029526830763b86f1d35fb2778f7
-  languageName: node
-  linkType: hard
-
-"@capacitor/synapse@npm:^1.0.4":
-  version: 1.0.4
-  resolution: "@capacitor/synapse@npm:1.0.4"
-  checksum: 10c0/83f37d06ebdb4234596f123417043aae8b0fd3b5905d399fe8bb7f1d7c3352c8449bef093793b01a0b3c4a59208ac27aec5b1ed7cf5e399c5c3004cc0ca74646
   languageName: node
   linkType: hard
 
@@ -5589,6 +5553,44 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@sweptmind/capacitor-geofence@file:../../packages/capacitor-geofence::locator=%40sweptmind%2Fmobile%40workspace%3Aapps%2Fmobile":
+  version: 0.0.1
+  resolution: "@sweptmind/capacitor-geofence@file:../../packages/capacitor-geofence#../../packages/capacitor-geofence::hash=af4e3c&locator=%40sweptmind%2Fmobile%40workspace%3Aapps%2Fmobile"
+  peerDependencies:
+    "@capacitor/core": ^6.0.0
+  checksum: 10c0/b4883751f34f2811da95410f73ee3cdbd1485b8f14aaa5bf7409fd31931eaaa580962bf751fbab45e46666fe019599c91c05a4653f6ed56f0ccf604bf8c5a5d3
+  languageName: node
+  linkType: hard
+
+"@sweptmind/capacitor-geofence@file:../capacitor-geofence::locator=%40sweptmind%2Fnative-bridge%40workspace%3Apackages%2Fnative-bridge":
+  version: 0.0.1
+  resolution: "@sweptmind/capacitor-geofence@file:../capacitor-geofence#../capacitor-geofence::hash=af4e3c&locator=%40sweptmind%2Fnative-bridge%40workspace%3Apackages%2Fnative-bridge"
+  peerDependencies:
+    "@capacitor/core": ^6.0.0
+  checksum: 10c0/b4883751f34f2811da95410f73ee3cdbd1485b8f14aaa5bf7409fd31931eaaa580962bf751fbab45e46666fe019599c91c05a4653f6ed56f0ccf604bf8c5a5d3
+  languageName: node
+  linkType: hard
+
+"@sweptmind/capacitor-geofence@file:packages/capacitor-geofence::locator=sweptmind%40workspace%3A.":
+  version: 0.0.1
+  resolution: "@sweptmind/capacitor-geofence@file:packages/capacitor-geofence#packages/capacitor-geofence::hash=af4e3c&locator=sweptmind%40workspace%3A."
+  peerDependencies:
+    "@capacitor/core": ^6.0.0
+  checksum: 10c0/b4883751f34f2811da95410f73ee3cdbd1485b8f14aaa5bf7409fd31931eaaa580962bf751fbab45e46666fe019599c91c05a4653f6ed56f0ccf604bf8c5a5d3
+  languageName: node
+  linkType: hard
+
+"@sweptmind/capacitor-geofence@workspace:packages/capacitor-geofence":
+  version: 0.0.0-use.local
+  resolution: "@sweptmind/capacitor-geofence@workspace:packages/capacitor-geofence"
+  dependencies:
+    "@capacitor/core": "npm:^6.0.0"
+    typescript: "npm:^5"
+  peerDependencies:
+    "@capacitor/core": ^6.0.0
+  languageName: unknown
+  linkType: soft
+
 "@sweptmind/mobile@workspace:apps/mobile":
   version: 0.0.0-use.local
   resolution: "@sweptmind/mobile@workspace:apps/mobile"
@@ -5599,13 +5601,14 @@ __metadata:
     "@capacitor/geolocation": "npm:^6"
     "@capacitor/ios": "npm:^6"
     "@capacitor/push-notifications": "npm:^6"
+    "@sweptmind/capacitor-geofence": "file:../../packages/capacitor-geofence"
   languageName: unknown
   linkType: soft
 
 "@sweptmind/native-bridge@file:packages/native-bridge::locator=sweptmind%40workspace%3A.":
   version: 0.0.1
-  resolution: "@sweptmind/native-bridge@file:packages/native-bridge#packages/native-bridge::hash=30f139&locator=sweptmind%40workspace%3A."
-  checksum: 10c0/c29b0a4219da4d35adf0b69656f00106b93c3387a3a1e454137cb487da38ebee0c1a7b91032ab44c15e95c63c6c830df175e361fc168510da191adf1159f9289
+  resolution: "@sweptmind/native-bridge@file:packages/native-bridge#packages/native-bridge::hash=715e55&locator=sweptmind%40workspace%3A."
+  checksum: 10c0/5e7f76746114fb56c536497ea3179618d59b65fd5ffc7cbafcb498e064f9b5387d669d06eea196eb9920b6dd31b53c937c729d2b6c82659764c7d87202f27ab9
   languageName: node
   linkType: hard
 
@@ -5614,9 +5617,10 @@ __metadata:
   resolution: "@sweptmind/native-bridge@workspace:packages/native-bridge"
   dependencies:
     "@capacitor-community/contacts": "npm:^7.1.0"
-    "@capacitor/core": "npm:^8.2.0"
-    "@capacitor/geolocation": "npm:^8.1.0"
-    "@capacitor/push-notifications": "npm:^8.0.2"
+    "@capacitor/core": "npm:^6.0.0"
+    "@capacitor/geolocation": "npm:^6.0.0"
+    "@capacitor/push-notifications": "npm:^6.0.0"
+    "@sweptmind/capacitor-geofence": "file:../capacitor-geofence"
     typescript: "npm:^5"
   languageName: unknown
   linkType: soft
@@ -16281,6 +16285,7 @@ __metadata:
     "@pothos/plugin-drizzle": "npm:^0.17.0"
     "@pothos/plugin-scope-auth": "npm:^4.1.6"
     "@serwist/turbopack": "npm:^9.5.6"
+    "@sweptmind/capacitor-geofence": "file:packages/capacitor-geofence"
     "@sweptmind/native-bridge": "file:packages/native-bridge"
     "@tailwindcss/postcss": "npm:^4"
     "@testing-library/dom": "npm:^10.4.1"

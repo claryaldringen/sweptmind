@@ -10,6 +10,7 @@ export type {
   PushRegistration,
   GeofenceConfig,
   GeofenceEvent,
+  GeofenceRegistration,
   TrackingConfig,
   Contact,
 } from "./types";

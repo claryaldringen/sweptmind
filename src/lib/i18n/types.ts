@@ -209,6 +209,12 @@ export interface Dictionary {
     radiusKm: string;
     electronDesc: string;
     openSettings: string;
+    geofenceNotificationTitle: string;
+    geofenceNotificationBodyOne: string;
+    geofenceNotificationBodyMany: string;
+    backgroundPermissionTitle: string;
+    backgroundPermissionDescription: string;
+    backgroundPermissionButton: string;
   };
   recurrence: {
     addRecurrence: string;
