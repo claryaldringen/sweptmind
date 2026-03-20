@@ -25,3 +25,7 @@ mutation ToggleStepCompleted($id: String!) {
     isCompleted
   }
 }
+
+mutation ReorderSteps($taskId: String!, $input: [ReorderStepInput!]!) {
+  reorderSteps(taskId: $taskId, input: $input)
+}

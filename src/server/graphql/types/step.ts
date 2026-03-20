@@ -84,3 +84,23 @@ builder.mutationField("deleteSteps", (t) =>
     resolve: async (_root, args, ctx) => ctx.services.step.deleteMany(ctx.userId!, args.ids),
   }),
 );
+
+const ReorderStepInput = builder.inputType("ReorderStepInput", {
+  fields: (t) => ({
+    id: t.string({ required: true }),
+    sortOrder: t.int({ required: true }),
+  }),
+});
+
+builder.mutationField("reorderSteps", (t) =>
+  t.field({
+    type: "Boolean",
+    authScopes: { authenticated: true },
+    args: {
+      taskId: t.arg.string({ required: true }),
+      input: t.arg({ type: [ReorderStepInput], required: true }),
+    },
+    resolve: async (_root, args, ctx) =>
+      ctx.services.step.reorder(ctx.userId!, args.taskId, args.input),
+  }),
+);

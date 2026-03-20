@@ -152,6 +152,7 @@ export type Mutation = {
   register: Maybe<User>;
   removeTagFromTask: Maybe<Scalars["Boolean"]["output"]>;
   reorderLists: Maybe<Scalars["Boolean"]["output"]>;
+  reorderSteps: Maybe<Scalars["Boolean"]["output"]>;
   reorderTasks: Maybe<Scalars["Boolean"]["output"]>;
   skipOnboarding: Maybe<Scalars["Boolean"]["output"]>;
   toggleStepCompleted: Maybe<Step>;
@@ -241,6 +242,11 @@ export type MutationRemoveTagFromTaskArgs = {
 
 export type MutationReorderListsArgs = {
   input: Array<ReorderListInput>;
+};
+
+export type MutationReorderStepsArgs = {
+  taskId: Scalars["String"]["input"];
+  input: Array<ReorderStepInput>;
 };
 
 export type MutationReorderTasksArgs = {
@@ -384,6 +390,11 @@ export type RegisterInput = {
 };
 
 export type ReorderListInput = {
+  id: Scalars["String"]["input"];
+  sortOrder: Scalars["Int"]["input"];
+};
+
+export type ReorderStepInput = {
   id: Scalars["String"]["input"];
   sortOrder: Scalars["Int"]["input"];
 };
@@ -716,6 +727,13 @@ export type ReorderTasksMutationVariables = Exact<{
 }>;
 
 export type ReorderTasksMutation = { __typename?: "Mutation"; reorderTasks: boolean | null };
+
+export type ReorderStepsMutationVariables = Exact<{
+  taskId: Scalars["String"]["input"];
+  input: Array<ReorderStepInput> | ReorderStepInput;
+}>;
+
+export type ReorderStepsMutation = { __typename?: "Mutation"; reorderSteps: boolean | null };
 
 export type ImportTasksMutationVariables = Exact<{
   input: Array<ImportTaskInput> | ImportTaskInput;
