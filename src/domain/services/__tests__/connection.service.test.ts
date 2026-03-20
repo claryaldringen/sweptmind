@@ -11,6 +11,7 @@ function makeInvite(overrides: Partial<ConnectionInvite> = {}): ConnectionInvite
   return {
     id: "invite-1",
     fromUserId: "user-1",
+    taskId: null,
     token: "token-abc",
     status: "pending",
     acceptedByUserId: null,

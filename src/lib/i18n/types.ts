@@ -445,6 +445,7 @@ export interface Dictionary {
     createInvite: string;
     copyLink: string;
     inviteCopied: string;
+    sendLinkHint: string;
     cancelInvite: string;
     invitePending: string;
     inviteExpires: string;
