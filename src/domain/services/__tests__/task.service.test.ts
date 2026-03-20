@@ -91,6 +91,7 @@ function makeStepRepo(overrides: Partial<IStepRepository> = {}): IStepRepository
     update: vi.fn(),
     delete: vi.fn(),
     deleteMany: vi.fn(),
+    updateSortOrder: vi.fn(),
     ...overrides,
   };
 }
