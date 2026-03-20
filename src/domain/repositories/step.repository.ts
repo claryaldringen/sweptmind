@@ -9,4 +9,5 @@ export interface IStepRepository {
   update(id: string, data: Partial<Step>): Promise<Step>;
   delete(id: string): Promise<void>;
   deleteMany(ids: string[]): Promise<void>;
+  updateSortOrder(id: string, sortOrder: number): Promise<void>;
 }

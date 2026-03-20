@@ -50,6 +50,7 @@ function makeStepRepo(overrides: Partial<IStepRepository> = {}): IStepRepository
     update: vi.fn(),
     delete: vi.fn(),
     deleteMany: vi.fn(),
+    updateSortOrder: vi.fn(),
     ...overrides,
   };
 }
@@ -200,6 +201,29 @@ describe("StepService", () => {
       await expect(service.update("other-user", "step-1", "Updated")).rejects.toThrow(
         "Step not found",
       );
+    });
+  });
+
+  describe("reorder", () => {
+    it("aktualizuje sortOrder pro každou položku", async () => {
+      taskRepo.findById.mockResolvedValue({ id: "task-1", userId: "user-1" } as any);
+
+      await service.reorder("user-1", "task-1", [
+        { id: "step-a", sortOrder: 1 },
+        { id: "step-b", sortOrder: 0 },
+      ]);
+
+      expect(stepRepo.updateSortOrder).toHaveBeenCalledTimes(2);
+      expect(stepRepo.updateSortOrder).toHaveBeenCalledWith("step-a", 1);
+      expect(stepRepo.updateSortOrder).toHaveBeenCalledWith("step-b", 0);
+    });
+
+    it("vyhodí chybu pokud task nepatří uživateli", async () => {
+      taskRepo.findById.mockResolvedValue(undefined);
+
+      await expect(
+        service.reorder("user-1", "task-1", [{ id: "step-a", sortOrder: 0 }]),
+      ).rejects.toThrow("Task not found");
     });
   });
 

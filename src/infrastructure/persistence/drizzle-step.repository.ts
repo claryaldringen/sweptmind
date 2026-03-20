@@ -67,4 +67,11 @@ export class DrizzleStepRepository implements IStepRepository {
     if (ids.length === 0) return;
     await this.db.delete(schema.steps).where(inArray(schema.steps.id, ids));
   }
+
+  async updateSortOrder(id: string, sortOrder: number): Promise<void> {
+    await this.db
+      .update(schema.steps)
+      .set({ sortOrder })
+      .where(eq(schema.steps.id, id));
+  }
 }
