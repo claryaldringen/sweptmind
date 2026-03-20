@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
 import { X, Plus, Trash2 } from "lucide-react";
@@ -34,14 +34,15 @@ import {
   verticalListSortingStrategy,
   useSortable,
   arrayMove,
+  sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { cn } from "@/lib/utils";
 
 function autoResize(el: HTMLTextAreaElement) {
   el.style.height = "auto";
   el.style.height = el.scrollHeight + "px";
 }
-import { cn } from "@/lib/utils";
 
 const DELETE_STEPS = gql`
   mutation DeleteSteps($ids: [String!]!) {
@@ -235,6 +236,7 @@ export function TaskSteps({
   addStepLabel,
 }: TaskStepsProps) {
   const [newStepTitle, setNewStepTitle] = useState("");
+  const stepsDndId = useId();
   const stepIds = useMemo(() => steps.map((s) => s.id), [steps]);
 
   const [orderedIds, setOrderedIds] = useState(() => steps.map((s) => s.id));
@@ -254,7 +256,7 @@ export function TaskSteps({
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   function handleDragEnd(event: DragEndEvent) {
@@ -283,6 +285,7 @@ export function TaskSteps({
   return (
     <StepSelectionProvider stepIds={stepIds}>
       <DndContext
+        id={stepsDndId}
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}

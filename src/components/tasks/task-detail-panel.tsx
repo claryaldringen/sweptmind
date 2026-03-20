@@ -640,6 +640,19 @@ export function TaskDetailPanel() {
             fields: { sortOrder: () => sortOrder },
           });
         }
+        // Also reorder the steps array on the parent Task to prevent snap-back
+        cache.modify({
+          id: cache.identify({ __typename: "Task", id: task.id }),
+          fields: {
+            steps(existing = [], { readField }) {
+              return [...existing].sort((a: any, b: any) => {
+                const aOrder = readField("sortOrder", a) as number;
+                const bOrder = readField("sortOrder", b) as number;
+                return aOrder - bOrder;
+              });
+            },
+          },
+        });
       },
     });
   }
