@@ -117,6 +117,78 @@ export class TaskSharingService {
     }
   }
 
+  async evaluateCompletionRule(taskId: string, userId: string): Promise<void> {
+    // Determine if this task is a source or target of a share
+    const shareAsTarget = await this.sharedTaskRepo.findByTargetTask(taskId);
+
+    // Find the source task (the one with the rules)
+    const sourceTaskId = shareAsTarget ? shareAsTarget.sourceTaskId : taskId;
+    const shares = shareAsTarget
+      ? await this.sharedTaskRepo.findBySourceTask(sourceTaskId)
+      : await this.sharedTaskRepo.findBySourceTask(taskId);
+
+    if (shares.length === 0) return; // Not a shared task
+
+    const sourceTask = await this.taskRepo.findByIdUnchecked(sourceTaskId);
+    if (!sourceTask) return;
+    if (!sourceTask.shareCompletionMode) return; // No rule configured
+
+    const mode = sourceTask.shareCompletionMode;
+    const action = sourceTask.shareCompletionAction ?? "complete";
+
+    // Check if condition is met
+    if (mode === "all") {
+      // Check source task
+      if (!sourceTask.isCompleted) return;
+      // Check all target tasks
+      for (const share of shares) {
+        const targetTask = await this.taskRepo.findByIdUnchecked(share.targetTaskId);
+        if (targetTask && !targetTask.isCompleted) return;
+      }
+    }
+    // mode === "any" — condition already met (someone just toggled complete)
+
+    // Execute action
+    if (action === "complete") {
+      if (!sourceTask.isCompleted) {
+        await this.taskRepo.updateUnchecked(sourceTaskId, {
+          isCompleted: true,
+          completedAt: new Date(),
+        });
+      }
+      for (const share of shares) {
+        const targetTask = await this.taskRepo.findByIdUnchecked(share.targetTaskId);
+        if (targetTask && !targetTask.isCompleted) {
+          await this.taskRepo.updateUnchecked(share.targetTaskId, {
+            isCompleted: true,
+            completedAt: new Date(),
+          });
+        }
+      }
+    } else if (action === "move" && sourceTask.shareCompletionListId) {
+      if (!sourceTask.isCompleted) {
+        await this.taskRepo.updateUnchecked(sourceTaskId, {
+          listId: sourceTask.shareCompletionListId,
+          isCompleted: true,
+          completedAt: new Date(),
+        });
+      } else {
+        await this.taskRepo.updateUnchecked(sourceTaskId, {
+          listId: sourceTask.shareCompletionListId,
+        });
+      }
+      for (const share of shares) {
+        const targetTask = await this.taskRepo.findByIdUnchecked(share.targetTaskId);
+        if (targetTask && !targetTask.isCompleted) {
+          await this.taskRepo.updateUnchecked(share.targetTaskId, {
+            isCompleted: true,
+            completedAt: new Date(),
+          });
+        }
+      }
+    }
+  }
+
   async notifyOwnerAction(taskId: string, action: "completed" | "deleted"): Promise<void> {
     const shares = await this.sharedTaskRepo.findBySourceTask(taskId);
 

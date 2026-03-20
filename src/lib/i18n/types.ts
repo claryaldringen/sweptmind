@@ -465,6 +465,15 @@ export interface Dictionary {
     inviteInvalid: string;
     alreadyConnected: string;
     noConnections: string;
+    completionRules: string;
+    completionMode: string;
+    completionModeAny: string;
+    completionModeAll: string;
+    completionAction: string;
+    completionActionComplete: string;
+    completionActionMove: string;
+    completionSelectList: string;
+    completionNoRule: string;
   };
 }
 

@@ -24,6 +24,7 @@ import { TaskDependency } from "./detail/task-dependency";
 import { TaskAttachments } from "./detail/task-attachments";
 import { TaskAiSection } from "./detail/task-ai-section";
 import { TaskSharing } from "./detail/task-sharing";
+import { TaskCompletionRules } from "./detail/task-completion-rules";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 import {
   computeFirstOccurrence,
@@ -71,6 +72,9 @@ const UPDATE_TASK = gql`
         id
         title
       }
+      shareCompletionMode
+      shareCompletionAction
+      shareCompletionListId
     }
   }
 `;
@@ -200,6 +204,10 @@ interface TaskDetail {
   blockedByTaskId: string | null;
   blockedByTask: { id: string; title: string } | null;
   blockedByTaskIsCompleted: boolean | null;
+  shareCompletionMode: string | null;
+  shareCompletionAction: string | null;
+  shareCompletionListId: string | null;
+  isSharedTo: boolean;
   attachments: TaskAttachment[];
   aiAnalysis: {
     isActionable: boolean;
@@ -228,6 +236,9 @@ interface UpdateTaskData {
     location: TaskLocation | null;
     blockedByTaskId: string | null;
     blockedByTask: { id: string; title: string } | null;
+    shareCompletionMode: string | null;
+    shareCompletionAction: string | null;
+    shareCompletionListId: string | null;
   };
 }
 
@@ -1009,6 +1020,19 @@ export function TaskDetailPanel() {
 
         {/* Sharing */}
         <TaskSharing taskId={task.id} />
+
+        {/* Completion rules — only for tasks shared to others */}
+        {task.isSharedTo && (
+          <TaskCompletionRules
+            mode={task.shareCompletionMode}
+            action={task.shareCompletionAction}
+            listId={task.shareCompletionListId}
+            lists={allLists}
+            onModeChange={(mode) => optimisticUpdate({ shareCompletionMode: mode })}
+            onActionChange={(action) => optimisticUpdate({ shareCompletionAction: action })}
+            onListChange={(listId) => optimisticUpdate({ shareCompletionListId: listId })}
+          />
+        )}
 
         <Separator />
 

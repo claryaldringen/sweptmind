@@ -30,6 +30,9 @@ export const updateTaskSchema = z.object({
   locationRadius: z.number().min(0.1).max(100).nullish(),
   deviceContext: deviceContextEnum,
   blockedByTaskId: z.string().uuid().nullish(),
+  shareCompletionMode: z.string().nullish(),
+  shareCompletionAction: z.string().nullish(),
+  shareCompletionListId: z.string().nullish(),
 });
 
 export const importTaskSchema = z.object({

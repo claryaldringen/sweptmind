@@ -25,6 +25,9 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     recurrence: null,
     deviceContext: null,
     blockedByTaskId: null,
+    shareCompletionMode: null,
+    shareCompletionAction: null,
+    shareCompletionListId: null,
     sortOrder: 0,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
@@ -483,6 +486,7 @@ describe("TaskService", () => {
         unshareTask: vi.fn(),
         getShareInfo: vi.fn(),
         getShareSource: vi.fn(),
+        evaluateCompletionRule: vi.fn().mockResolvedValue(undefined),
       } as unknown as TaskSharingService;
 
       serviceWithSharing = new TaskService(repo, null, null, undefined, sharingService);

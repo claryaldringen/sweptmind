@@ -227,6 +227,7 @@ export class TaskService {
 
     if (this.taskSharingService && toggled.isCompleted) {
       this.taskSharingService.notifyOwnerAction(id, "completed").catch(() => {});
+      this.taskSharingService.evaluateCompletionRule(id, userId).catch(() => {});
     }
 
     return toggled;

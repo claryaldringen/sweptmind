@@ -14,6 +14,9 @@ export interface Task {
   recurrence: string | null;
   deviceContext: string | null;
   blockedByTaskId: string | null;
+  shareCompletionMode: string | null;
+  shareCompletionAction: string | null;
+  shareCompletionListId: string | null;
   sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
@@ -52,6 +55,9 @@ export interface UpdateTaskInput {
   locationRadius?: number | null;
   deviceContext?: string | null;
   blockedByTaskId?: string | null;
+  shareCompletionMode?: string | null;
+  shareCompletionAction?: string | null;
+  shareCompletionListId?: string | null;
 }
 
 export interface ReorderItem {

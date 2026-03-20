@@ -100,6 +100,9 @@ export const APP_TASK_FIELDS = gql`
     isGoogleCalendarEvent
     isSharedTo
     isSharedFrom
+    shareCompletionMode
+    shareCompletionAction
+    shareCompletionListId
   }
 `;
 
@@ -254,6 +257,9 @@ export interface AppTask {
   isGoogleCalendarEvent?: boolean;
   isSharedTo?: boolean;
   isSharedFrom?: boolean;
+  shareCompletionMode?: string | null;
+  shareCompletionAction?: string | null;
+  shareCompletionListId?: string | null;
 }
 
 export interface TagItem {
