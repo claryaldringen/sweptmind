@@ -20,6 +20,7 @@ export class StripePaymentGateway implements IPaymentGateway {
           quantity: 1,
         },
       ],
+      customer_email: params.email,
       metadata: { userId: params.userId },
       success_url: params.successUrl,
       cancel_url: params.cancelUrl,

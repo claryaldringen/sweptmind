@@ -68,19 +68,20 @@ describe("PaymentService", () => {
 
   describe("createCheckoutSession", () => {
     it("deleguje na payment gateway s monthly planem", async () => {
-      const result = await service.createCheckoutSession("user-1", "monthly", "https://app.com");
+      const result = await service.createCheckoutSession("user-1", "test@example.com", "monthly", "https://app.com");
 
       expect(result).toBe("https://checkout.stripe.com/session-1");
       expect(gateway.createCheckoutSession).toHaveBeenCalledWith({
         plan: "monthly",
         userId: "user-1",
+        email: "test@example.com",
         successUrl: "https://app.com/settings?checkout=success",
         cancelUrl: "https://app.com/settings?checkout=cancel",
       });
     });
 
     it("deleguje na payment gateway s yearly planem", async () => {
-      await service.createCheckoutSession("user-1", "yearly", "https://app.com");
+      await service.createCheckoutSession("user-1", "test@example.com", "yearly", "https://app.com");
 
       expect(gateway.createCheckoutSession).toHaveBeenCalledWith(
         expect.objectContaining({ plan: "yearly" }),

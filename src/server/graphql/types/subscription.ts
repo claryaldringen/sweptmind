@@ -52,7 +52,13 @@ builder.mutationField("createCheckoutSession", (t) =>
     },
     resolve: async (_root, args, ctx) => {
       const plan = args.plan === "yearly" ? "yearly" : "monthly";
-      return ctx.services.payment.createCheckoutSession(ctx.userId!, plan, process.env.AUTH_URL!);
+      const user = await ctx.services.user.getById(ctx.userId!);
+      return ctx.services.payment.createCheckoutSession(
+        ctx.userId!,
+        user?.email ?? "",
+        plan,
+        process.env.AUTH_URL!,
+      );
     },
   }),
 );

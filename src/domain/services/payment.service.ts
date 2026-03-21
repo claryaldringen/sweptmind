@@ -23,12 +23,14 @@ export class PaymentService {
 
   async createCheckoutSession(
     userId: string,
+    email: string,
     plan: "monthly" | "yearly",
     baseUrl: string,
   ): Promise<string> {
     return this.paymentGateway.createCheckoutSession({
       plan,
       userId,
+      email,
       successUrl: `${baseUrl}/settings?checkout=success`,
       cancelUrl: `${baseUrl}/settings?checkout=cancel`,
     });
