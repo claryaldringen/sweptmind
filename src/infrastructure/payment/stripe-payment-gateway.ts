@@ -23,7 +23,6 @@ export class StripePaymentGateway implements IPaymentGateway {
       metadata: { userId: params.userId },
       success_url: params.successUrl,
       cancel_url: params.cancelUrl,
-      automatic_tax: { enabled: true },
     });
 
     return session.url!;
