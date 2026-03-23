@@ -112,6 +112,24 @@ export function TaskInput({ listId, placeholder, onTaskCreated }: TaskInputProps
     // Fire mutation — same ID means Apollo auto-merges server response
     createTask({
       variables: { input: { id, listId, title: trimmed } },
+      update(cache, { data }) {
+        if (!data?.createTask) return;
+        // Re-ensure the task is in activeTasks after mutation completes.
+        // A concurrent cache-and-network refetch of GET_APP_DATA may have
+        // overwritten the optimistic entry if it resolved before the mutation.
+        cache.modify({
+          fields: {
+            activeTasks(existing = [], { readField }) {
+              const alreadyExists = existing.some(
+                (ref: { __ref: string }) => readField("id", ref) === id,
+              );
+              if (alreadyExists) return existing;
+              const newRef = { __ref: `Task:${id}` };
+              return position === "top" ? [newRef, ...existing] : [...existing, newRef];
+            },
+          },
+        });
+      },
       onError() {
         client.cache.evict({ id: client.cache.identify({ __typename: "Task", id }) });
         client.cache.modify({
