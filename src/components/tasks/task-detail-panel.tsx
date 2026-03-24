@@ -820,7 +820,7 @@ export function TaskDetailPanel() {
           </Button>
           <span className="min-w-0 truncate text-sm font-medium">{task.title}</span>
         </div>
-        <div className="min-h-0 flex-1 overflow-auto p-4">
+        <div className="min-h-0 min-w-0 flex-1 overflow-auto break-words p-4">
           <TaskAiSection
             key={task.id}
             taskId={task.id}
@@ -865,7 +865,7 @@ export function TaskDetailPanel() {
         </div>
       )}
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-auto px-4 pt-4 pb-4">
+      <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-auto break-words px-4 pt-4 pb-4">
         {/* Title + Checkbox */}
         <div className="flex min-w-0 items-start gap-3">
           <Checkbox

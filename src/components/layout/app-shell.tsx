@@ -59,11 +59,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                     minWidth={200}
                     maxWidth={400}
                   />
-                  <div className="flex flex-1 flex-col overflow-hidden">
+                  <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
                     <UpdateToast />
                     <OfflineIndicator />
                     <InstallPrompt />
-                    <main className="flex flex-1 overflow-hidden">
+                    <main className="flex min-w-0 flex-1 overflow-hidden">
                       <ErrorBoundary>{children}</ErrorBoundary>
                     </main>
                   </div>

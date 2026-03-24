@@ -230,8 +230,8 @@ function SortableListItem({
               isListSelected && "bg-sidebar-accent",
             )}
           >
-            <div className="flex items-center gap-3">
-              <ListIcon icon={list.icon} className="h-5 w-5 text-blue-500" />
+            <div className="flex min-w-0 items-center gap-3">
+              <ListIcon icon={list.icon} className="h-5 w-5 shrink-0 text-blue-500" />
               <span className="truncate">{list.name}</span>
               {isNearby && <MapPin className="h-3 w-3 animate-pulse text-green-500" />}
               {isDeviceMatch &&
@@ -449,8 +449,8 @@ function SidebarTagItem({
             isSelected && "bg-sidebar-accent",
           )}
         >
-          <div className="flex items-center gap-3">
-            <Tag className={cn("h-5 w-5", colors.text)} />
+          <div className="flex min-w-0 items-center gap-3">
+            <Tag className={cn("h-5 w-5 shrink-0", colors.text)} />
             <span className="truncate">{tag.name}</span>
             {isNearby && <MapPin className="h-3 w-3 animate-pulse text-green-500" />}
             {isDeviceMatch &&
@@ -557,9 +557,9 @@ function SidebarSmartListItem({
         isSelected && "bg-sidebar-accent",
       )}
     >
-      <div className="flex items-center gap-3">
-        <Icon className={cn("h-5 w-5", color)} />
-        {label}
+      <div className="flex min-w-0 items-center gap-3">
+        <Icon className={cn("h-5 w-5 shrink-0", color)} />
+        <span className="truncate">{label}</span>
       </div>
       <div className="flex items-center gap-1.5">
         {hasConflict && <AlertTriangle className="h-3.5 w-3.5 text-red-500" />}

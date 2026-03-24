@@ -496,7 +496,7 @@ export const TaskItem = memo(function TaskItem({
                 ) : (
                   <span
                     className={cn(
-                      "truncate text-sm",
+                      "break-words text-sm",
                       visuallyCompleted && "text-muted-foreground line-through",
                     )}
                   >

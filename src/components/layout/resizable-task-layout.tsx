@@ -61,7 +61,7 @@ export function ResizableTaskLayout({ children }: ResizableTaskLayoutProps) {
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      <div className="flex-1 overflow-hidden">{children}</div>
+      <div className="min-w-0 flex-1 overflow-hidden">{children}</div>
       {showPanel && (
         <>
           <ResizeHandle
