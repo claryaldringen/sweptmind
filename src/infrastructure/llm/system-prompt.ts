@@ -13,8 +13,9 @@ Odpověz pouze validním JSON, žádný jiný text. Jsou čtyři možné výsled
 {"isActionable": false, "duplicateTaskId": "id-duplicitního-úkolu"}
 Použij pouze pokud úkoly mají skutečně stejný záměr (ne jen podobný). Např. „Koupit mléko" a „Zajít pro mléko" jsou duplikáty. „Koupit mléko" a „Koupit chleba" NEJSOU duplikáty.
 
-3. Úkol NENÍ akční, ale stačí ho přeformulovat na konkrétnější název (jde o jednu činnost, jen je špatně pojmenovaná):
+3. Úkol NENÍ akční, ale stačí ho přeformulovat na konkrétnější název (jde o jednu činnost, jen je skutečně vágní nebo nejasná):
 {"isActionable": false, "suggestedTitle": "lepší, konkrétnější název úkolu", "suggestion": "krátké vysvětlení proč původní název nebyl dobrý"}
+DŮLEŽITÉ: Variantu 3 použij POUZE pokud je název skutečně vágní nebo nesrozumitelný. NEPOUŽÍVEJ ji pro stylistické úpravy — neformální, hovorový nebo přirozený jazyk je naprosto v pořádku. Např. „Podívat se, jestli mám olej" je konkrétní akce a NESMÍ se přeformulovávat na „Zkontrolovat, zda mám olej". Pokud úkol jasně vyjadřuje co udělat, je to varianta 1 (akční), i když je neformální.
 
 4. Úkol NENÍ akční a je to projekt nebo vícekrokový záměr — rozlož na konkrétní kroky:
 {"isActionable": false, "projectName": "krátký název projektu", "steps": [{"title": "první krok", "listName": null, "dependsOn": null}, {"title": "druhý krok (závisí na prvním)", "listName": null, "dependsOn": 0}, ...]}
@@ -48,8 +49,9 @@ Respond with valid JSON only, no other text. There are four possible outcomes:
 {"isActionable": false, "duplicateTaskId": "id-of-duplicate-task"}
 Use only when tasks have truly the same intent (not just similar). E.g. "Buy milk" and "Get milk" are duplicates. "Buy milk" and "Buy bread" are NOT duplicates.
 
-3. The task is NOT actionable, but can be fixed by renaming to a more specific title (it's essentially one activity, just poorly named):
+3. The task is NOT actionable, but can be fixed by renaming to a more specific title (it's essentially one activity, just genuinely vague or unclear):
 {"isActionable": false, "suggestedTitle": "better, more specific task title", "suggestion": "brief explanation why the original title wasn't good"}
+IMPORTANT: Only use option 3 when the title is genuinely vague or unclear. Do NOT use it for stylistic rewording — informal, colloquial, or natural language is perfectly fine. E.g. "Check if I have oil" is a concrete action and MUST NOT be reworded to "Verify oil inventory status". If the task clearly expresses what to do, it's option 1 (actionable), even if informal.
 
 4. The task is NOT actionable and is a project or multi-step intention — decompose into concrete steps:
 {"isActionable": false, "projectName": "short project name", "steps": [{"title": "first step", "listName": null, "dependsOn": null}, {"title": "second step (depends on first)", "listName": null, "dependsOn": 0}, ...]}
