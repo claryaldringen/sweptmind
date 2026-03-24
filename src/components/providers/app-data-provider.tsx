@@ -323,11 +323,17 @@ const AppDataContext = createContext<AppDataContextValue | null>(null);
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
   // Phase 1: metadata + active tasks (all non-completed)
+  // cache-and-network: show cached data instantly + always fetch fresh from server.
+  // nextFetchPolicy → cache-first after initial fetch so optimistic updates aren't
+  // overwritten by background refetches (the original reason cache-first was chosen).
   const {
     data: appData,
     loading: appLoading,
     refetch: refetchAppData,
-  } = useQuery<GetAppDataResult>(GET_APP_DATA);
+  } = useQuery<GetAppDataResult>(GET_APP_DATA, {
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
+  });
 
   // Phase 2: completed tasks (loaded after phase 1, paginated)
   const apolloClient = useApolloClient();
