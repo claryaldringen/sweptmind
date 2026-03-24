@@ -282,7 +282,7 @@ export interface LocationItem {
   address: string | null;
 }
 
-interface GetAppDataResult {
+export interface GetAppDataResult {
   lists: ListItem[];
   activeTasks: AppTask[];
   tags: TagItem[];
