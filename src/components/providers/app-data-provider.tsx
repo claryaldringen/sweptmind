@@ -404,6 +404,17 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     setHasMoreCompleted(true);
   }, [refetchAppData]);
 
+  // Refetch when user returns to the tab (replaces cache-and-network background fetches)
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        refetchAppData();
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [refetchAppData]);
+
   const conflictingTaskIds = useMemo(() => detectTimeConflicts(allTasks), [allTasks]);
 
   const value = useMemo(

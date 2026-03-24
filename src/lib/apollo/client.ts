@@ -80,7 +80,7 @@ export function makeClient() {
     link: errorLink.concat(offlineLink).concat(retryLink).concat(httpLink),
     defaultOptions: {
       watchQuery: {
-        fetchPolicy: "cache-and-network",
+        fetchPolicy: "cache-first",
       },
     },
   });
