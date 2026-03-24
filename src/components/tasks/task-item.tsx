@@ -66,7 +66,7 @@ import { useTranslations } from "@/lib/i18n";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { useDeviceContext } from "@/hooks/use-device-context";
 import { useTaskSelectionOptional } from "@/components/providers/task-selection-provider";
-import { useAppData } from "@/components/providers/app-data-provider";
+import { useAppData, GET_APP_DATA, type GetAppDataResult } from "@/components/providers/app-data-provider";
 import {
   TOGGLE_TASK_COMPLETED as TOGGLE_COMPLETED,
   DELETE_TASK,
@@ -910,11 +910,30 @@ export const TaskItem = memo(function TaskItem({
               <ContextMenuItem
                 variant="destructive"
                 onClick={() => {
-                  deleteTasks({ variables: { ids: bulkIds } });
-                  for (const id of bulkIds) {
-                    cache.evict({ id: cache.identify({ __typename: "Task", id }) });
+                  // Optimistic removal via writeQuery
+                  const bulkSet = new Set(bulkIds);
+                  const existing = client.cache.readQuery<GetAppDataResult>({ query: GET_APP_DATA });
+                  if (existing) {
+                    const removed = existing.activeTasks.filter((t) => bulkSet.has(t.id));
+                    const countByList = new Map<string, number>();
+                    for (const t of removed) {
+                      countByList.set(t.listId, (countByList.get(t.listId) ?? 0) + 1);
+                    }
+                    client.cache.writeQuery({
+                      query: GET_APP_DATA,
+                      data: {
+                        ...existing,
+                        activeTasks: existing.activeTasks.filter((t) => !bulkSet.has(t.id)),
+                        lists: existing.lists.map((l) => {
+                          const n = countByList.get(l.id) ?? 0;
+                          return n > 0
+                            ? { ...l, taskCount: Math.max(0, l.taskCount - n), visibleTaskCount: Math.max(0, l.visibleTaskCount - n) }
+                            : l;
+                        }),
+                      },
+                    });
                   }
-                  cache.gc();
+                  deleteTasks({ variables: { ids: bulkIds } });
                   taskSelection?.clear();
                 }}
               >
@@ -998,6 +1017,22 @@ export const TaskItem = memo(function TaskItem({
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
+                // Optimistic removal via writeQuery
+                const existing = client.cache.readQuery<GetAppDataResult>({ query: GET_APP_DATA });
+                if (existing) {
+                  client.cache.writeQuery({
+                    query: GET_APP_DATA,
+                    data: {
+                      ...existing,
+                      activeTasks: existing.activeTasks.filter((t) => t.id !== task.id),
+                      lists: existing.lists.map((l) =>
+                        l.id === task.list?.id
+                          ? { ...l, taskCount: Math.max(0, l.taskCount - 1), visibleTaskCount: Math.max(0, l.visibleTaskCount - 1) }
+                          : l,
+                      ),
+                    },
+                  });
+                }
                 deleteTask({ variables: { id: task.id } });
                 // Close detail panel if it's showing this task
                 if (selectedTaskId === task.id) {

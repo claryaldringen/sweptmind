@@ -33,7 +33,7 @@ import {
 } from "@/domain/services/recurrence";
 import { pickNextTagColor } from "@/lib/tag-colors";
 import { useIsPremium } from "@/hooks/use-is-premium";
-import { useAppData } from "@/components/providers/app-data-provider";
+import { useAppData, GET_APP_DATA, type GetAppDataResult } from "@/components/providers/app-data-provider";
 import { useTaskDates } from "@/hooks/use-task-dates";
 import { useApplyDecomposition } from "@/hooks/use-apply-decomposition";
 import {
@@ -626,6 +626,27 @@ export function TaskDetailPanel() {
   }
 
   function handleDelete() {
+    // Optimistic removal via writeQuery (same pattern as task creation)
+    const existing = apolloClient.cache.readQuery<GetAppDataResult>({ query: GET_APP_DATA });
+    if (existing) {
+      const deletedTask = existing.activeTasks.find((t: { id: string }) => t.id === taskId);
+      apolloClient.cache.writeQuery({
+        query: GET_APP_DATA,
+        data: {
+          ...existing,
+          activeTasks: existing.activeTasks.filter((t: { id: string }) => t.id !== taskId),
+          lists: existing.lists.map((list: { id: string; taskCount: number; visibleTaskCount: number; listId?: string }) =>
+            list.id === deletedTask?.listId
+              ? {
+                  ...list,
+                  taskCount: Math.max(0, list.taskCount - 1),
+                  visibleTaskCount: Math.max(0, list.visibleTaskCount - 1),
+                }
+              : list,
+          ),
+        },
+      });
+    }
     deleteTask({ variables: { id: taskId } });
     closePanel();
   }
