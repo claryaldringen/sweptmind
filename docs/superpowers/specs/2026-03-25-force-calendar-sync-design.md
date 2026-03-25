@@ -18,7 +18,13 @@ Nový boolean flag `forceCalendarSync` na tasku. Pokud je `true`, task se synchr
 ### Domain entity
 
 - Nový field `forceCalendarSync: boolean` v `Task` interface
+- Nový field `forceCalendarSync?: boolean` v `UpdateTaskInput` interface (domain DTO)
 - Soubor: `src/domain/entities/task.ts`
+
+### Validace
+
+- Přidat `forceCalendarSync: z.boolean().nullish()` do `updateTaskSchema` v `src/lib/graphql-validators.ts`
+- Bez tohoto by Zod field při parsování odstranil a update by tiše nic neudělal
 
 ### Domain services
 
@@ -27,23 +33,36 @@ Nový boolean flag `forceCalendarSync` na tasku. Pokud je `true`, task se synchr
 
 **`calendar.service.ts`** — metoda `getSyncableTasks()`:
 - Do filtru přidat `|| t.forceCalendarSync` pro zahrnutí force-syncnutých tasků
+- CalDAV handler a iCal feed route volají `getSyncableTasks()`, takže nevyžadují další změny
 
-### GraphQL
+**`task.service.ts`** — toggle-off cleanup:
+- Při updatu tasku, pokud se `forceCalendarSync` mění z `true` na `false` a task nesplňuje globální sync scope, smazat odpovídající kalendářovou událost (volat `deleteTaskEvent`)
+
+### GraphQL — server
 
 - Přidat `forceCalendarSync` field na Task output type
+- Přidat computed field `matchesSyncScope: Boolean` na Task output type — server-autoritativní výpočet, zda task spadá do globálního sync scope (zamezí duplikaci logiky na klientovi)
 - Přidat `forceCalendarSync` do `UpdateTaskInput`
 - Žádná nová mutace — využije se existující `updateTask`
 - Soubor: `src/server/graphql/types/task.ts`
 
+### GraphQL — klient
+
+- Přidat `forceCalendarSync` a `matchesSyncScope` do response selection setu v:
+  - `src/graphql/mutations/tasks.graphql` (UpdateTask mutace)
+  - `src/components/tasks/task-detail-panel.tsx` (inline `UPDATE_TASK` GQL string)
+  - Příslušné query fragmenty, pokud existují
+
 ### UI — tlačítko v detail panelu
 
-- Umístění: komponenta `task-dates.tsx` (nebo vedle date sekce)
+- Umístění: komponenta `src/components/tasks/detail/task-dates.tsx`
 - Ikona: `CalendarPlus` (neaktivní) / `CalendarCheck` (aktivní) z Lucide
 - Viditelnost: pouze pokud:
   1. Task má `dueDate`
-  2. Task **nesplňuje** globální sync scope (klientská replika logiky `taskMatchesSyncScope` na základě `calendarSyncAll` a `calendarSyncDateRange`)
+  2. `matchesSyncScope` je `false` (server-autoritativní field)
 - Klik: přepne `forceCalendarSync` přes `updateTask` mutaci s optimistickým updatem
 - Pokud task už splňuje globální scope, tlačítko se nezobrazí (synchronizace probíhá automaticky)
+- Když je `syncAll` zapnuté, všechny tasky s dueDate spadají do scope → tlačítko se nikdy nezobrazí (korektní chování)
 
 ## Budoucí rozšíření
 
