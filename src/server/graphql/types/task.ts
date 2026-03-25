@@ -28,6 +28,7 @@ export const TaskType = TaskRef.implement({
     recurrence: t.exposeString("recurrence", { nullable: true }),
     locationRadius: t.exposeFloat("locationRadius", { nullable: true }),
     deviceContext: t.exposeString("deviceContext", { nullable: true }),
+    forceCalendarSync: t.exposeBoolean("forceCalendarSync"),
     sortOrder: t.exposeInt("sortOrder"),
     createdAt: t.string({
       resolve: (task) => task.createdAt.toISOString(),
@@ -295,6 +296,7 @@ const UpdateTaskInput = builder.inputType("UpdateTaskInput", {
     shareCompletionMode: t.string(),
     shareCompletionAction: t.string(),
     shareCompletionListId: t.string(),
+    forceCalendarSync: t.boolean({ required: false }),
   }),
 });
 

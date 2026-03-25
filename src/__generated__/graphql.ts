@@ -437,6 +437,7 @@ export type Task = {
   dependentTaskCount: Maybe<Scalars["Int"]["output"]>;
   deviceContext: Maybe<Scalars["String"]["output"]>;
   dueDate: Maybe<Scalars["String"]["output"]>;
+  forceCalendarSync: Maybe<Scalars["Boolean"]["output"]>;
   id: Maybe<Scalars["String"]["output"]>;
   isCompleted: Maybe<Scalars["Boolean"]["output"]>;
   list: Maybe<List>;
@@ -483,6 +484,7 @@ export type UpdateTaskInput = {
   blockedByTaskId: InputMaybe<Scalars["String"]["input"]>;
   deviceContext: InputMaybe<Scalars["String"]["input"]>;
   dueDate: InputMaybe<Scalars["String"]["input"]>;
+  forceCalendarSync: InputMaybe<Scalars["Boolean"]["input"]>;
   listId: InputMaybe<Scalars["String"]["input"]>;
   locationId: InputMaybe<Scalars["String"]["input"]>;
   locationRadius: InputMaybe<Scalars["Float"]["input"]>;
