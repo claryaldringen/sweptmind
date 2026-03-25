@@ -79,6 +79,8 @@ export const cs: Dictionary = {
     dayAfterTomorrow: "Pozítří",
     dueDateRange: "{start} – {end}",
     conflictWarning: "Koliduje s: {tasks}",
+    forceCalendarSync: "Přidat do kalendáře",
+    forceCalendarSyncActive: "Přidáno do kalendáře",
   },
   lists: {
     newList: "Nový seznam",

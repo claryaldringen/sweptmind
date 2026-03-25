@@ -79,6 +79,8 @@ export const en: Dictionary = {
     dayAfterTomorrow: "Day after tomorrow",
     dueDateRange: "{start} – {end}",
     conflictWarning: "Conflicts with: {tasks}",
+    forceCalendarSync: "Add to calendar",
+    forceCalendarSyncActive: "Added to calendar",
   },
   lists: {
     newList: "New list",
