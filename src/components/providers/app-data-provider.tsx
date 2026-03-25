@@ -95,6 +95,17 @@ export const APP_TASK_FIELDS = gql`
         name
         reason
       }
+      shoppingDistribution {
+        stepId
+        stepTitle
+        suggestions {
+          action
+          target
+          targetId
+          confidence
+          reason
+        }
+      }
       analyzedTitle
     }
     isGoogleCalendarEvent
@@ -252,6 +263,19 @@ export interface AppTask {
     decomposition: { title: string; listName: string | null; dependsOn: number | null }[] | null;
     duplicateTaskId: string | null;
     callIntent: { name: string; reason: string | null } | null;
+    shoppingDistribution:
+      | {
+          stepId: string | null;
+          stepTitle: string;
+          suggestions: {
+            action: string;
+            target: string;
+            targetId: string | null;
+            confidence: number;
+            reason: string;
+          }[];
+        }[]
+      | null;
     analyzedTitle: string;
   } | null;
   isGoogleCalendarEvent?: boolean;

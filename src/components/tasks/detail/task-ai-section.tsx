@@ -1,7 +1,17 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Lightbulb, X, Link2, Pencil, Copy, Trash2, Phone } from "lucide-react";
+import {
+  Lightbulb,
+  X,
+  Link2,
+  Pencil,
+  Copy,
+  Trash2,
+  Phone,
+  ShoppingCart,
+  ChevronDown,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -24,6 +34,20 @@ interface CallIntent {
   reason: string | null;
 }
 
+interface ShoppingItemSuggestion {
+  action: string;
+  target: string;
+  targetId: string | null;
+  confidence: number;
+  reason: string;
+}
+
+interface ShoppingItem {
+  stepId: string | null;
+  stepTitle: string;
+  suggestions: ShoppingItemSuggestion[];
+}
+
 interface TaskAiSectionProps {
   taskId: string;
   suggestedTitle: string | null;
@@ -32,10 +56,13 @@ interface TaskAiSectionProps {
   duplicateTaskId: string | null;
   duplicateTaskTitle: string | null;
   callIntent: CallIntent | null;
+  shoppingDistribution: ShoppingItem[] | null;
   onApplyDecomposition: (result: DecomposeResult) => void;
   onApplyRename: (title: string) => void;
   onDeleteDuplicate: () => void;
   onNavigateToDuplicate: (taskId: string) => void;
+  onApplyShoppingItem: (item: ShoppingItem, suggestion: ShoppingItemSuggestion) => void;
+  onApplyAllShopping: (items: ShoppingItem[]) => void;
   onDismiss: () => void;
 }
 
@@ -97,6 +124,57 @@ function CallIntentSection({ callIntent }: { callIntent: CallIntent }) {
   );
 }
 
+function ShoppingSuggestionPicker({
+  suggestions,
+  onSelect,
+}: {
+  suggestions: ShoppingItemSuggestion[];
+  onSelect: (s: ShoppingItemSuggestion) => void;
+}) {
+  const { t } = useTranslations();
+  const [open, setOpen] = useState(false);
+  const primary = suggestions[0];
+
+  if (suggestions.length === 1) {
+    return (
+      <Button variant="outline" size="sm" className="shrink-0" onClick={() => onSelect(primary)}>
+        &rarr; {primary.target}
+      </Button>
+    );
+  }
+
+  return (
+    <div className="relative shrink-0">
+      <Button variant="outline" size="sm" onClick={() => setOpen(!open)}>
+        &rarr; {primary.target}
+        <ChevronDown className="ml-1 h-3 w-3" />
+      </Button>
+      {open && (
+        <div className="bg-popover border-border absolute top-full right-0 z-10 mt-1 min-w-48 rounded-md border p-1 shadow-md">
+          {suggestions.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              className="hover:bg-accent flex w-full flex-col items-start rounded-sm px-2 py-1.5 text-left text-sm"
+              onClick={() => {
+                onSelect(s);
+                setOpen(false);
+              }}
+            >
+              <span className="font-medium">
+                {s.action === "add_to_task"
+                  ? `${t("premium.aiShoppingAddToTask")} ${s.target}`
+                  : `${t("premium.aiShoppingCreateInList")} ${s.target}`}
+              </span>
+              <span className="text-muted-foreground text-xs">{s.reason}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TaskAiSection({
   suggestedTitle,
   projectName,
@@ -104,10 +182,13 @@ export function TaskAiSection({
   duplicateTaskId,
   duplicateTaskTitle,
   callIntent,
+  shoppingDistribution,
   onApplyDecomposition,
   onApplyRename,
   onDeleteDuplicate,
   onNavigateToDuplicate,
+  onApplyShoppingItem,
+  onApplyAllShopping,
   onDismiss,
 }: TaskAiSectionProps) {
   const { t } = useTranslations();
@@ -183,6 +264,63 @@ export function TaskAiSection({
         <Button variant="ghost" size="sm" onClick={onDismiss}>
           {t("premium.aiDecomposeCancel")}
         </Button>
+      </div>
+    );
+  }
+
+  // --- Shopping distribution ---
+  if (shoppingDistribution && shoppingDistribution.length > 0) {
+    return (
+      <div className="space-y-3 rounded-lg bg-yellow-50 p-3 dark:bg-yellow-950/20">
+        <div className="flex items-center gap-2">
+          <ShoppingCart className="h-4 w-4 shrink-0 text-yellow-500" />
+          <span className="text-sm font-medium">{t("premium.aiShoppingTitle")}</span>
+        </div>
+
+        <div className="space-y-2">
+          {shoppingDistribution.map((item, i) => {
+            const primary = item.suggestions[0];
+            const hasAlternatives = item.suggestions.length > 1;
+            const isHighConfidence = primary.confidence >= 0.8;
+
+            return (
+              <div key={i} className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1 truncate text-sm">{item.stepTitle}</span>
+                {isHighConfidence && !hasAlternatives ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => onApplyShoppingItem(item, primary)}
+                  >
+                    &rarr; {primary.target}
+                  </Button>
+                ) : (
+                  <ShoppingSuggestionPicker
+                    suggestions={item.suggestions}
+                    onSelect={(s) => onApplyShoppingItem(item, s)}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {callIntent && <CallIntentSection callIntent={callIntent} />}
+
+        <div className="flex gap-2">
+          <Button
+            variant="default"
+            size="sm"
+            className="flex-1"
+            onClick={() => onApplyAllShopping(shoppingDistribution)}
+          >
+            {t("premium.aiShoppingApplyAll")}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onDismiss}>
+            {t("premium.aiDecomposeCancel")}
+          </Button>
+        </div>
       </div>
     );
   }

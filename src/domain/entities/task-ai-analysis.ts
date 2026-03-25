@@ -9,6 +9,20 @@ export interface CallIntent {
   reason: string | null;
 }
 
+export interface ShoppingItemSuggestion {
+  action: "add_to_task" | "create_in_list";
+  target: string;
+  targetId: string | null;
+  confidence: number;
+  reason: string;
+}
+
+export interface ShoppingItem {
+  stepId: string | null;
+  stepTitle: string;
+  suggestions: ShoppingItemSuggestion[];
+}
+
 export interface TaskAiAnalysis {
   id: string;
   taskId: string;
@@ -19,6 +33,7 @@ export interface TaskAiAnalysis {
   decomposition: DecompositionStep[] | null;
   duplicateTaskId: string | null;
   callIntent: CallIntent | null;
+  shoppingDistribution: ShoppingItem[] | null;
   analyzedTitle: string;
   createdAt: Date;
 }
@@ -32,5 +47,6 @@ export interface CreateAiAnalysisInput {
   decomposition: DecompositionStep[] | null;
   duplicateTaskId: string | null;
   callIntent: CallIntent | null;
+  shoppingDistribution: ShoppingItem[] | null;
   analyzedTitle: string;
 }

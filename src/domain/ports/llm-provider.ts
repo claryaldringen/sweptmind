@@ -9,6 +9,18 @@ export interface LlmCallIntent {
   reason: string | null;
 }
 
+export interface LlmShoppingItemSuggestion {
+  action: "add_to_task" | "create_in_list";
+  target: string;
+  confidence: number;
+  reason: string;
+}
+
+export interface LlmShoppingItem {
+  stepTitle: string;
+  suggestions: LlmShoppingItemSuggestion[];
+}
+
 export interface LlmResponse {
   isActionable: boolean;
   suggestion: string | null;
@@ -17,6 +29,7 @@ export interface LlmResponse {
   steps: LlmAnalysisStep[] | null;
   duplicateTaskId: string | null;
   callIntent: LlmCallIntent | null;
+  shoppingDistribution: LlmShoppingItem[] | null;
 }
 
 export interface LlmContext {
@@ -24,6 +37,13 @@ export interface LlmContext {
   tasks: { id: string; title: string }[];
   deviceContext: string | null;
   listName: string | null;
+  steps: string[];
+  completedTaskHistory: {
+    title: string;
+    listName: string;
+    hadSteps: boolean;
+    completedAt: string;
+  }[];
 }
 
 export interface ILlmProvider {

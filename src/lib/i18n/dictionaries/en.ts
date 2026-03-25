@@ -420,6 +420,10 @@ export const en: Dictionary = {
     aiCallIntentReason: "Reason:",
     aiCallIntentNoContacts: "Open contacts on your phone",
     aiCallIntentCall: "Call",
+    aiShoppingTitle: "Shopping list distribution",
+    aiShoppingApplyAll: "Move all",
+    aiShoppingAddToTask: "Add to",
+    aiShoppingCreateInList: "Create in",
   },
   validation: {
     invalidEmail: "Invalid email address",

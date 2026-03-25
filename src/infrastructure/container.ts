@@ -139,7 +139,13 @@ export const services = {
   onboarding: new OnboardingService(listRepo, locationRepo, userRepo),
   subscription: subscriptionService,
   attachment: new AttachmentService(attachmentRepo, taskRepo, subscriptionService, blobStorage),
-  payment: new PaymentService(paymentGateway, qrGenerator, subscriptionRepo, fioBankGateway, subscriptionService),
+  payment: new PaymentService(
+    paymentGateway,
+    qrGenerator,
+    subscriptionRepo,
+    fioBankGateway,
+    subscriptionService,
+  ),
   ai: new AiService(
     aiAnalysisRepo,
     taskRepo,
@@ -148,6 +154,7 @@ export const services = {
     subscriptionService,
     userRepo,
     aiUsageRepo,
+    stepRepo,
   ),
   pushSubscription: new PushSubscriptionService(pushSubRepo),
   connection: new ConnectionService(

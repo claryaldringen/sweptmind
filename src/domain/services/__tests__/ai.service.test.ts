@@ -7,6 +7,7 @@ import type { IListRepository } from "../../repositories/list.repository";
 import type { ILlmProvider } from "../../ports/llm-provider";
 import type { IUserRepository } from "../../repositories/user.repository";
 import type { IAiUsageRepository } from "../../repositories/ai-usage.repository";
+import type { IStepRepository } from "../../repositories/step.repository";
 import type { TaskAiAnalysis } from "../../entities/task-ai-analysis";
 import type { Task } from "../../entities/task";
 import type { User } from "../../entities/user";
@@ -49,6 +50,7 @@ function makeAnalysis(overrides: Partial<TaskAiAnalysis> = {}): TaskAiAnalysis {
     decomposition: null,
     duplicateTaskId: null,
     callIntent: null,
+    shoppingDistribution: null,
     analyzedTitle: "Buy groceries",
     createdAt: new Date("2024-01-01"),
     ...overrides,
@@ -137,6 +139,7 @@ function makeLlmProvider(overrides: Partial<ILlmProvider> = {}): ILlmProvider {
       steps: null,
       duplicateTaskId: null,
       callIntent: null,
+      shoppingDistribution: null,
     }),
     isConfigured: vi.fn().mockReturnValue(true),
     ...overrides,
@@ -222,6 +225,20 @@ function makeUserRepo(overrides: Partial<User> = {}): IUserRepository {
   };
 }
 
+function makeStepRepo(): IStepRepository {
+  return {
+    findById: vi.fn().mockResolvedValue(undefined),
+    findByTask: vi.fn().mockResolvedValue([]),
+    findByTaskIds: vi.fn().mockResolvedValue(new Map()),
+    findMaxSortOrder: vi.fn().mockResolvedValue(undefined),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    deleteMany: vi.fn(),
+    updateSortOrder: vi.fn(),
+  };
+}
+
 function makeAiUsageRepo(): IAiUsageRepository {
   return {
     getByUserAndMonth: vi.fn().mockResolvedValue(undefined),
@@ -260,6 +277,7 @@ describe("AiService", () => {
       subscriptionService,
       userRepo,
       aiUsageRepo,
+      makeStepRepo(),
     );
   });
 
@@ -299,6 +317,8 @@ describe("AiService", () => {
         tasks: [],
         deviceContext: null,
         listName: null,
+        steps: [],
+        completedTaskHistory: [],
       },
       "gpt-4o-mini",
     );
@@ -336,6 +356,7 @@ describe("AiService", () => {
       subscriptionService,
       userRepo,
       aiUsageRepo,
+      makeStepRepo(),
     );
 
     await expect(service.analyzeTask("task-1", "user-1")).rejects.toThrow(
@@ -380,6 +401,7 @@ describe("AiService", () => {
       subscriptionService,
       userRepo,
       aiUsageRepo,
+      makeStepRepo(),
     );
 
     await expect(service.analyzeTask("task-1", "user-1")).rejects.toThrow("AI is not configured");
@@ -396,6 +418,7 @@ describe("AiService", () => {
       subscriptionService,
       userRepo,
       aiUsageRepo,
+      makeStepRepo(),
     );
 
     await expect(service.analyzeTask("task-1", "user-1")).rejects.toThrow("AI is not configured");
@@ -413,6 +436,7 @@ describe("AiService", () => {
       subscriptionService,
       userRepo,
       aiUsageRepo,
+      makeStepRepo(),
     );
 
     const task = makeTask({ title: "Buy groceries" });
@@ -449,6 +473,7 @@ describe("AiService", () => {
       subscriptionService,
       userRepo,
       aiUsageRepo,
+      makeStepRepo(),
     );
 
     const task = makeTask({ title: "Buy groceries" });
@@ -485,6 +510,7 @@ describe("AiService", () => {
         subscriptionService,
         userRepo,
         aiUsageRepo,
+        makeStepRepo(),
       );
 
       const result = await service.getUsage("user-1");

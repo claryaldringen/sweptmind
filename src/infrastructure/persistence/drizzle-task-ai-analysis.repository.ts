@@ -7,6 +7,7 @@ import type {
   CreateAiAnalysisInput,
   DecompositionStep,
   CallIntent,
+  ShoppingItem,
 } from "@/domain/entities/task-ai-analysis";
 
 function toEntity(row: typeof schema.taskAiAnalyses.$inferSelect): TaskAiAnalysis {
@@ -14,6 +15,7 @@ function toEntity(row: typeof schema.taskAiAnalyses.$inferSelect): TaskAiAnalysi
     ...row,
     decomposition: (row.decomposition as DecompositionStep[] | null) ?? null,
     callIntent: (row.callIntent as CallIntent | null) ?? null,
+    shoppingDistribution: (row.shoppingDistribution as ShoppingItem[] | null) ?? null,
   };
 }
 
@@ -53,6 +55,7 @@ export class DrizzleTaskAiAnalysisRepository implements ITaskAiAnalysisRepositor
           decomposition: input.decomposition,
           duplicateTaskId: input.duplicateTaskId,
           callIntent: input.callIntent,
+          shoppingDistribution: input.shoppingDistribution,
           analyzedTitle: input.analyzedTitle,
           createdAt: new Date(),
         },

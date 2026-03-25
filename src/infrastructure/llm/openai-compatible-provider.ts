@@ -3,6 +3,7 @@ import type {
   LlmResponse,
   LlmContext,
   LlmCallIntent,
+  LlmShoppingItem,
 } from "@/domain/ports/llm-provider";
 import { getAnalyzePrompt } from "./system-prompt";
 
@@ -16,6 +17,18 @@ function formatUserMessage(title: string, context: LlmContext): string {
   if (context.deviceContext) msg += `\nDevice context: ${context.deviceContext}`;
   msg += `\nUser's lists: ${context.lists.join(", ") || "(none)"}`;
   msg += `\nUser's existing tasks:\n${taskList}`;
+  if (context.steps.length > 0) {
+    msg += `\nTask steps (items):\n${context.steps.map((s) => `- ${s}`).join("\n")}`;
+  }
+  if (context.completedTaskHistory.length > 0) {
+    const history = context.completedTaskHistory
+      .map(
+        (t) =>
+          `- "${t.title}" in list "${t.listName}"${t.hadSteps ? " (had steps)" : ""}, completed ${t.completedAt}`,
+      )
+      .join("\n");
+    msg += `\nRecent completed tasks (patterns):\n${history}`;
+  }
   return msg;
 }
 
@@ -41,8 +54,44 @@ function parseSteps(parsed: Record<string, unknown>): LlmResponse["steps"] {
   return steps.length > 0 ? steps : null;
 }
 
+function parseShoppingDistribution(parsed: Record<string, unknown>): LlmShoppingItem[] | null {
+  if (!Array.isArray(parsed.shoppingDistribution)) return null;
+  const items = (parsed.shoppingDistribution as Record<string, unknown>[])
+    .map((item) => ({
+      stepTitle: String(item.stepTitle ?? "").trim(),
+      suggestions: Array.isArray(item.suggestions)
+        ? (item.suggestions as Record<string, unknown>[])
+            .filter((s) => typeof s.confidence === "number" && (s.confidence as number) >= 0.5)
+            .map((s) => ({
+              action:
+                s.action === "create_in_list"
+                  ? ("create_in_list" as const)
+                  : ("add_to_task" as const),
+              target: String(s.target ?? "").trim(),
+              confidence: s.confidence as number,
+              reason: String(s.reason ?? "").trim(),
+            }))
+        : [],
+    }))
+    .filter((item) => item.stepTitle && item.suggestions.length > 0);
+  return items.length > 0 ? items : null;
+}
+
 function parseResponse(parsed: Record<string, unknown>): LlmResponse {
   const callIntent = parseCallIntent(parsed);
+  const shoppingDistribution = parseShoppingDistribution(parsed);
+  if (shoppingDistribution) {
+    return {
+      isActionable: false,
+      suggestion: null,
+      suggestedTitle: null,
+      projectName: null,
+      steps: null,
+      duplicateTaskId: null,
+      callIntent,
+      shoppingDistribution,
+    };
+  }
   if (parsed.isActionable) {
     return {
       isActionable: true,
@@ -52,6 +101,7 @@ function parseResponse(parsed: Record<string, unknown>): LlmResponse {
       steps: null,
       duplicateTaskId: null,
       callIntent,
+      shoppingDistribution: null,
     };
   }
   return {
@@ -62,6 +112,7 @@ function parseResponse(parsed: Record<string, unknown>): LlmResponse {
     duplicateTaskId: (parsed.duplicateTaskId as string) ?? null,
     steps: parseSteps(parsed),
     callIntent,
+    shoppingDistribution: null,
   };
 }
 

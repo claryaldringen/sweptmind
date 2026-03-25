@@ -1,5 +1,6 @@
 import { builder } from "../builder";
 import { TaskAiAnalysisRef } from "./refs";
+import type { ShoppingItem, ShoppingItemSuggestion } from "@/domain/entities/task-ai-analysis";
 
 const CallIntentRef = builder.objectRef<{ name: string; reason: string | null }>("CallIntent");
 CallIntentRef.implement({
@@ -22,6 +23,30 @@ DecompositionStepRef.implement({
   }),
 });
 
+const ShoppingItemSuggestionRef =
+  builder.objectRef<ShoppingItemSuggestion>("ShoppingItemSuggestion");
+ShoppingItemSuggestionRef.implement({
+  fields: (t) => ({
+    action: t.exposeString("action"),
+    target: t.exposeString("target"),
+    targetId: t.exposeString("targetId", { nullable: true }),
+    confidence: t.exposeFloat("confidence"),
+    reason: t.exposeString("reason"),
+  }),
+});
+
+const ShoppingItemRef = builder.objectRef<ShoppingItem>("ShoppingItem");
+ShoppingItemRef.implement({
+  fields: (t) => ({
+    stepId: t.exposeString("stepId", { nullable: true }),
+    stepTitle: t.exposeString("stepTitle"),
+    suggestions: t.field({
+      type: [ShoppingItemSuggestionRef],
+      resolve: (item) => item.suggestions,
+    }),
+  }),
+});
+
 export const TaskAiAnalysisType = TaskAiAnalysisRef.implement({
   fields: (t) => ({
     id: t.exposeString("id"),
@@ -40,6 +65,11 @@ export const TaskAiAnalysisType = TaskAiAnalysisRef.implement({
       type: CallIntentRef,
       nullable: true,
       resolve: (analysis) => analysis.callIntent ?? null,
+    }),
+    shoppingDistribution: t.field({
+      type: [ShoppingItemRef],
+      nullable: true,
+      resolve: (analysis) => analysis.shoppingDistribution ?? null,
     }),
     analyzedTitle: t.exposeString("analyzedTitle"),
     createdAt: t.string({

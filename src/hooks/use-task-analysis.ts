@@ -22,6 +22,17 @@ const ANALYZE_TASK = gql`
         name
         reason
       }
+      shoppingDistribution {
+        stepId
+        stepTitle
+        suggestions {
+          action
+          target
+          targetId
+          confidence
+          reason
+        }
+      }
       analyzedTitle
     }
   }
@@ -93,6 +104,17 @@ export function useTaskAnalysis(
                   callIntent {
                     name
                     reason
+                  }
+                  shoppingDistribution {
+                    stepId
+                    stepTitle
+                    suggestions {
+                      action
+                      target
+                      targetId
+                      confidence
+                      reason
+                    }
                   }
                   analyzedTitle
                 }

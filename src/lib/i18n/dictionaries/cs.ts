@@ -417,6 +417,10 @@ export const cs: Dictionary = {
     aiCallIntentReason: "Důvod:",
     aiCallIntentNoContacts: "Otevři kontakty v telefonu",
     aiCallIntentCall: "Zavolat",
+    aiShoppingTitle: "Distribuce nákupního seznamu",
+    aiShoppingApplyAll: "Přesunout vše",
+    aiShoppingAddToTask: "Přidat do",
+    aiShoppingCreateInList: "Vytvořit v",
   },
   validation: {
     invalidEmail: "Neplatná e-mailová adresa",

@@ -18,6 +18,7 @@ export const taskAiAnalyses = pgTable(
     decomposition: jsonb("decomposition"),
     duplicateTaskId: text("duplicate_task_id").references(() => tasks.id, { onDelete: "set null" }),
     callIntent: jsonb("call_intent"),
+    shoppingDistribution: jsonb("shopping_distribution"),
     analyzedTitle: text("analyzed_title").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },

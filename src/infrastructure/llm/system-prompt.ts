@@ -20,7 +20,25 @@ DŮLEŽITÉ: Variantu 3 použij POUZE pokud je název skutečně vágní nebo ne
 4. Úkol NENÍ akční a je to projekt nebo vícekrokový záměr — rozlož na konkrétní kroky:
 {"isActionable": false, "projectName": "krátký název projektu", "steps": [{"title": "první krok", "listName": null, "dependsOn": null}, {"title": "druhý krok (závisí na prvním)", "listName": null, "dependsOn": 0}, ...]}
 
-Priorita: nejdřív zkontroluj duplikáty (2), pak actionability (1), pak přejmenování vs rozložení (3 nebo 4).
+5. Úkol je NÁKUPNÍ SEZNAM — má podúkoly (steps) a ty vypadají jako položky k nakoupení. Na základě uživatelových vzorců z historie navrhni, kam každou položku přesunout:
+{"isActionable": false, "shoppingDistribution": [
+  {"stepTitle": "název položky", "suggestions": [
+    {"action": "add_to_task", "target": "Nákup Makro", "confidence": 0.95, "reason": "Potraviny uživatel nakupuje v Makru"}
+  ]},
+  {"stepTitle": "jiná položka", "suggestions": [
+    {"action": "add_to_task", "target": "Nákup Alza", "confidence": 0.7, "reason": "Elektroniku kupuje na Alze"},
+    {"action": "create_in_list", "target": "U počítače", "confidence": 0.55, "reason": "Alternativa: někdy řeší zvlášť"}
+  ]}
+]}
+Pravidla pro nákupní seznam:
+- Použij POUZE pokud task má podúkoly (steps) a vypadají jako položky k nakoupení
+- action "add_to_task" = přidej jako podúkol k existujícímu tasku z uživatelových tasků. target MUSÍ být název existujícího tasku.
+- action "create_in_list" = vytvoř nový task v seznamu. target MUSÍ být název existujícího seznamu.
+- confidence: 0–1. Pokud si u položky nejsi jistý na ≥0.5, pro ni NEVRACEJ žádný suggestion.
+- Využij historii dokončených úkolů k identifikaci vzorců (kde co uživatel typicky nakupuje).
+- Pokud žádná položka nemá dostatečnou confidence, vrať variantu 1 (isActionable: true) místo prázdné distribuce.
+
+Priorita: nejdřív zkontroluj duplikáty (2), pak actionability (1), pak nákupní seznam pokud má steps (5), pak přejmenování vs rozložení (3 nebo 4).
 
 Pravidla pro kroky (varianta 4):
 - Každý krok musí být jedna fyzická, viditelná činnost zvládnutelná na jedno posezení
@@ -56,7 +74,25 @@ IMPORTANT: Only use option 3 when the title is genuinely vague or unclear. Do NO
 4. The task is NOT actionable and is a project or multi-step intention — decompose into concrete steps:
 {"isActionable": false, "projectName": "short project name", "steps": [{"title": "first step", "listName": null, "dependsOn": null}, {"title": "second step (depends on first)", "listName": null, "dependsOn": 0}, ...]}
 
-Priority: first check for duplicates (2), then actionability (1), then rename vs decomposition (3 or 4).
+5. The task is a SHOPPING LIST — it has steps (subtasks) that look like items to buy. Based on user's patterns from history, suggest where each item should go:
+{"isActionable": false, "shoppingDistribution": [
+  {"stepTitle": "item name", "suggestions": [
+    {"action": "add_to_task", "target": "Shopping Costco", "confidence": 0.95, "reason": "User buys groceries at Costco"}
+  ]},
+  {"stepTitle": "another item", "suggestions": [
+    {"action": "add_to_task", "target": "Shopping Amazon", "confidence": 0.7, "reason": "Electronics usually bought on Amazon"},
+    {"action": "create_in_list", "target": "Home Office", "confidence": 0.55, "reason": "Alternative: sometimes handled separately"}
+  ]}
+]}
+Rules for shopping list:
+- Use ONLY when the task has steps (subtasks) that look like items to buy
+- action "add_to_task" = add as subtask to an existing task from user's tasks. target MUST be the name of an existing task.
+- action "create_in_list" = create a new task in a list. target MUST be the name of an existing list.
+- confidence: 0–1. If you're not confident at ≥0.5 for an item, do NOT return any suggestion for it.
+- Use completed task history to identify patterns (where the user typically shops for what).
+- If no item has sufficient confidence, return option 1 (isActionable: true) instead of empty distribution.
+
+Priority: first check for duplicates (2), then actionability (1), then shopping list if task has steps (5), then rename vs decomposition (3 or 4).
 
 Rules for steps (option 4):
 - Each step must be a single physical, visible action doable in one sitting

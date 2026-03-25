@@ -33,9 +33,14 @@ import {
 } from "@/domain/services/recurrence";
 import { pickNextTagColor } from "@/lib/tag-colors";
 import { useIsPremium } from "@/hooks/use-is-premium";
-import { useAppData, GET_APP_DATA, type GetAppDataResult } from "@/components/providers/app-data-provider";
+import {
+  useAppData,
+  GET_APP_DATA,
+  type GetAppDataResult,
+} from "@/components/providers/app-data-provider";
 import { useTaskDates } from "@/hooks/use-task-dates";
 import { useApplyDecomposition } from "@/hooks/use-apply-decomposition";
+import { useApplyShoppingDistribution } from "@/hooks/use-apply-shopping-distribution";
 import {
   TOGGLE_TASK_COMPLETED as TOGGLE_COMPLETED,
   DELETE_TASK,
@@ -217,6 +222,19 @@ interface TaskDetail {
     decomposition: { title: string; listName: string | null; dependsOn: number | null }[] | null;
     duplicateTaskId: string | null;
     callIntent: { name: string; reason: string | null } | null;
+    shoppingDistribution:
+      | {
+          stepId: string | null;
+          stepTitle: string;
+          suggestions: {
+            action: string;
+            target: string;
+            targetId: string | null;
+            confidence: number;
+            reason: string;
+          }[];
+        }[]
+      | null;
   } | null;
 }
 
@@ -591,6 +609,10 @@ export function TaskDetailPanel() {
     optimisticUpdate,
   });
 
+  const { handleApplyShoppingItem, handleApplyAllShopping } = useApplyShoppingDistribution({
+    taskId: task?.id ?? "",
+  });
+
   // ---- Early returns ----
 
   if (!taskId) return null;
@@ -635,14 +657,15 @@ export function TaskDetailPanel() {
         data: {
           ...existing,
           activeTasks: existing.activeTasks.filter((t: { id: string }) => t.id !== taskId),
-          lists: existing.lists.map((list: { id: string; taskCount: number; visibleTaskCount: number; listId?: string }) =>
-            list.id === deletedTask?.listId
-              ? {
-                  ...list,
-                  taskCount: Math.max(0, list.taskCount - 1),
-                  visibleTaskCount: Math.max(0, list.visibleTaskCount - 1),
-                }
-              : list,
+          lists: existing.lists.map(
+            (list: { id: string; taskCount: number; visibleTaskCount: number; listId?: string }) =>
+              list.id === deletedTask?.listId
+                ? {
+                    ...list,
+                    taskCount: Math.max(0, list.taskCount - 1),
+                    visibleTaskCount: Math.max(0, list.visibleTaskCount - 1),
+                  }
+                : list,
           ),
         },
       });
@@ -805,7 +828,12 @@ export function TaskDetailPanel() {
   // AI-only panel — show only when there's displayable content
   const ai = task.aiAnalysis;
   const hasAiContent =
-    ai && (ai.suggestedTitle || ai.decomposition?.length || ai.duplicateTaskId || ai.callIntent);
+    ai &&
+    (ai.suggestedTitle ||
+      ai.decomposition?.length ||
+      ai.duplicateTaskId ||
+      ai.callIntent ||
+      ai.shoppingDistribution?.length);
   if (showAi && hasAiContent) {
     return (
       <div
@@ -820,7 +848,7 @@ export function TaskDetailPanel() {
           </Button>
           <span className="min-w-0 truncate text-sm font-medium">{task.title}</span>
         </div>
-        <div className="min-h-0 min-w-0 flex-1 overflow-auto break-words p-4">
+        <div className="min-h-0 min-w-0 flex-1 overflow-auto p-4 break-words">
           <TaskAiSection
             key={task.id}
             taskId={task.id}
@@ -834,6 +862,7 @@ export function TaskDetailPanel() {
                 : null
             }
             callIntent={ai.callIntent}
+            shoppingDistribution={ai.shoppingDistribution ?? null}
             onApplyDecomposition={handleApplyDecomposition}
             onApplyRename={(title) => {
               optimisticUpdate({ title });
@@ -846,6 +875,8 @@ export function TaskDetailPanel() {
               params.delete("ai");
               router.push(`?${params.toString()}`, { scroll: false });
             }}
+            onApplyShoppingItem={handleApplyShoppingItem}
+            onApplyAllShopping={handleApplyAllShopping}
             onDismiss={handleDismissAi}
           />
         </div>
@@ -865,7 +896,7 @@ export function TaskDetailPanel() {
         </div>
       )}
 
-      <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-auto break-words px-4 pt-4 pb-4">
+      <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-auto px-4 pt-4 pb-4 break-words">
         {/* Title + Checkbox */}
         <div className="flex min-w-0 items-start gap-3">
           <Checkbox

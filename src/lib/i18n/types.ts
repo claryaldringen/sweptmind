@@ -394,6 +394,10 @@ export interface Dictionary {
     aiCallIntentReason: string;
     aiCallIntentNoContacts: string;
     aiCallIntentCall: string;
+    aiShoppingTitle: string;
+    aiShoppingApplyAll: string;
+    aiShoppingAddToTask: string;
+    aiShoppingCreateInList: string;
   };
   validation: {
     invalidEmail: string;
