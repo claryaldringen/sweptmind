@@ -29,6 +29,7 @@ export const tasks = pgTable(
     title: text("title").notNull(),
     notes: text("notes"),
     isCompleted: boolean("is_completed").notNull().default(false),
+    forceCalendarSync: boolean("force_calendar_sync").notNull().default(false),
     completedAt: timestamp("completed_at", { mode: "date" }),
     dueDate: text("due_date"), // YYYY-MM-DD date string
     dueDateEnd: text("due_date_end"), // YYYY-MM-DD or YYYY-MM-DDTHH:mm (end of range)

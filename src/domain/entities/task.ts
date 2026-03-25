@@ -17,6 +17,7 @@ export interface Task {
   shareCompletionMode: string | null;
   shareCompletionAction: string | null;
   shareCompletionListId: string | null;
+  forceCalendarSync: boolean;
   sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
@@ -58,6 +59,7 @@ export interface UpdateTaskInput {
   shareCompletionMode?: string | null;
   shareCompletionAction?: string | null;
   shareCompletionListId?: string | null;
+  forceCalendarSync?: boolean | null;
 }
 
 export interface ReorderItem {
