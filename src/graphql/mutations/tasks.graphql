@@ -56,3 +56,18 @@ mutation ImportTasks($input: [ImportTaskInput!]!) {
     createdLists
   }
 }
+
+mutation CloneTask($id: String!) {
+  cloneTask(id: $id) {
+    id
+    listId
+    title
+    notes
+    isCompleted
+    dueDate
+    dueDateEnd
+    sortOrder
+    createdAt
+    forceCalendarSync
+  }
+}
