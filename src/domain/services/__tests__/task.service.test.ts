@@ -1037,4 +1037,102 @@ describe("TaskService", () => {
       );
     });
   });
+
+  describe("clone", () => {
+    let taskRepo: ITaskRepository;
+    let stepRepo: IStepRepository;
+
+    beforeEach(() => {
+      taskRepo = makeRepo();
+      stepRepo = makeStepRepo();
+      service = new TaskService(taskRepo, null, stepRepo);
+    });
+
+    it("creates a copy of task without date fields", async () => {
+      const original = makeTask({
+        id: "original-1",
+        title: "Buy groceries",
+        notes: "Weekly shopping",
+        listId: "list-1",
+        dueDate: "2026-03-25T10:00",
+        dueDateEnd: "2026-03-25T11:00",
+        reminderAt: "2026-03-25",
+        recurrence: "WEEKLY",
+        locationId: "loc-1",
+        locationRadius: 500,
+        deviceContext: "phone",
+        isCompleted: true,
+        completedAt: new Date(),
+        forceCalendarSync: true,
+      });
+      vi.mocked(taskRepo.findById).mockResolvedValue(original);
+      vi.mocked(stepRepo.findByTask).mockResolvedValue([]);
+      vi.mocked(taskRepo.findMinSortOrder).mockResolvedValue(5);
+      vi.mocked(taskRepo.create).mockImplementation(async (data) => ({
+        ...makeTask({}),
+        ...data,
+        id: data.id ?? "new-id",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+
+      const cloned = await service.clone("original-1", "user-1");
+
+      expect(taskRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "user-1",
+          listId: "list-1",
+          title: "Buy groceries",
+          notes: "Weekly shopping",
+          locationId: "loc-1",
+          locationRadius: 500,
+          deviceContext: "phone",
+          dueDate: null,
+          dueDateEnd: null,
+          reminderAt: null,
+          sortOrder: 4,
+        }),
+      );
+      expect(cloned.dueDate).toBeNull();
+      expect(cloned.isCompleted).toBe(false);
+      expect(cloned.forceCalendarSync).toBe(false);
+      expect(cloned.recurrence).toBeNull();
+    });
+
+    it("copies steps with isCompleted=false", async () => {
+      vi.mocked(taskRepo.findById).mockResolvedValue(makeTask({ id: "t1" }));
+      vi.mocked(taskRepo.findMinSortOrder).mockResolvedValue(0);
+      vi.mocked(taskRepo.create).mockImplementation(async (data) => ({
+        ...makeTask({}),
+        ...data,
+        id: data.id ?? "new-id",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+      vi.mocked(stepRepo.findByTask).mockResolvedValue([
+        { id: "s1", taskId: "t1", title: "Step A", isCompleted: true, sortOrder: 0 },
+        { id: "s2", taskId: "t1", title: "Step B", isCompleted: false, sortOrder: 1 },
+      ]);
+      vi.mocked(stepRepo.create).mockImplementation(async (data) => ({
+        id: "new-step",
+        ...data,
+        isCompleted: false,
+      }));
+
+      await service.clone("t1", "user-1");
+
+      expect(stepRepo.create).toHaveBeenCalledTimes(2);
+      expect(stepRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Step A", sortOrder: 0 }),
+      );
+      expect(stepRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Step B", sortOrder: 1 }),
+      );
+    });
+
+    it("throws when task not found", async () => {
+      vi.mocked(taskRepo.findById).mockResolvedValue(undefined);
+      await expect(service.clone("nope", "user-1")).rejects.toThrow("Task not found");
+    });
+  });
 });

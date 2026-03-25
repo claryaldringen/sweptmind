@@ -413,4 +413,39 @@ export class TaskService {
 
     return newList;
   }
+
+  async clone(id: string, userId: string): Promise<Task> {
+    const task = await this.taskRepo.findById(id, userId);
+    if (!task) throw new Error("Task not found");
+    if (!this.stepRepo) throw new Error("StepRepository not configured");
+
+    const minSort = await this.taskRepo.findMinSortOrder(task.listId);
+    const sortOrder = (minSort ?? 1) - 1;
+
+    const cloned = await this.taskRepo.create({
+      userId,
+      listId: task.listId,
+      title: task.title,
+      notes: task.notes,
+      dueDate: null,
+      dueDateEnd: null,
+      reminderAt: null,
+      recurrence: null,
+      locationId: task.locationId,
+      locationRadius: task.locationRadius,
+      deviceContext: task.deviceContext,
+      sortOrder,
+    });
+
+    const steps = await this.stepRepo.findByTask(id);
+    for (const step of steps) {
+      await this.stepRepo.create({
+        taskId: cloned.id,
+        title: step.title,
+        sortOrder: step.sortOrder,
+      });
+    }
+
+    return cloned;
+  }
 }
