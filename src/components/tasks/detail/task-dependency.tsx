@@ -39,7 +39,7 @@ interface TaskDependencyProps {
   taskId: string;
   blockedByTask: { id: string; title: string } | null;
   tagIds: string[];
-  onSetDependency: (blockedByTaskId: string | null) => void;
+  onSetDependency: (blockedByTaskId: string | null, blockedByTaskTitle?: string) => void;
   onNavigateToTask: (taskId: string) => void;
 }
 
@@ -155,7 +155,7 @@ export function TaskDependency({
                     key={result.id}
                     value={result.id}
                     onSelect={() => {
-                      onSetDependency(result.id);
+                      onSetDependency(result.id, result.title);
                       setOpen(false);
                       setSearchQuery("");
                     }}

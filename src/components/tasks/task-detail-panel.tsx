@@ -907,9 +907,20 @@ export function TaskDetailPanel() {
 
   // Dependency handler
 
-  function handleSetDependency(blockedByTaskId: string | null) {
+  function handleSetDependency(blockedByTaskId: string | null, blockedByTaskTitle?: string) {
     if (!task) return;
-    optimisticUpdate({ blockedByTaskId });
+    apolloClient.cache.modify({
+      id: apolloClient.cache.identify({ __typename: "Task", id: task.id }),
+      fields: {
+        blockedByTaskId: () => blockedByTaskId,
+        blockedByTask: () =>
+          blockedByTaskId && blockedByTaskTitle
+            ? { __typename: "Task", id: blockedByTaskId, title: blockedByTaskTitle }
+            : null,
+        blockedByTaskIsCompleted: () => (blockedByTaskId ? false : null),
+      },
+    });
+    updateTask({ variables: { id: task.id, input: { blockedByTaskId } } });
   }
 
   function handleDismissAi() {
