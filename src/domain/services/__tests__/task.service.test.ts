@@ -1110,13 +1110,14 @@ describe("TaskService", () => {
         updatedAt: new Date(),
       }));
       vi.mocked(stepRepo.findByTask).mockResolvedValue([
-        { id: "s1", taskId: "t1", title: "Step A", isCompleted: true, sortOrder: 0 },
-        { id: "s2", taskId: "t1", title: "Step B", isCompleted: false, sortOrder: 1 },
+        { id: "s1", taskId: "t1", title: "Step A", isCompleted: true, sortOrder: 0, createdAt: new Date() },
+        { id: "s2", taskId: "t1", title: "Step B", isCompleted: false, sortOrder: 1, createdAt: new Date() },
       ]);
       vi.mocked(stepRepo.create).mockImplementation(async (data) => ({
         id: "new-step",
         ...data,
         isCompleted: false,
+        createdAt: new Date(),
       }));
 
       await service.clone("t1", "user-1");
