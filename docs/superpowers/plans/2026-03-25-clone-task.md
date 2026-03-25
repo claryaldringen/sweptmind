@@ -126,7 +126,7 @@ async clone(id: string, userId: string): Promise<Task> {
   if (!task) throw new Error("Task not found");
   if (!this.stepRepo) throw new Error("StepRepository not configured");
 
-  const minSort = await this.taskRepo.findMinSortOrder(task.listId, userId);
+  const minSort = await this.taskRepo.findMinSortOrder(task.listId);
   const sortOrder = (minSort ?? 1) - 1;
 
   const cloned = await this.taskRepo.create({
@@ -309,38 +309,104 @@ const [cloneTask] = useMutation(CLONE_TASK);
 
 - [ ] **Step 3: Add handleClone function**
 
-After the `handleDelete` function:
+After the `handleDelete` function. Pattern: write optimistic task to cache immediately (like `task-input.tsx`), fire mutation, update callback reconciles with server data, then navigate to new task:
 
 ```typescript
 async function handleClone() {
+  const tempId = crypto.randomUUID();
+
+  // Build optimistic task matching full AppTaskFields shape
+  const optimisticTask = {
+    __typename: "Task" as const,
+    id: tempId,
+    listId: task.listId,
+    locationId: task.locationId,
+    locationRadius: task.locationRadius,
+    title: task.title,
+    notes: task.notes,
+    isCompleted: false,
+    completedAt: null,
+    dueDate: null,
+    dueDateEnd: null,
+    reminderAt: null,
+    recurrence: null,
+    deviceContext: task.deviceContext,
+    sortOrder: -1,
+    createdAt: new Date().toISOString(),
+    steps: (task.steps ?? []).map((s: { title: string; sortOrder: number }) => ({
+      __typename: "Step" as const,
+      id: crypto.randomUUID(),
+      taskId: tempId,
+      title: s.title,
+      isCompleted: false,
+      sortOrder: s.sortOrder,
+    })),
+    tags: task.tags ?? [],
+    location: task.location ?? null,
+    list: task.list ?? { __typename: "List" as const, id: task.listId, name: "" },
+    blockedByTaskId: null,
+    blockedByTask: null,
+    blockedByTaskIsCompleted: null,
+    dependentTaskCount: 0,
+    attachments: [],
+    aiAnalysis: null,
+    isGoogleCalendarEvent: false,
+    isSharedTo: false,
+    isSharedFrom: false,
+    shareCompletionMode: null,
+    shareCompletionAction: null,
+    shareCompletionListId: null,
+    forceCalendarSync: false,
+  };
+
+  // Write optimistic data immediately
+  const existing = apolloClient.cache.readQuery<GetAppDataResult>({ query: GET_APP_DATA });
+  if (existing) {
+    apolloClient.cache.writeQuery({
+      query: GET_APP_DATA,
+      data: {
+        ...existing,
+        activeTasks: [optimisticTask, ...existing.activeTasks],
+        lists: existing.lists.map((list: { id: string; taskCount: number; visibleTaskCount: number }) =>
+          list.id === task.listId
+            ? { ...list, taskCount: list.taskCount + 1, visibleTaskCount: list.visibleTaskCount + 1 }
+            : list,
+        ),
+      },
+    });
+  }
+
+  // Navigate to optimistic task immediately
+  const params = new URLSearchParams(searchParams.toString());
+  params.set("task", tempId);
+  router.push(`?${params.toString()}`, { scroll: false });
+
+  // Fire mutation — update callback replaces optimistic data with server response
   const { data } = await cloneTask({
     variables: { id: taskId },
     update(cache, { data }) {
       if (!data?.cloneTask) return;
-      const existing = cache.readQuery<GetAppDataResult>({ query: GET_APP_DATA });
-      if (!existing) return;
+      const current = cache.readQuery<GetAppDataResult>({ query: GET_APP_DATA });
+      if (!current) return;
+      // Remove optimistic entry, add real one
       cache.writeQuery({
         query: GET_APP_DATA,
         data: {
-          ...existing,
-          activeTasks: [data.cloneTask, ...existing.activeTasks],
-          lists: existing.lists.map((list: { id: string; taskCount: number; visibleTaskCount: number }) =>
-            list.id === data.cloneTask.listId
-              ? {
-                  ...list,
-                  taskCount: list.taskCount + 1,
-                  visibleTaskCount: list.visibleTaskCount + 1,
-                }
-              : list,
-          ),
+          ...current,
+          activeTasks: [
+            data.cloneTask,
+            ...current.activeTasks.filter((t: { id: string }) => t.id !== tempId),
+          ],
         },
       });
     },
   });
+
+  // Navigate to real task ID
   if (data?.cloneTask?.id) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("task", data.cloneTask.id);
-    router.replace(`${pathname}?${params.toString()}`);
+    const p = new URLSearchParams(searchParams.toString());
+    p.set("task", data.cloneTask.id);
+    router.push(`?${p.toString()}`, { scroll: false });
   }
 }
 ```
