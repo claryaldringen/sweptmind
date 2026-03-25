@@ -76,6 +76,8 @@ export interface Dictionary {
     dayAfterTomorrow: string;
     dueDateRange: string;
     conflictWarning: string;
+    forceCalendarSync: string;
+    forceCalendarSyncActive: string;
   };
   lists: {
     newList: string;

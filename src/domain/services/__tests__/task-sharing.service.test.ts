@@ -31,6 +31,7 @@ const makeTask = (overrides: Partial<Task> = {}): Task => ({
   shareCompletionMode: null,
   shareCompletionAction: null,
   shareCompletionListId: null,
+  forceCalendarSync: false,
   sortOrder: 1,
   createdAt: new Date("2026-01-01"),
   updatedAt: new Date("2026-01-01"),
