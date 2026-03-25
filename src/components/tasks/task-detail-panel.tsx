@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { gql } from "@apollo/client";
 import { useMutation, useQuery, useApolloClient } from "@apollo/client/react";
-import { AlertTriangle, ArrowLeft } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Copy } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,6 +36,7 @@ import { useIsPremium } from "@/hooks/use-is-premium";
 import {
   useAppData,
   GET_APP_DATA,
+  APP_TASK_FIELDS,
   type GetAppDataResult,
 } from "@/components/providers/app-data-provider";
 import { useTaskDates } from "@/hooks/use-task-dates";
@@ -60,6 +61,15 @@ const CALENDAR_SYNC_ALL = gql`
 const CALENDAR_SYNC_DATE_RANGE = gql`
   query CalendarSyncDateRange {
     calendarSyncDateRange
+  }
+`;
+
+const CLONE_TASK = gql`
+  ${APP_TASK_FIELDS}
+  mutation CloneTask($id: String!) {
+    cloneTask(id: $id) {
+      ...AppTaskFields
+    }
   }
 `;
 
@@ -409,6 +419,7 @@ export function TaskDetailPanel() {
       cache.gc();
     },
   });
+  const [cloneTask] = useMutation<{ cloneTask: GetAppDataResult["activeTasks"][number] }>(CLONE_TASK);
   const [createStep] = useMutation<CreateStepData>(CREATE_STEP, {
     optimisticResponse: ({ input }) => ({
       createStep: {
@@ -698,6 +709,105 @@ export function TaskDetailPanel() {
     }
     deleteTask({ variables: { id: taskId } });
     closePanel();
+  }
+
+  async function handleClone() {
+    if (!task) return;
+    const tempId = crypto.randomUUID();
+
+    // Build optimistic task matching full AppTaskFields shape
+    const optimisticTask = {
+      __typename: "Task" as const,
+      id: tempId,
+      listId: task.listId,
+      locationId: task.locationId,
+      locationRadius: task.locationRadius,
+      title: task.title,
+      notes: task.notes,
+      isCompleted: false,
+      completedAt: null,
+      dueDate: null,
+      dueDateEnd: null,
+      reminderAt: null,
+      recurrence: null,
+      deviceContext: task.deviceContext,
+      sortOrder: -1,
+      createdAt: new Date().toISOString(),
+      steps: (task.steps ?? []).map((s: { title: string; sortOrder: number }) => ({
+        __typename: "Step" as const,
+        id: crypto.randomUUID(),
+        taskId: tempId,
+        title: s.title,
+        isCompleted: false,
+        sortOrder: s.sortOrder,
+      })),
+      tags: task.tags ?? [],
+      location: task.location ?? null,
+      list: task.list ?? { __typename: "List" as const, id: task.listId, name: "" },
+      blockedByTaskId: null,
+      blockedByTask: null,
+      blockedByTaskIsCompleted: null,
+      dependentTaskCount: 0,
+      attachments: [],
+      aiAnalysis: null,
+      isGoogleCalendarEvent: false,
+      isSharedTo: false,
+      isSharedFrom: false,
+      shareCompletionMode: null,
+      shareCompletionAction: null,
+      shareCompletionListId: null,
+      forceCalendarSync: false,
+    };
+
+    // Write optimistic data immediately
+    const existing = apolloClient.cache.readQuery<GetAppDataResult>({ query: GET_APP_DATA });
+    if (existing) {
+      apolloClient.cache.writeQuery({
+        query: GET_APP_DATA,
+        data: {
+          ...existing,
+          activeTasks: [optimisticTask, ...existing.activeTasks],
+          lists: existing.lists.map((list: { id: string; taskCount: number; visibleTaskCount: number }) =>
+            list.id === task.listId
+              ? { ...list, taskCount: list.taskCount + 1, visibleTaskCount: list.visibleTaskCount + 1 }
+              : list,
+          ),
+        },
+      });
+    }
+
+    // Navigate to optimistic task immediately
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("task", tempId);
+    router.push(`?${params.toString()}`, { scroll: false });
+
+    // Fire mutation — update callback replaces optimistic data with server response
+    const { data } = await cloneTask({
+      variables: { id: taskId },
+      update(cache, { data }) {
+        if (!data?.cloneTask) return;
+        const current = cache.readQuery<GetAppDataResult>({ query: GET_APP_DATA });
+        if (!current) return;
+        // Remove optimistic entry, add real one
+        cache.writeQuery({
+          query: GET_APP_DATA,
+          data: {
+            ...current,
+            activeTasks: [
+              data.cloneTask,
+              ...current.activeTasks.filter((t: { id: string }) => t.id !== tempId),
+            ],
+          },
+        });
+      },
+    });
+
+    // Navigate to real task ID
+    if (data?.cloneTask?.id) {
+      const p = new URLSearchParams(searchParams.toString());
+      p.set("task", data.cloneTask.id);
+      router.push(`?${p.toString()}`, { scroll: false });
+    }
   }
 
   // Steps handlers
@@ -1116,6 +1226,16 @@ export function TaskDetailPanel() {
             onListChange={(listId) => optimisticUpdate({ shareCompletionListId: listId })}
           />
         )}
+
+        {/* Clone */}
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2"
+          onClick={handleClone}
+        >
+          <Copy className="h-4 w-4" />
+          {t("tasks.cloneTask")}
+        </Button>
 
         <Separator />
 
