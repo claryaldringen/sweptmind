@@ -114,6 +114,7 @@ export const APP_TASK_FIELDS = gql`
     shareCompletionMode
     shareCompletionAction
     shareCompletionListId
+    forceCalendarSync
   }
 `;
 

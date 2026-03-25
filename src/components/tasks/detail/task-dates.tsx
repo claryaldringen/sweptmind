@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar, Bell } from "lucide-react";
+import { Calendar, Bell, CalendarPlus, CalendarCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResponsivePicker } from "@/components/ui/responsive-picker";
 import { DatePickerContent } from "@/components/tasks/date-picker-content";
@@ -22,6 +22,9 @@ interface TaskDatesProps {
   onEndTimeChange: (time: string) => void;
   onClearEndDate: () => void;
   onQuickEndDate: (type: "1h" | "sunday") => void;
+  forceCalendarSync?: boolean;
+  matchesSyncScope?: boolean;
+  onToggleForceCalendarSync?: () => void;
   t: (key: string, params?: Record<string, string | number>) => string;
   dateFnsLocale: DateFnsLocale;
 }
@@ -39,6 +42,9 @@ export function TaskDates({
   onEndTimeChange,
   onClearEndDate,
   onQuickEndDate,
+  forceCalendarSync,
+  matchesSyncScope,
+  onToggleForceCalendarSync,
   t,
   dateFnsLocale,
 }: TaskDatesProps) {
@@ -124,6 +130,26 @@ export function TaskDates({
           showTimeToggle={false}
         />
       </ResponsivePicker>
+
+      {dueDate && !matchesSyncScope && onToggleForceCalendarSync && (
+        <Button
+          variant="ghost"
+          className={cn(
+            "w-full justify-start gap-2",
+            forceCalendarSync && "text-blue-500",
+          )}
+          onClick={onToggleForceCalendarSync}
+        >
+          {forceCalendarSync ? (
+            <CalendarCheck className="h-4 w-4" />
+          ) : (
+            <CalendarPlus className="h-4 w-4" />
+          )}
+          {forceCalendarSync
+            ? t("tasks.forceCalendarSyncActive")
+            : t("tasks.forceCalendarSync")}
+        </Button>
+      )}
     </>
   );
 }

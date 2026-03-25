@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { gql } from "@apollo/client";
-import { useMutation, useApolloClient } from "@apollo/client/react";
+import { useMutation, useQuery, useApolloClient } from "@apollo/client/react";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,22 @@ import {
   DELETE_TASK,
 } from "@/graphql/shared/task-mutations";
 import { DELETE_LOCATION, CREATE_LOCATION } from "@/graphql/shared/location-mutations";
+
+// ---------------------------------------------------------------------------
+// Calendar sync scope queries (shared cache with Settings page)
+// ---------------------------------------------------------------------------
+
+const CALENDAR_SYNC_ALL = gql`
+  query CalendarSyncAll {
+    calendarSyncAll
+  }
+`;
+
+const CALENDAR_SYNC_DATE_RANGE = gql`
+  query CalendarSyncDateRange {
+    calendarSyncDateRange
+  }
+`;
 
 // ---------------------------------------------------------------------------
 // GraphQL operations
@@ -213,6 +229,7 @@ interface TaskDetail {
   shareCompletionMode: string | null;
   shareCompletionAction: string | null;
   shareCompletionListId: string | null;
+  forceCalendarSync: boolean;
   isSharedTo: boolean;
   attachments: TaskAttachment[];
   aiAnalysis: {
@@ -312,6 +329,8 @@ export function TaskDetailPanel() {
     conflictingTaskIds,
   } = useAppData();
   const { isPremium } = useIsPremium();
+  const { data: syncAllData } = useQuery<{ calendarSyncAll: boolean }>(CALENDAR_SYNC_ALL);
+  const { data: syncDateRangeData } = useQuery<{ calendarSyncDateRange: boolean }>(CALENDAR_SYNC_DATE_RANGE);
   const task = taskId
     ? ((allTasks.find((t) => t.id === taskId) as TaskDetail | undefined) ?? null)
     : null;
@@ -338,6 +357,12 @@ export function TaskDetailPanel() {
           return a.s < b.e && b.s < a.e;
         })
       : [];
+
+  const calendarSyncAll = syncAllData?.calendarSyncAll ?? false;
+  const calendarSyncDateRange = syncDateRangeData?.calendarSyncDateRange ?? false;
+  const matchesSyncScope = calendarSyncAll
+    || (task?.dueDate?.includes("T") ?? false)
+    || (calendarSyncDateRange && task?.dueDateEnd != null);
 
   // ---- Mutations ----
 
@@ -971,6 +996,11 @@ export function TaskDetailPanel() {
             onEndTimeChange={handleEndTimeChange}
             onClearEndDate={handleClearEndDate}
             onQuickEndDate={handleQuickEndDate}
+            forceCalendarSync={task.forceCalendarSync}
+            matchesSyncScope={matchesSyncScope}
+            onToggleForceCalendarSync={() =>
+              optimisticUpdate({ forceCalendarSync: !task.forceCalendarSync })
+            }
             t={t}
             dateFnsLocale={dateFnsLocale}
           />
