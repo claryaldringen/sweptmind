@@ -71,6 +71,7 @@ export interface Dictionary {
     deleteConfirmDesc: string;
     moveTo: string;
     convertToList: string;
+    cloneTask: string;
     today: string;
     tomorrow: string;
     dayAfterTomorrow: string;

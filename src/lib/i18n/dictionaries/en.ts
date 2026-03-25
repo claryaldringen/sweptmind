@@ -74,6 +74,7 @@ export const en: Dictionary = {
     deleteConfirmDesc: "Are you sure you want to delete this task? This action cannot be undone.",
     moveTo: "Move to",
     convertToList: "Convert to list",
+    cloneTask: "Clone task",
     today: "Today",
     tomorrow: "Tomorrow",
     dayAfterTomorrow: "Day after tomorrow",

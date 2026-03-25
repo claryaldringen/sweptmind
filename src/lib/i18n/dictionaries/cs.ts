@@ -74,6 +74,7 @@ export const cs: Dictionary = {
     deleteConfirmDesc: "Opravdu chceš smazat tento úkol? Tuto akci nelze vrátit zpět.",
     moveTo: "Přesunout do",
     convertToList: "Udělat seznam z úkolu",
+    cloneTask: "Klonovat úkol",
     today: "Dnes",
     tomorrow: "Zítra",
     dayAfterTomorrow: "Pozítří",
