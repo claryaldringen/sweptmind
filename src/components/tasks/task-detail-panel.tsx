@@ -80,6 +80,7 @@ const UPDATE_TASK = gql`
       shareCompletionMode
       shareCompletionAction
       shareCompletionListId
+      forceCalendarSync
     }
   }
 `;

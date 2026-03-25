@@ -30,6 +30,7 @@ mutation UpdateTask($id: String!, $input: UpdateTaskInput!) {
     recurrence
     deviceContext
     listId
+    forceCalendarSync
   }
 }
 

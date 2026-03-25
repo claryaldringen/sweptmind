@@ -30,6 +30,7 @@ fragment TaskFields on Task {
   isGoogleCalendarEvent
   isSharedTo
   isSharedFrom
+  forceCalendarSync
 }
 
 query TasksByList($listId: String!) {
