@@ -22,7 +22,8 @@ export class CalendarService {
     }
     return tasks.filter(
       (t) =>
-        t.dueDate != null && (t.dueDate.includes("T") || (syncDateRange && t.dueDateEnd != null)),
+        (t.forceCalendarSync && t.dueDate != null) ||
+        (t.dueDate != null && (t.dueDate.includes("T") || (syncDateRange && t.dueDateEnd != null))),
     );
   }
 

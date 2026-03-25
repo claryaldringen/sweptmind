@@ -231,6 +231,7 @@ export class GoogleCalendarService {
   // ---------------------------------------------------------------------------
 
   private taskMatchesSyncScope(task: Task, syncAll: boolean, syncDateRange: boolean): boolean {
+    if (task.forceCalendarSync && task.dueDate) return true;
     if (!task.dueDate) return false;
     if (syncAll) return true;
     const hasTime = task.dueDate.includes("T");

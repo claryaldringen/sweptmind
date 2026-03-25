@@ -24,6 +24,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     shareCompletionMode: null,
     shareCompletionAction: null,
     shareCompletionListId: null,
+    forceCalendarSync: false,
     sortOrder: 0,
     createdAt: new Date("2026-01-01T00:00:00Z"),
     updatedAt: new Date("2026-01-01T00:00:00Z"),
@@ -105,6 +106,17 @@ describe("CalendarService", () => {
         makeTask({ id: "1", dueDate: "2026-03-15T14:30" }),
         makeTask({ id: "2", dueDate: "2026-03-15" }),
         makeTask({ id: "3", dueDate: null }),
+      ];
+      vi.mocked(taskRepo.findPlanned).mockResolvedValue(tasks);
+      const result = await service.getSyncableTasks("user-1", false);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe("1");
+    });
+
+    it("includes date-only task with forceCalendarSync=true even when syncAll=false", async () => {
+      const tasks = [
+        makeTask({ id: "1", dueDate: "2026-03-15", forceCalendarSync: true }),
+        makeTask({ id: "2", dueDate: "2026-03-15", forceCalendarSync: false }),
       ];
       vi.mocked(taskRepo.findPlanned).mockResolvedValue(tasks);
       const result = await service.getSyncableTasks("user-1", false);

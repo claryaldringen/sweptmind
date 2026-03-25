@@ -32,6 +32,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     shareCompletionMode: null,
     shareCompletionAction: null,
     shareCompletionListId: null,
+    forceCalendarSync: false,
     sortOrder: 0,
     createdAt: new Date("2025-01-01"),
     updatedAt: new Date("2025-01-01"),
@@ -331,6 +332,12 @@ describe("GoogleCalendarService", () => {
       const task = makeTask({ dueDate: "2025-06-15", dueDateEnd: "2025-06-17" });
       await service.pushTask("user-1", task);
 
+      expect(gcalClient.insertEvent).toHaveBeenCalled();
+    });
+
+    it("syncs date-only task when forceCalendarSync is true", async () => {
+      const task = makeTask({ dueDate: "2026-03-15", forceCalendarSync: true });
+      await service.pushTask("user-1", task);
       expect(gcalClient.insertEvent).toHaveBeenCalled();
     });
 
