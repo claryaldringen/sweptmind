@@ -147,6 +147,8 @@ export class TaskService {
     if (input.deviceContext !== undefined) updates.deviceContext = input.deviceContext ?? null;
     if (input.blockedByTaskId !== undefined)
       updates.blockedByTaskId = input.blockedByTaskId ?? null;
+    if (input.forceCalendarSync !== undefined)
+      updates.forceCalendarSync = input.forceCalendarSync ?? false;
 
     const updated = await this.taskRepo.update(id, userId, updates);
 
