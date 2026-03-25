@@ -13,23 +13,26 @@ Nová GraphQL mutace `cloneTask(id)` s optimistickým UI updatem pro okamžité 
 ### Domain service
 
 - Nová metoda `clone(id: string, userId: string): Promise<Task>` v `task.service.ts`
-- Načte zdrojový task + jeho steps
-- Vytvoří nový task s kopírovanými poli:
+- Načte zdrojový task přes `taskRepo.findById(id, userId)` — pokud neexistuje nebo patří jinému uživateli, throw `"Task not found"`
+- Načte steps zdrojového tasku. Pokud `stepRepo` není nakonfigurován, throw `"StepRepository not configured"` (vzor z `convertToList`)
+- Vytvoří nový task **přímo přes `taskRepo.create`** (ne přes `this.create()`, aby se nepočítal reminderAt a netriggeroval Google Calendar sync):
   - **Kopíruje:** title, notes, listId, locationId, locationRadius, deviceContext
-  - **Nekopíruje:** dueDate, dueDateEnd, reminderAt, recurrence, isCompleted, completedAt, forceCalendarSync, blockedByTaskId, shareCompletionMode, shareCompletionAction, shareCompletionListId
-- sortOrder = nejnižší sortOrder v daném listu - 1 (stejný vzor jako `create`)
-- Zkopíruje steps: title + sortOrder, isCompleted=false
-- Zkopíruje tagy zdrojového tasku na nový task
+  - **Nekopíruje:** dueDate, dueDateEnd, reminderAt, recurrence, isCompleted, completedAt, forceCalendarSync, blockedByTaskId, shareCompletionMode, shareCompletionAction, shareCompletionListId, attachments
+- sortOrder = nejnižší sortOrder v daném listu - 1 (existující vzor)
+- Zkopíruje steps: title + sortOrder, isCompleted=false. Pokud zdrojový task nemá steps, klon taky nemá.
+- **Tagy nekopíruje** — `TaskService` nemá přístup k `ITagRepository`. Kopírování tagů řeší resolver (viz GraphQL sekce).
 
 ### GraphQL — server
 
 - Nová mutace `cloneTask(id: String!): Task!` v `src/server/graphql/types/task.ts`
-- Resolver zavolá `ctx.services.task.clone(args.id, ctx.userId!)`
-- Vrací nový task se steps (pro Apollo cache)
+- Resolver:
+  1. Zavolá `ctx.services.task.clone(args.id, ctx.userId!)` → získá nový task
+  2. Zkopíruje tagy: `ctx.services.tag.getByTask(args.id)` → pro každý tag `ctx.services.tag.addToTask(newTask.id, tag.id)`
+  3. Vrátí nový task se steps
 
 ### GraphQL — klient
 
-- Nová mutace v `src/graphql/mutations/tasks.graphql`:
+- Inline GQL mutace v `task-detail-panel.tsx` (stejný pattern jako `UPDATE_TASK`):
   ```graphql
   mutation CloneTask($id: String!) {
     cloneTask(id: $id) {
@@ -37,17 +40,17 @@ Nová GraphQL mutace `cloneTask(id)` s optimistickým UI updatem pro okamžité 
     }
   }
   ```
+- Také přidat do `src/graphql/mutations/tasks.graphql` pro codegen
 
 ### UI — tlačítko v detail panelu
 
-- Umístění: v sekci akcí v `task-detail-panel.tsx`
+- Umístění: v `task-detail-panel.tsx`, vedle jiných akcí (ne v `task-actions.tsx` footer baru)
 - Ikona: `Copy` z Lucide
 - Text: "Klonovat úkol" / "Clone task"
 - Po kliknutí:
-  1. Optimistický update — přidá nový task do Apollo cache pro daný list (writeQuery)
-  2. Zavolá `cloneTask` mutaci
-  3. Po odpovědi přepíše optimistická data reálnými
-  4. Otevře detail nového tasku (`?task=<newId>`)
+  1. Zavolá `cloneTask` mutaci
+  2. V `update` callbacku přidá nový task do Apollo cache pro daný list (writeQuery)
+  3. Otevře detail nového tasku (`?task=<newId>`)
 
 ### i18n
 
