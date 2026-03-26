@@ -410,6 +410,101 @@ describe("GoogleCalendarService", () => {
   });
 
   // -------------------------------------------------------------------------
+  // pushUnsyncedTasks
+  // -------------------------------------------------------------------------
+
+  describe("pushUnsyncedTasks", () => {
+    it("pushes tasks matching sync scope without sync entry", async () => {
+      vi.mocked(taskRepo.findByUser).mockResolvedValue([
+        makeTask({ id: "t1", dueDate: "2025-06-15T10:00:00Z" }),
+        makeTask({ id: "t2", dueDate: "2025-06-16T14:00:00Z" }),
+      ]);
+      vi.mocked(syncRepo.findByTaskIds).mockResolvedValue(new Map());
+      vi.mocked(syncRepo.findByTaskId).mockResolvedValue(undefined);
+      vi.mocked(gcalClient.insertEvent).mockResolvedValue({
+        id: "gcal-new",
+        summary: "Test",
+        start: { dateTime: "2025-06-15T10:00:00Z" },
+        end: { dateTime: "2025-06-15T11:00:00Z" },
+      });
+
+      const pushed = await service.pushUnsyncedTasks("user-1");
+
+      expect(pushed).toBe(2);
+      expect(gcalClient.insertEvent).toHaveBeenCalledTimes(2);
+    });
+
+    it("skips tasks that already have sync entries", async () => {
+      vi.mocked(taskRepo.findByUser).mockResolvedValue([
+        makeTask({ id: "t1", dueDate: "2025-06-15T10:00:00Z" }),
+      ]);
+      vi.mocked(syncRepo.findByTaskIds).mockResolvedValue(
+        new Map([["t1", makeSyncEntry({ taskId: "t1" })]]),
+      );
+
+      const pushed = await service.pushUnsyncedTasks("user-1");
+
+      expect(pushed).toBe(0);
+      expect(gcalClient.insertEvent).not.toHaveBeenCalled();
+    });
+
+    it("skips completed tasks", async () => {
+      vi.mocked(taskRepo.findByUser).mockResolvedValue([
+        makeTask({ id: "t1", dueDate: "2025-06-15T10:00:00Z", isCompleted: true }),
+      ]);
+      vi.mocked(syncRepo.findByTaskIds).mockResolvedValue(new Map());
+
+      const pushed = await service.pushUnsyncedTasks("user-1");
+
+      expect(pushed).toBe(0);
+    });
+
+    it("returns 0 when sync is disabled", async () => {
+      vi.mocked(userRepo.getGoogleCalendarSettings).mockResolvedValue({
+        ...defaultSettings,
+        enabled: false,
+      });
+
+      const pushed = await service.pushUnsyncedTasks("user-1");
+
+      expect(pushed).toBe(0);
+      expect(taskRepo.findByUser).not.toHaveBeenCalled();
+    });
+
+    it("returns 0 when direction is pull-only", async () => {
+      vi.mocked(userRepo.getGoogleCalendarSettings).mockResolvedValue({
+        ...defaultSettings,
+        direction: "pull",
+      });
+
+      const pushed = await service.pushUnsyncedTasks("user-1");
+
+      expect(pushed).toBe(0);
+    });
+
+    it("continues pushing when individual task fails", async () => {
+      vi.mocked(taskRepo.findByUser).mockResolvedValue([
+        makeTask({ id: "t1", dueDate: "2025-06-15T10:00:00Z" }),
+        makeTask({ id: "t2", dueDate: "2025-06-16T10:00:00Z" }),
+      ]);
+      vi.mocked(syncRepo.findByTaskIds).mockResolvedValue(new Map());
+      vi.mocked(syncRepo.findByTaskId).mockResolvedValue(undefined);
+      vi.mocked(gcalClient.insertEvent)
+        .mockRejectedValueOnce(new Error("API error"))
+        .mockResolvedValueOnce({
+          id: "gcal-2",
+          summary: "Test",
+          start: { dateTime: "2025-06-16T10:00:00Z" },
+          end: { dateTime: "2025-06-16T11:00:00Z" },
+        });
+
+      const pushed = await service.pushUnsyncedTasks("user-1");
+
+      expect(pushed).toBe(1);
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // pullChanges
   // -------------------------------------------------------------------------
 

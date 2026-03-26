@@ -349,15 +349,7 @@ builder.mutationField("cloneTask", (t) =>
     type: TaskType,
     authScopes: { authenticated: true },
     args: { id: t.arg.string({ required: true }) },
-    resolve: async (_root, args, ctx) => {
-      const cloned = await ctx.services.task.clone(args.id, ctx.userId!);
-      // Copy tags via TagService
-      const tags = await ctx.services.tag.getByTask(args.id);
-      for (const tag of tags) {
-        await ctx.services.tag.addToTask(cloned.id, tag.id, ctx.userId!);
-      }
-      return cloned;
-    },
+    resolve: (_root, args, ctx) => ctx.services.task.clone(args.id, ctx.userId!),
   }),
 );
 

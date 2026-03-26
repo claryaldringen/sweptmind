@@ -6,6 +6,7 @@ import type { IStepRepository } from "../../repositories/step.repository";
 import type { Task, Step } from "../../entities/task";
 import type { List } from "../../entities/list";
 import type { TaskSharingService } from "../task-sharing.service";
+import type { ITagRepository } from "../../repositories/tag.repository";
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {
@@ -1134,6 +1135,44 @@ describe("TaskService", () => {
     it("throws when task not found", async () => {
       vi.mocked(taskRepo.findById).mockResolvedValue(undefined);
       await expect(service.clone("nope", "user-1")).rejects.toThrow("Task not found");
+    });
+
+    it("copies tags from original task", async () => {
+      const tagRepo: ITagRepository = {
+        findByUser: vi.fn(),
+        findByTask: vi.fn().mockResolvedValue([
+          { id: "tag-1", userId: "user-1", name: "Urgent", color: "red", deviceContext: null, locationId: null, locationRadius: null },
+          { id: "tag-2", userId: "user-1", name: "Home", color: "blue", deviceContext: null, locationId: null, locationRadius: null },
+        ]),
+        findByTaskIds: vi.fn(),
+        findById: vi.fn(),
+        create: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+        addToTask: vi.fn(),
+        removeFromTask: vi.fn(),
+        countTasksByTag: vi.fn(),
+        countTasksByTags: vi.fn(),
+      };
+      const serviceWithTags = new TaskService(taskRepo, null, stepRepo, undefined, undefined, tagRepo);
+
+      vi.mocked(taskRepo.findById).mockResolvedValue(makeTask({ id: "t1" }));
+      vi.mocked(taskRepo.findMinSortOrder).mockResolvedValue(0);
+      vi.mocked(taskRepo.create).mockImplementation(async (data) => ({
+        ...makeTask({}),
+        ...data,
+        id: "cloned-id",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+      vi.mocked(stepRepo.findByTask).mockResolvedValue([]);
+
+      await serviceWithTags.clone("t1", "user-1");
+
+      expect(tagRepo.findByTask).toHaveBeenCalledWith("t1");
+      expect(tagRepo.addToTask).toHaveBeenCalledTimes(2);
+      expect(tagRepo.addToTask).toHaveBeenCalledWith("cloned-id", "tag-1");
+      expect(tagRepo.addToTask).toHaveBeenCalledWith("cloned-id", "tag-2");
     });
   });
 });

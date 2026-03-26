@@ -101,6 +101,7 @@ const taskService = new TaskService(
   stepRepo,
   googleCalendarService,
   taskSharingService,
+  tagRepo,
 );
 
 export const repos = {

@@ -8,6 +8,7 @@ import { computeNextDueDate, computeFirstOccurrence } from "./recurrence";
 import { computeDefaultReminder } from "./task-visibility";
 import { format } from "date-fns";
 import type { TaskSharingService } from "./task-sharing.service";
+import type { ITagRepository } from "../repositories/tag.repository";
 
 export interface ImportTaskInput {
   title: string;
@@ -32,6 +33,7 @@ export class TaskService {
       deleteTaskEvent(userId: string, taskId: string): Promise<void>;
     },
     private readonly taskSharingService?: TaskSharingService,
+    private readonly tagRepo?: ITagRepository,
   ) {}
 
   async getByUser(userId: string): Promise<Task[]> {
@@ -96,7 +98,7 @@ export class TaskService {
     });
 
     if (this.googleCalendarService && created.dueDate) {
-      this.googleCalendarService.pushTask(userId, created).catch(() => {});
+      this.googleCalendarService.pushTask(userId, created).catch((err) => console.error("[TaskService] background operation failed:", err));
     }
 
     return created;
@@ -153,13 +155,13 @@ export class TaskService {
     const updated = await this.taskRepo.update(id, userId, updates);
 
     if (this.googleCalendarService && updated.dueDate) {
-      this.googleCalendarService.pushTask(userId, updated).catch(() => {});
+      this.googleCalendarService.pushTask(userId, updated).catch((err) => console.error("[TaskService] background operation failed:", err));
     } else if (this.googleCalendarService && !updated.dueDate) {
-      this.googleCalendarService.deleteTaskEvent(userId, id).catch(() => {});
+      this.googleCalendarService.deleteTaskEvent(userId, id).catch((err) => console.error("[TaskService] background operation failed:", err));
     }
 
     if (this.taskSharingService) {
-      this.taskSharingService.syncSharedFields(id, updates).catch(() => {});
+      this.taskSharingService.syncSharedFields(id, updates).catch((err) => console.error("[TaskService] background operation failed:", err));
     }
 
     return updated;
@@ -169,11 +171,11 @@ export class TaskService {
     await this.taskRepo.delete(id, userId);
 
     if (this.googleCalendarService) {
-      this.googleCalendarService.deleteTaskEvent(userId, id).catch(() => {});
+      this.googleCalendarService.deleteTaskEvent(userId, id).catch((err) => console.error("[TaskService] background operation failed:", err));
     }
 
     if (this.taskSharingService) {
-      this.taskSharingService.notifyOwnerAction(id, "deleted").catch(() => {});
+      this.taskSharingService.notifyOwnerAction(id, "deleted").catch((err) => console.error("[TaskService] background operation failed:", err));
     }
 
     return true;
@@ -212,7 +214,7 @@ export class TaskService {
       const toggled = await this.taskRepo.update(id, userId, recurrenceUpdates);
 
       if (this.googleCalendarService && toggled.dueDate) {
-        this.googleCalendarService.pushTask(userId, toggled).catch(() => {});
+        this.googleCalendarService.pushTask(userId, toggled).catch((err) => console.error("[TaskService] background operation failed:", err));
       }
 
       return toggled;
@@ -224,12 +226,12 @@ export class TaskService {
     });
 
     if (this.googleCalendarService && toggled.dueDate) {
-      this.googleCalendarService.pushTask(userId, toggled).catch(() => {});
+      this.googleCalendarService.pushTask(userId, toggled).catch((err) => console.error("[TaskService] background operation failed:", err));
     }
 
     if (this.taskSharingService && toggled.isCompleted) {
-      this.taskSharingService.notifyOwnerAction(id, "completed").catch(() => {});
-      this.taskSharingService.evaluateCompletionRule(id, userId).catch(() => {});
+      this.taskSharingService.notifyOwnerAction(id, "completed").catch((err) => console.error("[TaskService] background operation failed:", err));
+      this.taskSharingService.evaluateCompletionRule(id, userId).catch((err) => console.error("[TaskService] background operation failed:", err));
     }
 
     return toggled;
@@ -444,6 +446,13 @@ export class TaskService {
         title: step.title,
         sortOrder: step.sortOrder,
       });
+    }
+
+    if (this.tagRepo) {
+      const tags = await this.tagRepo.findByTask(id);
+      for (const tag of tags) {
+        await this.tagRepo.addToTask(cloned.id, tag.id);
+      }
     }
 
     return cloned;
