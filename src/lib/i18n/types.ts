@@ -79,6 +79,15 @@ export interface Dictionary {
     conflictWarning: string;
     forceCalendarSync: string;
     forceCalendarSyncActive: string;
+    iconDueDate: string;
+    iconReminder: string;
+    iconRecurrence: string;
+    iconAttachments: string;
+    iconBlocked: string;
+    iconDependents: string;
+    iconConflict: string;
+    iconDevicePhone: string;
+    iconDeviceDesktop: string;
   };
   lists: {
     newList: string;

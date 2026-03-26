@@ -548,6 +548,7 @@ export const TaskItem = memo(function TaskItem({
                             ? "text-blue-500"
                             : "text-muted-foreground",
                       )}
+                      title={t("tasks.iconDueDate")}
                     >
                       <CalendarDays className="h-3 w-3" />
                       {isDueToday
@@ -570,6 +571,7 @@ export const TaskItem = memo(function TaskItem({
                         "flex items-center gap-0.5",
                         isReminderToday ? "text-blue-500" : "text-muted-foreground",
                       )}
+                      title={t("tasks.iconReminder")}
                     >
                       <Bell className="h-3 w-3" />
                       {isReminderToday
@@ -583,7 +585,7 @@ export const TaskItem = memo(function TaskItem({
                     <span className="text-muted-foreground">·</span>
                   )}
                   {hasRecurrence && (
-                    <span className="text-muted-foreground flex items-center gap-0.5">
+                    <span className="text-muted-foreground flex items-center gap-0.5" title={t("tasks.iconRecurrence")}>
                       <Repeat className="h-3 w-3" />
                       {task.recurrence === "DAILY"
                         ? t("recurrence.daily")
@@ -668,7 +670,7 @@ export const TaskItem = memo(function TaskItem({
                       <span className="text-muted-foreground">·</span>
                     )}
                   {hasAttachments && (
-                    <span className="text-muted-foreground flex items-center gap-0.5">
+                    <span className="text-muted-foreground flex items-center gap-0.5" title={t("tasks.iconAttachments")}>
                       <Paperclip className="h-3 w-3" />
                     </span>
                   )}
@@ -683,7 +685,7 @@ export const TaskItem = memo(function TaskItem({
                       <span className="text-muted-foreground">·</span>
                     )}
                   {deviceMatch && (
-                    <span className="flex items-center gap-0.5 text-yellow-500">
+                    <span className="flex items-center gap-0.5 text-yellow-500" title={taskList?.deviceContext === "phone" ? t("tasks.iconDevicePhone") : t("tasks.iconDeviceDesktop")}>
                       {taskList?.deviceContext === "phone" ? (
                         <Smartphone className="h-3 w-3 animate-pulse" />
                       ) : (
@@ -703,7 +705,7 @@ export const TaskItem = memo(function TaskItem({
                       <span className="text-muted-foreground">·</span>
                     )}
                   {isBlocked && (
-                    <span className="text-muted-foreground flex items-center gap-0.5">
+                    <span className="text-muted-foreground flex items-center gap-0.5" title={t("tasks.iconBlocked")}>
                       <Lock className="h-3 w-3" />
                     </span>
                   )}
@@ -720,13 +722,13 @@ export const TaskItem = memo(function TaskItem({
                       <span className="text-muted-foreground">·</span>
                     )}
                   {dependentCount > 0 && (
-                    <span className="text-muted-foreground flex items-center gap-0.5">
+                    <span className="text-muted-foreground flex items-center gap-0.5" title={t("tasks.iconDependents")}>
                       <Link2 className="h-3 w-3" />
                       {dependentCount}
                     </span>
                   )}
                   {isConflicting && (
-                    <span className="flex items-center gap-0.5 text-red-600">
+                    <span className="flex items-center gap-0.5 text-red-600" title={t("tasks.iconConflict")}>
                       <AlertTriangle className="h-3 w-3" />
                     </span>
                   )}
