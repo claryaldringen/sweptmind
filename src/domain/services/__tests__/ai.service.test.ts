@@ -221,6 +221,7 @@ function makeUserRepo(overrides: Partial<User> = {}): IUserRepository {
       channelExpiry: null,
       targetListId: null,
     }),
+    findUsersWithGoogleCalendarEnabled: vi.fn().mockResolvedValue([]),
     findUsersWithExpiringChannels: vi.fn().mockResolvedValue([]),
     updateSharingDefaultList: vi.fn(),
   };

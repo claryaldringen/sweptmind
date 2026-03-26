@@ -269,6 +269,13 @@ export class DrizzleUserRepository implements IUserRepository {
       .where(eq(schema.users.id, userId));
   }
 
+  async findUsersWithGoogleCalendarEnabled(): Promise<Array<{ id: string }>> {
+    return this.db.query.users.findMany({
+      where: eq(schema.users.googleCalendarEnabled, true),
+      columns: { id: true },
+    });
+  }
+
   async findUsersWithExpiringChannels(
     before: Date,
   ): Promise<Array<{ id: string; googleCalendarChannelId: string }>> {

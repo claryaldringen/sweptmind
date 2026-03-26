@@ -194,6 +194,7 @@ function makeMocks() {
     updateGoogleCalendarTargetListId: vi.fn(),
     getGoogleCalendarTargetListId: vi.fn(),
     getGoogleCalendarSettings: vi.fn(),
+    findUsersWithGoogleCalendarEnabled: vi.fn(),
     findUsersWithExpiringChannels: vi.fn(),
     updateSharingDefaultList: vi.fn(),
   };

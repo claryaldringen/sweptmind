@@ -43,6 +43,7 @@ export interface IUserRepository {
     syncAll: boolean;
     syncDateRange: boolean;
   }>;
+  findUsersWithGoogleCalendarEnabled(): Promise<Array<{ id: string }>>;
   findUsersWithExpiringChannels(
     before: Date,
   ): Promise<Array<{ id: string; googleCalendarChannelId: string }>>;

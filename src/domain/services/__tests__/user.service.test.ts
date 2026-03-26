@@ -62,6 +62,7 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     updateGoogleCalendarTargetListId: vi.fn(),
     getGoogleCalendarTargetListId: vi.fn(),
     getGoogleCalendarSettings: vi.fn(),
+    findUsersWithGoogleCalendarEnabled: vi.fn(),
     findUsersWithExpiringChannels: vi.fn(),
     updateSharingDefaultList: vi.fn(),
     ...overrides,

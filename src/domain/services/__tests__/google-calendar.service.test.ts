@@ -95,6 +95,7 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     updateGoogleCalendarTargetListId: vi.fn(),
     getGoogleCalendarTargetListId: vi.fn().mockResolvedValue(null),
     getGoogleCalendarSettings: vi.fn().mockResolvedValue({ ...defaultSettings }),
+    findUsersWithGoogleCalendarEnabled: vi.fn().mockResolvedValue([]),
     findUsersWithExpiringChannels: vi.fn().mockResolvedValue([]),
     updateSharingDefaultList: vi.fn(),
     ...overrides,

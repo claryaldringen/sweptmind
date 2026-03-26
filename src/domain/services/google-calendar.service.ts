@@ -226,6 +226,36 @@ export class GoogleCalendarService {
     await this.userRepo.updateGoogleCalendarChannel(userId, null, null);
   }
 
+  /**
+   * Push all tasks that match sync scope but don't have a calendar_sync entry yet.
+   */
+  async pushUnsyncedTasks(userId: string): Promise<number> {
+    if (!this.taskRepo) throw new Error("TaskRepository not configured");
+
+    const settings = await this.userRepo.getGoogleCalendarSettings(userId);
+    if (!settings.enabled || settings.direction === "pull") return 0;
+
+    const tasks = await this.taskRepo.findByUser(userId);
+    const syncable = tasks.filter(
+      (t) => !t.isCompleted && this.taskMatchesSyncScope(t, settings.syncAll, settings.syncDateRange),
+    );
+    if (syncable.length === 0) return 0;
+
+    const syncMap = await this.syncRepo.findByTaskIds(syncable.map((t) => t.id));
+    const unsynced = syncable.filter((t) => !syncMap.has(t.id));
+
+    let pushed = 0;
+    for (const task of unsynced) {
+      try {
+        await this.pushTask(userId, task);
+        pushed++;
+      } catch (error) {
+        console.error(`Failed to push task ${task.id}:`, error);
+      }
+    }
+    return pushed;
+  }
+
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
