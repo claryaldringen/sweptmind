@@ -546,7 +546,10 @@ export function TaskDetailPanel() {
       cache.modify({
         id: cache.identify({ __typename: "Task", id: taskId }),
         fields: {
-          tags(existing = []) {
+          tags(existing = [], { readField }) {
+            if (existing.some((ref: { __ref: string }) => readField("id", ref) === tagId)) {
+              return existing;
+            }
             const newRef = cache.writeFragment({
               data: tag,
               fragment: gql`
