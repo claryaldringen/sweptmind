@@ -864,11 +864,61 @@ export function TaskDetailPanel() {
     if (!task) return;
     const existingColors = allTagsFromProvider.map((t) => t.color);
     const color = pickNextTagColor(existingColors);
+
+    // Optimistic: add temp tag to task immediately
+    const tempId = crypto.randomUUID();
+    apolloClient.cache.modify({
+      id: apolloClient.cache.identify({ __typename: "Task", id: task.id }),
+      fields: {
+        tags(existing = []) {
+          const newRef = apolloClient.cache.writeFragment({
+            data: { __typename: "Tag", id: tempId, name, color },
+            fragment: gql`
+              fragment TempTag on Tag {
+                id
+                name
+                color
+              }
+            `,
+          });
+          return [...existing, newRef];
+        },
+      },
+    });
+
     const result = await createTag({
       variables: { input: { name, color } },
     });
     if (result.data?.createTag) {
-      await addTagToTask({ variables: { taskId: task.id, tagId: result.data.createTag.id } });
+      // Replace temp tag with real one
+      const realTag = result.data.createTag;
+      apolloClient.cache.modify({
+        id: apolloClient.cache.identify({ __typename: "Task", id: task.id }),
+        fields: {
+          tags(existing = [], { readField }) {
+            const filtered = existing.filter(
+              (ref: { __ref: string }) => readField("id", ref) !== tempId,
+            );
+            const newRef = apolloClient.cache.writeFragment({
+              data: realTag,
+              fragment: gql`
+                fragment RealTag on Tag {
+                  id
+                  name
+                  color
+                }
+              `,
+            });
+            return [...filtered, newRef];
+          },
+        },
+      });
+      // Clean up temp tag from cache
+      apolloClient.cache.evict({
+        id: apolloClient.cache.identify({ __typename: "Tag", id: tempId }),
+      });
+      apolloClient.cache.gc();
+      await addTagToTask({ variables: { taskId: task.id, tagId: realTag.id } });
     }
   }
 
@@ -921,6 +971,55 @@ export function TaskDetailPanel() {
       },
     });
     updateTask({ variables: { id: task.id, input: { blockedByTaskId } } });
+
+    // Copy tags from blocking task to this task
+    if (blockedByTaskId) {
+      const blockerTags = apolloClient.cache.readFragment<{
+        tags: { id: string; name: string; color: string }[];
+      }>({
+        id: apolloClient.cache.identify({ __typename: "Task", id: blockedByTaskId }),
+        fragment: gql`
+          fragment BlockerTags on Task {
+            tags {
+              id
+              name
+              color
+            }
+          }
+        `,
+      });
+      if (blockerTags?.tags?.length) {
+        const currentTagIds = new Set(task.tags?.map((t) => t.id) ?? []);
+        const newTags = blockerTags.tags.filter((t) => !currentTagIds.has(t.id));
+        if (newTags.length > 0) {
+          // Optimistic: add tags to task in cache immediately
+          apolloClient.cache.modify({
+            id: apolloClient.cache.identify({ __typename: "Task", id: task.id }),
+            fields: {
+              tags(existing = []) {
+                const refs = newTags.map((tag) =>
+                  apolloClient.cache.writeFragment({
+                    data: { __typename: "Tag", ...tag },
+                    fragment: gql`
+                      fragment CopyTag on Tag {
+                        id
+                        name
+                        color
+                      }
+                    `,
+                  }),
+                );
+                return [...existing, ...refs];
+              },
+            },
+          });
+          // Fire mutations
+          for (const tag of newTags) {
+            addTagToTask({ variables: { taskId: task.id, tagId: tag.id } });
+          }
+        }
+      }
+    }
   }
 
   function handleDismissAi() {

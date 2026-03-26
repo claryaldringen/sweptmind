@@ -41,16 +41,17 @@ export function TaskTags({
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
   const [newTagName, setNewTagName] = useState("");
 
-  async function handleAddTag(tagId: string) {
-    await onAddTag(tagId);
+  function handleAddTag(tagId: string) {
     setTagPopoverOpen(false);
+    onAddTag(tagId);
   }
 
-  async function handleCreateAndAddTag() {
+  function handleCreateAndAddTag() {
     if (!newTagName.trim()) return;
-    await onCreateAndAddTag(newTagName.trim());
+    const name = newTagName.trim();
     setNewTagName("");
     setTagPopoverOpen(false);
+    onCreateAndAddTag(name);
   }
 
   return (
