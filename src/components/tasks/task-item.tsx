@@ -237,6 +237,11 @@ export const TaskItem = memo(function TaskItem({
       cache.evict({ id: cache.identify({ __typename: "Task", id: task.id }) });
       cache.gc();
     },
+    onError() {
+      // Ghost task — ensure it stays removed from cache even if server delete fails
+      client.cache.evict({ id: client.cache.identify({ __typename: "Task", id: task.id }) });
+      client.cache.gc();
+    },
   });
 
   const { lists } = useLists();

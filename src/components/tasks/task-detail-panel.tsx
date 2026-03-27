@@ -418,6 +418,13 @@ export function TaskDetailPanel() {
       });
       cache.gc();
     },
+    onError() {
+      // Ghost task (optimistic only, not on server) — ensure it stays removed from cache
+      apolloClient.cache.evict({
+        id: apolloClient.cache.identify({ __typename: "Task", id: taskId }),
+      });
+      apolloClient.cache.gc();
+    },
   });
   const [cloneTask] = useMutation<{ cloneTask: GetAppDataResult["activeTasks"][number] }>(CLONE_TASK);
   const [createStep] = useMutation<CreateStepData>(CREATE_STEP, {
