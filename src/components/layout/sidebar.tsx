@@ -189,7 +189,7 @@ function SortableListItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={cn(isDragging && "z-10")}
+      className={cn(isDragging ? "z-10 cursor-grabbing" : "cursor-grab")}
       {...attributes}
       {...listeners}
     >
@@ -623,7 +623,7 @@ function SortableSmartItem({ id, children }: { id: string; children: ReactNode }
     <div
       ref={setNodeRef}
       style={style}
-      className={cn(isDragging && "z-10 opacity-50")}
+      className={cn(isDragging ? "z-10 cursor-grabbing opacity-50" : "cursor-grab")}
       {...attributes}
       {...listeners}
     >

@@ -34,7 +34,7 @@ export function SortableTaskItem({ task, showListName, analyzingTaskIds }: Sorta
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="outline-none">
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={`outline-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}>
       <TaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingTaskIds} />
     </div>
   );

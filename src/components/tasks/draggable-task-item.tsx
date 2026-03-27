@@ -21,7 +21,7 @@ export function DraggableTaskItem({
   });
 
   return (
-    <div ref={setNodeRef} style={{ opacity: isDragging ? 0.5 : 1 }} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={{ opacity: isDragging ? 0.5 : 1 }} {...attributes} {...listeners} className={isDragging ? "cursor-grabbing" : "cursor-grab"}>
       <TaskItem task={task} showListName={showListName} analyzingTaskIds={analyzingTaskIds} />
     </div>
   );
