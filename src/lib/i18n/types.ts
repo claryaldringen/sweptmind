@@ -47,6 +47,9 @@ export interface Dictionary {
     tasks: string;
     newList: string;
     settings: string;
+    searchPlaceholder: string;
+    noResults: string;
+    tags: string;
   };
   tasks: {
     addTask: string;
@@ -201,6 +204,7 @@ export interface Dictionary {
     planned: string;
     nearby: string;
     tag: string;
+    searchResults: string;
   };
   planned: {
     overdue: string;

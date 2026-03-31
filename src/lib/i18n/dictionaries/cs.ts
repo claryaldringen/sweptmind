@@ -50,6 +50,9 @@ export const cs: Dictionary = {
     tasks: "Tady & teď",
     newList: "Nový seznam",
     settings: "Nastavení",
+    searchPlaceholder: "Hledat úkoly…",
+    noResults: "Žádné výsledky",
+    tags: "Štítky",
   },
   tasks: {
     addTask: "Přidat úkol",
@@ -217,6 +220,7 @@ export const cs: Dictionary = {
     planned: "Plánované",
     nearby: "V okolí",
     tag: "Štítek",
+    searchResults: "Výsledky hledání",
   },
   planned: {
     overdue: "Zpožděné",

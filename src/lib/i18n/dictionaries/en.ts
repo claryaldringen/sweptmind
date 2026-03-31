@@ -50,6 +50,9 @@ export const en: Dictionary = {
     tasks: "Here & Now",
     newList: "New list",
     settings: "Settings",
+    searchPlaceholder: "Search tasks…",
+    noResults: "No results",
+    tags: "Tags",
   },
   tasks: {
     addTask: "Add task",
@@ -218,6 +221,7 @@ export const en: Dictionary = {
     planned: "Planned",
     nearby: "Nearby",
     tag: "Tag",
+    searchResults: "Search results",
   },
   planned: {
     overdue: "Overdue",

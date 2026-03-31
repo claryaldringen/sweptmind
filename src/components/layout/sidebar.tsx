@@ -5,6 +5,7 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
   useSyncExternalStore,
   type ComponentType,
   type ReactNode,
@@ -36,13 +37,17 @@ import { isFutureTask } from "@/domain/services/task-visibility";
 import {
   AlertTriangle,
   CalendarDays,
+  ChevronDown,
+  ChevronRight,
   MapPin,
   Monitor,
   Pencil,
   Plus,
+  Search,
   Smartphone,
   Tag,
   Trash2,
+  X,
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -646,9 +651,36 @@ export function Sidebar() {
   const { allTasks, tags: allTags, conflictingTaskIds } = useAppData();
   const [reorderLists] = useMutation(REORDER_LISTS);
   const [createListOpen, setCreateListOpen] = useState(false);
+  const [tagsExpanded, setTagsExpanded] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("sweptmind-tags-expanded") !== "false";
+  });
   const [localOrder, setLocalOrder] = useState<ListItemWithCounts[] | null>(null);
   const { isNearby: checkNearby, isTracking, nearbyLocationIds } = useNearby();
   const [smartOrder, setSmartOrder] = useState(getStoredSmartOrder);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync search input from URL when navigating to /search
+  const isSearchPage = pathname === "/search";
+
+  useEffect(() => {
+    if (isSearchPage) {
+      const urlQ = new URLSearchParams(window.location.search).get("q") ?? "";
+      setSearchQuery(urlQ);
+    } else {
+      setSearchQuery("");
+    }
+  }, [isSearchPage, pathname]);
+
+  function handleSearchChange(value: string) {
+    setSearchQuery(value);
+    if (value.trim()) {
+      router.push(`/search?q=${encodeURIComponent(value.trim())}`);
+    } else if (isSearchPage) {
+      router.back();
+    }
+  }
 
   // Compute context task count from allTasks
   const contextTaskCount = useMemo(() => {
@@ -978,6 +1010,30 @@ export function Sidebar() {
       <div className="flex items-center gap-2 p-4">
         <UserMenu />
       </div>
+      <div className="px-2 pb-2">
+        <div className="relative">
+          <Search className="text-muted-foreground pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2" />
+          <Input
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder={t("sidebar.searchPlaceholder")}
+            className="h-8 pl-8 pr-8 text-sm"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                handleSearchChange("");
+                searchInputRef.current?.focus();
+              }}
+              className="text-muted-foreground hover:text-foreground absolute right-2 top-1/2 -translate-y-1/2"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
       <ScrollArea className="min-h-0 flex-1 px-2">
         <ListSelectionProvider
           listIds={sidebarSelectableIds}
@@ -1066,35 +1122,56 @@ export function Sidebar() {
           {allTags.length > 0 && (
             <>
               <Separator className="my-3" />
-              <nav className="space-y-1">
-                {allTags.map((tag) => (
-                  <SidebarTagItem
-                    key={tag.id}
-                    tag={tag}
-                    isActive={isDesktop && pathname === `/tags/${tag.id}`}
-                    sidebarHasFocus={sidebarHasFocus}
-                    isNearby={
-                      tag.location
-                        ? checkNearby(
-                            tag.location.latitude,
-                            tag.location.longitude,
-                            tag.location.radius,
-                          )
-                        : false
-                    }
-                    isDeviceMatch={tag.deviceContext === deviceContext}
-                    taskCount={tagTaskCounts.get(tag.id) ?? 0}
-                    smartListIds={smartListIdSet}
-                    onBulkDelete={handleSidebarBulkDelete}
-                    onRename={(t) => {
-                      setRenameTagValue(t.name);
-                      setRenameTagTarget(t);
-                    }}
-                    onDelete={setDeleteTagTarget}
-                    onNavigate={closeSidebar}
-                  />
-                ))}
-              </nav>
+              <button
+                type="button"
+                onClick={() => {
+                  setTagsExpanded((prev) => {
+                    const next = !prev;
+                    localStorage.setItem("sweptmind-tags-expanded", String(next));
+                    return next;
+                  });
+                }}
+                className="text-muted-foreground hover:text-foreground flex w-full items-center gap-1 px-2 py-1 text-xs font-medium transition-colors"
+              >
+                {tagsExpanded ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
+                {t("sidebar.tags")}
+                <span className="text-muted-foreground/60 ml-auto text-[10px]">{allTags.length}</span>
+              </button>
+              {tagsExpanded && (
+                <nav className="space-y-1">
+                  {allTags.map((tag) => (
+                    <SidebarTagItem
+                      key={tag.id}
+                      tag={tag}
+                      isActive={isDesktop && pathname === `/tags/${tag.id}`}
+                      sidebarHasFocus={sidebarHasFocus}
+                      isNearby={
+                        tag.location
+                          ? checkNearby(
+                              tag.location.latitude,
+                              tag.location.longitude,
+                              tag.location.radius,
+                            )
+                          : false
+                      }
+                      isDeviceMatch={tag.deviceContext === deviceContext}
+                      taskCount={tagTaskCounts.get(tag.id) ?? 0}
+                      smartListIds={smartListIdSet}
+                      onBulkDelete={handleSidebarBulkDelete}
+                      onRename={(t) => {
+                        setRenameTagValue(t.name);
+                        setRenameTagTarget(t);
+                      }}
+                      onDelete={setDeleteTagTarget}
+                      onNavigate={closeSidebar}
+                    />
+                  ))}
+                </nav>
+              )}
             </>
           )}
         </ListSelectionProvider>
