@@ -179,6 +179,9 @@ function StepRow({
               }
             }}
             onKeyDown={(e) => {
+              // Stop keyboard events from bubbling to dnd-kit's KeyboardSensor
+              // (Space key would otherwise initiate a drag instead of typing)
+              e.stopPropagation();
               if (e.key === "Enter") {
                 e.preventDefault();
                 e.currentTarget.blur();
