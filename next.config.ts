@@ -2,13 +2,13 @@ import type { NextConfig } from "next";
 import { withSerwist } from "@serwist/turbopack";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
   transpilePackages: ["@sweptmind/native-bridge", "@sweptmind/capacitor-geofence"],
   turbopack: {},
   env: {
-    NEXT_PUBLIC_BUILD_ID:
-      process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev",
+    NEXT_PUBLIC_BUILD_ID: "dev",
     NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
   },
   async redirects() {
@@ -60,8 +60,8 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.googleusercontent.com https://*.fbcdn.net https://platform-lookaside.fbsbx.com https://*.public.blob.vercel-storage.com",
-              "connect-src 'self' https://accounts.google.com https://*.googleapis.com https://*.google.com https://photon.komoot.io https://nominatim.openstreetmap.org https://ipwho.is https://get.geojs.io https://ip-api.com https://ipapi.co https://*.public.blob.vercel-storage.com",
+              "img-src 'self' data: blob: https://*.googleusercontent.com https://*.fbcdn.net https://platform-lookaside.fbsbx.com",
+              "connect-src 'self' https://accounts.google.com https://*.googleapis.com https://*.google.com https://photon.komoot.io https://nominatim.openstreetmap.org https://ipwho.is https://get.geojs.io https://ip-api.com https://ipapi.co",
               "font-src 'self'",
               "worker-src 'self'",
               "frame-src 'self' https://accounts.google.com",
