@@ -224,46 +224,46 @@ export function TaskAttachments({
   }, []);
 
   async function uploadFile(file: globalThis.File) {
-    const mimeType = file.type || "application/octet-stream";
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("taskId", taskId);
 
-    // 1. Get upload token from server
-    const tokenRes = await fetch("/api/upload/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        taskId,
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType,
-      }),
+    const { blobUrl } = await new Promise<{ blobUrl: string }>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) {
+          updateFileProgress(file.name, (e.loaded / e.total) * 100);
+        }
+      });
+
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText));
+        } else {
+          try {
+            const err = JSON.parse(xhr.responseText);
+            reject(new Error(err.error || "Upload failed"));
+          } catch {
+            reject(new Error("Upload failed"));
+          }
+        }
+      });
+
+      xhr.addEventListener("error", () => reject(new Error("Upload failed")));
+
+      xhr.open("POST", "/api/upload");
+      xhr.send(formData);
     });
 
-    if (!tokenRes.ok) {
-      const err = await tokenRes.json();
-      throw new Error(err.error || "Upload validation failed");
-    }
-
-    const { clientToken, pathname } = await tokenRes.json();
-
-    // 2. Upload directly to Vercel Blob with progress
-    const { put } = await import("@vercel/blob/client");
-    const blob = await put(pathname, file, {
-      access: "public",
-      token: clientToken,
-      multipart: true,
-      onUploadProgress: ({ percentage }) => {
-        updateFileProgress(file.name, percentage);
-      },
-    });
-
-    // 3. Register in DB
+    // Register in DB via GraphQL (preserves existing Apollo cache update)
     await registerAttachment({
       variables: {
         taskId,
         fileName: file.name,
         fileSize: file.size,
-        mimeType,
-        blobUrl: blob.url,
+        mimeType: file.type || "application/octet-stream",
+        blobUrl,
       },
     });
   }
