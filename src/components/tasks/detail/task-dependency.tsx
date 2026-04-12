@@ -102,10 +102,10 @@ export function TaskDependency({
 
   if (blockedByTask) {
     return (
-      <div className="flex items-center">
+      <div className="flex min-w-0 items-center">
         <Button
           variant="ghost"
-          className="w-full justify-start gap-2 text-amber-600 dark:text-amber-400"
+          className="min-w-0 flex-1 justify-start gap-2 text-amber-600 dark:text-amber-400"
           onClick={() => onNavigateToTask(blockedByTask.id)}
         >
           <Lock className="h-4 w-4" />
