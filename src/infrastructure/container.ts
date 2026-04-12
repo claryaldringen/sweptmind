@@ -21,7 +21,7 @@ import { OpenAiCompatibleProvider } from "./llm/openai-compatible-provider";
 import { StripePaymentGateway } from "./payment/stripe-payment-gateway";
 import { QrCodeGenerator } from "./payment/qrcode-generator";
 import { FioBankGateway } from "./fio/fio-bank-gateway";
-import { VercelBlobStorage } from "./blob/vercel-blob-storage";
+import { LocalFilesystemBlobStorage } from "./blob/local-filesystem-blob-storage";
 import { TaskService } from "@/domain/services/task.service";
 import { ListService } from "@/domain/services/list.service";
 import { StepService } from "@/domain/services/step.service";
@@ -62,7 +62,8 @@ const sharedTaskRepo = new DrizzleSharedTaskRepository(db);
 const notificationSender = new PushNotificationSender(pushSubRepo);
 
 const llmProvider = new OpenAiCompatibleProvider();
-const blobStorage = new VercelBlobStorage();
+const uploadsPath = process.env.UPLOADS_PATH ?? "/opt/sweptmind-uploads";
+export const blobStorage = new LocalFilesystemBlobStorage(uploadsPath);
 const paymentGateway = new StripePaymentGateway(
   process.env.STRIPE_SECRET_KEY ?? "",
   process.env.STRIPE_PRICE_MONTHLY_ID ?? "",

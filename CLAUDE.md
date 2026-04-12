@@ -128,18 +128,21 @@ src/
 - Po jakékoliv změně DB schématu (`src/server/db/schema/`) vždy automaticky spusť `yarn db:push` pro aplikaci změn do lokální databáze.
 - **Po deployi na produkci (push na main):** Pokud se změnilo DB schéma, musíš pushout schéma i na produkční DB:
   ```bash
-  vercel env pull .env.production.local
-  set -a && source .env.production.local && set +a && yarn db:push
-  rm .env.production.local
+  ssh root@204.168.176.128 "cd /opt/sweptmind && yarn db:push"
   ```
 
 ## Deployment
 
-- **Hosting:** Vercel (Next.js nativní platforma)
-- **Databáze:** Vercel Postgres (nebo jiná managed PostgreSQL)
-- **Žádný Docker** — Vercel buildí z gitu přímo
-- Vercel zajišťuje: SSL/TLS, CDN, edge network, automatické preview deploye, serverless functions, build pipeline
-- Rate limiting v produkci: in-memory (per serverless instance) — pro scale nahradit Vercel KV / Upstash Redis
+- **Hosting:** Hetzner VPS (204.168.176.128), standalone Next.js za Caddy reverse proxy
+- **Databáze:** PostgreSQL 16 na stejném serveru (localhost:5432, DB `sweptmind`)
+- **Process manager:** pm2 (`sweptmind`), ecosystem config v `/opt/sweptmind/ecosystem.config.cjs`
+- **Reverse proxy:** Caddy (auto HTTPS via Let's Encrypt), config v `/etc/caddy/Caddyfile`
+- **Cron joby:** systemd timery (`sweptmind-push`, `sweptmind-gcal-sync`, `sweptmind-gcal-renew`)
+- **Přílohy:** Lokální filesystem (`/opt/sweptmind-uploads/`), servírované přes Caddy na `/uploads/*`
+- **Deploy postup:**
+  ```bash
+  ssh root@204.168.176.128 "cd /opt/sweptmind && git pull && yarn install && yarn build && pm2 restart sweptmind"
+  ```
 
 ## Mobilní roadmap
 
@@ -147,7 +150,7 @@ src/
 - Responsivní UI (sidebar → drawer na mobilu)
 - PWA manifest, ikony, service worker (Serwist)
 - Offline režim (Apollo cache persistence v IndexedDB, retry link, optimistic UI)
-- Push notifikace (Web Push API, VAPID, Vercel Cron)
+- Push notifikace (Web Push API, VAPID, systemd timer)
 
 ### Fáze 2 (implementováno): Capacitor + Electron
 - Capacitor wrapper (iOS + Android) — WebView shell načítající sweptmind.com
@@ -159,4 +162,4 @@ src/
 
 ## Prostředí
 
-Vyžaduje `.env.local` s: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `AUTH_GOOGLE_ID/SECRET`, `AUTH_FACEBOOK_ID/SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `CRON_SECRET` (Vercel auto), `FIREBASE_SERVICE_ACCOUNT` (JSON string Firebase service account pro FCM/APNs push), `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY_ID`, `STRIPE_PRICE_YEARLY_ID`, `FIO_API_TOKEN` (FIO banka API token pro kontrolu plateb), `FIO_ACCOUNT_NUMBER` (FIO číslo účtu v IBAN formátu pro SPAYD QR kódy), `BLOB_READ_WRITE_TOKEN` (Vercel Blob storage token, auto-provided by Vercel), `LLM_PROVIDER` (`ollama` nebo `openai`, default `ollama`), `OLLAMA_BASE_URL` (default `http://localhost:11434`), `OLLAMA_MODEL` (default `llama3.1`), `LLM_API_KEY` (API klíč pro cloud LLM), `LLM_BASE_URL` (default `https://api.openai.com/v1`, OpenAI-compatible endpoint), `LLM_MODEL` (default `gpt-4o-mini`)
+Vyžaduje `.env.local` s: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `AUTH_GOOGLE_ID/SECRET`, `AUTH_FACEBOOK_ID/SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `CRON_SECRET`, `FIREBASE_SERVICE_ACCOUNT` (JSON string Firebase service account pro FCM/APNs push), `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY_ID`, `STRIPE_PRICE_YEARLY_ID`, `FIO_API_TOKEN` (FIO banka API token pro kontrolu plateb), `FIO_ACCOUNT_NUMBER` (FIO číslo účtu v IBAN formátu pro SPAYD QR kódy), `UPLOADS_PATH` (cesta k úložišti příloh, default `/opt/sweptmind-uploads`), `LLM_PROVIDER` (`ollama` nebo `openai`, default `ollama`), `OLLAMA_BASE_URL` (default `http://localhost:11434`), `OLLAMA_MODEL` (default `llama3.1`), `LLM_API_KEY` (API klíč pro cloud LLM), `LLM_BASE_URL` (default `https://api.openai.com/v1`, OpenAI-compatible endpoint), `LLM_MODEL` (default `gpt-4o-mini`)

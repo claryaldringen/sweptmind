@@ -104,7 +104,10 @@ function makeSubscriptionService(isPremium = true): SubscriptionService {
 }
 
 function makeBlobStorage(): IBlobStorage {
-  return { delete: vi.fn().mockResolvedValue(undefined) };
+  return {
+    save: vi.fn().mockResolvedValue("https://example.com/file.jpg"),
+    delete: vi.fn().mockResolvedValue(undefined),
+  };
 }
 
 describe("AttachmentService", () => {
