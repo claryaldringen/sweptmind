@@ -61,7 +61,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://*.googleusercontent.com https://*.fbcdn.net https://platform-lookaside.fbsbx.com",
-              "connect-src 'self' https://accounts.google.com https://*.googleapis.com https://*.google.com https://photon.komoot.io https://nominatim.openstreetmap.org https://ipwho.is https://get.geojs.io https://ip-api.com https://ipapi.co",
+              "connect-src 'self' https://accounts.google.com https://*.googleapis.com https://*.google.com https://*.googleusercontent.com https://photon.komoot.io https://nominatim.openstreetmap.org https://ipwho.is https://get.geojs.io https://ip-api.com https://ipapi.co",
               "font-src 'self'",
               "worker-src 'self'",
               "frame-src 'self' https://accounts.google.com",
