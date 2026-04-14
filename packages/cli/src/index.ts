@@ -29,4 +29,12 @@ registerCalendarCommands(program);
 registerSubscriptionCommands(program);
 registerConfigCommands(program);
 
+program
+  .command("serve")
+  .description("Start MCP server (stdio transport)")
+  .action(async () => {
+    const { startMcpServer } = await import("./mcp-server.js");
+    await startMcpServer();
+  });
+
 program.parse();
