@@ -5,10 +5,11 @@ import { createContext } from "@/server/graphql/context";
 import { NextRequest } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { auth } from "@/lib/auth";
+import { services } from "@/infrastructure/container";
 
 const yoga = createYoga({
   schema,
-  context: createContext,
+  context: ({ request }: { request: Request }) => createContext(request),
   graphqlEndpoint: "/api/graphql",
   fetchAPI: { Response },
   // eslint-disable-next-line react-hooks/rules-of-hooks -- Envelop plugin factory, not a React hook
@@ -19,21 +20,26 @@ const yoga = createYoga({
   logging: process.env.NODE_ENV === "development" ? "debug" : "info",
 });
 
-async function getRateLimitKey(): Promise<string | undefined> {
+async function getRateLimitKey(request: Request): Promise<string | undefined> {
+  const authHeader = request.headers.get("authorization");
+  if (authHeader?.startsWith("Bearer sm_")) {
+    const userId = await services.apiToken.validateToken(authHeader.slice(7));
+    return userId ? `user:${userId}` : undefined;
+  }
   const session = await auth();
   return session?.user?.id ? `user:${session.user.id}` : undefined;
 }
 
 export async function GET(request: NextRequest) {
-  const key = await getRateLimitKey();
+  const key = await getRateLimitKey(request);
   const limited = rateLimit(request, { maxRequests: 100, key });
   if (limited) return limited;
-  return yoga.handleRequest(request, {});
+  return yoga.handleRequest(request, { request });
 }
 
 export async function POST(request: NextRequest) {
-  const key = await getRateLimitKey();
+  const key = await getRateLimitKey(request);
   const limited = rateLimit(request, { maxRequests: 100, key });
   if (limited) return limited;
-  return yoga.handleRequest(request, {});
+  return yoga.handleRequest(request, { request });
 }

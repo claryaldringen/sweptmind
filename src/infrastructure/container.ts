@@ -40,6 +40,8 @@ import { GoogleCalendarService } from "@/domain/services/google-calendar.service
 import { PushSubscriptionService } from "@/domain/services/push-subscription.service";
 import { ConnectionService } from "@/domain/services/connection.service";
 import { TaskSharingService } from "@/domain/services/task-sharing.service";
+import { ApiTokenService } from "@/domain/services/api-token.service";
+import { DrizzleApiTokenRepository } from "./persistence/drizzle-api-token.repository";
 import * as googleCalendarClient from "./google-calendar/google-calendar-client";
 
 const taskRepo = new DrizzleTaskRepository(db);
@@ -59,6 +61,7 @@ const pushSubRepo = new DrizzlePushSubscriptionRepository(db);
 const connectionInviteRepo = new DrizzleConnectionInviteRepository(db);
 const userConnectionRepo = new DrizzleUserConnectionRepository(db);
 const sharedTaskRepo = new DrizzleSharedTaskRepository(db);
+const apiTokenRepo = new DrizzleApiTokenRepository(db);
 const notificationSender = new PushNotificationSender(pushSubRepo);
 
 const llmProvider = new OpenAiCompatibleProvider();
@@ -121,6 +124,7 @@ export const repos = {
   connectionInvite: connectionInviteRepo,
   userConnection: userConnectionRepo,
   sharedTask: sharedTaskRepo,
+  apiToken: apiTokenRepo,
 };
 
 export type Repos = typeof repos;
@@ -166,6 +170,7 @@ export const services = {
     notificationSender,
   ),
   taskSharing: taskSharingService,
+  apiToken: new ApiTokenService(apiTokenRepo),
 };
 
 // Wire circular dependency: connection ↔ taskSharing

@@ -8,9 +8,22 @@ export interface GraphQLContext {
   userId: string | null;
 }
 
-export async function createContext(): Promise<GraphQLContext> {
-  const session = await auth();
-  const userId = session?.user?.id ?? null;
+export async function createContext(request?: Request): Promise<GraphQLContext> {
+  let userId: string | null = null;
+
+  // Try API token first (Authorization: Bearer sm_...)
+  const authHeader = request?.headers.get("authorization");
+  if (authHeader?.startsWith("Bearer sm_")) {
+    const token = authHeader.slice(7); // "Bearer ".length
+    userId = await services.apiToken.validateToken(token);
+  }
+
+  // Fall back to session auth
+  if (!userId) {
+    const session = await auth();
+    userId = session?.user?.id ?? null;
+  }
+
   return {
     services,
     loaders: createDataLoaders(repos, userId ?? ""),
