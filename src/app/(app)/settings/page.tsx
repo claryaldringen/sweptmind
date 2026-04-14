@@ -39,6 +39,7 @@ import { parseCSV, mapOutlookTaskRow, type MappedTask } from "@/lib/csv-import";
 import { getPlatform, getPushAdapter } from "@sweptmind/native-bridge";
 import { useIsPremium } from "@/hooks/use-is-premium";
 import { SharingSection } from "@/components/settings/sharing-section";
+import { ApiTokensSection } from "@/components/settings/api-tokens-section";
 
 interface ElectronAPI {
   platform: string;
@@ -1492,6 +1493,9 @@ export default function SettingsPage() {
 
         {/* Sharing */}
         <SharingSection userLists={userLists} />
+
+        {/* API Tokens */}
+        <ApiTokensSection />
 
         {/* AI Settings — premium only */}
         {isPremium && (
