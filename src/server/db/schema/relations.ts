@@ -12,6 +12,7 @@ import { taskAttachments } from "./attachments";
 import { taskAiAnalyses } from "./ai-analyses";
 import { aiUsage } from "./ai-usage";
 import { connectionInvites, userConnections, sharedTasks } from "./sharing";
+import { apiTokens } from "./api-tokens";
 
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
@@ -29,6 +30,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   acceptedInvites: many(connectionInvites, { relationName: "acceptedInvites" }),
   connections: many(userConnections),
   connectedTo: many(userConnections, { relationName: "connectedTo" }),
+  apiTokens: many(apiTokens),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -217,5 +219,12 @@ export const sharedTasksRelations = relations(sharedTasks, ({ one }) => ({
     fields: [sharedTasks.targetTaskId],
     references: [tasks.id],
     relationName: "targetTask",
+  }),
+}));
+
+export const apiTokensRelations = relations(apiTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [apiTokens.userId],
+    references: [users.id],
   }),
 }));

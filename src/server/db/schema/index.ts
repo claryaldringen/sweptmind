@@ -10,4 +10,5 @@ export * from "./attachments";
 export * from "./ai-analyses";
 export * from "./ai-usage";
 export * from "./sharing";
+export * from "./api-tokens";
 export * from "./relations";
