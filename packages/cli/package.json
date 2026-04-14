@@ -1,10 +1,10 @@
 {
-  "name": "@sweptmind/cli",
+  "name": "sweptmind-cli",
   "version": "0.1.0",
   "description": "CLI tool for SweptMind task management",
   "type": "module",
   "bin": {
-    "sm": "./dist/index.js"
+    "sm": "dist/index.js"
   },
   "files": [
     "dist"
