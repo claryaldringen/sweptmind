@@ -35,5 +35,11 @@
     "url": "https://github.com/sweptmind/sweptmind"
   },
   "license": "MIT",
-  "keywords": ["todo", "tasks", "gtd", "cli", "sweptmind"]
+  "keywords": [
+    "todo",
+    "tasks",
+    "gtd",
+    "cli",
+    "sweptmind"
+  ]
 }
