@@ -14,5 +14,6 @@ import "./types/subscription";
 import "./types/attachment";
 import "./types/ai-analysis";
 import "./types/sharing";
+import "./types/api-token";
 
 export const schema = builder.toSchema();

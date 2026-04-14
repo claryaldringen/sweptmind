@@ -1,0 +1,8 @@
+query GetApiTokens {
+  apiTokens {
+    id
+    name
+    lastUsedAt
+    createdAt
+  }
+}

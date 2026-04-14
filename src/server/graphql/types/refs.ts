@@ -9,6 +9,7 @@ import type { TaskAttachment } from "@/domain/entities/task-attachment";
 import type { TaskAiAnalysis } from "@/domain/entities/task-ai-analysis";
 import type { ConnectionInvite } from "@/domain/entities/connection-invite";
 import type { ConnectionWithUser } from "@/domain/entities/user-connection";
+import type { ApiToken } from "@/domain/entities/api-token";
 
 export const UserRef = builder.objectRef<User>("User");
 export const ListRef = builder.objectRef<List>("List");
@@ -34,3 +35,4 @@ export const IncomingShareInfoRef = builder.objectRef<{
   sourceTask: Task;
   createdAt: Date;
 }>("IncomingShareInfo");
+export const ApiTokenRef = builder.objectRef<ApiToken>("ApiToken");

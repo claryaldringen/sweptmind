@@ -1,0 +1,11 @@
+mutation CreateApiToken($name: String!) {
+  createApiToken(name: $name) {
+    rawToken
+    id
+    name
+  }
+}
+
+mutation RevokeApiToken($id: String!) {
+  revokeApiToken(id: $id)
+}
