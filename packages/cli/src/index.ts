@@ -37,4 +37,64 @@ program
     await startMcpServer();
   });
 
+program
+  .command("setup")
+  .description("Configure SweptMind MCP server for Claude Code")
+  .option("--global", "Write to ~/.claude/.mcp.json (default: .mcp.json in current directory)")
+  .action(async (opts: { global?: boolean }) => {
+    const { writeFileSync, readFileSync, existsSync, mkdirSync } = await import("fs");
+    const { join } = await import("path");
+    const { homedir } = await import("os");
+    const { execSync } = await import("child_process");
+
+    // Find sm binary path
+    let smPath: string;
+    try {
+      smPath = execSync("which sm", { encoding: "utf8" }).trim();
+    } catch {
+      smPath = process.argv[1];
+    }
+
+    const mcpConfig = {
+      mcpServers: {
+        sweptmind: {
+          command: smPath,
+          args: ["serve"],
+        },
+      },
+    };
+
+    const targetPath = opts.global
+      ? join(homedir(), ".claude", ".mcp.json")
+      : join(process.cwd(), ".mcp.json");
+
+    // Merge with existing config if present
+    let existing: Record<string, unknown> = {};
+    if (existsSync(targetPath)) {
+      try {
+        existing = JSON.parse(readFileSync(targetPath, "utf8"));
+      } catch {
+        // ignore parse errors
+      }
+    }
+
+    const merged = {
+      ...existing,
+      mcpServers: {
+        ...((existing.mcpServers as Record<string, unknown>) || {}),
+        ...mcpConfig.mcpServers,
+      },
+    };
+
+    // Ensure directory exists
+    const dir = targetPath.substring(0, targetPath.lastIndexOf("/"));
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+
+    writeFileSync(targetPath, JSON.stringify(merged, null, 2) + "\n");
+    console.log(`SweptMind MCP server configured in ${targetPath}`);
+    console.log("Restart Claude Code to activate.");
+  });
+
 program.parse();
