@@ -154,9 +154,20 @@ sm task list --list <id> --json | jq '.[] | .title'
 
 ## Claude Code Integration
 
-SweptMind CLI includes a built-in MCP server for integration with Claude Code.
+SweptMind CLI includes a built-in MCP server for integration with Claude Code and other AI assistants.
 
-Add to your `.claude/settings.json`:
+### Automatic setup
+
+```bash
+sm setup           # writes .mcp.json in current directory
+sm setup --global  # writes ~/.claude/.mcp.json (all projects)
+```
+
+Restart Claude Code after running `sm setup`. You will then have access to tools like `task_list`, `task_add`, `task_complete`, `list_ls`, etc.
+
+### Manual setup
+
+Add to `.mcp.json` in your project root or `~/.claude/.mcp.json`:
 
 ```json
 {
@@ -169,7 +180,9 @@ Add to your `.claude/settings.json`:
 }
 ```
 
-Or with an explicit token:
+If `sm` is not in PATH, use the absolute path (run `which sm` to find it).
+
+You can also pass the token via environment variable instead of `sm login`:
 
 ```json
 {
@@ -182,8 +195,6 @@ Or with an explicit token:
   }
 }
 ```
-
-After setup, Claude Code can manage your tasks directly using SweptMind tools.
 
 ## License
 
