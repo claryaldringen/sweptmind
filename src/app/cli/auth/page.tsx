@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { services } from "@/infrastructure/container";
 
 export default async function CliAuthPage({
   searchParams,
@@ -15,16 +16,14 @@ export default async function CliAuthPage({
     redirect(`/login?callbackUrl=${encodeURIComponent(returnUrl)}`);
   }
 
-  // User is authenticated — auto-create token and redirect to CLI
+  // User is authenticated — create token directly and redirect to CLI
   if (callbackUrl) {
-    const response = await fetch(`${process.env.AUTH_URL}/api/cli/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ callbackUrl, name: "CLI" }),
-    });
-    const data = await response.json();
+    const { rawToken } = await services.apiToken.createToken(
+      session.user.id!,
+      "CLI",
+    );
     const url = new URL(callbackUrl);
-    url.searchParams.set("token", data.token);
+    url.searchParams.set("token", rawToken);
     redirect(url.toString());
   }
 
