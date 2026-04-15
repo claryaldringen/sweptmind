@@ -190,6 +190,14 @@ export interface Dictionary {
     featureTagsDesc: string;
     featureContextName: string;
     featureContextDesc: string;
+    featureCliName: string;
+    featureCliDesc: string;
+    featureCliBadge: string;
+    featureCliTerminalLine1: string;
+    featureCliTerminalLine2: string;
+    featureCliTerminalLine3: string;
+    featureCliMcpTitle: string;
+    featureCliMcpDesc: string;
     ctaHeadline: string;
     ctaButton: string;
     ctaSignIn: string;

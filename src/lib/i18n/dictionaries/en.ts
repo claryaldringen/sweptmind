@@ -207,6 +207,16 @@ export const en: Dictionary = {
     featureContextName: "Context lists",
     featureContextDesc:
       "Split tasks by context — at home, at work, at the computer, on the phone. Always know what you can do right now.",
+    featureCliName: "CLI & AI Integration",
+    featureCliDesc:
+      "Control SweptMind from your terminal. Add tasks, manage lists and automate workflows — straight from the command line or through an AI assistant.",
+    featureCliBadge: "New",
+    featureCliTerminalLine1: "sm task add \"Deploy new version\" --due 2026-04-20",
+    featureCliTerminalLine2: "sm task list --planned",
+    featureCliTerminalLine3: "sm task complete abc123",
+    featureCliMcpTitle: "Works with Claude Code, Cursor and more",
+    featureCliMcpDesc:
+      "Built-in MCP server connects SweptMind with AI assistants. Your AI can read tasks, create new ones and mark them done — without a single click.",
     ctaHeadline: "Ready to start?",
     ctaButton: "Create a free account",
     ctaSignIn: "Already have an account?",

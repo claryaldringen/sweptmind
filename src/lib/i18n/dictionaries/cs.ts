@@ -206,6 +206,16 @@ export const cs: Dictionary = {
     featureContextName: "Kontextové seznamy",
     featureContextDesc:
       "Rozděluj úkoly podle kontextu — doma, v práci, u počítače, na telefonu. Vždy víš, co můžeš udělat právě teď.",
+    featureCliName: "CLI & AI integrace",
+    featureCliDesc:
+      "Ovládej SweptMind z terminálu. Přidávej úkoly, spravuj seznamy a automatizuj workflow — přímo z příkazové řádky nebo přes AI asistenta.",
+    featureCliBadge: "Nové",
+    featureCliTerminalLine1: "sm task add \"Nasadit novou verzi\" --due 2026-04-20",
+    featureCliTerminalLine2: "sm task list --planned",
+    featureCliTerminalLine3: "sm task complete abc123",
+    featureCliMcpTitle: "Funguje s Claude Code, Cursor a dalšími",
+    featureCliMcpDesc:
+      "Vestavěný MCP server propojí SweptMind s AI asistenty. Tvůj AI může číst úkoly, vytvářet nové a označovat hotové — bez jediného kliknutí.",
     ctaHeadline: "Připraven/a začít?",
     ctaButton: "Vytvořit účet zdarma",
     ctaSignIn: "Už máš účet?",

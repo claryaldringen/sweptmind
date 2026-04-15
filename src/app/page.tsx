@@ -17,6 +17,8 @@ import {
   Tag,
   Layers,
   ArrowRight,
+  Terminal,
+  Bot,
 } from "lucide-react";
 import { cs } from "@/lib/i18n/dictionaries/cs";
 import { en } from "@/lib/i18n/dictionaries/en";
@@ -195,6 +197,99 @@ export default async function HomePage() {
                 description={t.landing.gtdExecuteDesc}
                 color="amber"
               />
+            </div>
+          </div>
+        </section>
+
+        {/* CLI & AI Integration — Killer Feature */}
+        <section className="border-border/50 border-t px-6 py-24 sm:py-32 2xl:py-40">
+          <div className="mx-auto max-w-5xl 2xl:max-w-6xl">
+            <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-950 text-white shadow-2xl dark:border-neutral-700">
+              <div className="grid lg:grid-cols-2">
+                {/* Left — text */}
+                <div className="flex flex-col justify-center gap-6 p-8 sm:p-10 lg:p-12 2xl:p-14">
+                  <div className="flex items-center gap-3">
+                    <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold tracking-wide text-emerald-400 uppercase">
+                      {t.landing.featureCliBadge}
+                    </span>
+                  </div>
+                  <h2 className="text-3xl font-bold tracking-tight sm:text-4xl 2xl:text-5xl">
+                    {t.landing.featureCliName}
+                  </h2>
+                  <p className="text-lg leading-relaxed text-neutral-300 2xl:text-xl">
+                    {t.landing.featureCliDesc}
+                  </p>
+                  <div className="mt-2 flex items-start gap-3 rounded-lg border border-neutral-700 bg-neutral-900 p-4 2xl:p-5">
+                    <Bot className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400 2xl:h-6 2xl:w-6" />
+                    <div>
+                      <p className="mb-1 text-sm font-semibold text-emerald-400 2xl:text-base">
+                        {t.landing.featureCliMcpTitle}
+                      </p>
+                      <p className="text-sm leading-relaxed text-neutral-400 2xl:text-base">
+                        {t.landing.featureCliMcpDesc}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                {/* Right — terminal mockup */}
+                <div className="flex items-center justify-center bg-neutral-900/50 p-8 sm:p-10 lg:p-12 2xl:p-14">
+                  <div className="w-full max-w-md">
+                    <div className="overflow-hidden rounded-lg border border-neutral-700 bg-neutral-900 shadow-lg">
+                      {/* Terminal chrome */}
+                      <div className="flex items-center gap-2 border-b border-neutral-700 px-4 py-2.5">
+                        <div className="flex gap-1.5">
+                          <div className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
+                          <div className="h-2.5 w-2.5 rounded-full bg-amber-500/70" />
+                          <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/70" />
+                        </div>
+                        <span className="ml-2 text-xs text-neutral-500">
+                          Terminal
+                        </span>
+                      </div>
+                      {/* Terminal body */}
+                      <div className="space-y-3 p-4 font-mono text-sm 2xl:text-base">
+                        <div>
+                          <span className="text-emerald-400">$</span>{" "}
+                          <span className="text-neutral-200">
+                            {t.landing.featureCliTerminalLine1}
+                          </span>
+                        </div>
+                        <div className="text-neutral-500">
+                          Task created.
+                        </div>
+                        <div>
+                          <span className="text-emerald-400">$</span>{" "}
+                          <span className="text-neutral-200">
+                            {t.landing.featureCliTerminalLine2}
+                          </span>
+                        </div>
+                        <div className="text-neutral-500">
+                          1. Deploy new version &nbsp;(Apr 20)
+                          <br />
+                          2. Review pull request &nbsp;(Apr 18)
+                          <br />
+                          3. Write release notes &nbsp;(Apr 16)
+                        </div>
+                        <div>
+                          <span className="text-emerald-400">$</span>{" "}
+                          <span className="text-neutral-200">
+                            {t.landing.featureCliTerminalLine3}
+                          </span>
+                        </div>
+                        <div className="text-emerald-400">
+                          Done.
+                        </div>
+                      </div>
+                    </div>
+                    {/* npm install hint */}
+                    <div className="mt-4 text-center">
+                      <code className="rounded bg-neutral-800 px-3 py-1.5 text-xs text-neutral-400 2xl:text-sm">
+                        npm install -g sweptmind-cli
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
