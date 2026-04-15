@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { gql } from "./lib/client.js";
+import { gql, setMcpMode } from "./lib/client.js";
 
 const TASK_FIELDS = `
   id listId title notes isCompleted completedAt dueDate dueDateEnd
@@ -27,6 +27,8 @@ async function callGql<T>(query: string, variables?: Record<string, unknown>): P
 }
 
 export async function startMcpServer(): Promise<void> {
+  setMcpMode(true);
+
   const server = new McpServer({
     name: "sweptmind",
     version: "0.2.0",
@@ -49,26 +51,28 @@ export async function startMcpServer(): Promise<void> {
       completed: z.boolean().optional().describe("Include completed tasks"),
     },
     async ({ listId, planned, completed }) => {
-      let data: unknown;
-      if (planned) {
-        data = await gql(`query { plannedTasks { ${TASK_FIELDS} list { id name } } }`);
-      } else if (listId) {
-        data = await gql(`query($listId: String!) { tasksByList(listId: $listId) { ${TASK_FIELDS} } }`, { listId });
-      } else {
-        // Return planned tasks as default when no listId
-        data = await gql(`query { plannedTasks { ${TASK_FIELDS} list { id name } } }`);
-      }
-
-      if (!completed && data && typeof data === "object") {
-        // Filter out completed tasks from whichever field we got
-        const d = data as Record<string, unknown[]>;
-        const key = Object.keys(d)[0];
-        if (Array.isArray(d[key])) {
-          d[key] = d[key].filter((t: any) => !t.isCompleted);
+      try {
+        let data: unknown;
+        if (planned) {
+          data = await gql(`query { plannedTasks { ${TASK_FIELDS} list { id name } } }`);
+        } else if (listId) {
+          data = await gql(`query($listId: String!) { tasksByList(listId: $listId) { ${TASK_FIELDS} } }`, { listId });
+        } else {
+          data = await gql(`query { plannedTasks { ${TASK_FIELDS} list { id name } } }`);
         }
-      }
 
-      return jsonText(data);
+        if (!completed && data && typeof data === "object") {
+          const d = data as Record<string, unknown[]>;
+          const key = Object.keys(d)[0];
+          if (Array.isArray(d[key])) {
+            d[key] = d[key].filter((t: any) => !t.isCompleted);
+          }
+        }
+
+        return jsonText(data);
+      } catch (err) {
+        return jsonText({ error: err instanceof Error ? err.message : String(err) });
+      }
     },
   );
 

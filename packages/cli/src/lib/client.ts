@@ -3,21 +3,32 @@ import { getToken, getApiUrl } from "./config.js";
 import { error } from "./output.js";
 
 let client: GraphQLClient | null = null;
+let mcpMode = false;
+
+export function setMcpMode(enabled: boolean): void {
+  mcpMode = enabled;
+}
+
+function fail(message: string): never {
+  if (mcpMode) {
+    throw new Error(message);
+  }
+  error(message);
+  process.exit(1);
+}
 
 export function getClient(): GraphQLClient {
   if (client) return client;
 
   const token = getToken();
   if (!token) {
-    error("Nepřihlášen. Spusť 'sm login'.");
-    process.exit(1);
+    fail("Nepřihlášen. Spusť 'sm login'.");
   }
 
   client = new GraphQLClient(`${getApiUrl()}/api/graphql`, {
     headers: {
       authorization: `Bearer ${token}`,
     },
-    signal: AbortSignal.timeout(10_000),
   });
 
   return client;
@@ -29,7 +40,9 @@ export async function gql<T>(
 ): Promise<T> {
   const c = getClient();
   try {
-    return await c.request<T>(query, variables);
+    return await c.request<T>(query, variables, {
+      signal: AbortSignal.timeout(10_000),
+    });
   } catch (err: unknown) {
     if (err && typeof err === "object" && "response" in err) {
       const response = (
@@ -38,17 +51,14 @@ export async function gql<T>(
         }
       ).response;
       if (response.status === 401) {
-        error("Nepřihlášen. Spusť 'sm login'.");
-        process.exit(1);
+        fail("Nepřihlášen. Spusť 'sm login'.");
       }
       if (response.errors?.length) {
-        error(response.errors[0].message);
-        process.exit(1);
+        fail(response.errors[0].message);
       }
     }
-    error(
+    fail(
       "Nelze se připojit k serveru. Zkontroluj připojení nebo 'sm config get apiUrl'.",
     );
-    process.exit(1);
   }
 }
