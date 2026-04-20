@@ -139,7 +139,7 @@ export function CreateListDialog({ open, onOpenChange }: CreateListDialogProps) 
             onChange={(e) => setName(e.target.value)}
             autoFocus
           />
-          <div className="grid grid-cols-8 gap-1.5">
+          <div className="grid max-h-48 grid-cols-8 gap-1.5 overflow-y-auto">
             {Object.entries(LIST_ICONS).map(([key, Icon]) => (
               <button
                 key={key}
