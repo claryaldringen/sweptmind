@@ -128,31 +128,46 @@ export function registerTaskCommands(program: Command): void {
     .option("--list <listId>", "Seznam (ID)")
     .option("--due <date>", "Termín (YYYY-MM-DD)")
     .option("--reminder <datetime>", "Připomenutí (YYYY-MM-DDTHH:mm)")
+    .option("--recurrence <pattern>", "Opakování (DAILY | DAILY:N | WEEKLY:1,3,5 | WEEKLY:N:1,3 | MONTHLY | MONTHLY:N | MONTHLY_LAST | YEARLY | YEARLY:N)")
     .option("--notes <notes>", "Poznámky")
     .option("--json", "JSON výstup")
-    .action(async (title: string, opts: OutputOptions & { list?: string; due?: string; reminder?: string; notes?: string }) => {
+    .action(async (title: string, opts: OutputOptions & { list?: string; due?: string; reminder?: string; recurrence?: string; notes?: string }) => {
       const listId = opts.list || getConfig("defaultList");
       if (!listId) {
         error("Specifikuj seznam: --list <id> nebo nastav default: sm config set defaultList <id>");
         process.exit(1);
       }
 
-      const input: Record<string, unknown> = { title, listId };
-      if (opts.due) input.dueDate = opts.due;
-      if (opts.reminder) input.reminderAt = opts.reminder;
-      if (opts.notes) input.notes = opts.notes;
+      // CreateTaskInput podporuje jen základní pole; reminder a recurrence aplikujeme dodatečně přes updateTask.
+      const createInput: Record<string, unknown> = { title, listId };
+      if (opts.due) createInput.dueDate = opts.due;
+      if (opts.notes) createInput.notes = opts.notes;
 
-      const data = await gql<{ createTask: Task }>(
+      const created = await gql<{ createTask: Task }>(
         `mutation($input: CreateTaskInput!) { createTask(input: $input) { ${TASK_FIELDS} } }`,
-        { input },
+        { input: createInput },
       );
 
+      let finalTask = created.createTask;
+
+      if (opts.reminder || opts.recurrence) {
+        const updateInput: Record<string, unknown> = {};
+        if (opts.reminder) updateInput.reminderAt = opts.reminder;
+        if (opts.recurrence) updateInput.recurrence = opts.recurrence;
+
+        const updated = await gql<{ updateTask: Task }>(
+          `mutation($id: String!, $input: UpdateTaskInput!) { updateTask(id: $id, input: $input) { ${TASK_FIELDS} } }`,
+          { id: finalTask.id, input: updateInput },
+        );
+        finalTask = updated.updateTask;
+      }
+
       if (shouldOutputJSON(opts)) {
-        json(data.createTask);
+        json(finalTask);
         return;
       }
 
-      success(`Úkol #${data.createTask.id.slice(0, 8)} vytvořen`);
+      success(`Úkol #${finalTask.id.slice(0, 8)} vytvořen`);
     });
 
   task
@@ -162,13 +177,15 @@ export function registerTaskCommands(program: Command): void {
     .option("--notes <notes>", "Poznámky")
     .option("--due <date>", "Termín")
     .option("--reminder <datetime>", "Připomenutí")
+    .option("--recurrence <pattern>", "Opakování (DAILY | DAILY:N | WEEKLY:1,3,5 | WEEKLY:N:1,3 | MONTHLY | MONTHLY:N | MONTHLY_LAST | YEARLY | YEARLY:N; prázdný řetězec zruší)")
     .option("--json", "JSON výstup")
-    .action(async (id: string, opts: OutputOptions & { title?: string; notes?: string; due?: string; reminder?: string }) => {
+    .action(async (id: string, opts: OutputOptions & { title?: string; notes?: string; due?: string; reminder?: string; recurrence?: string }) => {
       const input: Record<string, unknown> = {};
       if (opts.title) input.title = opts.title;
       if (opts.notes) input.notes = opts.notes;
       if (opts.due) input.dueDate = opts.due;
       if (opts.reminder) input.reminderAt = opts.reminder;
+      if (opts.recurrence !== undefined) input.recurrence = opts.recurrence === "" ? null : opts.recurrence;
 
       const data = await gql<{ updateTask: Task }>(
         `mutation($id: String!, $input: UpdateTaskInput!) { updateTask(id: $id, input: $input) { id title } }`,

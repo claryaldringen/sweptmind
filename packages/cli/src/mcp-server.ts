@@ -89,20 +89,42 @@ export async function startMcpServer(): Promise<void> {
 
   server.tool(
     "task_add",
-    "Create a new task",
+    "Create a new task. Reminder and recurrence are applied via a follow-up update (CreateTaskInput does not accept them).",
     {
       title: z.string().describe("Task title"),
       listId: z.string().describe("List ID to add the task to"),
       dueDate: z.string().optional().describe("Due date (YYYY-MM-DD)"),
       reminder: z.string().optional().describe("Reminder datetime (YYYY-MM-DDTHH:mm)"),
+      recurrence: z.string().optional().describe("Recurrence pattern: DAILY | DAILY:N | WEEKLY:1,3,5 (0=Sun..6=Sat) | WEEKLY:N:1,3 | MONTHLY | MONTHLY:N | MONTHLY_LAST | YEARLY | YEARLY:N"),
       notes: z.string().optional().describe("Task notes"),
     },
-    async ({ title, listId, dueDate, reminder, notes }) => {
-      const input: Record<string, unknown> = { title, listId };
-      if (dueDate) input.dueDate = dueDate;
-      if (reminder) input.reminderAt = reminder;
-      if (notes) input.notes = notes;
-      return callGql(`mutation($input: CreateTaskInput!) { createTask(input: $input) { ${TASK_FIELDS} } }`, { input });
+    async ({ title, listId, dueDate, reminder, recurrence, notes }) => {
+      try {
+        const createInput: Record<string, unknown> = { title, listId };
+        if (dueDate) createInput.dueDate = dueDate;
+        if (notes) createInput.notes = notes;
+
+        const created = await gql<{ createTask: { id: string } & Record<string, unknown> }>(
+          `mutation($input: CreateTaskInput!) { createTask(input: $input) { ${TASK_FIELDS} } }`,
+          { input: createInput },
+        );
+
+        if (!reminder && !recurrence) {
+          return jsonText(created);
+        }
+
+        const updateInput: Record<string, unknown> = {};
+        if (reminder) updateInput.reminderAt = reminder;
+        if (recurrence) updateInput.recurrence = recurrence;
+
+        const updated = await gql(
+          `mutation($id: String!, $input: UpdateTaskInput!) { updateTask(id: $id, input: $input) { ${TASK_FIELDS} } }`,
+          { id: created.createTask.id, input: updateInput },
+        );
+        return jsonText(updated);
+      } catch (err) {
+        return jsonText({ error: err instanceof Error ? err.message : String(err) });
+      }
     },
   );
 
@@ -115,13 +137,15 @@ export async function startMcpServer(): Promise<void> {
       notes: z.string().optional().describe("New notes"),
       dueDate: z.string().optional().describe("New due date (YYYY-MM-DD)"),
       reminder: z.string().optional().describe("New reminder (YYYY-MM-DDTHH:mm)"),
+      recurrence: z.string().optional().describe("New recurrence pattern (see task_add for format). Pass empty string to clear."),
     },
-    async ({ id, title, notes, dueDate, reminder }) => {
+    async ({ id, title, notes, dueDate, reminder, recurrence }) => {
       const input: Record<string, unknown> = {};
       if (title) input.title = title;
       if (notes) input.notes = notes;
       if (dueDate) input.dueDate = dueDate;
       if (reminder) input.reminderAt = reminder;
+      if (recurrence !== undefined) input.recurrence = recurrence === "" ? null : recurrence;
       return callGql(`mutation($id: String!, $input: UpdateTaskInput!) { updateTask(id: $id, input: $input) { id title } }`, { id, input });
     },
   );
