@@ -338,7 +338,7 @@ export function TaskDetailPanel() {
     loading,
     conflictingTaskIds,
   } = useAppData();
-  const { isPremium } = useIsPremium();
+  const { isPremium, aiEnabled } = useIsPremium();
   const { data: syncAllData } = useQuery<{ calendarSyncAll: boolean }>(CALENDAR_SYNC_ALL);
   const { data: syncDateRangeData } = useQuery<{ calendarSyncDateRange: boolean }>(CALENDAR_SYNC_DATE_RANGE);
   const task = taskId
@@ -1090,7 +1090,7 @@ export function TaskDetailPanel() {
       ai.duplicateTaskId ||
       ai.callIntent ||
       ai.shoppingDistribution?.length);
-  if (showAi && hasAiContent) {
+  if (showAi && hasAiContent && aiEnabled) {
     return (
       <div
         className={cn(

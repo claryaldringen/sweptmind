@@ -1512,7 +1512,10 @@ export default function SettingsPage() {
                 checked={aiEnabledState}
                 onCheckedChange={async (checked) => {
                   setAiEnabledState(checked);
-                  await updateAiEnabled({ variables: { enabled: checked } });
+                  await updateAiEnabled({
+                    variables: { enabled: checked },
+                    refetchQueries: ["GetMeForPremium"],
+                  });
                 }}
               />
             </div>

@@ -10,6 +10,7 @@ import {
   type MouseEvent,
 } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useIsPremium } from "@/hooks/use-is-premium";
 import { gql } from "@apollo/client";
 import { useMutation, useApolloClient } from "@apollo/client/react";
 import { useLists } from "@/components/providers/app-data-provider";
@@ -136,6 +137,7 @@ export const TaskItem = memo(function TaskItem({
 }: TaskItemProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { aiEnabled } = useIsPremium();
   const { t, tArray, locale: appLocale } = useTranslations();
   const dateFnsLocale = appLocale === "cs" ? cs : enUS;
   const selectedTaskId = searchParams.get("task");
@@ -512,7 +514,8 @@ export const TaskItem = memo(function TaskItem({
                   (task.aiAnalysis.suggestedTitle ||
                     task.aiAnalysis.decomposition?.length ||
                     task.aiAnalysis.duplicateTaskId ||
-                    task.aiAnalysis.callIntent) && (
+                    task.aiAnalysis.callIntent) &&
+                  aiEnabled && (
                     <button
                       type="button"
                       aria-label={task.aiAnalysis.suggestion ?? t("premium.aiNotActionable")}
@@ -529,7 +532,7 @@ export const TaskItem = memo(function TaskItem({
                       <Lightbulb className="h-5 w-5 shrink-0 text-yellow-500" />
                     </button>
                   )}
-                {analyzingTaskIds?.has(task.id) && !task.aiAnalysis && (
+                {aiEnabled && analyzingTaskIds?.has(task.id) && !task.aiAnalysis && (
                   <span title={t("premium.aiAnalyzing")}>
                     <Lightbulb className="h-3.5 w-3.5 shrink-0 animate-pulse text-yellow-500/50" />
                   </span>
