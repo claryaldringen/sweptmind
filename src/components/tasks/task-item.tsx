@@ -64,6 +64,7 @@ import { format, isPast, parseISO, startOfDay, addDays } from "date-fns";
 import { cs } from "date-fns/locale/cs";
 import { enUS } from "date-fns/locale/en-US";
 import { useTranslations } from "@/lib/i18n";
+import { formatRecurrenceLabel } from "@/domain/services/recurrence";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { useDeviceContext } from "@/hooks/use-device-context";
 import { useTaskSelectionOptional } from "@/components/providers/task-selection-provider";
@@ -595,23 +596,17 @@ export const TaskItem = memo(function TaskItem({
                   {hasRecurrence && (
                     <span className="text-muted-foreground flex items-center gap-0.5" title={t("tasks.iconRecurrence")}>
                       <Repeat className="h-3 w-3" />
-                      {task.recurrence === "DAILY"
-                        ? t("recurrence.daily")
-                        : task.recurrence === "MONTHLY"
-                          ? t("recurrence.monthly")
-                          : task.recurrence === "MONTHLY_LAST"
-                            ? t("recurrence.monthlyLast")
-                            : task.recurrence === "YEARLY"
-                              ? t("recurrence.yearly")
-                              : task.recurrence?.startsWith("WEEKLY:")
-                                ? (() => {
-                                    const days = task.recurrence!.slice(7).split(",").map(Number);
-                                    const dayNames = tArray("recurrence.daysShort");
-                                    return days.length === 7
-                                      ? t("recurrence.daily")
-                                      : days.map((d) => dayNames[d]).join(", ");
-                                  })()
-                                : t("recurrence.weekly")}
+                      {formatRecurrenceLabel(task.recurrence ?? null, {
+                        everyDay: t("recurrence.everyDay"),
+                        everyNDays: (n) => t("recurrence.everyNDays", { n }),
+                        everyNWeeks: (n) => t("recurrence.everyNWeeks", { n }),
+                        everyMonth: t("recurrence.everyMonth"),
+                        everyNMonths: (n) => t("recurrence.everyNMonths", { n }),
+                        everyLastDay: t("recurrence.everyLastDay"),
+                        everyYear: t("recurrence.everyYear"),
+                        everyNYears: (n) => t("recurrence.everyNYears", { n }),
+                        daysShort: tArray("recurrence.daysShort"),
+                      })}
                     </span>
                   )}
                   {hasRecurrence && totalSteps > 0 && (
