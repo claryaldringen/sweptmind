@@ -1361,6 +1361,7 @@ export function TaskDetailPanel() {
 
         {/* Notes */}
         <Textarea
+          key={task.id + (task.notes ?? "")}
           placeholder={t("tasks.addNote")}
           defaultValue={task.notes ?? ""}
           onBlur={handleNotesBlur}
