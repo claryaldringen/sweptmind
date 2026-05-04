@@ -10,6 +10,7 @@ import { ResizableTaskLayout } from "@/components/layout/resizable-task-layout";
 import { useTranslations } from "@/lib/i18n";
 import { useAppData, type AppTask } from "@/components/providers/app-data-provider";
 import { TaskSelectionProvider } from "@/components/providers/task-selection-provider";
+import { useToday } from "@/hooks/use-today";
 
 type GroupKey = "overdue" | "today" | "tomorrow" | "thisWeek" | "later";
 
@@ -57,9 +58,10 @@ export default function PlannedPage() {
   const { open: openSidebar, isDesktop } = useSidebarContext();
   const { allTasks, loading, conflictingTaskIds } = useAppData();
 
-  // Compute date strings outside useMemo so they update when the day changes
-  const now = new Date();
-  const todayStr = format(now, "yyyy-MM-dd");
+  // useToday() re-renders this page at midnight and on tab visibility change,
+  // so groups (overdue/today/tomorrow) stay correct without a manual refresh.
+  const todayStr = useToday();
+  const now = new Date(`${todayStr}T00:00:00`);
   const tomorrowDate = new Date(now);
   tomorrowDate.setDate(tomorrowDate.getDate() + 1);
   const tomorrowStr = format(tomorrowDate, "yyyy-MM-dd");

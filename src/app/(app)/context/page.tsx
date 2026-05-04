@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { format } from "date-fns";
 import { ArrowLeft, Zap } from "lucide-react";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { useDeviceContext } from "@/hooks/use-device-context";
@@ -12,6 +11,7 @@ import { ResizableTaskLayout } from "@/components/layout/resizable-task-layout";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n";
 import { useAppData } from "@/components/providers/app-data-provider";
+import { useToday } from "@/hooks/use-today";
 
 export default function ContextPage() {
   const { t } = useTranslations();
@@ -19,10 +19,9 @@ export default function ContextPage() {
   const deviceContext = useDeviceContext();
   const { isNearby } = useNearby();
   const { allTasks, lists, tags, loading } = useAppData();
+  const todayStr = useToday();
 
   const tasks = useMemo(() => {
-    const todayStr = format(new Date(), "yyyy-MM-dd");
-
     // Helper: is this list nearby (using its own locationRadius)?
     function isListNearby(l: (typeof lists)[0]): boolean {
       if (!l.location) return false;
@@ -126,7 +125,7 @@ export default function ContextPage() {
     }
 
     return filtered.sort((a, b) => sortPriority(a) - sortPriority(b));
-  }, [allTasks, lists, tags, deviceContext, isNearby]);
+  }, [allTasks, lists, tags, deviceContext, isNearby, todayStr]);
 
   return (
     <ResizableTaskLayout>

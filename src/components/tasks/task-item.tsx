@@ -67,6 +67,7 @@ import { useTranslations } from "@/lib/i18n";
 import { formatRecurrenceLabel } from "@/domain/services/recurrence";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { useDeviceContext } from "@/hooks/use-device-context";
+import { useToday } from "@/hooks/use-today";
 import { useTaskSelectionOptional } from "@/components/providers/task-selection-provider";
 import { useAppData, GET_APP_DATA, type GetAppDataResult } from "@/components/providers/app-data-provider";
 import {
@@ -118,9 +119,6 @@ const SET_TASKS_COMPLETED = gql`
   }
 `;
 
-/** Computed once per module load – stable for the lifetime of the page. */
-const LOCAL_TODAY = format(new Date(), "yyyy-MM-dd");
-
 interface TaskItemProps {
   task: Task;
   showListName?: boolean;
@@ -144,6 +142,7 @@ export const TaskItem = memo(function TaskItem({
   const selectedTaskId = searchParams.get("task");
   const { isNearby: checkNearby } = useNearby();
   const deviceContext = useDeviceContext();
+  const today = useToday();
   const taskSelection = useTaskSelectionOptional();
   const isSelected = taskSelection?.selectedIds.has(task.id) ?? false;
   const { conflictingTaskIds } = useAppData();
@@ -333,11 +332,11 @@ export const TaskItem = memo(function TaskItem({
     const totalSteps = task.steps?.length ?? 0;
     const hasTags = (task.tags?.length ?? 0) > 0;
     const dueDateParsed = task.dueDate ? parseISO(task.dueDate) : null;
-    const isDueToday = task.dueDate?.split("T")[0] === LOCAL_TODAY;
+    const isDueToday = task.dueDate?.split("T")[0] === today;
     const isOverdue =
       dueDateParsed && !task.isCompleted && !isDueToday && isPast(startOfDay(dueDateParsed));
     const hasReminder = !!task.reminderAt;
-    const isReminderToday = task.reminderAt?.split("T")[0] === LOCAL_TODAY;
+    const isReminderToday = task.reminderAt?.split("T")[0] === today;
     const hasRecurrence = !!task.recurrence;
     const hasLocation = !!task.location;
     const locationNearby = task.location
@@ -388,7 +387,7 @@ export const TaskItem = memo(function TaskItem({
       dependentCount,
       hasMetadata,
     };
-  }, [task, listsMap, checkNearby, deviceContext, showListName]);
+  }, [task, listsMap, checkNearby, deviceContext, showListName, today]);
 
   const allLists = lists;
 
