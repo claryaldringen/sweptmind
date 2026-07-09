@@ -17,6 +17,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useTranslations } from "@/lib/i18n";
+import { ROW_CLASS, SELECT_BASE_CLASS, SELECT_CLASS } from "@/components/settings/styles";
+import { cn } from "@/lib/utils";
 
 // ── GraphQL ──────────────────────────────────────────────────────────────────
 
@@ -242,8 +244,8 @@ export function SharingSection({ userLists }: SharingSectionProps) {
 
   return (
     <div className="rounded-lg border p-5 md:col-span-2">
-      <div className="mb-4 flex items-center gap-2">
-        <Users className="h-5 w-5" />
+      <div className="mb-4 flex items-start gap-2">
+        <Users className="mt-0.5 h-5 w-5 shrink-0" />
         <div>
           <h2 className="text-lg font-semibold">{t("sharing.title")}</h2>
           <p className="text-muted-foreground text-sm">{t("sharing.description")}</p>
@@ -251,12 +253,12 @@ export function SharingSection({ userLists }: SharingSectionProps) {
       </div>
 
       {/* Global default list */}
-      <div className="mb-5 flex items-center justify-between gap-4">
+      <div className={cn("mb-5", ROW_CLASS)}>
         <p className="text-sm font-medium">{t("sharing.defaultList")}</p>
         <select
           value={defaultListId ?? ""}
           onChange={(e) => handleDefaultListChange(e.target.value || null)}
-          className="border-input bg-background ring-offset-background focus:ring-ring flex h-8 rounded-md border px-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+          className={SELECT_CLASS}
         >
           <option value="">{t("calendar.calendarTargetListPlaceholder")}</option>
           {userLists.map((list) => (
@@ -367,7 +369,7 @@ export function SharingSection({ userLists }: SharingSectionProps) {
                     onChange={(e) =>
                       handleConnectionTargetListChange(connection.id, e.target.value || null)
                     }
-                    className="border-input bg-background ring-offset-background focus:ring-ring flex h-8 rounded-md border px-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                    className={SELECT_BASE_CLASS}
                   >
                     <option value="">{t("calendar.calendarTargetListPlaceholder")}</option>
                     {userLists.map((list) => (

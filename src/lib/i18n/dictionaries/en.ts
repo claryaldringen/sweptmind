@@ -147,7 +147,7 @@ export const en: Dictionary = {
     aiModelDesc:
       "Choose a model for task analysis. More powerful models have lower monthly limits.",
     aiUsage: "Usage this month",
-    aiLimit: "{{count}} analyses/month",
+    aiLimit: "{count} analyses/month",
   },
   common: {
     loading: "Loading...",

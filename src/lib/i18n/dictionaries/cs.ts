@@ -146,7 +146,7 @@ export const cs: Dictionary = {
     aiModel: "AI model",
     aiModelDesc: "Vyber model pro analýzu úkolů. Výkonnější modely mají nižší měsíční limit.",
     aiUsage: "Využití tento měsíc",
-    aiLimit: "{{count}} analýz/měsíc",
+    aiLimit: "{count} analýz/měsíc",
   },
   common: {
     loading: "Načítání...",

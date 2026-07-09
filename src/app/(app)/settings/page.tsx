@@ -40,6 +40,7 @@ import { getPlatform, getPushAdapter } from "@sweptmind/native-bridge";
 import { useIsPremium } from "@/hooks/use-is-premium";
 import { SharingSection } from "@/components/settings/sharing-section";
 import { ApiTokensSection } from "@/components/settings/api-tokens-section";
+import { ROW_CLASS, SELECT_CLASS } from "@/components/settings/styles";
 
 interface ElectronAPI {
   platform: string;
@@ -805,7 +806,7 @@ export default function SettingsPage() {
     : [];
 
   return (
-    <div className="flex flex-1 flex-col overflow-auto p-8">
+    <div className="flex flex-1 flex-col overflow-auto p-4 sm:p-8">
       <h1 className="mb-8 flex items-center gap-2 text-2xl font-bold">
         {!isDesktop && (
           <Button variant="ghost" size="icon" onClick={openSidebar} className="-ml-2">
@@ -911,7 +912,9 @@ export default function SettingsPage() {
 
               {/* Plan toggle */}
               <div>
-                <div className="flex gap-2">
+                {/* Stacked on phones: a narrow yearly button would let the discount
+                    badge cover its label. */}
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
                     variant={selectedPlan === "monthly" ? "default" : "outline"}
                     onClick={() => setSelectedPlan("monthly")}
@@ -939,7 +942,7 @@ export default function SettingsPage() {
               </div>
 
               {/* Payment buttons */}
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Button
                   className="flex-1 gap-2"
                   onClick={handlePayByCard}
@@ -1027,7 +1030,7 @@ export default function SettingsPage() {
         <div className="rounded-lg border p-5">
           <div>
             <h2 className="mb-3 text-sm font-semibold">{t("settings.appearance")}</h2>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant={theme === "light" ? "default" : "outline"}
                 onClick={() => setTheme("light")}
@@ -1060,7 +1063,7 @@ export default function SettingsPage() {
           <div>
             <h2 className="mb-3 text-sm font-semibold">{t("settings.taskCount")}</h2>
             <p className="text-muted-foreground mb-3 text-xs">{t("settings.taskCountDesc")}</p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant={taskCountMode === "all" ? "default" : "outline"}
                 onClick={() => setTaskCountMode("all")}
@@ -1168,7 +1171,7 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              <div className="rounded-md border">
+              <div className="overflow-x-auto rounded-md border">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
@@ -1322,12 +1325,12 @@ export default function SettingsPage() {
         {/* Calendar */}
         <div className="rounded-lg border p-5 md:col-span-2">
           <h2 className="mb-3 text-sm font-semibold">{t("calendar.title")}</h2>
-          <div className="mb-4 flex items-center justify-between gap-4">
+          <div className={cn("mb-4", ROW_CLASS)}>
             <p className="text-sm font-medium">{t("calendar.syncScopeLabel")}</p>
             <select
               value={syncScope}
               onChange={(e) => handleSyncScopeChange(e.target.value)}
-              className="border-input bg-background ring-offset-background focus:ring-ring flex h-8 rounded-md border px-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+              className={SELECT_CLASS}
             >
               <option value="time">{t("calendar.syncScopeTime")}</option>
               <option value="time-and-range">{t("calendar.syncScopeTimeAndRange")}</option>
@@ -1342,7 +1345,7 @@ export default function SettingsPage() {
                 type="text"
                 readOnly
                 value={calendarTokenLoading ? t("calendar.generating") : caldavUrl}
-                className="bg-muted flex-1 rounded-md border px-3 py-2 text-sm"
+                className="bg-muted min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"
               />
               <Button variant="outline" size="icon" onClick={handleCopy} disabled={!calendarToken}>
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -1357,7 +1360,7 @@ export default function SettingsPage() {
                 type="text"
                 readOnly
                 value={calendarTokenLoading ? t("calendar.generating") : icsFeedUrl}
-                className="bg-muted flex-1 rounded-md border px-3 py-2 text-sm"
+                className="bg-muted min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"
               />
               <Button
                 variant="outline"
@@ -1377,7 +1380,7 @@ export default function SettingsPage() {
           </div>
 
           {/* CalDAV target list */}
-          <div className="flex items-center justify-between gap-4">
+          <div className={cn("mt-4", ROW_CLASS)}>
             <p className="text-sm font-medium">{t("calendar.calendarTargetList")}</p>
             <select
               value={caldavTargetListId ?? ""}
@@ -1389,7 +1392,7 @@ export default function SettingsPage() {
                 });
                 await updateCaldavTargetList({ variables: { listId } });
               }}
-              className="border-input bg-background ring-offset-background focus:ring-ring flex h-8 rounded-md border px-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+              className={SELECT_CLASS}
             >
               <option value="">{t("calendar.calendarTargetListPlaceholder")}</option>
               {userLists.map((list) => (
@@ -1434,7 +1437,7 @@ export default function SettingsPage() {
               </Button>
             ) : (
               <>
-                <div className="flex items-center justify-between gap-4">
+                <div className={ROW_CLASS}>
                   <p className="text-sm font-medium">{t("calendar.googleCalendarDirection")}</p>
                   <select
                     value={gcalDirection}
@@ -1446,14 +1449,14 @@ export default function SettingsPage() {
                       });
                       await updateGcalDirection({ variables: { direction } });
                     }}
-                    className="border-input bg-background ring-offset-background focus:ring-ring flex h-8 rounded-md border px-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                    className={SELECT_CLASS}
                   >
                     <option value="both">{t("calendar.googleCalendarDirectionBoth")}</option>
                     <option value="push">{t("calendar.googleCalendarDirectionPush")}</option>
                     <option value="pull">{t("calendar.googleCalendarDirectionPull")}</option>
                   </select>
                 </div>
-                <div className="flex items-center justify-between gap-4">
+                <div className={ROW_CLASS}>
                   <p className="text-sm font-medium">{t("calendar.googleCalendarTargetList")}</p>
                   <select
                     value={gcalTargetListId ?? ""}
@@ -1465,7 +1468,7 @@ export default function SettingsPage() {
                       });
                       await updateGcalTargetList({ variables: { listId } });
                     }}
-                    className="border-input bg-background ring-offset-background focus:ring-ring flex h-8 rounded-md border px-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                    className={SELECT_CLASS}
                   >
                     <option value="">{t("calendar.calendarTargetListPlaceholder")}</option>
                     {userLists.map((list) => (

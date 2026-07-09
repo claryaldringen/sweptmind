@@ -87,8 +87,8 @@ export function ApiTokensSection() {
 
   return (
     <section className="rounded-lg border p-5">
-      <div className="mb-4 flex items-center gap-2">
-        <Key className="h-4 w-4" />
+      <div className="mb-4 flex items-start gap-2">
+        <Key className="mt-0.5 h-4 w-4 shrink-0" />
         <div>
           <h2 className="text-sm font-semibold">API Tokeny</h2>
           <p className="text-muted-foreground text-xs">
@@ -136,10 +136,12 @@ export function ApiTokensSection() {
           }) => (
             <div
               key={token.id}
-              className="flex items-center justify-between rounded-md border p-3"
+              className="flex items-center justify-between gap-2 rounded-md border p-3"
             >
-              <div>
-                <p className="font-medium">{token.name}</p>
+              <div className="min-w-0">
+                <p className="truncate font-medium" title={token.name}>
+                  {token.name}
+                </p>
                 <p className="text-muted-foreground text-xs">
                   Vytvořen:{" "}
                   {new Date(token.createdAt).toLocaleDateString("cs")}
@@ -149,7 +151,7 @@ export function ApiTokensSection() {
               </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="shrink-0">
                     <Trash2 className="text-destructive h-4 w-4" />
                   </Button>
                 </AlertDialogTrigger>
