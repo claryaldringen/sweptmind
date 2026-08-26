@@ -1232,6 +1232,7 @@ export function TaskDetailPanel() {
               optimisticUpdate({ forceCalendarSync: !task.forceCalendarSync })
             }
             t={t}
+            locale={appLocale}
             dateFnsLocale={dateFnsLocale}
           />
 

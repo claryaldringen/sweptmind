@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { ResponsivePicker } from "@/components/ui/responsive-picker";
 import { DatePickerContent } from "@/components/tasks/date-picker-content";
 import { cn } from "@/lib/utils";
-import { format, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
 import type { Locale as DateFnsLocale } from "date-fns";
+import { formatDueDate, formatTaskDate } from "@/lib/format-task-date";
+import type { Locale } from "@/lib/i18n/types";
 
 interface TaskDatesProps {
   dueDate: string | null;
@@ -26,6 +28,7 @@ interface TaskDatesProps {
   matchesSyncScope?: boolean;
   onToggleForceCalendarSync?: () => void;
   t: (key: string, params?: Record<string, string | number>) => string;
+  locale: Locale;
   dateFnsLocale: DateFnsLocale;
 }
 
@@ -46,17 +49,14 @@ export function TaskDates({
   matchesSyncScope,
   onToggleForceCalendarSync,
   t,
+  locale,
   dateFnsLocale,
 }: TaskDatesProps) {
   const [dueDateOpen, setDueDateOpen] = useState(false);
   const [reminderOpen, setReminderOpen] = useState(false);
 
   const dueDateLabel = dueDate
-    ? dueDateEnd
-      ? `${format(parseISO(dueDate), dueDate.includes("T") ? "MMM d, yyyy h:mm a" : "MMM d, yyyy", { locale: dateFnsLocale })} – ${format(parseISO(dueDateEnd), dueDateEnd.includes("T") ? "MMM d, yyyy h:mm a" : "MMM d, yyyy", { locale: dateFnsLocale })}`
-      : format(parseISO(dueDate), dueDate.includes("T") ? "MMM d, yyyy h:mm a" : "MMM d, yyyy", {
-          locale: dateFnsLocale,
-        })
+    ? formatDueDate(dueDate, dueDateEnd, { locale, dateFnsLocale, withYear: true })
     : null;
 
   return (
@@ -110,9 +110,7 @@ export function TaskDates({
             <Bell className="h-4 w-4" />
             {reminderAt
               ? t("tasks.reminder", {
-                  date: format(parseISO(reminderAt), "MMM d, yyyy", {
-                    locale: dateFnsLocale,
-                  }),
+                  date: formatTaskDate(reminderAt, { locale, dateFnsLocale, withYear: true }),
                 })
               : t("tasks.addReminder")}
           </Button>

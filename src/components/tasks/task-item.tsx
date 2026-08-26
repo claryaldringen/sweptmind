@@ -65,6 +65,7 @@ import { cs } from "date-fns/locale/cs";
 import { enUS } from "date-fns/locale/en-US";
 import { useTranslations } from "@/lib/i18n";
 import { formatRecurrenceLabel } from "@/domain/services/recurrence";
+import { formatDueDate, formatTaskDate } from "@/lib/format-task-date";
 import { useNearby } from "@/components/providers/nearby-provider";
 import { useDeviceContext } from "@/hooks/use-device-context";
 import { useToday } from "@/hooks/use-today";
@@ -313,7 +314,6 @@ export const TaskItem = memo(function TaskItem({
     completedSteps,
     totalSteps,
     hasTags,
-    dueDateParsed,
     isDueToday,
     isOverdue,
     hasReminder,
@@ -372,7 +372,6 @@ export const TaskItem = memo(function TaskItem({
       completedSteps,
       totalSteps,
       hasTags,
-      dueDateParsed,
       isDueToday,
       isOverdue,
       hasReminder,
@@ -559,15 +558,11 @@ export const TaskItem = memo(function TaskItem({
                       title={t("tasks.iconDueDate")}
                     >
                       <CalendarDays className="h-3 w-3" />
-                      {isDueToday
-                        ? t("tasks.today")
-                        : task.dueDateEnd
-                          ? `${format(dueDateParsed!, task.dueDate.includes("T") ? "MMM d, h:mm a" : "MMM d", { locale: dateFnsLocale })} – ${format(parseISO(task.dueDateEnd), task.dueDateEnd.includes("T") ? "MMM d, h:mm a" : "MMM d", { locale: dateFnsLocale })}`
-                          : format(
-                              dueDateParsed!,
-                              task.dueDate.includes("T") ? "MMM d, h:mm a" : "MMM d",
-                              { locale: dateFnsLocale },
-                            )}
+                      {formatDueDate(task.dueDate, task.dueDateEnd ?? null, {
+                        locale: appLocale,
+                        dateFnsLocale,
+                        dayLabel: isDueToday ? t("tasks.today") : undefined,
+                      })}
                     </span>
                   )}
                   {task.dueDate && (hasReminder || totalSteps > 0) && (
@@ -582,11 +577,11 @@ export const TaskItem = memo(function TaskItem({
                       title={t("tasks.iconReminder")}
                     >
                       <Bell className="h-3 w-3" />
-                      {isReminderToday
-                        ? t("tasks.today")
-                        : format(parseISO(task.reminderAt!), "MMM d", {
-                            locale: dateFnsLocale,
-                          })}
+                      {formatTaskDate(task.reminderAt!, {
+                        locale: appLocale,
+                        dateFnsLocale,
+                        dayLabel: isReminderToday ? t("tasks.today") : undefined,
+                      })}
                     </span>
                   )}
                   {hasReminder && (hasRecurrence || totalSteps > 0) && (
