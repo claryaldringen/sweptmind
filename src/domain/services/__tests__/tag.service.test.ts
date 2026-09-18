@@ -14,6 +14,7 @@ function makeTag(overrides: Partial<Tag> = {}): Tag {
     deviceContext: null,
     locationId: null,
     locationRadius: null,
+    lastUsedAt: null,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     ...overrides,

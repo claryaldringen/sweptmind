@@ -19,6 +19,9 @@ export const tags = pgTable(
       onDelete: "set null",
     }),
     locationRadius: doublePrecision("location_radius"), // km, null = use location default
+    // Poslední přiřazení štítku k úkolu – řídí pořadí v nabídce štítků.
+    // Null u štítků, které od zavedení sloupce nikdo nepoužil; řazení pak padá na createdAt.
+    lastUsedAt: timestamp("last_used_at", { mode: "date" }),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()

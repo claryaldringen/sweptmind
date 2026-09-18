@@ -37,12 +37,16 @@ const MARK_TASKS_ACTIONABLE = gql`
   }
 `;
 
+/** createTag vrací i lastUsedAt, aby entita v cache nebyla nekompletní. */
+type CreatedTag = TaskTag & { lastUsedAt: string | null };
+
 const CREATE_TAG = gql`
   mutation CreateTag($input: CreateTagInput!) {
     createTag(input: $input) {
       id
       name
       color
+      lastUsedAt
     }
   }
 `;
@@ -131,7 +135,7 @@ export function useApplyDecomposition({
   const router = useRouter();
   const apolloClient = useApolloClient();
 
-  const [createTag] = useMutation<{ createTag: TaskTag }>(CREATE_TAG, {
+  const [createTag] = useMutation<{ createTag: CreatedTag }>(CREATE_TAG, {
     update(cache, { data }) {
       if (!data?.createTag) return;
       cache.modify({
@@ -150,6 +154,7 @@ export function useApplyDecomposition({
                   id
                   name
                   color
+                  lastUsedAt
                   taskCount
                   deviceContext
                   locationId

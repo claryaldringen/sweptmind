@@ -69,6 +69,11 @@ export class DrizzleTagRepository implements ITagRepository {
 
   async addToTask(taskId: string, tagId: string): Promise<void> {
     await this.db.insert(schema.taskTags).values({ taskId, tagId }).onConflictDoNothing();
+    // Přiřazení k úkolu je "použití" štítku – posune ho v nabídce nahoru.
+    await this.db
+      .update(schema.tags)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(schema.tags.id, tagId));
   }
 
   async removeFromTask(taskId: string, tagId: string): Promise<void> {

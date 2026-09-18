@@ -22,6 +22,10 @@ export const TagType = TagRef.implement({
     createdAt: t.string({
       resolve: (tag) => tag.createdAt.toISOString(),
     }),
+    lastUsedAt: t.string({
+      nullable: true,
+      resolve: (tag) => tag.lastUsedAt?.toISOString() ?? null,
+    }),
     taskCount: t.int({
       resolve: async (tag, _args, ctx) => {
         return ctx.loaders.taskCountByTagId.load(tag.id);

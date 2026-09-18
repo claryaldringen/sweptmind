@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { X, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,17 +15,24 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { getTagColorClasses } from "@/lib/tag-colors";
+import { sortTagsByLastUsed } from "@/lib/sort-tags";
+import type { Locale } from "@/lib/i18n/types";
 import type { TaskTag as TaskTagType } from "./types";
+
+/** Štítek v nabídce – navíc nese čas posledního použití, který určuje pořadí. */
+type SelectableTag = TaskTagType & { lastUsedAt?: string | null };
 
 interface TaskTagsProps {
   taskTags: TaskTagType[];
-  allTags: TaskTagType[];
+  allTags: SelectableTag[];
   onAddTag: (tagId: string) => Promise<void>;
   onRemoveTag: (tagId: string) => Promise<void>;
   onCreateAndAddTag: (name: string) => Promise<void>;
   addTagLabel: string;
   searchOrCreateTagLabel: string;
   createTagLabel: (name: string) => string;
+  /** Jazyk aplikace – řídí abecední řazení nepoužitých štítků. */
+  locale: Locale;
 }
 
 export function TaskTags({
@@ -37,9 +44,20 @@ export function TaskTags({
   addTagLabel,
   searchOrCreateTagLabel,
   createTagLabel,
+  locale,
 }: TaskTagsProps) {
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
   const [newTagName, setNewTagName] = useState("");
+
+  // Naposledy použité štítky nabízíme jako první.
+  const offeredTags = useMemo(
+    () =>
+      sortTagsByLastUsed(
+        allTags.filter((tg) => !taskTags.some((tt) => tt.id === tg.id)),
+        locale,
+      ),
+    [allTags, taskTags, locale],
+  );
 
   function handleAddTag(tagId: string) {
     setTagPopoverOpen(false);
@@ -121,17 +139,15 @@ export function TaskTags({
                 )}
               </CommandEmpty>
               <CommandGroup>
-                {allTags
-                  .filter((tg) => !taskTags.some((tt) => tt.id === tg.id))
-                  .map((tag) => {
-                    const colors = getTagColorClasses(tag.color);
-                    return (
-                      <CommandItem key={tag.id} onSelect={() => handleAddTag(tag.id)}>
-                        <span className={cn("h-3 w-3 rounded-full", colors.bg)} />
-                        {tag.name}
-                      </CommandItem>
-                    );
-                  })}
+                {offeredTags.map((tag) => {
+                  const colors = getTagColorClasses(tag.color);
+                  return (
+                    <CommandItem key={tag.id} onSelect={() => handleAddTag(tag.id)}>
+                      <span className={cn("h-3 w-3 rounded-full", colors.bg)} />
+                      {tag.name}
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             </CommandList>
           </Command>

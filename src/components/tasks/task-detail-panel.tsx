@@ -155,12 +155,16 @@ const REORDER_STEPS = gql`
 
 // Tags and locations come from useAppData()
 
+/** createTag vrací i lastUsedAt, aby entita v cache nebyla nekompletní. */
+type CreatedTag = TaskTag & { lastUsedAt: string | null };
+
 const CREATE_TAG = gql`
   mutation CreateTag($input: CreateTagInput!) {
     createTag(input: $input) {
       id
       name
       color
+      lastUsedAt
     }
   }
 `;
@@ -496,7 +500,7 @@ export function TaskDetailPanel() {
   });
   const [reorderSteps] = useMutation(REORDER_STEPS);
 
-  const [createTag] = useMutation<{ createTag: TaskTag }>(CREATE_TAG, {
+  const [createTag] = useMutation<{ createTag: CreatedTag }>(CREATE_TAG, {
     update(cache, { data }) {
       if (!data?.createTag) return;
       cache.modify({
@@ -515,6 +519,7 @@ export function TaskDetailPanel() {
                   id
                   name
                   color
+                  lastUsedAt
                   taskCount
                   deviceContext
                   locationId
@@ -570,6 +575,19 @@ export function TaskDetailPanel() {
             return [...existing, newRef];
           },
         },
+      });
+      // Nabídka štítků se řadí podle posledního použití a čte ho z cache,
+      // takže právě použitý štítek označíme rovnou – bez čekání na refetch.
+      // writeFragment (ne modify) proto, že modify umí přepsat jen pole,
+      // které v cache už existuje – u čerstvě vytvořeného štítku by mlčel.
+      cache.writeFragment({
+        id: cache.identify({ __typename: "Tag", id: tagId }),
+        fragment: gql`
+          fragment TagUsage on Tag {
+            lastUsedAt
+          }
+        `,
+        data: { __typename: "Tag", id: tagId, lastUsedAt: new Date().toISOString() },
       });
     },
   });
@@ -1284,6 +1302,7 @@ export function TaskDetailPanel() {
             addTagLabel={t("tasks.addTag")}
             searchOrCreateTagLabel={t("tasks.searchOrCreateTag")}
             createTagLabel={(name) => t("tasks.createTag", { name })}
+            locale={appLocale}
           />
 
           {/* Location */}

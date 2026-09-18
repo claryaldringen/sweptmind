@@ -154,6 +154,7 @@ export const GET_APP_DATA = gql`
       name
       color
       taskCount
+      lastUsedAt
       deviceContext
       locationId
       locationRadius
@@ -292,6 +293,8 @@ export interface TagItem {
   name: string;
   color: string;
   taskCount: number;
+  /** ISO čas posledního přiřazení k úkolu; null = štítek se ještě nepoužil. */
+  lastUsedAt: string | null;
   deviceContext: string | null;
   locationId: string | null;
   locationRadius: number | null;
