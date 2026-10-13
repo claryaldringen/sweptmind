@@ -117,7 +117,7 @@ export class TaskSharingService {
     }
   }
 
-  async evaluateCompletionRule(taskId: string, userId: string): Promise<void> {
+  async evaluateCompletionRule(taskId: string, _userId: string): Promise<void> {
     // Determine if this task is a source or target of a share
     const shareAsTarget = await this.sharedTaskRepo.findByTargetTask(taskId);
 

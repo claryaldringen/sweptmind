@@ -210,7 +210,7 @@ describe("StepService", () => {
 
   describe("reorder", () => {
     it("aktualizuje sortOrder pro každou položku", async () => {
-      vi.mocked(taskRepo.findById).mockResolvedValue({ id: "task-1", userId: "user-1" } as any);
+      vi.mocked(taskRepo.findById).mockResolvedValue(makeTask({ id: "task-1", userId: "user-1" }));
 
       await service.reorder("user-1", "task-1", [
         { id: "step-a", sortOrder: 1 },

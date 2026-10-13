@@ -62,10 +62,10 @@ export async function startMcpServer(): Promise<void> {
         }
 
         if (!completed && data && typeof data === "object") {
-          const d = data as Record<string, unknown[]>;
+          const d = data as Record<string, { isCompleted?: boolean }[]>;
           const key = Object.keys(d)[0];
           if (Array.isArray(d[key])) {
-            d[key] = d[key].filter((t: any) => !t.isCompleted);
+            d[key] = d[key].filter((t) => !t.isCompleted);
           }
         }
 

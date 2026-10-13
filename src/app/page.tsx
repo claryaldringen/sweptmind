@@ -17,7 +17,6 @@ import {
   Tag,
   Layers,
   ArrowRight,
-  Terminal,
   Bot,
 } from "lucide-react";
 import { cs } from "@/lib/i18n/dictionaries/cs";

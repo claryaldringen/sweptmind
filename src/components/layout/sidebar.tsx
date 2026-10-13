@@ -667,7 +667,7 @@ export function Sidebar() {
   useEffect(() => {
     if (isSearchPage) {
       const urlQ = new URLSearchParams(window.location.search).get("q") ?? "";
-      setSearchQuery(urlQ);
+      setSearchQuery(urlQ); // eslint-disable-line react-hooks/set-state-in-effect -- sync z URL (externí stav)
     } else {
       setSearchQuery("");
     }

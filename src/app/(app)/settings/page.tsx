@@ -975,6 +975,7 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                   <div className="flex justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- data URL, next/image ho neoptimalizuje */}
                     <img
                       src={qrDataUrl}
                       alt="QR code for bank transfer"

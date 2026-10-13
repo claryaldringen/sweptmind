@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { setConfig, getApiUrl } from "../lib/config.js";
+import { setConfig } from "../lib/config.js";
 import { startOAuthFlow } from "../lib/auth.js";
 import { gql } from "../lib/client.js";
 import {

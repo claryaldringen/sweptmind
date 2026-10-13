@@ -117,8 +117,8 @@ interface ConnectionEntry {
 
 function UserAvatar({ user }: { user: ShareUser }) {
   if (user.image) {
-    // eslint-disable-next-line @next/next/no-img-element
     return (
+      // eslint-disable-next-line @next/next/no-img-element -- externí avatar z OAuth
       <img src={user.image} alt={user.name ?? ""} className="h-7 w-7 rounded-full object-cover" />
     );
   }

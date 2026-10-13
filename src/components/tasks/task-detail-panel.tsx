@@ -864,7 +864,7 @@ export function TaskDetailPanel() {
           id: cache.identify({ __typename: "Task", id: task.id }),
           fields: {
             steps(existing = [], { readField }) {
-              return [...existing].sort((a: any, b: any) => {
+              return [...existing].sort((a: { __ref: string }, b: { __ref: string }) => {
                 const aOrder = readField("sortOrder", a) as number;
                 const bOrder = readField("sortOrder", b) as number;
                 return aOrder - bOrder;
