@@ -40,7 +40,9 @@ export async function gql<T>(
 ): Promise<T> {
   const c = getClient();
   try {
-    return await c.request<T>(query, variables, {
+    return await c.request<T>({
+      document: query,
+      variables,
       signal: AbortSignal.timeout(10_000),
     });
   } catch (err: unknown) {
