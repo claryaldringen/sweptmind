@@ -69,9 +69,6 @@ export class DrizzleStepRepository implements IStepRepository {
   }
 
   async updateSortOrder(id: string, sortOrder: number): Promise<void> {
-    await this.db
-      .update(schema.steps)
-      .set({ sortOrder })
-      .where(eq(schema.steps.id, id));
+    await this.db.update(schema.steps).set({ sortOrder }).where(eq(schema.steps.id, id));
   }
 }

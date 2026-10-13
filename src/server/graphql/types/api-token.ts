@@ -48,10 +48,7 @@ builder.mutationField("createApiToken", (t) =>
       name: t.arg.string({ required: true }),
     },
     resolve: async (_root, { name }, ctx) => {
-      const { rawToken, token } = await ctx.services.apiToken.createToken(
-        ctx.userId!,
-        name,
-      );
+      const { rawToken, token } = await ctx.services.apiToken.createToken(ctx.userId!, name);
       return { rawToken, id: token.id, name: token.name };
     },
   }),

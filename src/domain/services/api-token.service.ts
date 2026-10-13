@@ -5,10 +5,7 @@ import type { ApiToken } from "../entities/api-token";
 export class ApiTokenService {
   constructor(private readonly repo: IApiTokenRepository) {}
 
-  async createToken(
-    userId: string,
-    name: string,
-  ): Promise<{ rawToken: string; token: ApiToken }> {
+  async createToken(userId: string, name: string): Promise<{ rawToken: string; token: ApiToken }> {
     const rawToken = `sm_${randomBytes(32).toString("hex")}`;
     const tokenHash = await this.hashToken(rawToken);
     const token = await this.repo.create({ userId, tokenHash, name });

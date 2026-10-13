@@ -245,10 +245,7 @@ export function TaskSteps({
   const [orderedIds, setOrderedIds] = useState(() => steps.map((s) => s.id));
 
   // Keep orderedIds in sync with props
-  if (
-    orderedIds.length !== stepIds.length ||
-    orderedIds.some((id, i) => id !== stepIds[i])
-  ) {
+  if (orderedIds.length !== stepIds.length || orderedIds.some((id, i) => id !== stepIds[i])) {
     setOrderedIds(stepIds);
   }
 

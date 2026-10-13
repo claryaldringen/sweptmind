@@ -344,7 +344,9 @@ export function TaskDetailPanel() {
   } = useAppData();
   const { isPremium, aiEnabled } = useIsPremium();
   const { data: syncAllData } = useQuery<{ calendarSyncAll: boolean }>(CALENDAR_SYNC_ALL);
-  const { data: syncDateRangeData } = useQuery<{ calendarSyncDateRange: boolean }>(CALENDAR_SYNC_DATE_RANGE);
+  const { data: syncDateRangeData } = useQuery<{ calendarSyncDateRange: boolean }>(
+    CALENDAR_SYNC_DATE_RANGE,
+  );
   const task = taskId
     ? ((allTasks.find((t) => t.id === taskId) as TaskDetail | undefined) ?? null)
     : null;
@@ -374,9 +376,10 @@ export function TaskDetailPanel() {
 
   const calendarSyncAll = syncAllData?.calendarSyncAll ?? false;
   const calendarSyncDateRange = syncDateRangeData?.calendarSyncDateRange ?? false;
-  const matchesSyncScope = calendarSyncAll
-    || (task?.dueDate?.includes("T") ?? false)
-    || (calendarSyncDateRange && task?.dueDateEnd != null);
+  const matchesSyncScope =
+    calendarSyncAll ||
+    (task?.dueDate?.includes("T") ?? false) ||
+    (calendarSyncDateRange && task?.dueDateEnd != null);
 
   // ---- Mutations ----
 
@@ -430,7 +433,9 @@ export function TaskDetailPanel() {
       apolloClient.cache.gc();
     },
   });
-  const [cloneTask] = useMutation<{ cloneTask: GetAppDataResult["activeTasks"][number] }>(CLONE_TASK);
+  const [cloneTask] = useMutation<{ cloneTask: GetAppDataResult["activeTasks"][number] }>(
+    CLONE_TASK,
+  );
   const [createStep] = useMutation<CreateStepData>(CREATE_STEP, {
     optimisticResponse: ({ input }) => ({
       createStep: {
@@ -795,10 +800,15 @@ export function TaskDetailPanel() {
         data: {
           ...existing,
           activeTasks: [optimisticTask, ...existing.activeTasks],
-          lists: existing.lists.map((list: { id: string; taskCount: number; visibleTaskCount: number }) =>
-            list.id === task.listId
-              ? { ...list, taskCount: list.taskCount + 1, visibleTaskCount: list.visibleTaskCount + 1 }
-              : list,
+          lists: existing.lists.map(
+            (list: { id: string; taskCount: number; visibleTaskCount: number }) =>
+              list.id === task.listId
+                ? {
+                    ...list,
+                    taskCount: list.taskCount + 1,
+                    visibleTaskCount: list.visibleTaskCount + 1,
+                  }
+                : list,
           ),
         },
       });
@@ -1368,11 +1378,7 @@ export function TaskDetailPanel() {
         )}
 
         {/* Clone */}
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-2"
-          onClick={handleClone}
-        >
+        <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleClone}>
           <Copy className="h-4 w-4" />
           {t("tasks.cloneTask")}
         </Button>

@@ -30,10 +30,7 @@ export class DrizzleApiTokenRepository implements IApiTokenRepository {
   }
 
   async updateLastUsed(id: string): Promise<void> {
-    await this.db
-      .update(apiTokens)
-      .set({ lastUsedAt: new Date() })
-      .where(eq(apiTokens.id, id));
+    await this.db.update(apiTokens).set({ lastUsedAt: new Date() }).where(eq(apiTokens.id, id));
   }
 
   async delete(id: string): Promise<void> {

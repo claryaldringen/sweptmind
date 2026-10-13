@@ -13,10 +13,7 @@ export async function POST(request: NextRequest) {
   const name = body.name || "CLI";
   const callbackUrl = body.callbackUrl;
 
-  const { rawToken, token } = await services.apiToken.createToken(
-    session.user.id,
-    name,
-  );
+  const { rawToken, token } = await services.apiToken.createToken(session.user.id, name);
 
   if (callbackUrl) {
     const url = new URL(callbackUrl);

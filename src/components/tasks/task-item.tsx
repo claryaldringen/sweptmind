@@ -70,7 +70,11 @@ import { useNearby } from "@/components/providers/nearby-provider";
 import { useDeviceContext } from "@/hooks/use-device-context";
 import { useToday } from "@/hooks/use-today";
 import { useTaskSelectionOptional } from "@/components/providers/task-selection-provider";
-import { useAppData, GET_APP_DATA, type GetAppDataResult } from "@/components/providers/app-data-provider";
+import {
+  useAppData,
+  GET_APP_DATA,
+  type GetAppDataResult,
+} from "@/components/providers/app-data-provider";
 import {
   TOGGLE_TASK_COMPLETED as TOGGLE_COMPLETED,
   DELETE_TASK,
@@ -502,7 +506,7 @@ export const TaskItem = memo(function TaskItem({
                 ) : (
                   <span
                     className={cn(
-                      "break-words text-sm",
+                      "text-sm break-words",
                       visuallyCompleted && "text-muted-foreground line-through",
                     )}
                   >
@@ -588,7 +592,10 @@ export const TaskItem = memo(function TaskItem({
                     <span className="text-muted-foreground">·</span>
                   )}
                   {hasRecurrence && (
-                    <span className="text-muted-foreground flex items-center gap-0.5" title={t("tasks.iconRecurrence")}>
+                    <span
+                      className="text-muted-foreground flex items-center gap-0.5"
+                      title={t("tasks.iconRecurrence")}
+                    >
                       <Repeat className="h-3 w-3" />
                       {formatRecurrenceLabel(task.recurrence ?? null, {
                         everyDay: t("recurrence.everyDay"),
@@ -667,7 +674,10 @@ export const TaskItem = memo(function TaskItem({
                       <span className="text-muted-foreground">·</span>
                     )}
                   {hasAttachments && (
-                    <span className="text-muted-foreground flex items-center gap-0.5" title={t("tasks.iconAttachments")}>
+                    <span
+                      className="text-muted-foreground flex items-center gap-0.5"
+                      title={t("tasks.iconAttachments")}
+                    >
                       <Paperclip className="h-3 w-3" />
                     </span>
                   )}
@@ -682,7 +692,14 @@ export const TaskItem = memo(function TaskItem({
                       <span className="text-muted-foreground">·</span>
                     )}
                   {deviceMatch && (
-                    <span className="flex items-center gap-0.5 text-yellow-500" title={taskList?.deviceContext === "phone" ? t("tasks.iconDevicePhone") : t("tasks.iconDeviceDesktop")}>
+                    <span
+                      className="flex items-center gap-0.5 text-yellow-500"
+                      title={
+                        taskList?.deviceContext === "phone"
+                          ? t("tasks.iconDevicePhone")
+                          : t("tasks.iconDeviceDesktop")
+                      }
+                    >
                       {taskList?.deviceContext === "phone" ? (
                         <Smartphone className="h-3 w-3 animate-pulse" />
                       ) : (
@@ -702,7 +719,10 @@ export const TaskItem = memo(function TaskItem({
                       <span className="text-muted-foreground">·</span>
                     )}
                   {isBlocked && (
-                    <span className="text-muted-foreground flex items-center gap-0.5" title={t("tasks.iconBlocked")}>
+                    <span
+                      className="text-muted-foreground flex items-center gap-0.5"
+                      title={t("tasks.iconBlocked")}
+                    >
                       <Lock className="h-3 w-3" />
                     </span>
                   )}
@@ -719,13 +739,19 @@ export const TaskItem = memo(function TaskItem({
                       <span className="text-muted-foreground">·</span>
                     )}
                   {dependentCount > 0 && (
-                    <span className="text-muted-foreground flex items-center gap-0.5" title={t("tasks.iconDependents")}>
+                    <span
+                      className="text-muted-foreground flex items-center gap-0.5"
+                      title={t("tasks.iconDependents")}
+                    >
                       <Link2 className="h-3 w-3" />
                       {dependentCount}
                     </span>
                   )}
                   {isConflicting && (
-                    <span className="flex items-center gap-0.5 text-red-600" title={t("tasks.iconConflict")}>
+                    <span
+                      className="flex items-center gap-0.5 text-red-600"
+                      title={t("tasks.iconConflict")}
+                    >
                       <AlertTriangle className="h-3 w-3" />
                     </span>
                   )}
@@ -911,7 +937,9 @@ export const TaskItem = memo(function TaskItem({
                 onClick={() => {
                   // Optimistic removal via writeQuery
                   const bulkSet = new Set(bulkIds);
-                  const existing = client.cache.readQuery<GetAppDataResult>({ query: GET_APP_DATA });
+                  const existing = client.cache.readQuery<GetAppDataResult>({
+                    query: GET_APP_DATA,
+                  });
                   if (existing) {
                     const removed = existing.activeTasks.filter((t) => bulkSet.has(t.id));
                     const countByList = new Map<string, number>();
@@ -926,7 +954,11 @@ export const TaskItem = memo(function TaskItem({
                         lists: existing.lists.map((l) => {
                           const n = countByList.get(l.id) ?? 0;
                           return n > 0
-                            ? { ...l, taskCount: Math.max(0, l.taskCount - n), visibleTaskCount: Math.max(0, l.visibleTaskCount - n) }
+                            ? {
+                                ...l,
+                                taskCount: Math.max(0, l.taskCount - n),
+                                visibleTaskCount: Math.max(0, l.visibleTaskCount - n),
+                              }
                             : l;
                         }),
                       },
@@ -1026,7 +1058,11 @@ export const TaskItem = memo(function TaskItem({
                       activeTasks: existing.activeTasks.filter((t) => t.id !== task.id),
                       lists: existing.lists.map((l) =>
                         l.id === task.list?.id
-                          ? { ...l, taskCount: Math.max(0, l.taskCount - 1), visibleTaskCount: Math.max(0, l.visibleTaskCount - 1) }
+                          ? {
+                              ...l,
+                              taskCount: Math.max(0, l.taskCount - 1),
+                              visibleTaskCount: Math.max(0, l.visibleTaskCount - 1),
+                            }
                           : l,
                       ),
                     },

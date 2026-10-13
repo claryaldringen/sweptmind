@@ -114,13 +114,9 @@ export function ApiTokensSection() {
       {/* Show newly created token */}
       {newToken && (
         <div className="bg-muted mb-4 flex items-center gap-2 rounded-md p-3">
-          <code className="flex-1 break-all text-sm">{newToken}</code>
+          <code className="flex-1 text-sm break-all">{newToken}</code>
           <Button variant="ghost" size="sm" onClick={handleCopy}>
-            {copied ? (
-              <Check className="h-4 w-4" />
-            ) : (
-              <Copy className="h-4 w-4" />
-            )}
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           </Button>
         </div>
       )}
@@ -128,12 +124,7 @@ export function ApiTokensSection() {
       {/* Token list */}
       <div className="space-y-2">
         {tokens.map(
-          (token: {
-            id: string;
-            name: string;
-            lastUsedAt: string | null;
-            createdAt: string;
-          }) => (
+          (token: { id: string; name: string; lastUsedAt: string | null; createdAt: string }) => (
             <div
               key={token.id}
               className="flex items-center justify-between gap-2 rounded-md border p-3"
@@ -143,8 +134,7 @@ export function ApiTokensSection() {
                   {token.name}
                 </p>
                 <p className="text-muted-foreground text-xs">
-                  Vytvořen:{" "}
-                  {new Date(token.createdAt).toLocaleDateString("cs")}
+                  Vytvořen: {new Date(token.createdAt).toLocaleDateString("cs")}
                   {token.lastUsedAt &&
                     ` · Naposledy použit: ${new Date(token.lastUsedAt).toLocaleDateString("cs")}`}
                 </p>
@@ -159,15 +149,13 @@ export function ApiTokensSection() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Odvolat token?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Token &quot;{token.name}&quot; bude trvale smazán.
-                      Všechna zařízení používající tento token se odpojí.
+                      Token &quot;{token.name}&quot; bude trvale smazán. Všechna zařízení
+                      používající tento token se odpojí.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Zrušit</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => handleRevoke(token.id)}
-                    >
+                    <AlertDialogAction onClick={() => handleRevoke(token.id)}>
                       Odvolat
                     </AlertDialogAction>
                   </AlertDialogFooter>

@@ -22,14 +22,7 @@ function notify() {
 function scheduleMidnight() {
   if (midnightTimer) clearTimeout(midnightTimer);
   const now = new Date();
-  const nextMidnight = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() + 1,
-    0,
-    0,
-    1,
-  );
+  const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
   const delay = Math.max(1000, nextMidnight.getTime() - now.getTime());
   midnightTimer = setTimeout(() => {
     notify();

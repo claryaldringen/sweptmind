@@ -1111,8 +1111,22 @@ describe("TaskService", () => {
         updatedAt: new Date(),
       }));
       vi.mocked(stepRepo.findByTask).mockResolvedValue([
-        { id: "s1", taskId: "t1", title: "Step A", isCompleted: true, sortOrder: 0, createdAt: new Date() },
-        { id: "s2", taskId: "t1", title: "Step B", isCompleted: false, sortOrder: 1, createdAt: new Date() },
+        {
+          id: "s1",
+          taskId: "t1",
+          title: "Step A",
+          isCompleted: true,
+          sortOrder: 0,
+          createdAt: new Date(),
+        },
+        {
+          id: "s2",
+          taskId: "t1",
+          title: "Step B",
+          isCompleted: false,
+          sortOrder: 1,
+          createdAt: new Date(),
+        },
       ]);
       vi.mocked(stepRepo.create).mockImplementation(async (data) => ({
         id: "new-step",
@@ -1141,8 +1155,24 @@ describe("TaskService", () => {
       const tagRepo: ITagRepository = {
         findByUser: vi.fn(),
         findByTask: vi.fn().mockResolvedValue([
-          { id: "tag-1", userId: "user-1", name: "Urgent", color: "red", deviceContext: null, locationId: null, locationRadius: null },
-          { id: "tag-2", userId: "user-1", name: "Home", color: "blue", deviceContext: null, locationId: null, locationRadius: null },
+          {
+            id: "tag-1",
+            userId: "user-1",
+            name: "Urgent",
+            color: "red",
+            deviceContext: null,
+            locationId: null,
+            locationRadius: null,
+          },
+          {
+            id: "tag-2",
+            userId: "user-1",
+            name: "Home",
+            color: "blue",
+            deviceContext: null,
+            locationId: null,
+            locationRadius: null,
+          },
         ]),
         findByTaskIds: vi.fn(),
         findById: vi.fn(),
@@ -1154,7 +1184,14 @@ describe("TaskService", () => {
         countTasksByTag: vi.fn(),
         countTasksByTags: vi.fn(),
       };
-      const serviceWithTags = new TaskService(taskRepo, null, stepRepo, undefined, undefined, tagRepo);
+      const serviceWithTags = new TaskService(
+        taskRepo,
+        null,
+        stepRepo,
+        undefined,
+        undefined,
+        tagRepo,
+      );
 
       vi.mocked(taskRepo.findById).mockResolvedValue(makeTask({ id: "t1" }));
       vi.mocked(taskRepo.findMinSortOrder).mockResolvedValue(0);

@@ -241,9 +241,7 @@ export default async function HomePage() {
                           <div className="h-2.5 w-2.5 rounded-full bg-amber-500/70" />
                           <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/70" />
                         </div>
-                        <span className="ml-2 text-xs text-neutral-500">
-                          Terminal
-                        </span>
+                        <span className="ml-2 text-xs text-neutral-500">Terminal</span>
                       </div>
                       {/* Terminal body */}
                       <div className="space-y-3 p-4 font-mono text-sm 2xl:text-base">
@@ -253,9 +251,7 @@ export default async function HomePage() {
                             {t.landing.featureCliTerminalLine1}
                           </span>
                         </div>
-                        <div className="text-neutral-500">
-                          Task created.
-                        </div>
+                        <div className="text-neutral-500">Task created.</div>
                         <div>
                           <span className="text-emerald-400">$</span>{" "}
                           <span className="text-neutral-200">
@@ -275,9 +271,7 @@ export default async function HomePage() {
                             {t.landing.featureCliTerminalLine3}
                           </span>
                         </div>
-                        <div className="text-emerald-400">
-                          Done.
-                        </div>
+                        <div className="text-emerald-400">Done.</div>
                       </div>
                     </div>
                     {/* npm install hint */}

@@ -32,9 +32,7 @@ export function TaskCompletionRules({
 
   return (
     <div className="space-y-2 px-3 py-2">
-      <p className="text-muted-foreground text-xs font-medium">
-        {t("sharing.completionRules")}
-      </p>
+      <p className="text-muted-foreground text-xs font-medium">{t("sharing.completionRules")}</p>
 
       {/* Mode: when is it done? */}
       <div className="flex items-center gap-2">
@@ -82,12 +80,8 @@ export function TaskCompletionRules({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="complete">
-                {t("sharing.completionActionComplete")}
-              </SelectItem>
-              <SelectItem value="move">
-                {t("sharing.completionActionMove")}
-              </SelectItem>
+              <SelectItem value="complete">{t("sharing.completionActionComplete")}</SelectItem>
+              <SelectItem value="move">{t("sharing.completionActionMove")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -97,10 +91,7 @@ export function TaskCompletionRules({
       {mode && action === "move" && (
         <div className="flex items-center gap-2">
           <span className="w-24 shrink-0" />
-          <Select
-            value={listId ?? ""}
-            onValueChange={(v) => onListChange(v || null)}
-          >
+          <Select value={listId ?? ""} onValueChange={(v) => onListChange(v || null)}>
             <SelectTrigger className="h-7 flex-1 text-xs">
               <SelectValue placeholder={t("sharing.completionSelectList")} />
             </SelectTrigger>

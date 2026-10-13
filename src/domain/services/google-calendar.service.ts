@@ -237,7 +237,8 @@ export class GoogleCalendarService {
 
     const tasks = await this.taskRepo.findByUser(userId);
     const syncable = tasks.filter(
-      (t) => !t.isCompleted && this.taskMatchesSyncScope(t, settings.syncAll, settings.syncDateRange),
+      (t) =>
+        !t.isCompleted && this.taskMatchesSyncScope(t, settings.syncAll, settings.syncDateRange),
     );
     if (syncable.length === 0) return 0;
 

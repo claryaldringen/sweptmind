@@ -2,9 +2,8 @@ import { builder } from "../builder";
 import { SubscriptionRef } from "./refs";
 import type { BankPaymentVerificationResult } from "@/domain/services/payment.service";
 
-const BankPaymentVerificationRef = builder.objectRef<BankPaymentVerificationResult>(
-  "BankPaymentVerification",
-);
+const BankPaymentVerificationRef =
+  builder.objectRef<BankPaymentVerificationResult>("BankPaymentVerification");
 
 BankPaymentVerificationRef.implement({
   fields: (t) => ({

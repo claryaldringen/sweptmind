@@ -1012,13 +1012,13 @@ export function Sidebar() {
       </div>
       <div className="px-2 pb-2">
         <div className="relative">
-          <Search className="text-muted-foreground pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2" />
+          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
           <Input
             ref={searchInputRef}
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder={t("sidebar.searchPlaceholder")}
-            className="h-8 pl-8 pr-8 text-sm"
+            className="h-8 pr-8 pl-8 text-sm"
           />
           {searchQuery && (
             <button
@@ -1027,7 +1027,7 @@ export function Sidebar() {
                 handleSearchChange("");
                 searchInputRef.current?.focus();
               }}
-              className="text-muted-foreground hover:text-foreground absolute right-2 top-1/2 -translate-y-1/2"
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -1139,7 +1139,9 @@ export function Sidebar() {
                   <ChevronRight className="h-3 w-3" />
                 )}
                 {t("sidebar.tags")}
-                <span className="text-muted-foreground/60 ml-auto text-[10px]">{allTags.length}</span>
+                <span className="text-muted-foreground/60 ml-auto text-[10px]">
+                  {allTags.length}
+                </span>
               </button>
               {tagsExpanded && (
                 <nav className="space-y-1">

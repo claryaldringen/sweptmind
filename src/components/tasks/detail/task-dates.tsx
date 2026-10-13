@@ -132,10 +132,7 @@ export function TaskDates({
       {dueDate && !matchesSyncScope && onToggleForceCalendarSync && (
         <Button
           variant="ghost"
-          className={cn(
-            "w-full justify-start gap-2",
-            forceCalendarSync && "text-blue-500",
-          )}
+          className={cn("w-full justify-start gap-2", forceCalendarSync && "text-blue-500")}
           onClick={onToggleForceCalendarSync}
         >
           {forceCalendarSync ? (
@@ -143,9 +140,7 @@ export function TaskDates({
           ) : (
             <CalendarPlus className="h-4 w-4" />
           )}
-          {forceCalendarSync
-            ? t("tasks.forceCalendarSyncActive")
-            : t("tasks.forceCalendarSync")}
+          {forceCalendarSync ? t("tasks.forceCalendarSyncActive") : t("tasks.forceCalendarSync")}
         </Button>
       )}
     </>

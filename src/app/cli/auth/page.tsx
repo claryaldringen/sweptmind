@@ -18,10 +18,7 @@ export default async function CliAuthPage({
 
   // User is authenticated — create token directly and redirect to CLI
   if (callbackUrl) {
-    const { rawToken } = await services.apiToken.createToken(
-      session.user.id!,
-      "CLI",
-    );
+    const { rawToken } = await services.apiToken.createToken(session.user.id!, "CLI");
     const url = new URL(callbackUrl);
     url.searchParams.set("token", rawToken);
     redirect(url.toString());
@@ -32,7 +29,9 @@ export default async function CliAuthPage({
       <div className="text-center">
         <h1 className="text-2xl font-bold">{"CLI P\u0159ihl\u00e1\u0161en\u00ed"}</h1>
         <p className="text-muted-foreground mt-2">
-          {"P\u0159ihl\u00e1\u0161en jako "}{session.user.name ?? session.user.email}{". Zav\u0159i toto okno."}
+          {"P\u0159ihl\u00e1\u0161en jako "}
+          {session.user.name ?? session.user.email}
+          {". Zav\u0159i toto okno."}
         </p>
       </div>
     </div>

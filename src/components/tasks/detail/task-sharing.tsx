@@ -300,17 +300,13 @@ export function TaskSharing({ taskId }: TaskSharingProps) {
                     {copied ? t("sharing.copyLink") : t("sharing.createInvite")}
                   </p>
                   {copied && (
-                    <p className="text-muted-foreground text-xs">
-                      {t("sharing.inviteCopied")}
-                    </p>
+                    <p className="text-muted-foreground text-xs">{t("sharing.inviteCopied")}</p>
                   )}
                 </div>
               </button>
               {inviteUrl && (
                 <div className="mt-1 space-y-1 px-3 py-2">
-                  <p className="text-muted-foreground text-xs">
-                    {t("sharing.sendLinkHint")}
-                  </p>
+                  <p className="text-muted-foreground text-xs">{t("sharing.sendLinkHint")}</p>
                   <div
                     className="bg-muted cursor-pointer rounded-md px-2 py-1.5 text-xs break-all select-all"
                     onClick={async () => {

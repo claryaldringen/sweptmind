@@ -210,7 +210,7 @@ export const cs: Dictionary = {
     featureCliDesc:
       "Ovládej SweptMind z terminálu. Přidávej úkoly, spravuj seznamy a automatizuj workflow — přímo z příkazové řádky nebo přes AI asistenta.",
     featureCliBadge: "Nové",
-    featureCliTerminalLine1: "sm task add \"Nasadit novou verzi\" --due 2026-04-20",
+    featureCliTerminalLine1: 'sm task add "Nasadit novou verzi" --due 2026-04-20',
     featureCliTerminalLine2: "sm task list --planned",
     featureCliTerminalLine3: "sm task complete abc123",
     featureCliMcpTitle: "Funguje s Claude Code, Cursor a dalšími",

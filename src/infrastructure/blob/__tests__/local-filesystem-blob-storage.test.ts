@@ -24,10 +24,9 @@ describe("LocalFilesystemBlobStorage", () => {
       const data = Buffer.from("test data");
       const result = await storage.save("attachments/user-1/task-1/photo.jpg", data);
 
-      expect(mkdir).toHaveBeenCalledWith(
-        "/opt/sweptmind-uploads/attachments/user-1/task-1",
-        { recursive: true },
-      );
+      expect(mkdir).toHaveBeenCalledWith("/opt/sweptmind-uploads/attachments/user-1/task-1", {
+        recursive: true,
+      });
       expect(writeFile).toHaveBeenCalledWith(
         "/opt/sweptmind-uploads/attachments/user-1/task-1/photo.jpg",
         data,
@@ -37,9 +36,7 @@ describe("LocalFilesystemBlobStorage", () => {
 
     it("rejects path traversal attempts", async () => {
       const data = Buffer.from("test");
-      await expect(storage.save("../etc/passwd", data)).rejects.toThrow(
-        "Invalid path",
-      );
+      await expect(storage.save("../etc/passwd", data)).rejects.toThrow("Invalid path");
       await expect(storage.save("attachments/../../etc/passwd", data)).rejects.toThrow(
         "Invalid path",
       );

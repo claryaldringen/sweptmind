@@ -211,7 +211,7 @@ export const en: Dictionary = {
     featureCliDesc:
       "Control SweptMind from your terminal. Add tasks, manage lists and automate workflows — straight from the command line or through an AI assistant.",
     featureCliBadge: "New",
-    featureCliTerminalLine1: "sm task add \"Deploy new version\" --due 2026-04-20",
+    featureCliTerminalLine1: 'sm task add "Deploy new version" --due 2026-04-20',
     featureCliTerminalLine2: "sm task list --planned",
     featureCliTerminalLine3: "sm task complete abc123",
     featureCliMcpTitle: "Works with Claude Code, Cursor and more",

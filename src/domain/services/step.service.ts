@@ -50,7 +50,11 @@ export class StepService {
     return true;
   }
 
-  async reorder(userId: string, taskId: string, items: { id: string; sortOrder: number }[]): Promise<boolean> {
+  async reorder(
+    userId: string,
+    taskId: string,
+    items: { id: string; sortOrder: number }[],
+  ): Promise<boolean> {
     const task = await this.taskRepo.findById(taskId, userId);
     if (!task) throw new Error("Task not found");
     for (const item of items) {
