@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { SubscriptionService } from "../subscription.service";
 import type { ISubscriptionRepository } from "../../repositories/subscription.repository";
 import type { Subscription } from "../../entities/subscription";
@@ -80,7 +80,14 @@ describe("SubscriptionService", () => {
   });
 
   describe("activateBankTransfer", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it("vytvoří měsíční předplatné pro 49 CZK", async () => {
+      // Období přes přechod na zimní čas (25. 10.) – konec musí být o kalendářní měsíc později
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 9, 13, 12, 0));
       const created = makeSubscription({ plan: "monthly" });
       vi.mocked(subRepo.create).mockResolvedValue(created);
 
@@ -96,11 +103,8 @@ describe("SubscriptionService", () => {
       );
 
       const createArg = vi.mocked(subRepo.create).mock.calls[0][0];
-      const diffMs = createArg.currentPeriodEnd.getTime() - createArg.currentPeriodStart.getTime();
-      // Měsíční interval: cca 28-31 dní
-      const diffDays = diffMs / (1000 * 60 * 60 * 24);
-      expect(diffDays).toBeGreaterThanOrEqual(28);
-      expect(diffDays).toBeLessThanOrEqual(31);
+      expect(createArg.currentPeriodStart).toEqual(new Date(2026, 9, 13, 12, 0));
+      expect(createArg.currentPeriodEnd).toEqual(new Date(2026, 10, 13, 12, 0));
     });
 
     it("vytvoří roční předplatné pro 490 CZK", async () => {
