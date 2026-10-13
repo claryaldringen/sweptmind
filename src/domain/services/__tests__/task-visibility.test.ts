@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { getVisibleDate, isFutureTask, computeDefaultReminder } from "../task-visibility";
+import {
+  getVisibleDate,
+  isFutureTask,
+  computeDefaultReminder,
+  compareFutureTasks,
+} from "../task-visibility";
 
 describe("getVisibleDate", () => {
   it("vrátí null pro úkol bez dueDate a bez reminderAt", () => {
@@ -219,5 +224,82 @@ describe("isFutureTask — dependency blocking", () => {
         blockedByTaskId: null,
       }),
     ).toBe(false);
+  });
+});
+
+describe("compareFutureTasks", () => {
+  const task = (
+    id: string,
+    overrides: Partial<{
+      dueDate: string | null;
+      reminderAt: string | null;
+      blockedByTaskId: string | null;
+      blockedByTaskIsCompleted: boolean | null;
+    }> = {},
+  ) => ({
+    id,
+    dueDate: null,
+    reminderAt: null,
+    isCompleted: false,
+    blockedByTaskId: null,
+    blockedByTaskIsCompleted: null,
+    ...overrides,
+  });
+
+  const blocked = { blockedByTaskId: "blocker", blockedByTaskIsCompleted: false };
+
+  const sortIds = (tasks: ReturnType<typeof task>[]) =>
+    [...tasks].sort(compareFutureTasks).map((t) => t.id);
+
+  it("řadí úkoly s datem před úkoly blokované jiným úkolem", () => {
+    expect(
+      sortIds([
+        task("blocked", blocked),
+        task("dated", { dueDate: "2026-12-01" }),
+        task("blocked-2", blocked),
+        task("dated-2", { dueDate: "2026-11-01" }),
+      ]),
+    ).toEqual(["dated-2", "dated", "blocked", "blocked-2"]);
+  });
+
+  it("blokovaný úkol s datem jde až za neblokované úkoly s datem", () => {
+    expect(
+      sortIds([
+        task("blocked-dated", { ...blocked, dueDate: "2026-10-20" }),
+        task("dated", { dueDate: "2026-12-01" }),
+      ]),
+    ).toEqual(["dated", "blocked-dated"]);
+  });
+
+  it("v rámci blokovaných řadí podle data, bez data až nakonec", () => {
+    expect(
+      sortIds([
+        task("blocked-no-date", blocked),
+        task("blocked-late", { ...blocked, dueDate: "2026-12-01" }),
+        task("blocked-early", { ...blocked, dueDate: "2026-11-01" }),
+      ]),
+    ).toEqual(["blocked-early", "blocked-late", "blocked-no-date"]);
+  });
+
+  it("úkol jen s připomínkou řadí podle data připomínky", () => {
+    expect(
+      sortIds([
+        task("due-late", { dueDate: "2026-12-01" }),
+        task("reminder-only", { reminderAt: "2026-11-01" }),
+      ]),
+    ).toEqual(["reminder-only", "due-late"]);
+  });
+
+  it("úkol s dokončeným blokujícím úkolem se řadí jako neblokovaný", () => {
+    expect(
+      sortIds([
+        task("blocked", blocked),
+        task("unblocked", {
+          blockedByTaskId: "blocker",
+          blockedByTaskIsCompleted: true,
+          dueDate: "2026-12-01",
+        }),
+      ]),
+    ).toEqual(["unblocked", "blocked"]);
   });
 });

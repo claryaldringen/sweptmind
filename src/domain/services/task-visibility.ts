@@ -71,12 +71,32 @@ export function computeDefaultReminder(dueDate: string | null): string | null {
   return dueDate;
 }
 
+function isBlocked(task: VisibilityTask): boolean {
+  return !!task.blockedByTaskId && task.blockedByTaskIsCompleted === false;
+}
+
+/**
+ * Sort comparator for the "Future" section: dated tasks first (by date),
+ * tasks blocked by an incomplete task after them. Undated tasks go last within each group.
+ */
+export function compareFutureTasks(a: VisibilityTask, b: VisibilityTask): number {
+  const blockedDiff = Number(isBlocked(a)) - Number(isBlocked(b));
+  if (blockedDiff !== 0) return blockedDiff;
+
+  const dateA = a.dueDate ?? a.reminderAt;
+  const dateB = b.dueDate ?? b.reminderAt;
+  if (dateA && dateB) return dateA.localeCompare(dateB);
+  if (dateA) return -1;
+  if (dateB) return 1;
+  return 0;
+}
+
 /** Returns true if the task should NOT be visible yet (it's a future task). */
 export function isFutureTask(task: VisibilityTask, today?: string): boolean {
   if (task.isCompleted) return false;
 
   // Blocked by an incomplete task → future
-  if (task.blockedByTaskId && task.blockedByTaskIsCompleted === false) return true;
+  if (isBlocked(task)) return true;
 
   const todayStr = today ?? new Date().toISOString().slice(0, 10);
   const visibleDate = getVisibleDate(task, todayStr);

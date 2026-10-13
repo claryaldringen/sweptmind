@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
-import { isFutureTask } from "@/domain/services/task-visibility";
+import { compareFutureTasks, isFutureTask } from "@/domain/services/task-visibility";
 
 interface VisibilityTask {
   id: string;
@@ -34,7 +34,7 @@ export function useDepartureAnimation<T extends VisibilityTask>(
       else if (isFutureTask(t)) future.push(t);
       else active.push(t);
     }
-    future.sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
+    future.sort(compareFutureTasks);
     return { activeTasks: active, futureTasks: future, completedTasks: completed };
   }, [tasks]);
 
