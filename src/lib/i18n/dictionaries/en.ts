@@ -324,11 +324,28 @@ export const en: Dictionary = {
       "Notifications are blocked. Allow them in your browser settings and try again.",
     swUnavailable: "Service worker is unavailable. Try refreshing the page.",
     error: "Failed to enable notifications.",
-    notifyDueDate: "Tasks with due date",
-    notifyReminder: "Reminders",
+    notifyDueDate: "Tasks with a time – when it's due",
+    notifyReminder: "Morning summary of today's tasks",
     electronDesc:
       "Notifications are managed by macOS. Allow notifications for SweptMind in System Settings.",
     openSettings: "Open System Settings",
+    channelName: "Task reminders",
+    nativePermissionDenied:
+      "Notifications are blocked on this phone. Allow them in the app settings.",
+    nativeUnavailable: "Push notifications aren't available in this version of the app yet.",
+    openAppSettings: "Open app settings",
+  },
+  locationReminders: {
+    title: "Location reminders",
+    description:
+      "We'll let you know when you're near a place where you can do a task – even when the app is closed. This needs background location (“Allow all the time”). Your location stays on your phone and is never sent to the server.",
+    enabled: "Reminders on",
+    disabled: "Reminders off",
+    needsAlways:
+      "Location is only allowed while using the app. To get reminders when the app is closed, choose “Allow all the time” in settings.",
+    denied: "Location access is blocked. Allow it in the app settings.",
+    notificationsDenied: "Notifications are blocked, reminders won't be shown.",
+    andMore: "{titles} and {count} more",
   },
   calendar: {
     title: "Calendar",

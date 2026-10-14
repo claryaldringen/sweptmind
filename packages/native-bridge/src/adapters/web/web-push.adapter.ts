@@ -1,13 +1,20 @@
 import type { PushPort } from "../../ports/push.port";
-import type { PushRegistration, PushNotification } from "../../types";
+import type { PushRegistration, PushNotification, PushPermissionStatus } from "../../types";
 
 export class WebPushAdapter implements PushPort {
   isSupported(): boolean {
-    return (
-      typeof window !== "undefined" &&
-      "PushManager" in window &&
-      "serviceWorker" in navigator
-    );
+    return typeof window !== "undefined" && "PushManager" in window && "serviceWorker" in navigator;
+  }
+
+  async isConfigured(): Promise<boolean> {
+    return this.isSupported();
+  }
+
+  async getPermissionStatus(): Promise<PushPermissionStatus> {
+    if (typeof Notification === "undefined") return "denied";
+    if (Notification.permission === "granted") return "granted";
+    if (Notification.permission === "denied") return "denied";
+    return "prompt";
   }
 
   async register(): Promise<PushRegistration> {
@@ -39,6 +46,18 @@ export class WebPushAdapter implements PushPort {
 
   onNotification(cb: (notification: PushNotification) => void): () => void {
     // Web push notifications are handled by the service worker (sw.ts)
+    void cb;
+    return () => {};
+  }
+
+  onTokenChange(cb: (registration: PushRegistration) => void): () => void {
+    // Web push subscriptions don't rotate on their own
+    void cb;
+    return () => {};
+  }
+
+  onNotificationOpened(cb: (data: Record<string, string>) => void): () => void {
+    // Taps are handled by the service worker's notificationclick
     void cb;
     return () => {};
   }

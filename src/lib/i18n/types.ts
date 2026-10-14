@@ -306,6 +306,20 @@ export interface Dictionary {
     notifyReminder: string;
     electronDesc: string;
     openSettings: string;
+    channelName: string;
+    nativePermissionDenied: string;
+    nativeUnavailable: string;
+    openAppSettings: string;
+  };
+  locationReminders: {
+    title: string;
+    description: string;
+    enabled: string;
+    disabled: string;
+    needsAlways: string;
+    denied: string;
+    notificationsDenied: string;
+    andMore: string;
   };
   calendar: {
     title: string;

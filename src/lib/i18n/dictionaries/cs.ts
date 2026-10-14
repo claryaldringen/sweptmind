@@ -323,10 +323,26 @@ export const cs: Dictionary = {
       "Notifikace jsou zablokované. Povol je v nastavení prohlížeče a zkus to znovu.",
     swUnavailable: "Service worker není dostupný. Zkus obnovit stránku.",
     error: "Nepodařilo se zapnout notifikace.",
-    notifyDueDate: "Úkoly s termínem",
-    notifyReminder: "Připomenutí",
+    notifyDueDate: "Úkoly s časem – když nastane termín",
+    notifyReminder: "Ranní přehled úkolů na dnes",
     electronDesc: "Notifikace spravuje macOS. Povol notifikace pro SweptMind v Nastavení systému.",
     openSettings: "Otevřít Nastavení systému",
+    channelName: "Připomínky úkolů",
+    nativePermissionDenied: "Notifikace jsou v telefonu zakázané. Povol je v nastavení aplikace.",
+    nativeUnavailable: "Push notifikace zatím nejsou v této verzi aplikace k dispozici.",
+    openAppSettings: "Otevřít nastavení aplikace",
+  },
+  locationReminders: {
+    title: "Upozornění podle polohy",
+    description:
+      "Upozorníme tě, když budeš u místa, kde můžeš splnit úkol – i když je aplikace zavřená. SweptMind k tomu potřebuje polohu na pozadí („Povolit vždy“). Poloha zůstává v telefonu a na server se neposílá.",
+    enabled: "Upozornění zapnuta",
+    disabled: "Upozornění vypnuta",
+    needsAlways:
+      "Poloha je povolená jen při používání aplikace. Aby upozornění chodila i při zavřené aplikaci, zvol v nastavení „Povolit vždy“.",
+    denied: "Přístup k poloze je zakázaný. Povol ho v nastavení aplikace.",
+    notificationsDenied: "Notifikace jsou zakázané, upozornění se nezobrazí.",
+    andMore: "{titles} a další {count}",
   },
   calendar: {
     title: "Kalendář",

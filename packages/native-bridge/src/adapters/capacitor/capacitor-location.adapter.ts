@@ -4,8 +4,10 @@ import type {
   GeofenceConfig,
   GeofenceEvent,
   GeofenceRegistration,
+  LocationPermissions,
   TrackingConfig,
 } from "../../types";
+import { listen } from "./listen";
 
 export class CapacitorLocationAdapter implements LocationPort {
   private geofenceCallbacks: ((event: GeofenceEvent) => void)[] = [];
@@ -74,36 +76,48 @@ export class CapacitorLocationAdapter implements LocationPort {
     };
   }
 
-  async requestAlwaysPermission(): Promise<"always" | "whenInUse" | "denied"> {
+  async requestAlwaysPermission(): Promise<LocationPermissions> {
     const { Geofence } = await import("@sweptmind/capacitor-geofence");
     const result = await Geofence.requestAlwaysPermission();
-    return result.status;
+    return { location: result.status, notifications: result.notifications };
   }
 
-  async getPermissionStatus(): Promise<
-    "always" | "whenInUse" | "denied" | "notDetermined"
-  > {
+  async getPermissionStatus(): Promise<LocationPermissions> {
     const { Geofence } = await import("@sweptmind/capacitor-geofence");
     const result = await Geofence.getPermissionStatus();
-    return result.status;
+    return { location: result.status, notifications: result.notifications };
+  }
+
+  async openAppSettings(): Promise<void> {
+    const { Capacitor } = await import("@capacitor/core");
+    if (Capacitor.getPlatform() !== "android") return;
+    const { Geofence } = await import("@sweptmind/capacitor-geofence");
+    await Geofence.openAppSettings();
   }
 
   async syncGeofences(fences: GeofenceRegistration[]): Promise<void> {
     const { Geofence } = await import("@sweptmind/capacitor-geofence");
+    const { Capacitor } = await import("@capacitor/core");
+    const geofences = fences.map((f) => ({
+      identifier: f.identifier,
+      latitude: f.latitude,
+      longitude: f.longitude,
+      radiusMeters: Math.max(f.radiusMeters, 200),
+      notifyOnEntry: true,
+      notifyOnExit: false,
+      notificationTitle: f.notificationTitle,
+      notificationBody: f.notificationBody,
+      notificationUrl: f.notificationUrl,
+    }));
+
+    if (Capacitor.getPlatform() === "android") {
+      // Atomic replace — removal can't race with the new registrations
+      await Geofence.setGeofences({ geofences });
+      return;
+    }
     await Geofence.removeAllGeofences();
-    if (fences.length > 0) {
-      await Geofence.addGeofences({
-        geofences: fences.map((f) => ({
-          identifier: f.identifier,
-          latitude: f.latitude,
-          longitude: f.longitude,
-          radiusMeters: Math.max(f.radiusMeters, 200),
-          notifyOnEntry: true,
-          notifyOnExit: false,
-          notificationTitle: f.notificationTitle,
-          notificationBody: f.notificationBody,
-        })),
-      });
+    if (geofences.length > 0) {
+      await Geofence.addGeofences({ geofences });
     }
   }
 
@@ -112,19 +126,23 @@ export class CapacitorLocationAdapter implements LocationPort {
     await Geofence.removeAllGeofences();
   }
 
+  onNotificationOpened(cb: (url: string) => void): () => void {
+    return listen(async () => {
+      const { Geofence } = await import("@sweptmind/capacitor-geofence");
+      return Geofence.addListener("notificationOpened", (event) => cb(event.url));
+    });
+  }
+
   private async setupNativeListener(): Promise<void> {
     const { Geofence } = await import("@sweptmind/capacitor-geofence");
-    const handle = await Geofence.addListener(
-      "geofenceTransition",
-      (event) => {
-        const mapped: GeofenceEvent = {
-          fenceId: event.identifier,
-          type: event.type,
-          position: { latitude: event.latitude, longitude: event.longitude },
-        };
-        this.geofenceCallbacks.forEach((cb) => cb(mapped));
-      },
-    );
+    const handle = await Geofence.addListener("geofenceTransition", (event) => {
+      const mapped: GeofenceEvent = {
+        fenceId: event.identifier,
+        type: event.type,
+        position: { latitude: event.latitude, longitude: event.longitude },
+      };
+      this.geofenceCallbacks.forEach((cb) => cb(mapped));
+    });
     this.listenerRemoveFn = handle.remove;
   }
 

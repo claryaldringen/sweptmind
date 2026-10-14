@@ -4,9 +4,6 @@ import { createContext, useContext, useCallback, useMemo, useEffect, type ReactN
 import { useUserLocation } from "@/hooks/use-user-location";
 import { useAppData } from "@/components/providers/app-data-provider";
 import { isNearby as checkNearby } from "@/lib/geo";
-import { getPlatform } from "@sweptmind/native-bridge";
-import { useGeofenceSync } from "@/hooks/use-geofence-sync";
-import { useGeofenceEvents } from "@/hooks/use-geofence-events";
 
 interface NearbyContextValue {
   userLatitude: number | null;
@@ -33,7 +30,7 @@ export function NearbyProvider({ children }: { children: ReactNode }) {
     }
   }, [isSupported, isTracking, startTracking]);
 
-  const { locations, allTasks } = useAppData();
+  const { locations } = useAppData();
 
   const isNearby = useCallback(
     (lat: number, lon: number, radiusKm?: number) => {
@@ -51,12 +48,6 @@ export function NearbyProvider({ children }: { children: ReactNode }) {
       )
       .map((loc) => loc.id);
   }, [position, locations]);
-
-  // Native geofence sync — registers OS-level geofences for task locations
-  // so notifications are shown even when the app is not running
-  const platform = getPlatform();
-  useGeofenceSync(locations, allTasks, platform);
-  useGeofenceEvents(platform);
 
   return (
     <NearbyContext.Provider

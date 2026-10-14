@@ -1,60 +1,74 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import {
-  getLocationAdapter,
-  type GeofenceRegistration,
-  type Platform,
-} from "@sweptmind/native-bridge";
-import type { AppTask, LocationItem } from "@/components/providers/app-data-provider";
+import { useRouter } from "next/navigation";
+import { getLocationAdapter, getPlatform } from "@sweptmind/native-bridge";
+import { useAppData } from "@/components/providers/app-data-provider";
+import { useToday } from "@/hooks/use-today";
+import { useTranslations } from "@/lib/i18n";
+import { buildGeofenceRegistrations } from "@/lib/geofence-registrations";
+import { useLocationRemindersEnabled } from "@/lib/native-preferences";
+
+const BODY_MAX_TITLES = 3;
+
+function isNative() {
+  const platform = getPlatform();
+  return platform === "ios" || platform === "android";
+}
 
 /**
- * Synchronizes native OS geofences with user's task locations.
- * Registers a geofence for each location that has at least one active (non-completed) task.
- * Includes notification title/body for local notifications shown by the OS
- * even when the app is not running.
+ * Keeps OS geofences in sync with places of actionable tasks while location reminders are on.
+ * The OS shows the notification itself, even when the app is not running.
  */
-export function useGeofenceSync(
-  locations: LocationItem[],
-  allTasks: AppTask[],
-  platform: Platform,
-) {
-  const prevKeyRef = useRef<string>("");
+export function useGeofenceSync() {
+  const { allTasks, lists, tags, locations, loading } = useAppData();
+  const enabled = useLocationRemindersEnabled();
+  const today = useToday();
+  const { t } = useTranslations();
+  const prevKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (platform !== "ios" && platform !== "android") return;
+    if (!isNative()) return;
+    if (!enabled) {
+      prevKeyRef.current = null;
+      return;
+    }
+    if (loading) return;
 
-    // Filter to locations that have at least one active task
-    const tasksWithLocation = allTasks.filter((t) => t.locationId && !t.isCompleted);
-
-    const activeLocationIds = new Set(tasksWithLocation.map((t) => t.locationId!));
-
-    const activeLocations = locations.filter((loc) => activeLocationIds.has(loc.id));
-
-    // Build registrations
-    const registrations: GeofenceRegistration[] = activeLocations.map((loc) => {
-      const tasks = tasksWithLocation.filter((t) => t.locationId === loc.id);
-      const body = tasks.length === 1 ? tasks[0].title : `${tasks[0].title} (+${tasks.length - 1})`;
-
-      return {
-        identifier: `location:${loc.id}`,
-        latitude: loc.latitude,
-        longitude: loc.longitude,
-        radiusMeters: Math.max(loc.radius * 1000, 200),
-        notificationTitle: loc.name,
-        notificationBody: body,
-      };
+    const registrations = buildGeofenceRegistrations({
+      tasks: allTasks,
+      lists,
+      tags,
+      locations,
+      today,
+      formatBody: (titles) => {
+        const shown = titles.slice(0, BODY_MAX_TITLES).join(", ");
+        const rest = titles.length - BODY_MAX_TITLES;
+        return rest > 0 ? t("locationReminders.andMore", { titles: shown, count: rest }) : shown;
+      },
     });
 
-    // Avoid re-syncing if nothing changed (compare serialized keys)
-    const key = registrations
-      .map((r) => `${r.identifier}:${r.notificationBody}`)
-      .sort()
-      .join("|");
+    const key = JSON.stringify(registrations);
     if (key === prevKeyRef.current) return;
     prevKeyRef.current = key;
 
-    const adapter = getLocationAdapter();
-    adapter.syncGeofences(registrations);
-  }, [locations, allTasks, platform]);
+    getLocationAdapter()
+      .syncGeofences(registrations)
+      .catch((err) => {
+        prevKeyRef.current = null; // retry on the next change
+        console.warn("[geofence] sync failed:", err);
+      });
+  }, [enabled, loading, allTasks, lists, tags, locations, today, t]);
+}
+
+/** Opens the page a tapped geofence notification points to. */
+export function useGeofenceNotificationTaps() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isNative()) return;
+    return getLocationAdapter().onNotificationOpened((url) => {
+      if (url.startsWith("/")) router.push(url);
+    });
+  }, [router]);
 }

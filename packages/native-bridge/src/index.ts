@@ -11,6 +11,9 @@ export type {
   GeofenceConfig,
   GeofenceEvent,
   GeofenceRegistration,
+  PushPermissionStatus,
+  LocationPermissionStatus,
+  LocationPermissions,
   TrackingConfig,
   Contact,
 } from "./types";

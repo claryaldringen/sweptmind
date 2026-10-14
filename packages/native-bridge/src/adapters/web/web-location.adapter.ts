@@ -1,5 +1,12 @@
 import type { LocationPort } from "../../ports/location.port";
-import type { Position, GeofenceConfig, GeofenceEvent, GeofenceRegistration, TrackingConfig } from "../../types";
+import type {
+  Position,
+  GeofenceConfig,
+  GeofenceEvent,
+  GeofenceRegistration,
+  LocationPermissions,
+  TrackingConfig,
+} from "../../types";
 
 export class WebLocationAdapter implements LocationPort {
   private watchId: number | null = null;
@@ -41,12 +48,16 @@ export class WebLocationAdapter implements LocationPort {
     return () => {};
   }
 
-  async requestAlwaysPermission(): Promise<"always" | "whenInUse" | "denied"> {
-    return "denied";
+  async requestAlwaysPermission(): Promise<LocationPermissions> {
+    return { location: "denied" };
   }
 
-  async getPermissionStatus(): Promise<"always" | "whenInUse" | "denied" | "notDetermined"> {
-    return "denied";
+  async getPermissionStatus(): Promise<LocationPermissions> {
+    return { location: "denied" };
+  }
+
+  async openAppSettings(): Promise<void> {
+    // Not available on web
   }
 
   async syncGeofences(_fences: GeofenceRegistration[]): Promise<void> {
@@ -55,5 +66,9 @@ export class WebLocationAdapter implements LocationPort {
 
   async removeAllGeofences(): Promise<void> {
     // Geofencing not supported on web — no-op
+  }
+
+  onNotificationOpened(_cb: (url: string) => void): () => void {
+    return () => {};
   }
 }

@@ -1,12 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockGeofence = {
+  setGeofences: vi.fn().mockResolvedValue(undefined),
   addGeofences: vi.fn().mockResolvedValue(undefined),
   removeGeofences: vi.fn().mockResolvedValue(undefined),
   removeAllGeofences: vi.fn().mockResolvedValue(undefined),
   getMonitoredGeofences: vi.fn().mockResolvedValue({ geofences: [] }),
-  requestAlwaysPermission: vi.fn().mockResolvedValue({ status: "always" }),
-  getPermissionStatus: vi.fn().mockResolvedValue({ status: "always" }),
+  requestAlwaysPermission: vi
+    .fn()
+    .mockResolvedValue({ status: "always", notifications: "granted" }),
+  getPermissionStatus: vi.fn().mockResolvedValue({ status: "whenInUse", notifications: "denied" }),
+  openAppSettings: vi.fn().mockResolvedValue(undefined),
   addListener: vi.fn().mockResolvedValue({ remove: vi.fn() }),
   removeAllListeners: vi.fn().mockResolvedValue(undefined),
 };
@@ -21,6 +25,11 @@ vi.mock("@sweptmind/capacitor-geofence", () => ({
   Geofence: mockGeofence,
 }));
 
+const mockPlatform = vi.hoisted(() => ({ value: "ios" }));
+vi.mock("@capacitor/core", () => ({
+  Capacitor: { getPlatform: () => mockPlatform.value },
+}));
+
 import { CapacitorLocationAdapter } from "../adapters/capacitor/capacitor-location.adapter";
 import { Geolocation } from "@capacitor/geolocation";
 
@@ -30,6 +39,7 @@ describe("CapacitorLocationAdapter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     adapter = new CapacitorLocationAdapter();
+    mockPlatform.value = "ios";
   });
 
   it("isSupported returns true", () => {
@@ -103,7 +113,39 @@ describe("CapacitorLocationAdapter", () => {
     });
   });
 
-  it("syncGeofences removes all and adds new", async () => {
+  it("syncGeofences on Android replaces geofences atomically", async () => {
+    mockPlatform.value = "android";
+    await adapter.syncGeofences([
+      {
+        identifier: "location:abc:500",
+        latitude: 50.0,
+        longitude: 14.0,
+        radiusMeters: 500,
+        notificationTitle: "Office",
+        notificationBody: "Buy coffee",
+        notificationUrl: "/context",
+      },
+    ]);
+
+    expect(mockGeofence.removeAllGeofences).not.toHaveBeenCalled();
+    expect(mockGeofence.setGeofences).toHaveBeenCalledWith({
+      geofences: [
+        {
+          identifier: "location:abc:500",
+          latitude: 50.0,
+          longitude: 14.0,
+          radiusMeters: 500,
+          notifyOnEntry: true,
+          notifyOnExit: false,
+          notificationTitle: "Office",
+          notificationBody: "Buy coffee",
+          notificationUrl: "/context",
+        },
+      ],
+    });
+  });
+
+  it("syncGeofences on iOS removes all and adds new", async () => {
     await adapter.syncGeofences([
       {
         identifier: "location:abc",
@@ -140,14 +182,38 @@ describe("CapacitorLocationAdapter", () => {
 
   it("requestAlwaysPermission delegates to native plugin", async () => {
     const result = await adapter.requestAlwaysPermission();
-    expect(result).toBe("always");
+    expect(result).toEqual({ location: "always", notifications: "granted" });
     expect(mockGeofence.requestAlwaysPermission).toHaveBeenCalled();
   });
 
   it("getPermissionStatus delegates to native plugin", async () => {
     const result = await adapter.getPermissionStatus();
-    expect(result).toBe("always");
+    expect(result).toEqual({ location: "whenInUse", notifications: "denied" });
     expect(mockGeofence.getPermissionStatus).toHaveBeenCalled();
+  });
+
+  it("openAppSettings opens system settings only on Android", async () => {
+    await adapter.openAppSettings();
+    expect(mockGeofence.openAppSettings).not.toHaveBeenCalled();
+
+    mockPlatform.value = "android";
+    await adapter.openAppSettings();
+    expect(mockGeofence.openAppSettings).toHaveBeenCalled();
+  });
+
+  it("onNotificationOpened forwards the tapped notification URL", async () => {
+    const cb = vi.fn();
+    adapter.onNotificationOpened(cb);
+
+    await vi.waitFor(() => {
+      expect(mockGeofence.addListener).toHaveBeenCalledWith(
+        "notificationOpened",
+        expect.any(Function),
+      );
+    });
+    const handler = mockGeofence.addListener.mock.calls[0][1];
+    handler({ url: "/context" });
+    expect(cb).toHaveBeenCalledWith("/context");
   });
 
   it("onGeofenceEvent sets up native listener", async () => {

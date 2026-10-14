@@ -36,7 +36,10 @@ import { useNewTaskPosition } from "@/hooks/use-new-task-position";
 import { useLocale } from "@/hooks/use-locale";
 import { useTranslations } from "@/lib/i18n";
 import { parseCSV, mapOutlookTaskRow, type MappedTask } from "@/lib/csv-import";
-import { getPlatform, getPushAdapter } from "@sweptmind/native-bridge";
+import { getLocationAdapter, getPlatform, getPushAdapter } from "@sweptmind/native-bridge";
+import { nativePreferences } from "@/lib/native-preferences";
+import { saveNativePushRegistration } from "@/hooks/use-native-push";
+import { LocationRemindersSection } from "@/components/settings/location-reminders-section";
 import { useIsPremium } from "@/hooks/use-is-premium";
 import { SharingSection } from "@/components/settings/sharing-section";
 import { ApiTokensSection } from "@/components/settings/api-tokens-section";
@@ -543,6 +546,9 @@ export default function SettingsPage() {
   const [pushError, setPushError] = useState<string | null>(null);
   const [notifyDueDate, setNotifyDueDate] = useState(true);
   const [notifyReminder, setNotifyReminder] = useState(true);
+  // Native app: notifications blocked in system settings / build without Firebase config
+  const [pushNativeBlocked, setPushNativeBlocked] = useState(false);
+  const [pushNativeUnavailable, setPushNativeUnavailable] = useState(false);
 
   useEffect(() => {
     const platform = getPlatform();
@@ -554,15 +560,31 @@ export default function SettingsPage() {
     }
 
     if (platform === "ios" || platform === "android") {
-      setPushSupported(true);
-      fetch("/api/push/preferences")
-        .then((r) => r.json())
-        .then((prefs) => {
-          setPushEnabled(true);
-          if (typeof prefs.notifyDueDate === "boolean") setNotifyDueDate(prefs.notifyDueDate);
-          if (typeof prefs.notifyReminder === "boolean") setNotifyReminder(prefs.notifyReminder);
+      const push = getPushAdapter();
+      Promise.all([push.isConfigured(), push.getPermissionStatus()])
+        .then(([configured, status]) => {
+          if (!configured) {
+            setPushSupported(false);
+            setPushNativeUnavailable(true);
+            return;
+          }
+          setPushSupported(true);
+          setPushNativeBlocked(status === "denied");
+          // On only if this device is actually registered — not just because prefs exist
+          setPushEnabled(
+            status === "granted" &&
+              !nativePreferences.isPushDisabled() &&
+              !!nativePreferences.getPushToken(),
+          );
         })
         .catch(() => setPushEnabled(false));
+      fetch("/api/push/preferences")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((prefs) => {
+          if (typeof prefs?.notifyDueDate === "boolean") setNotifyDueDate(prefs.notifyDueDate);
+          if (typeof prefs?.notifyReminder === "boolean") setNotifyReminder(prefs.notifyReminder);
+        })
+        .catch(() => {});
       return;
     }
 
@@ -615,16 +637,12 @@ export default function SettingsPage() {
 
         if (checked) {
           if (platform === "ios" || platform === "android") {
-            const pushAdapter = getPushAdapter();
-            const { token, platform: detectedPlatform } = await pushAdapter.register();
-            await fetch("/api/push/subscribe", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                endpoint: token,
-                platform: detectedPlatform,
-              }),
+            nativePreferences.setPushDisabled(false);
+            const registration = await getPushAdapter().register({
+              androidChannelName: t("push.channelName"),
             });
+            await saveNativePushRegistration(registration);
+            setPushNativeBlocked(false);
           } else {
             const permission = await Notification.requestPermission();
             if (permission !== "granted") {
@@ -652,8 +670,17 @@ export default function SettingsPage() {
           setPushEnabled(true);
         } else {
           if (platform === "ios" || platform === "android") {
-            const pushAdapter = getPushAdapter();
-            await pushAdapter.unregister();
+            nativePreferences.setPushDisabled(true);
+            const token = nativePreferences.getPushToken();
+            if (token) {
+              await fetch("/api/push/unsubscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ endpoint: token }),
+              });
+              nativePreferences.setPushToken(null);
+            }
+            await getPushAdapter().unregister();
           } else {
             const reg = await Promise.race([
               navigator.serviceWorker.ready,
@@ -675,7 +702,13 @@ export default function SettingsPage() {
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "unknown";
-        setPushError(msg === "timeout" ? t("push.swUnavailable") : t("push.error"));
+        const native = getPlatform() === "ios" || getPlatform() === "android";
+        if (native && msg === "Push permission denied") {
+          setPushNativeBlocked(true);
+          setPushError(t("push.nativePermissionDenied"));
+        } else {
+          setPushError(msg === "timeout" ? t("push.swUnavailable") : t("push.error"));
+        }
       } finally {
         setPushLoading(false);
       }
@@ -1263,6 +1296,16 @@ export default function SettingsPage() {
                 />
               </div>
               {pushError && <p className="text-sm text-red-500">{pushError}</p>}
+              {pushNativeBlocked && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => getLocationAdapter().openAppSettings()}
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  {t("push.openAppSettings")}
+                </Button>
+              )}
               {pushEnabled && (
                 <>
                   <div className="flex items-center justify-between gap-4">
@@ -1295,7 +1338,9 @@ export default function SettingsPage() {
               </Button>
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm">{t("push.unsupported")}</p>
+            <p className="text-muted-foreground text-sm">
+              {pushNativeUnavailable ? t("push.nativeUnavailable") : t("push.unsupported")}
+            </p>
           )}
 
           {/* Location (Electron only) */}
@@ -1319,6 +1364,13 @@ export default function SettingsPage() {
                   </Button>
                 </div>
               </div>
+            </>
+          )}
+
+          {(platform === "ios" || platform === "android") && (
+            <>
+              <Separator className="my-4" />
+              <LocationRemindersSection />
             </>
           )}
         </div>

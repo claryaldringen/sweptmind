@@ -6,6 +6,7 @@ import { ResizeHandle } from "@/components/layout/resize-handle";
 import { TaskDndProvider } from "@/components/providers/task-dnd-provider";
 import { AppDataProvider } from "@/components/providers/app-data-provider";
 import { NearbyProvider } from "@/components/providers/nearby-provider";
+import { NativeIntegration } from "@/components/providers/native-integration";
 import { ErrorBoundary } from "@/components/providers/error-boundary";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { OfflineIndicator } from "@/components/layout/offline-indicator";
@@ -44,6 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <TaskDndProvider>
       <AppDataProvider>
+        <NativeIntegration />
         <NearbyProvider>
           <SidebarContext.Provider value={{ close, open, isDesktop }}>
             <div className="flex h-dvh overflow-hidden">
