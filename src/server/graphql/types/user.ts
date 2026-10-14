@@ -97,6 +97,22 @@ builder.mutationField("updateAiModel", (t) =>
   }),
 );
 
+builder.mutationField("updateClientSettings", (t) =>
+  t.field({
+    type: "Boolean",
+    authScopes: { authenticated: true },
+    args: {
+      timezone: t.arg.string(),
+      locale: t.arg.string(),
+    },
+    resolve: async (_root, { timezone, locale }, ctx) => {
+      if (!ctx.userId) return false;
+      await ctx.services.user.updateClientSettings(ctx.userId, { timezone, locale });
+      return true;
+    },
+  }),
+);
+
 builder.mutationField("updateAiEnabled", (t) =>
   t.field({
     type: "Boolean",

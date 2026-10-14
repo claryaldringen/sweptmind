@@ -17,8 +17,9 @@ export interface SubscribeInput {
   p256dh: string;
   auth: string;
   platform: PushPlatform;
-  notifyDueDate: boolean;
-  notifyReminder: boolean;
+  /** Omitted = keep the user's current preference (shared across devices) */
+  notifyDueDate?: boolean;
+  notifyReminder?: boolean;
 }
 
 export interface PushPreferences {

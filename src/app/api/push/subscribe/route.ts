@@ -32,8 +32,9 @@ export async function POST(request: NextRequest) {
     authKey = "_";
   }
 
-  const notifyDueDate = body?.notifyDueDate !== false;
-  const notifyReminder = body?.notifyReminder !== false;
+  const notifyDueDate = typeof body?.notifyDueDate === "boolean" ? body.notifyDueDate : undefined;
+  const notifyReminder =
+    typeof body?.notifyReminder === "boolean" ? body.notifyReminder : undefined;
 
   await services.pushSubscription.subscribe(session.user.id, {
     endpoint,

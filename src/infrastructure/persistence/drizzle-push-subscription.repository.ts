@@ -21,12 +21,7 @@ export class DrizzlePushSubscriptionRepository implements IPushSubscriptionRepos
   ): Promise<void> {
     await this.db
       .delete(schema.pushSubscriptions)
-      .where(
-        and(
-          eq(schema.pushSubscriptions.userId, userId),
-          eq(schema.pushSubscriptions.endpoint, values.endpoint),
-        ),
-      );
+      .where(eq(schema.pushSubscriptions.endpoint, values.endpoint));
 
     await this.db.insert(schema.pushSubscriptions).values({
       userId,

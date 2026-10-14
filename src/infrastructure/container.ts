@@ -17,6 +17,8 @@ import { DrizzleConnectionInviteRepository } from "./persistence/drizzle-connect
 import { DrizzleUserConnectionRepository } from "./persistence/drizzle-user-connection.repository";
 import { DrizzleSharedTaskRepository } from "./persistence/drizzle-shared-task.repository";
 import { PushNotificationSender } from "./notification/push-notification-sender";
+import { PushDispatcher } from "./notification/push-dispatcher";
+import { TaskReminderJob } from "./notification/task-reminder-job";
 import { OpenAiCompatibleProvider } from "./llm/openai-compatible-provider";
 import { StripePaymentGateway } from "./payment/stripe-payment-gateway";
 import { QrCodeGenerator } from "./payment/qrcode-generator";
@@ -62,7 +64,9 @@ const connectionInviteRepo = new DrizzleConnectionInviteRepository(db);
 const userConnectionRepo = new DrizzleUserConnectionRepository(db);
 const sharedTaskRepo = new DrizzleSharedTaskRepository(db);
 const apiTokenRepo = new DrizzleApiTokenRepository(db);
-const notificationSender = new PushNotificationSender(pushSubRepo);
+const pushDispatcher = new PushDispatcher(pushSubRepo);
+const notificationSender = new PushNotificationSender(pushSubRepo, pushDispatcher);
+export const taskReminderJob = new TaskReminderJob(db, pushDispatcher);
 
 const llmProvider = new OpenAiCompatibleProvider();
 const uploadsPath = process.env.UPLOADS_PATH ?? "/opt/sweptmind-uploads";

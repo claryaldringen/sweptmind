@@ -1,7 +1,7 @@
 import { eq, and, gt, lt } from "drizzle-orm";
 import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
-import type { User, CreateUserInput } from "@/domain/entities/user";
+import type { User, CreateUserInput, ClientSettings } from "@/domain/entities/user";
 import type { IUserRepository } from "@/domain/repositories/user.repository";
 import { hashToken } from "@/lib/crypto";
 
@@ -140,6 +140,10 @@ export class DrizzleUserRepository implements IUserRepository {
       .update(schema.users)
       .set({ aiEnabled: enabled })
       .where(eq(schema.users.id, userId));
+  }
+
+  async updateClientSettings(userId: string, settings: ClientSettings): Promise<void> {
+    await this.db.update(schema.users).set(settings).where(eq(schema.users.id, userId));
   }
 
   async updateLlmModel(userId: string, model: string): Promise<void> {

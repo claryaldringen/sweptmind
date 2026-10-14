@@ -29,3 +29,9 @@ export interface CreateUserInput {
   email: string;
   hashedPassword: string;
 }
+
+/** Settings reported by the client so the server can act in the user's local time and language. */
+export interface ClientSettings {
+  timezone?: string;
+  locale?: "cs" | "en";
+}

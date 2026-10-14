@@ -1,4 +1,5 @@
-import type { User } from "../entities/user";
+import type { User, ClientSettings } from "../entities/user";
+import { isValidTimeZone } from "./task-notifications";
 import type { IUserRepository } from "../repositories/user.repository";
 
 export class UserService {
@@ -46,6 +47,18 @@ export class UserService {
 
   async updateAiEnabled(userId: string, enabled: boolean): Promise<void> {
     return this.userRepo.updateAiEnabled(userId, enabled);
+  }
+
+  /** Stores the client's time zone and language; invalid values are ignored. */
+  async updateClientSettings(
+    userId: string,
+    input: { timezone?: string | null; locale?: string | null },
+  ): Promise<void> {
+    const settings: ClientSettings = {};
+    if (input.timezone && isValidTimeZone(input.timezone)) settings.timezone = input.timezone;
+    if (input.locale === "cs" || input.locale === "en") settings.locale = input.locale;
+    if (Object.keys(settings).length === 0) return;
+    return this.userRepo.updateClientSettings(userId, settings);
   }
 
   async updateLlmModel(userId: string, model: string): Promise<void> {

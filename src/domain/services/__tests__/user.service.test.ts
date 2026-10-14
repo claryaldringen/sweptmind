@@ -52,6 +52,7 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     validatePasswordResetToken: vi.fn(),
     deletePasswordResetToken: vi.fn(),
     updateAiEnabled: vi.fn(),
+    updateClientSettings: vi.fn(),
     updateLlmModel: vi.fn(),
     updateGoogleCalendarEnabled: vi.fn(),
     getGoogleCalendarEnabled: vi.fn(),
@@ -106,6 +107,26 @@ describe("UserService", () => {
       await service.updateOnboardingCompleted("user-1", true);
 
       expect(userRepo.updateOnboardingCompleted).toHaveBeenCalledWith("user-1", true);
+    });
+  });
+
+  describe("updateClientSettings", () => {
+    it("uloží platné časové pásmo a jazyk", async () => {
+      await service.updateClientSettings("user-1", { timezone: "Europe/Prague", locale: "en" });
+      expect(userRepo.updateClientSettings).toHaveBeenCalledWith("user-1", {
+        timezone: "Europe/Prague",
+        locale: "en",
+      });
+    });
+
+    it("neplatné hodnoty ignoruje", async () => {
+      await service.updateClientSettings("user-1", { timezone: "Mars/Olympus", locale: "en" });
+      expect(userRepo.updateClientSettings).toHaveBeenCalledWith("user-1", { locale: "en" });
+    });
+
+    it("bez platných hodnot nic nezapisuje", async () => {
+      await service.updateClientSettings("user-1", { timezone: "nonsense", locale: "de" });
+      expect(userRepo.updateClientSettings).not.toHaveBeenCalled();
     });
   });
 

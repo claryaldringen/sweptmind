@@ -5,6 +5,11 @@ import type { Task } from "@/domain/entities/task";
 import type { ITaskRepository, PaginationOpts } from "@/domain/repositories/task.repository";
 import { isFutureTask } from "@/domain/services/task-visibility";
 
+/** A new due date (rescheduling, next recurrence) must be announced again. */
+function withNotificationReset(data: Partial<Task>) {
+  return "dueDate" in data ? { ...data, notifiedAt: null } : data;
+}
+
 export class DrizzleTaskRepository implements ITaskRepository {
   constructor(private readonly db: Database) {}
 
@@ -58,7 +63,7 @@ export class DrizzleTaskRepository implements ITaskRepository {
   async update(id: string, userId: string, data: Partial<Task>): Promise<Task> {
     const [task] = await this.db
       .update(schema.tasks)
-      .set(data)
+      .set(withNotificationReset(data))
       .where(and(eq(schema.tasks.id, id), eq(schema.tasks.userId, userId)))
       .returning();
     return task;
@@ -324,7 +329,7 @@ export class DrizzleTaskRepository implements ITaskRepository {
     if (ids.length === 0) return;
     await this.db
       .update(schema.tasks)
-      .set(data)
+      .set(withNotificationReset(data))
       .where(and(inArray(schema.tasks.id, ids), eq(schema.tasks.userId, userId)));
   }
 
@@ -337,7 +342,7 @@ export class DrizzleTaskRepository implements ITaskRepository {
   async updateUnchecked(id: string, data: Partial<Task>): Promise<Task> {
     const [task] = await this.db
       .update(schema.tasks)
-      .set({ ...data, updatedAt: new Date() })
+      .set({ ...withNotificationReset(data), updatedAt: new Date() })
       .where(eq(schema.tasks.id, id))
       .returning();
     return task;

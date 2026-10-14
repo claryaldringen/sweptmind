@@ -31,6 +31,10 @@ export const users = pgTable("users", {
   llmModel: text("llm_model"),
   // FK to lists.id — omitting .references() to avoid circular import (lists.ts → auth.ts)
   sharingDefaultListId: text("sharing_default_list_id"),
+  // Reported by the client; used to send notifications at the user's local time
+  timezone: text("timezone"), // IANA, e.g. "Europe/Prague"
+  locale: text("locale"), // "cs" | "en"
+  reminderDigestSentOn: text("reminder_digest_sent_on"), // YYYY-MM-DD (user's local date)
 });
 
 export const accounts = pgTable(

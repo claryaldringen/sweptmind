@@ -1,4 +1,4 @@
-import type { User, CreateUserInput } from "../entities/user";
+import type { User, CreateUserInput, ClientSettings } from "../entities/user";
 
 export interface IUserRepository {
   findById(id: string): Promise<User | undefined>;
@@ -19,6 +19,7 @@ export interface IUserRepository {
   validatePasswordResetToken(token: string): Promise<string | null>;
   deletePasswordResetToken(token: string): Promise<void>;
   updateAiEnabled(userId: string, enabled: boolean): Promise<void>;
+  updateClientSettings(userId: string, settings: ClientSettings): Promise<void>;
   updateLlmModel(userId: string, model: string): Promise<void>;
   updateGoogleCalendarEnabled(userId: string, enabled: boolean): Promise<void>;
   getGoogleCalendarEnabled(userId: string): Promise<boolean>;

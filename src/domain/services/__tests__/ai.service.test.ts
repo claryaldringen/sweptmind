@@ -203,6 +203,7 @@ function makeUserRepo(overrides: Partial<User> = {}): IUserRepository {
     validatePasswordResetToken: vi.fn().mockResolvedValue(null),
     deletePasswordResetToken: vi.fn(),
     updateAiEnabled: vi.fn(),
+    updateClientSettings: vi.fn(),
     updateLlmModel: vi.fn(),
     updateGoogleCalendarEnabled: vi.fn(),
     getGoogleCalendarEnabled: vi.fn().mockResolvedValue(false),

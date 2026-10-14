@@ -1,7 +1,10 @@
 import type { PushSubscription, PushPreferences } from "../entities/push-subscription";
 
 export interface IPushSubscriptionRepository {
-  /** Delete a subscription by userId + endpoint, then insert a new one. */
+  /**
+   * Insert the subscription for userId, replacing any existing one with the same endpoint —
+   * including another user's (a device/browser belongs to whoever is signed in now).
+   */
   upsert(
     userId: string,
     values: {

@@ -184,6 +184,7 @@ function makeMocks() {
     validatePasswordResetToken: vi.fn(),
     deletePasswordResetToken: vi.fn(),
     updateAiEnabled: vi.fn(),
+    updateClientSettings: vi.fn(),
     updateLlmModel: vi.fn(),
     updateGoogleCalendarEnabled: vi.fn(),
     getGoogleCalendarEnabled: vi.fn(),

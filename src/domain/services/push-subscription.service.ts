@@ -7,13 +7,15 @@ export class PushSubscriptionService {
   constructor(private readonly pushSubRepo: IPushSubscriptionRepository) {}
 
   async subscribe(userId: string, input: SubscribeInput): Promise<void> {
+    // The app re-registers on every start — don't reset preferences changed in Settings
+    const current = await this.getPreferences(userId);
     await this.pushSubRepo.upsert(userId, {
       endpoint: input.endpoint,
       p256dh: input.p256dh,
       auth: input.auth,
       platform: input.platform,
-      notifyDueDate: input.notifyDueDate,
-      notifyReminder: input.notifyReminder,
+      notifyDueDate: input.notifyDueDate ?? current.notifyDueDate,
+      notifyReminder: input.notifyReminder ?? current.notifyReminder,
     });
   }
 
