@@ -40,6 +40,7 @@ cd apps/mobile && npx cap sync android    # Sync web → Android
 cd apps/mobile && npx cap sync ios        # Sync web → iOS
 cd apps/mobile && npx cap open android    # Otevřít v Android Studio
 cd apps/mobile && npx cap open ios        # Otevřít v Xcode
+# Debug APK sestavuje CI (.github/workflows/android.yml) → artefakt „sweptmind-debug-apk“ u běhu workflow
 
 # Desktop (Electron)
 cd apps/desktop && yarn dev               # Dev mode (macOS)
@@ -56,7 +57,7 @@ cd apps/desktop && yarn build             # Build .dmg
 apps/
 ├── mobile/                # Capacitor (iOS + Android) — WebView shell
 │   ├── capacitor.config.ts
-│   ├── android/           # Auto-generated (gitignored)
+│   ├── android/           # Android projekt (verzovaný – nativní úpravy, AppInfo plugin, FCM meta-data)
 │   └── ios/               # Auto-generated (gitignored)
 ├── desktop/               # Electron (macOS) — Dock persistence
 │   ├── src/main.ts        # Main process
@@ -119,7 +120,7 @@ src/
 
 ## DB Schéma
 
-- `users` — Auth.js uživatelé + hashedPassword
+- `users` — Auth.js uživatelé + hashedPassword; `timezone`/`locale` hlásí klient (notifikace v místním čase a jazyce)
 - `accounts` — OAuth účty (Auth.js adaptér)
 - `verification_tokens` — Ověření emailu
 - `list_groups` — Seskupení seznamů
@@ -141,7 +142,7 @@ src/
 - **Databáze:** PostgreSQL 16 na stejném serveru (localhost:5432, DB `sweptmind`)
 - **Process manager:** pm2 (`sweptmind`), ecosystem config v `/opt/sweptmind/ecosystem.config.cjs`
 - **Reverse proxy:** Caddy (auto HTTPS via Let's Encrypt), config v `/etc/caddy/Caddyfile`
-- **Cron joby:** systemd timery (`sweptmind-push`, `sweptmind-gcal-sync`, `sweptmind-gcal-renew`)
+- **Cron joby:** systemd timery (`sweptmind-push` každou minutu – notifikace v čas úkolu + ranní přehled 8–12 h, `sweptmind-gcal-sync`, `sweptmind-gcal-renew`)
 - **Přílohy:** Lokální filesystem (`/opt/sweptmind-uploads/`), servírované přes Caddy na `/uploads/*`
 - **Deploy postup:**
   ```bash
@@ -160,6 +161,9 @@ src/
 - Capacitor wrapper (iOS + Android) — WebView shell načítající sweptmind.com
 - Electron wrapper (macOS) — Dock persistence, nativní menu
 - Nativní push přes FCM/APNs (Firebase Admin SDK) — hybridní model (web: VAPID, nativní: FCM)
+  - Android potřebuje `apps/mobile/android/app/google-services.json` (Firebase konzole → Android app `com.sweptmind.app`). Bez něj aplikace push nenabízí (plugin `AppInfo` hlásí `pushConfigured: false`), jinak by registrace aplikaci shodila.
+  - Server posílá na kanál `reminders` (vytváří ho aplikace při registraci)
+- Upozornění podle polohy: opt-in v Nastavení (poloha „vždy“), geofence registruje `packages/capacitor-geofence`, notifikaci zobrazí OS lokálně – poloha se na server neposílá
 - Background geolocation + geofencing (stabilní lokace: nativní geofencing, ad-hoc: periodické kontroly)
 - Port/adapter pattern v `packages/native-bridge/` pro clean architecture
 - Později: Biometrics, App badge count, Home screen widgets, Share target
