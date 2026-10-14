@@ -6,20 +6,24 @@ ext {
 }
 
 buildscript {
+    ext.kotlin_version = project.hasProperty('kotlin_version') ? rootProject.ext.kotlin_version : '1.9.25'
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.7.3'
+        // Keep in sync with the AGP version of the Capacitor 6 app template (apps/mobile/android)
+        classpath 'com.android.tools.build:gradle:8.2.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
 
 android {
     namespace "com.sweptmind.geofence"
-    compileSdk project.hasProperty('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 35
+    compileSdk project.hasProperty('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 34
     defaultConfig {
         minSdk project.hasProperty('minSdkVersion') ? rootProject.ext.minSdkVersion : 22
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -34,6 +38,9 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
 }
 
 repositories {
@@ -45,7 +52,9 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':capacitor-android')
     implementation 'com.google.android.gms:play-services-location:21.3.0'
-    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    // 1.13.x is the last line that compiles against SDK 34 (Capacitor 6 template)
+    implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.appcompat:appcompat:1.7.0'
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"

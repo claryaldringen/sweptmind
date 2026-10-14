@@ -3,14 +3,15 @@ import type {
   GeofencePlugin,
   GeofenceConfig,
   MonitoredGeofence,
-  GeofenceTransitionEvent,
-  PermissionStatus,
+  PermissionResult,
 } from "./definitions";
 
 export class GeofenceWeb extends WebPlugin implements GeofencePlugin {
-  async addGeofences(_options: {
-    geofences: GeofenceConfig[];
-  }): Promise<void> {
+  async setGeofences(_options: { geofences: GeofenceConfig[] }): Promise<void> {
+    // Geofencing not supported on web
+  }
+
+  async addGeofences(_options: { geofences: GeofenceConfig[] }): Promise<void> {
     // Geofencing not supported on web
   }
 
@@ -26,20 +27,15 @@ export class GeofenceWeb extends WebPlugin implements GeofencePlugin {
     return { geofences: [] };
   }
 
-  async requestAlwaysPermission(): Promise<{ status: PermissionStatus }> {
+  async requestAlwaysPermission(): Promise<PermissionResult> {
     return { status: "denied" };
   }
 
-  async getPermissionStatus(): Promise<{
-    status: PermissionStatus | "notDetermined";
-  }> {
+  async getPermissionStatus(): Promise<PermissionResult> {
     return { status: "denied" };
   }
 
-  async addListener(
-    _eventName: "geofenceTransition",
-    _callback: (event: GeofenceTransitionEvent) => void,
-  ): Promise<{ remove: () => Promise<void> }> {
-    return { remove: async () => {} };
+  async openAppSettings(): Promise<void> {
+    // No-op on web
   }
 }
