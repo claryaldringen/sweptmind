@@ -38,7 +38,7 @@ import { useTranslations } from "@/lib/i18n";
 import { parseCSV, mapOutlookTaskRow, type MappedTask } from "@/lib/csv-import";
 import { getLocationAdapter, getPlatform, getPushAdapter } from "@sweptmind/native-bridge";
 import { nativePreferences } from "@/lib/native-preferences";
-import { saveNativePushRegistration } from "@/hooks/use-native-push";
+import { saveNativePushRegistration, removeNativePushSubscription } from "@/hooks/use-native-push";
 import { LocationRemindersSection } from "@/components/settings/location-reminders-section";
 import { useIsPremium } from "@/hooks/use-is-premium";
 import { SharingSection } from "@/components/settings/sharing-section";
@@ -670,17 +670,14 @@ export default function SettingsPage() {
           setPushEnabled(true);
         } else {
           if (platform === "ios" || platform === "android") {
+            // The opt-out sticks even offline; useNativePush retries the server cleanup
             nativePreferences.setPushDisabled(true);
-            const token = nativePreferences.getPushToken();
-            if (token) {
-              await fetch("/api/push/unsubscribe", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ endpoint: token }),
-              });
-              nativePreferences.setPushToken(null);
-            }
-            await getPushAdapter().unregister();
+            await removeNativePushSubscription().catch((err) =>
+              console.warn("[push] unsubscribe failed, will retry:", err),
+            );
+            await getPushAdapter()
+              .unregister()
+              .catch(() => {});
           } else {
             const reg = await Promise.race([
               navigator.serviceWorker.ready,
@@ -1296,7 +1293,7 @@ export default function SettingsPage() {
                 />
               </div>
               {pushError && <p className="text-sm text-red-500">{pushError}</p>}
-              {pushNativeBlocked && (
+              {pushNativeBlocked && platform === "android" && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -1367,7 +1364,8 @@ export default function SettingsPage() {
             </>
           )}
 
-          {(platform === "ios" || platform === "android") && (
+          {/* Android only for now — the iOS geofence plugin isn't buildable yet (no podspec) */}
+          {platform === "android" && (
             <>
               <Separator className="my-4" />
               <LocationRemindersSection />

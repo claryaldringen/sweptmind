@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNull, like, lte, ne, or } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, like, lt, lte, ne, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
@@ -110,18 +110,30 @@ export class TaskReminderJob {
   }
 
   private async sendDailyDigests(now: Date): Promise<number> {
-    const subsByUser = await this.subscriptionsByUser(null, (sub) => sub.notifyReminder);
-    if (subsByUser.size === 0) return 0;
-
+    // Only users who may still be missing today's digest: anyone whose last digest date is
+    // the latest local date on Earth (UTC+14) already has it
+    const latestLocalDate = new Date(now.getTime() + 14 * HOUR_MS).toISOString().slice(0, 10);
     const users = await this.db
-      .select({
+      .selectDistinct({
         id: schema.users.id,
         timezone: schema.users.timezone,
         locale: schema.users.locale,
         reminderDigestSentOn: schema.users.reminderDigestSentOn,
       })
       .from(schema.users)
-      .where(inArray(schema.users.id, [...subsByUser.keys()]));
+      .innerJoin(
+        schema.pushSubscriptions,
+        and(
+          eq(schema.pushSubscriptions.userId, schema.users.id),
+          eq(schema.pushSubscriptions.notifyReminder, true),
+        ),
+      )
+      .where(
+        or(
+          isNull(schema.users.reminderDigestSentOn),
+          lt(schema.users.reminderDigestSentOn, latestLocalDate),
+        ),
+      );
 
     let delivered = 0;
     for (const user of users) {
@@ -147,11 +159,12 @@ export class TaskReminderJob {
       const tasks = selectDigestTasks(await this.loadDigestCandidates(user.id), nowLocal.date);
       if (tasks.length === 0) continue;
 
+      const subs = await this.subscriptionsByUser([user.id], (sub) => sub.notifyReminder);
       const message = buildDigestMessage(
         tasks.map((t) => t.title),
         normalizeLocale(user.locale),
       );
-      delivered += await this.dispatcher.send(subsByUser.get(user.id) ?? [], {
+      delivered += await this.dispatcher.send(subs.get(user.id) ?? [], {
         ...message,
         url: "/context",
         tag: `digest:${nowLocal.date}`,
@@ -168,7 +181,6 @@ export class TaskReminderJob {
         dueDate: schema.tasks.dueDate,
         reminderAt: schema.tasks.reminderAt,
         isCompleted: schema.tasks.isCompleted,
-        recurrence: schema.tasks.recurrence,
         blockedByTaskId: schema.tasks.blockedByTaskId,
         blockedByTaskIsCompleted: blocker.isCompleted,
       })
@@ -177,14 +189,13 @@ export class TaskReminderJob {
       .where(and(eq(schema.tasks.userId, userId), eq(schema.tasks.isCompleted, false)));
   }
 
-  /** Subscriptions grouped by user; `userIds: null` = all users. */
   private async subscriptionsByUser(
-    userIds: string[] | null,
+    userIds: string[],
     filter: (sub: PushSubscription) => boolean,
   ): Promise<Map<string, PushSubscription[]>> {
-    const subs = await this.db.query.pushSubscriptions.findMany(
-      userIds ? { where: inArray(schema.pushSubscriptions.userId, userIds) } : undefined,
-    );
+    const subs = await this.db.query.pushSubscriptions.findMany({
+      where: inArray(schema.pushSubscriptions.userId, userIds),
+    });
     const byUser = new Map<string, PushSubscription[]>();
     for (const sub of subs) {
       if (!filter(sub)) continue;

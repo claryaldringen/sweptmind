@@ -7,7 +7,7 @@ import type {
 } from "@/components/providers/app-data-provider";
 import { isFutureTask } from "@/domain/services/task-visibility";
 
-/** Android allows 100 geofences per app; keep a margin. */
+/** Android allows 100 geofences per app; keep a margin. (iOS would need 20 — Android-only for now.) */
 export const MAX_GEOFENCES = 90;
 const MIN_RADIUS_METERS = 200;
 const NOTIFICATION_URL = "/context";

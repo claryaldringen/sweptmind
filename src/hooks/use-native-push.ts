@@ -6,20 +6,46 @@ import { getPlatform, getPushAdapter, type PushRegistration } from "@sweptmind/n
 import { useTranslations } from "@/lib/i18n";
 import { nativePreferences } from "@/lib/native-preferences";
 
+let inFlightSave: { token: string; promise: Promise<void> } | null = null;
+
 /** Stores the device token on the server for the signed-in user. */
-export async function saveNativePushRegistration(registration: PushRegistration): Promise<void> {
-  const res = await fetch("/api/push/subscribe", {
+export function saveNativePushRegistration(registration: PushRegistration): Promise<void> {
+  // One registration fires both the register() result and the token listener
+  if (inFlightSave?.token === registration.token) return inFlightSave.promise;
+
+  const promise = (async () => {
+    const res = await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint: registration.token, platform: registration.platform }),
+    });
+    if (!res.ok) throw new Error(`Push subscribe failed: ${res.status}`);
+    nativePreferences.setPushToken(registration.token);
+  })().finally(() => {
+    if (inFlightSave?.promise === promise) inFlightSave = null;
+  });
+
+  inFlightSave = { token: registration.token, promise };
+  return promise;
+}
+
+/** Removes this device's subscription on the server; keeps the token if that fails (retried). */
+export async function removeNativePushSubscription(): Promise<void> {
+  const token = nativePreferences.getPushToken();
+  if (!token) return;
+  const res = await fetch("/api/push/unsubscribe", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ endpoint: registration.token, platform: registration.platform }),
+    body: JSON.stringify({ endpoint: token }),
   });
-  if (!res.ok) throw new Error(`Push subscribe failed: ${res.status}`);
-  nativePreferences.setPushToken(registration.token);
+  if (!res.ok) throw new Error(`Push unsubscribe failed: ${res.status}`);
+  nativePreferences.setPushToken(null);
 }
 
 /**
- * Native app: registers the device for push on every start (asks for permission once),
+ * Android app: registers the device for push on every start (asks for permission once),
  * keeps a rotated token in sync with the server and opens tapped notifications.
+ * iOS needs APNs/Firebase setup first, so it only has the manual toggle in Settings.
  */
 export function useNativePush() {
   const router = useRouter();
@@ -27,8 +53,7 @@ export function useNativePush() {
   const channelName = useRef(t("push.channelName"));
 
   useEffect(() => {
-    const platform = getPlatform();
-    if (platform !== "ios" && platform !== "android") return;
+    if (getPlatform() !== "android") return;
     const push = getPushAdapter();
 
     const offToken = push.onTokenChange((registration) => {
@@ -44,7 +69,11 @@ export function useNativePush() {
     });
 
     (async () => {
-      if (nativePreferences.isPushDisabled()) return;
+      if (nativePreferences.isPushDisabled()) {
+        // Finish a switch-off that couldn't reach the server (e.g. offline)
+        await removeNativePushSubscription();
+        return;
+      }
       if (!(await push.isConfigured())) return;
 
       const status = await push.getPermissionStatus();

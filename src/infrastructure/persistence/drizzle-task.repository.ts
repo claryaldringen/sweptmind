@@ -1,13 +1,20 @@
-import { eq, and, or, isNotNull, asc, desc, inArray, count, ilike } from "drizzle-orm";
+import { eq, and, or, isNotNull, asc, desc, inArray, count, ilike, sql } from "drizzle-orm";
 import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import type { Task } from "@/domain/entities/task";
 import type { ITaskRepository, PaginationOpts } from "@/domain/repositories/task.repository";
 import { isFutureTask } from "@/domain/services/task-visibility";
 
-/** A new due date (rescheduling, next recurrence) must be announced again. */
+/**
+ * A changed due date (rescheduling, next recurrence) must be announced again. Calendar syncs
+ * often rewrite the same value, so compare in SQL — SET expressions see the old row.
+ */
 function withNotificationReset(data: Partial<Task>) {
-  return "dueDate" in data ? { ...data, notifiedAt: null } : data;
+  if (!("dueDate" in data)) return data;
+  return {
+    ...data,
+    notifiedAt: sql`CASE WHEN ${schema.tasks.dueDate} IS DISTINCT FROM ${data.dueDate ?? null} THEN NULL ELSE ${schema.tasks.notifiedAt} END`,
+  };
 }
 
 export class DrizzleTaskRepository implements ITaskRepository {

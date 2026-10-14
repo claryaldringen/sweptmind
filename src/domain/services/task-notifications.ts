@@ -6,10 +6,10 @@
  *
  * - Due notification: a task with a time is announced when its time comes (within a grace
  *   window, so a missed cron run still delivers but stale tasks aren't announced).
- * - Daily digest ("Připomenutí"): one morning summary of tasks that become visible today.
+ * - Daily digest ("Připomenutí"): one morning summary of today's tasks.
  */
 
-import { getVisibleDate, isFutureTask } from "./task-visibility";
+import { computeDefaultReminder } from "./task-visibility";
 
 export const DEFAULT_TIME_ZONE = "Europe/Prague";
 export const DUE_GRACE_MINUTES = 60;
@@ -90,17 +90,22 @@ interface DigestCandidate {
   dueDate: string | null;
   reminderAt: string | null;
   isCompleted: boolean;
-  recurrence?: string | null;
   blockedByTaskId?: string | null;
   blockedByTaskIsCompleted?: boolean | null;
 }
 
-/** Tasks that become visible today (reminder day, date-only due day, day before a timed task). */
+/**
+ * Today's tasks: due today (date-only or with a time) plus explicit reminders for today.
+ * The automatic reminder of a timed task (the day before) doesn't count — that task is
+ * due tomorrow.
+ */
 export function selectDigestTasks<T extends DigestCandidate>(tasks: T[], today: string): T[] {
-  return tasks.filter(
-    (task) =>
-      !task.isCompleted && !isFutureTask(task, today) && getVisibleDate(task, today) === today,
-  );
+  return tasks.filter((task) => {
+    if (task.isCompleted) return false;
+    if (task.blockedByTaskId && task.blockedByTaskIsCompleted === false) return false;
+    if (task.dueDate?.slice(0, 10) === today) return true;
+    return task.reminderAt === today && task.reminderAt !== computeDefaultReminder(task.dueDate);
+  });
 }
 
 export function buildDueMessage(

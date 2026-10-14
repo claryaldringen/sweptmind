@@ -11,6 +11,9 @@ const UPDATE_CLIENT_SETTINGS = gql`
   }
 `;
 
+// During hydration useLocale briefly reports the server default — wait for the real value
+const SETTLE_MS = 1500;
+
 /**
  * Reports the device's time zone and the app language to the server, so notifications
  * go out at the user's local time and in their language.
@@ -20,9 +23,12 @@ export function useClientSettingsSync() {
   const [updateClientSettings] = useMutation(UPDATE_CLIENT_SETTINGS);
 
   useEffect(() => {
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    updateClientSettings({ variables: { timezone, locale } }).catch(() => {
-      // Best effort — the server falls back to Europe/Prague and Czech
-    });
+    const timer = setTimeout(() => {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      updateClientSettings({ variables: { timezone, locale } }).catch(() => {
+        // Best effort — the server falls back to Europe/Prague and Czech
+      });
+    }, SETTLE_MS);
+    return () => clearTimeout(timer);
   }, [locale, updateClientSettings]);
 }

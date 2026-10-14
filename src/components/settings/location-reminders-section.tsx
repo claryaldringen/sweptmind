@@ -9,7 +9,7 @@ import { useTranslations } from "@/lib/i18n";
 import { nativePreferences, useLocationRemindersEnabled } from "@/lib/native-preferences";
 
 /**
- * Native app only: opt-in for OS geofence notifications. The description doubles as the
+ * Android app only: opt-in for OS geofence notifications. The description doubles as the
  * prominent disclosure Google Play requires before asking for background location.
  */
 export function LocationRemindersSection() {
@@ -45,8 +45,8 @@ export function LocationRemindersSection() {
         if (result.location === "denied" || result.location === "notDetermined") return;
         nativePreferences.setLocationRemindersEnabled(true);
       } else {
+        // useGeofenceSync removes the registered geofences
         nativePreferences.setLocationRemindersEnabled(false);
-        await location.removeAllGeofences();
       }
     } catch (err) {
       console.warn("[geofence] toggle failed:", err);

@@ -126,26 +126,55 @@ describe("selectDigestTasks", () => {
     blockedByTaskIsCompleted: null,
   };
 
-  it("vybere úkoly, které se dnes objeví", () => {
+  it("vybere úkoly s termínem dnes – jen s datem i s časem", () => {
     const tasks = [
-      { ...base, id: "date-today", title: "A", dueDate: "2026-07-01" },
+      { ...base, id: "date-today", title: "A", dueDate: "2026-07-01", reminderAt: "2026-07-01" },
       {
         ...base,
-        id: "reminder-today",
+        id: "timed-today",
         title: "B",
-        dueDate: "2026-07-05",
-        reminderAt: "2026-07-01",
+        dueDate: "2026-07-01T15:00",
+        reminderAt: "2026-06-30",
       },
-      { ...base, id: "timed-tomorrow", title: "C", dueDate: "2026-07-02T10:00" },
     ];
     expect(selectDigestTasks(tasks, "2026-07-01").map((t) => t.id)).toEqual([
       "date-today",
-      "reminder-today",
-      "timed-tomorrow",
+      "timed-today",
     ]);
   });
 
-  it("vynechá dokončené, blokované, bez data a viditelné už dříve", () => {
+  it("vybere úkoly s ručně nastavenou připomínkou na dnes", () => {
+    const tasks = [
+      {
+        ...base,
+        id: "reminder-today",
+        title: "A",
+        dueDate: "2026-07-05",
+        reminderAt: "2026-07-01",
+      },
+      { ...base, id: "reminder-no-due", title: "B", dueDate: null, reminderAt: "2026-07-01" },
+    ];
+    expect(selectDigestTasks(tasks, "2026-07-01").map((t) => t.id)).toEqual([
+      "reminder-today",
+      "reminder-no-due",
+    ]);
+  });
+
+  it("nezahrne zítřejší úkol s časem, i když je vidět už dnes", () => {
+    // Automatic reminder of a timed task = the day before → visible today, but due tomorrow
+    const tasks = [
+      {
+        ...base,
+        id: "timed-tomorrow",
+        title: "A",
+        dueDate: "2026-07-02T10:00",
+        reminderAt: "2026-07-01",
+      },
+    ];
+    expect(selectDigestTasks(tasks, "2026-07-01")).toEqual([]);
+  });
+
+  it("vynechá dokončené, blokované, bez data a s jiným termínem", () => {
     const tasks = [
       { ...base, id: "done", title: "A", dueDate: "2026-07-01", isCompleted: true },
       {

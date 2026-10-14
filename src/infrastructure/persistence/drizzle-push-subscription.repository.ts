@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import type { PushSubscription } from "@/domain/entities/push-subscription";
@@ -19,13 +19,31 @@ export class DrizzlePushSubscriptionRepository implements IPushSubscriptionRepos
       notifyReminder: boolean;
     },
   ): Promise<void> {
-    await this.db
-      .delete(schema.pushSubscriptions)
-      .where(eq(schema.pushSubscriptions.endpoint, values.endpoint));
+    await this.db.transaction(async (tx) => {
+      // The device/browser now belongs to whoever is signed in
+      await tx
+        .delete(schema.pushSubscriptions)
+        .where(
+          and(
+            eq(schema.pushSubscriptions.endpoint, values.endpoint),
+            ne(schema.pushSubscriptions.userId, userId),
+          ),
+        );
 
-    await this.db.insert(schema.pushSubscriptions).values({
-      userId,
-      ...values,
+      // ON CONFLICT: the app may register the same token twice in parallel
+      await tx
+        .insert(schema.pushSubscriptions)
+        .values({ userId, ...values })
+        .onConflictDoUpdate({
+          target: [schema.pushSubscriptions.userId, schema.pushSubscriptions.endpoint],
+          set: {
+            p256dh: values.p256dh,
+            auth: values.auth,
+            platform: values.platform,
+            notifyDueDate: values.notifyDueDate,
+            notifyReminder: values.notifyReminder,
+          },
+        });
     });
   }
 
