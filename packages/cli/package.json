@@ -34,7 +34,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/sweptmind/sweptmind"
+    "url": "git+https://github.com/claryaldringen/sweptmind.git",
+    "directory": "packages/cli"
   },
   "license": "MIT",
   "keywords": [

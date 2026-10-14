@@ -1,0 +1,32 @@
+name: Publish CLI
+on:
+  push:
+    tags: ["cli-v*"]
+
+permissions:
+  id-token: write # OIDC for npm Trusted Publishing
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          registry-url: "https://registry.npmjs.org"
+      - name: Check tag matches package version
+        run: |
+          version=$(node -p "require('./packages/cli/package.json').version")
+          if [ "$GITHUB_REF_NAME" != "cli-v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match sweptmind-cli version $version"
+            exit 1
+          fi
+      - run: corepack enable && yarn install --immutable
+      - run: yarn workspace sweptmind-cli typecheck
+      - run: yarn workspace sweptmind-cli build
+      # Trusted Publishing requires npm >= 11.5.1
+      - run: npm install -g npm@^11.5.1
+      - run: npm publish
+        working-directory: packages/cli

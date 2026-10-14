@@ -44,6 +44,10 @@ cd apps/mobile && npx cap open ios        # Otevřít v Xcode
 # Desktop (Electron)
 cd apps/desktop && yarn dev               # Dev mode (macOS)
 cd apps/desktop && yarn build             # Build .dmg
+
+# CLI (npm balíček sweptmind-cli) – vydání přes GitHub Actions (npm Trusted Publishing, bez tokenu)
+# 1. zvednout "version" v packages/cli/package.json, commit, push
+# 2. git tag cli-vX.Y.Z && git push origin cli-vX.Y.Z   # spustí .github/workflows/publish-cli.yml
 ```
 
 ## Struktura projektu
