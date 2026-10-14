@@ -47,7 +47,6 @@ next-env.d.ts
 coverage/
 
 # Capacitor native projects (auto-generated)
-apps/mobile/android/
 apps/mobile/ios/
 
 # Electron build artifacts
