@@ -223,6 +223,104 @@ describe("GoogleCalendarService", () => {
   // pushTask
   // -------------------------------------------------------------------------
 
+  describe("pushTask – formát času události", () => {
+    beforeEach(() => {
+      vi.mocked(syncRepo.findByTaskId).mockResolvedValue(undefined);
+      vi.mocked(gcalClient.insertEvent).mockResolvedValue({
+        id: "gcal-new",
+        summary: "x",
+        start: { date: "2027-01-18" },
+        end: { date: "2027-01-19" },
+      });
+    });
+
+    function insertedEvent() {
+      return vi.mocked(gcalClient.insertEvent).mock.calls[0][2];
+    }
+
+    it("pošle místní čas úkolu se sekundami a časovým pásmem uživatele (RFC3339)", async () => {
+      vi.mocked(userRepo.getGoogleCalendarSettings).mockResolvedValue({
+        ...defaultSettings,
+        timeZone: "Europe/Prague",
+      });
+
+      await service.pushTask("user-1", makeTask({ dueDate: "2027-01-18T12:00", dueDateEnd: null }));
+
+      expect(insertedEvent().start).toEqual({
+        dateTime: "2027-01-18T12:00:00",
+        timeZone: "Europe/Prague",
+      });
+      expect(insertedEvent().end).toEqual({
+        dateTime: "2027-01-18T13:00:00",
+        timeZone: "Europe/Prague",
+      });
+    });
+
+    it("bez známého pásma použije Europe/Prague", async () => {
+      vi.mocked(userRepo.getGoogleCalendarSettings).mockResolvedValue({
+        ...defaultSettings,
+        timeZone: null,
+      });
+
+      await service.pushTask("user-1", makeTask({ dueDate: "2026-10-27T10:45", dueDateEnd: null }));
+
+      expect(insertedEvent().start).toEqual({
+        dateTime: "2026-10-27T10:45:00",
+        timeZone: "Europe/Prague",
+      });
+    });
+
+    it("výchozí hodinová délka přejde přes půlnoc", async () => {
+      vi.mocked(userRepo.getGoogleCalendarSettings).mockResolvedValue({
+        ...defaultSettings,
+        timeZone: "America/New_York",
+      });
+
+      await service.pushTask("user-1", makeTask({ dueDate: "2026-12-31T23:30", dueDateEnd: null }));
+
+      expect(insertedEvent().end).toEqual({
+        dateTime: "2027-01-01T00:30:00",
+        timeZone: "America/New_York",
+      });
+    });
+
+    it("použije konec úkolu", async () => {
+      vi.mocked(userRepo.getGoogleCalendarSettings).mockResolvedValue({
+        ...defaultSettings,
+        timeZone: "Europe/Prague",
+      });
+
+      await service.pushTask(
+        "user-1",
+        makeTask({ dueDate: "2027-01-18T12:00", dueDateEnd: "2027-01-18T14:15" }),
+      );
+
+      expect(insertedEvent().end).toEqual({
+        dateTime: "2027-01-18T14:15:00",
+        timeZone: "Europe/Prague",
+      });
+    });
+
+    it("čas s posunem (úkol z Google Kalendáře) pošle beze změny", async () => {
+      await service.pushTask(
+        "user-1",
+        makeTask({ dueDate: "2026-10-27T10:45:00+01:00", dueDateEnd: "2026-10-27T11:30:00+01:00" }),
+      );
+
+      expect(insertedEvent().start).toEqual({ dateTime: "2026-10-27T10:45:00+01:00" });
+      expect(insertedEvent().end).toEqual({ dateTime: "2026-10-27T11:30:00+01:00" });
+    });
+
+    it("čas s posunem bez konce dostane hodinovou délku", async () => {
+      await service.pushTask(
+        "user-1",
+        makeTask({ dueDate: "2026-10-27T10:45:00Z", dueDateEnd: null }),
+      );
+
+      expect(insertedEvent().end).toEqual({ dateTime: "2026-10-27T11:45:00.000Z" });
+    });
+  });
+
   describe("pushTask", () => {
     it("přeskočí když je sync vypnutý", async () => {
       vi.mocked(userRepo.getGoogleCalendarSettings).mockResolvedValue({

@@ -43,6 +43,8 @@ export interface IUserRepository {
     targetListId: string | null;
     syncAll: boolean;
     syncDateRange: boolean;
+    /** User's IANA time zone reported by the client (null = unknown) */
+    timeZone?: string | null;
   }>;
   findUsersWithGoogleCalendarEnabled(): Promise<Array<{ id: string }>>;
   findUsersWithExpiringChannels(

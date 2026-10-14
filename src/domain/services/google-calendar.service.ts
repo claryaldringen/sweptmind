@@ -10,6 +10,30 @@ import type {
 } from "../ports/google-calendar-client";
 import { addDays, format } from "date-fns";
 import { computeDefaultReminder } from "./task-visibility";
+import { resolveTimeZone } from "./task-notifications";
+
+/** Ends with "Z" or a UTC offset — e.g. times pulled from Google Calendar. */
+const UTC_OFFSET_RE = /(Z|[+-]\d{2}:?\d{2})$/i;
+
+/**
+ * Google requires RFC3339 (with seconds) plus an offset or an explicit time zone.
+ * App times are naive local "YYYY-MM-DDTHH:mm" in the user's zone; times that came
+ * from Google keep their offset.
+ */
+function toEventDateTime(value: string, timeZone: string): { dateTime: string; timeZone?: string } {
+  if (UTC_OFFSET_RE.test(value)) return { dateTime: value };
+  const local = value.length === 16 ? `${value}:00` : value;
+  return { dateTime: local, timeZone };
+}
+
+/** Default event end: one hour after the start, on the wall clock for naive times. */
+function oneHourAfter(value: string): string {
+  if (UTC_OFFSET_RE.test(value)) {
+    return new Date(new Date(value).getTime() + 60 * 60 * 1000).toISOString();
+  }
+  const wallClock = Date.parse(`${value.slice(0, 16)}:00Z`) + 60 * 60 * 1000;
+  return new Date(wallClock).toISOString().slice(0, 16);
+}
 
 /** Convert Google RRULE array to SweptMind recurrence string. */
 function rruleToRecurrence(recurrence?: string[]): string | null {
@@ -67,7 +91,7 @@ export class GoogleCalendarService {
     // Respect sync scope setting
     if (!this.taskMatchesSyncScope(task, settings.syncAll, settings.syncDateRange)) return;
 
-    const event = this.taskToEvent(task);
+    const event = this.taskToEvent(task, resolveTimeZone(settings.timeZone));
     const syncEntry = await this.syncRepo.findByTaskId(task.id);
 
     if (syncEntry?.googleCalendarEventId) {
@@ -295,27 +319,23 @@ export class GoogleCalendarService {
     return null;
   }
 
-  private taskToEvent(task: Task): GoogleCalendarEventData {
+  private taskToEvent(task: Task, timeZone: string): GoogleCalendarEventData {
     const hasTime = task.dueDate?.includes("T") ?? false;
 
     let start: GoogleCalendarEventData["start"];
     let end: GoogleCalendarEventData["end"];
 
     if (hasTime && task.dueDate) {
-      // Time-based event
-      const startIso = task.dueDate;
+      // Time-based event; an end without a time means the end of that day (Google
+      // requires both ends of the same type)
+      const endValue = task.dueDateEnd
+        ? task.dueDateEnd.includes("T")
+          ? task.dueDateEnd
+          : `${task.dueDateEnd}T23:59`
+        : oneHourAfter(task.dueDate);
 
-      if (task.dueDateEnd) {
-        // Explicit end time
-        end = { dateTime: task.dueDateEnd };
-      } else {
-        // Default duration: 1 hour
-        const startDate = new Date(task.dueDate);
-        const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
-        end = { dateTime: endDate.toISOString() };
-      }
-
-      start = { dateTime: startIso };
+      start = toEventDateTime(task.dueDate, timeZone);
+      end = toEventDateTime(endValue, timeZone);
     } else if (task.dueDate) {
       // All-day event — Google Calendar uses exclusive end date
       const dateStr = task.dueDate.slice(0, 10);
