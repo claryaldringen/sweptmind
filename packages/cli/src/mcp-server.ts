@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { gql, setMcpMode } from "./lib/client.js";
+import { VERSION } from "./version.js";
 
 const TASK_FIELDS = `
   id listId title notes isCompleted completedAt dueDate dueDateEnd
@@ -31,7 +32,7 @@ export async function startMcpServer(): Promise<void> {
 
   const server = new McpServer({
     name: "sweptmind",
-    version: "0.2.0",
+    version: VERSION,
   });
 
   // === Auth ===

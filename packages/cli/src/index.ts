@@ -10,13 +10,14 @@ import { registerShareCommands } from "./commands/share.js";
 import { registerCalendarCommands } from "./commands/calendar.js";
 import { registerSubscriptionCommands } from "./commands/subscription.js";
 import { registerConfigCommands } from "./commands/config.js";
+import { VERSION } from "./version.js";
 
 const program = new Command();
 
 program
   .name("sm")
   .description("SweptMind CLI — manage tasks from your terminal")
-  .version("0.1.0");
+  .version(VERSION);
 
 registerAuthCommands(program);
 registerTaskCommands(program);
