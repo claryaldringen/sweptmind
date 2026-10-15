@@ -7,7 +7,14 @@ files:
 mac:
   category: public.app-category.productivity
   target:
-    - dir
+    - target: dmg
+      arch: universal
   icon: icon.icns
+  # No Developer ID certificate — scripts/ad-hoc-sign.cjs signs the app instead
+  identity: null
+afterPack: scripts/ad-hoc-sign.cjs
+dmg:
+  # Stable name, so the settings page can link to the latest release's download
+  artifactName: SweptMind.dmg
 directories:
   output: release

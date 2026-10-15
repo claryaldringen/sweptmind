@@ -44,7 +44,10 @@ cd apps/mobile && npx cap open ios        # Otevřít v Xcode
 
 # Desktop (Electron)
 cd apps/desktop && yarn dev               # Dev mode (macOS)
-cd apps/desktop && yarn build             # Build .dmg
+cd apps/desktop && yarn build             # Build .dmg (universal, ad-hoc podpis – bez Apple Developer ID)
+# Vydání pro Mac: zvednout "version" v apps/desktop/package.json, commit, push, pak
+# git tag desktop-vX.Y.Z && git push origin desktop-vX.Y.Z   # .github/workflows/desktop.yml → GitHub Release
+# Nastavení v prohlížeči na Macu odkazuje na releases/latest/download/SweptMind.dmg
 
 # CLI (npm balíček sweptmind-cli) – vydání přes GitHub Actions (npm Trusted Publishing, bez tokenu)
 # 1. zvednout "version" v packages/cli/package.json, commit, push

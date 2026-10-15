@@ -320,6 +320,13 @@ export const cs: Dictionary = {
     updateAvailable: "Je dostupná nová verze",
     updateAction: "Aktualizovat",
   },
+  desktopApp: {
+    title: "Aplikace pro Mac",
+    description: "SweptMind ve vlastním okně s ikonou v Docku, nezávisle na prohlížeči.",
+    download: "Stáhnout pro macOS",
+    firstLaunch:
+      "Aplikace zatím není ověřená u Applu, takže ji macOS při prvním spuštění zablokuje. Pak otevři Nastavení systému → Soukromí a zabezpečení a klikni na „Přesto otevřít“.",
+  },
   push: {
     title: "Push notifikace",
     description: "Dostávej připomínky na úkoly.",

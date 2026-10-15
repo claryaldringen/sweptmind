@@ -298,6 +298,12 @@ export interface Dictionary {
     updateAvailable: string;
     updateAction: string;
   };
+  desktopApp: {
+    title: string;
+    description: string;
+    download: string;
+    firstLaunch: string;
+  };
   push: {
     title: string;
     description: string;

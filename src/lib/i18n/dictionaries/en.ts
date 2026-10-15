@@ -320,6 +320,13 @@ export const en: Dictionary = {
     updateAvailable: "A new version is available",
     updateAction: "Update",
   },
+  desktopApp: {
+    title: "Mac app",
+    description: "SweptMind in its own window with a Dock icon, independent of your browser.",
+    download: "Download for macOS",
+    firstLaunch:
+      "The app isn't notarized by Apple yet, so macOS blocks it on first launch. Then open System Settings → Privacy & Security and click “Open Anyway”.",
+  },
   push: {
     title: "Push Notifications",
     description: "Get reminders for your tasks.",
