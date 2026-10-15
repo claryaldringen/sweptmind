@@ -35,9 +35,25 @@ jobs:
           else
             echo "::warning::GOOGLE_SERVICES_JSON secret not set — the APK won't offer push notifications"
           fi
+      # A fixed signing key — with a fresh one per runner, every new APK had to be
+      # uninstalled first
+      - name: Use the fixed debug signing key
+        env:
+          ANDROID_DEBUG_KEYSTORE: ${{ secrets.ANDROID_DEBUG_KEYSTORE }}
+        run: |
+          if [ -n "$ANDROID_DEBUG_KEYSTORE" ]; then
+            printf '%s' "$ANDROID_DEBUG_KEYSTORE" | base64 -d > "$RUNNER_TEMP/debug.keystore"
+            echo "ANDROID_DEBUG_KEYSTORE_PATH=$RUNNER_TEMP/debug.keystore" >> "$GITHUB_ENV"
+          else
+            echo "::warning::ANDROID_DEBUG_KEYSTORE secret not set — the APK is signed with a throwaway key"
+          fi
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
         working-directory: apps/mobile/android
+      - name: Show the signing certificate
+        run: |
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          "$apksigner" verify --print-certs apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk | grep "SHA-256"
       - uses: actions/upload-artifact@v4
         with:
           name: sweptmind-debug-apk
