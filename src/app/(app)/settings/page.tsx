@@ -45,6 +45,7 @@ import { useIsPremium } from "@/hooks/use-is-premium";
 import { SharingSection } from "@/components/settings/sharing-section";
 import { ApiTokensSection } from "@/components/settings/api-tokens-section";
 import { DesktopAppSection } from "@/components/settings/desktop-app-section";
+import { AndroidAppSection } from "@/components/settings/android-app-section";
 import { PwaInstallSection } from "@/components/settings/pwa-install-section";
 import { ROW_CLASS, SELECT_CLASS } from "@/components/settings/styles";
 
@@ -1376,9 +1377,10 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {/* Mac app in a Mac browser, installing the web app elsewhere — at most one shows,
-            filling the slot next to Notifications */}
+        {/* Native apps and installing the web app, for browsers on the matching platform —
+            on a Mac only the first shows, filling the slot next to Notifications */}
         <DesktopAppSection />
+        <AndroidAppSection />
         <PwaInstallSection />
 
         {/* Calendar */}

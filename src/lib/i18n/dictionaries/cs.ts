@@ -353,6 +353,13 @@ export const cs: Dictionary = {
     account: "Číslo účtu",
     menuItem: "Podpořit SweptMind",
   },
+  androidApp: {
+    title: "Aplikace pro Android",
+    description: "SweptMind s upozorněními podle polohy a nativními notifikacemi.",
+    download: "Stáhnout APK ({version})",
+    installNote:
+      "Chrome se může zeptat, jestli soubor opravdu stáhnout. Pak otevři SweptMind.apk a povol instalaci z tohoto zdroje; když Play Protect varuje, zvol „Přesto nainstalovat“.",
+  },
   desktopApp: {
     title: "Aplikace pro Mac",
     description: "SweptMind ve vlastním okně s ikonou v Docku, nezávisle na prohlížeči.",

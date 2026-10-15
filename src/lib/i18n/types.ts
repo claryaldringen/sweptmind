@@ -328,6 +328,12 @@ export interface Dictionary {
     account: string;
     menuItem: string;
   };
+  androidApp: {
+    title: string;
+    description: string;
+    download: string;
+    installNote: string;
+  };
   desktopApp: {
     title: string;
     description: string;

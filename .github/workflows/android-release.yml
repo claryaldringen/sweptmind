@@ -1,0 +1,65 @@
+name: Android release
+# Release: bump versionCode and versionName in apps/mobile/android/app/build.gradle, then
+#   git tag android-vX.Y.Z && git push origin android-vX.Y.Z
+# The settings page offers the newest android-v* release's SweptMind.apk (/api/app-downloads).
+on:
+  push:
+    tags: ["android-v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+      - run: corepack enable && yarn install --immutable
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Check that the tag matches the app version
+        run: |
+          version=$(sed -nE 's/^ *versionName "([^"]+)".*/\1/p' apps/mobile/android/app/build.gradle)
+          if [ "android-v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match versionName $version"
+            exit 1
+          fi
+      - name: Sync Capacitor plugins into the Android project
+        run: npx cap sync android
+        working-directory: apps/mobile
+      - name: Write google-services.json and the release signing key
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          ANDROID_RELEASE_KEYSTORE: ${{ secrets.ANDROID_RELEASE_KEYSTORE }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ] || [ -z "$ANDROID_RELEASE_KEYSTORE" ]; then
+            echo "::error::GOOGLE_SERVICES_JSON and ANDROID_RELEASE_KEYSTORE secrets are required"
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON" > apps/mobile/android/app/google-services.json
+          printf '%s' "$ANDROID_RELEASE_KEYSTORE" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          echo "ANDROID_RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+      - name: Build release APK
+        env:
+          ANDROID_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        working-directory: apps/mobile/android
+      - name: Verify the signature
+        run: |
+          apk=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          "$apksigner" verify --print-certs "$apk" | grep "SHA-256"
+          cp "$apk" SweptMind.apk
+      - name: Publish the release
+        run: |
+          gh release create "$GITHUB_REF_NAME" SweptMind.apk \
+            --title "SweptMind pro Android ${GITHUB_REF_NAME#android-v}" \
+            --notes "Aplikace pro Android. Instalace mimo Google Play: otevři SweptMind.apk a povol instalaci z tohoto zdroje." \
+            --latest=false
+        env:
+          GH_TOKEN: ${{ github.token }}

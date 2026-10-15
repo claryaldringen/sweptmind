@@ -360,6 +360,13 @@ export const de: Dictionary = {
     account: "Kontonummer",
     menuItem: "SweptMind unterstützen",
   },
+  androidApp: {
+    title: "App für Android",
+    description: "SweptMind mit standortbasierten Erinnerungen und nativen Benachrichtigungen.",
+    download: "APK herunterladen ({version})",
+    installNote:
+      "Chrome fragt eventuell, ob du die Datei behalten möchtest. Öffne dann SweptMind.apk und erlaube die Installation aus dieser Quelle; wenn Play Protect warnt, wähle „Trotzdem installieren“.",
+  },
   desktopApp: {
     title: "Mac-App",
     description:

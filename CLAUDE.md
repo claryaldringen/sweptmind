@@ -41,6 +41,10 @@ cd apps/mobile && npx cap sync ios        # Sync web → iOS
 cd apps/mobile && npx cap open android    # Otevřít v Android Studio
 cd apps/mobile && npx cap open ios        # Otevřít v Xcode
 # Debug APK sestavuje CI (.github/workflows/android.yml) → artefakt „sweptmind-debug-apk“ u běhu workflow
+# Vydání Android aplikace: zvednout versionCode + versionName v apps/mobile/android/app/build.gradle, commit, push, pak
+# git tag android-vX.Y.Z && git push origin android-vX.Y.Z   # .github/workflows/android-release.yml → GitHub Release se SweptMind.apk
+# Release APK podepisuje klíč ze secretů ANDROID_RELEASE_KEYSTORE(_PASSWORD) – stejný klíč je nutný pro každou další verzi (i Google Play)
+# Nastavení v prohlížeči na Androidu nabídne nejnovější APK přes /api/app-downloads
 
 # Desktop (Electron)
 cd apps/desktop && yarn dev               # Dev mode (macOS)
