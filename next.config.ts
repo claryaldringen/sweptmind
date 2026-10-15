@@ -1,5 +1,23 @@
 import type { NextConfig } from "next";
+import { execSync } from "node:child_process";
 import { withSerwist } from "@serwist/turbopack";
+
+/**
+ * Identifies the deployed build; open clients compare it with /api/version to offer an
+ * update. Must be deterministic — the config can be evaluated more than once per build.
+ */
+function resolveBuildId(): string {
+  if (process.env.VERCEL_GIT_COMMIT_SHA) return process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7);
+  try {
+    const sha = execSync("git rev-parse --short HEAD", {
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    return sha || "dev";
+  } catch {
+    return "dev";
+  }
+}
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -8,7 +26,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@sweptmind/native-bridge", "@sweptmind/capacitor-geofence"],
   turbopack: {},
   env: {
-    NEXT_PUBLIC_BUILD_ID: "dev",
+    NEXT_PUBLIC_BUILD_ID: resolveBuildId(),
     NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
   },
   async redirects() {
