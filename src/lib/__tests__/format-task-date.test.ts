@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cs, enUS } from "date-fns/locale";
+import { cs, de, enUS, es, fr, it as itLocale } from "date-fns/locale";
 import { formatDueDate, formatTaskDate } from "../format-task-date";
 
 const CS = { locale: "cs" as const, dateFnsLocale: cs };
@@ -150,5 +150,19 @@ describe("formatTaskDate", () => {
 
   it("drží anglický formát beze změny", () => {
     expect(formatTaskDate("2026-08-27", { ...EN, withYear: true })).toBe("Aug 27, 2026");
+  });
+});
+
+describe("další jazyky", () => {
+  it("používají číselné datum ve svém pořadí a 24hodinový čas", () => {
+    const value = "2026-08-27T09:05";
+    expect(formatTaskDate(value, { locale: "de", dateFnsLocale: de, withYear: true })).toBe(
+      "27.8.2026, 09:05",
+    );
+    expect(formatTaskDate(value, { locale: "it", dateFnsLocale: itLocale })).toBe("27/8, 09:05");
+    expect(formatTaskDate(value, { locale: "fr", dateFnsLocale: fr })).toBe("27/8, 09:05");
+    expect(formatTaskDate(value, { locale: "es", dateFnsLocale: es, withYear: true })).toBe(
+      "27/8/2026, 9:05",
+    );
   });
 });

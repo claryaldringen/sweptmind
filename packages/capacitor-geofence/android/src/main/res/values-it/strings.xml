@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="geofence_channel_name">Promemoria per luogo</string>
+    <string name="geofence_channel_description">Notifiche quando sei vicino a un luogo dove puoi svolgere un\'attività</string>
+</resources>

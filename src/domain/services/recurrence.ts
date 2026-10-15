@@ -177,10 +177,12 @@ export function formatRecurrenceLabel(
     case "MONTHLY":
       return parsed.interval === 1 ? labels.everyMonth : labels.everyNMonths(parsed.interval);
 
-    case "MONTHLY_LAST":
-      return parsed.interval === 1
-        ? labels.everyLastDay
-        : `${labels.everyNMonths(parsed.interval)}, ${labels.everyLastDay.toLowerCase()}`;
+    case "MONTHLY_LAST": {
+      if (parsed.interval === 1) return labels.everyLastDay;
+      // Lowercase only the first letter — German capitalizes nouns ("letzter Tag im Monat")
+      const lastDay = labels.everyLastDay.charAt(0).toLowerCase() + labels.everyLastDay.slice(1);
+      return `${labels.everyNMonths(parsed.interval)}, ${lastDay}`;
+    }
 
     case "YEARLY":
       return parsed.interval === 1 ? labels.everyYear : labels.everyNYears(parsed.interval);

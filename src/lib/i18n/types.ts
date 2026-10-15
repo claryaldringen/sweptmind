@@ -215,6 +215,7 @@ export interface Dictionary {
   };
   pages: {
     planned: string;
+    plannedDescription: string;
     nearby: string;
     tag: string;
     searchResults: string;
@@ -301,6 +302,17 @@ export interface Dictionary {
     settingsDescription: string;
     settingsInstalled: string;
     settingsUnavailable: string;
+  };
+  apiTokens: {
+    title: string;
+    description: string;
+    namePlaceholder: string;
+    create: string;
+    created: string;
+    lastUsed: string;
+    revokeTitle: string;
+    revokeDescription: string;
+    revoke: string;
   };
   desktopApp: {
     title: string;
@@ -540,4 +552,4 @@ export interface Dictionary {
   };
 }
 
-export type Locale = "cs" | "en";
+export type { Locale } from "./locales";

@@ -96,7 +96,7 @@ src/
 ├── lib/
 │   ├── auth.ts            # Auth.js v5 konfigurace
 │   ├── apollo/            # Apollo Client nastavení (client.ts, rsc-client.ts, provider.tsx)
-│   ├── i18n/              # Lokalizace (cs/en slovníky, typy, provider)
+│   ├── i18n/              # Lokalizace (cs/en/de/it/fr/es slovníky, typy, provider)
 │   ├── utils.ts           # cn() helper
 │   └── validators.ts      # Zod schémata
 ├── components/
@@ -119,7 +119,7 @@ src/
 - **Apollo Client v4:** hooky se importují z `@apollo/client/react`, core z `@apollo/client`. `ApolloClient` + `InMemoryCache` z `@apollo/client-integration-nextjs` pro provider.
 - **JWT sessions** (žádná sessions tabulka) — Credentials provider vyžaduje JWT strategii
 - **Zod v4:** používá `.issues` (ne `.errors`) na ZodError
-- **i18n:** Vlastní lokalizace (cs/en) bez externích knihoven. `useLocale()` hook (localStorage + cookie `sweptmind-locale`), `useTranslations()` vrací `t(key, params?)`. Slovníky v `src/lib/i18n/dictionaries/`. Pro server components: přímý import slovníku + čtení locale z cookies. Jazyk se přepíná v Settings.
+- **i18n:** Vlastní lokalizace (cs, en, de, it, fr, es) bez externích knihoven. Seznam jazyků je `USER_LOCALES` v `src/domain/entities/user.ts` (používá ho i server pro notifikace), klient ho bere přes `src/lib/i18n/locales.ts`. `useLocale()` hook (localStorage + cookie `sweptmind-locale`, jinak jazyk prohlížeče), `useTranslations()` vrací `t(key, params?)`. Slovníky v `src/lib/i18n/dictionaries/` – nový klíč patří do `types.ts` a všech šesti slovníků (test `i18n.test.ts` hlídá shodu s angličtinou). Pro server components: `dictionaries` z `@/lib/i18n/dictionaries` + `getRequestLocale()` z `@/lib/i18n/server` (cookie, jinak Accept-Language). Texty stránky GTD jsou v `src/app/gtd/content/`. Jazyk se přepíná v Settings.
 
 ## DB Schéma
 

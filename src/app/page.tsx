@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -19,9 +18,8 @@ import {
   ArrowRight,
   Bot,
 } from "lucide-react";
-import { cs } from "@/lib/i18n/dictionaries/cs";
-import { en } from "@/lib/i18n/dictionaries/en";
-import type { Dictionary, Locale } from "@/lib/i18n/types";
+import { dictionaries } from "@/lib/i18n/dictionaries";
+import { getRequestLocale } from "@/lib/i18n/server";
 
 export const metadata: Metadata = {
   title: "SweptMind — GTD Task Management",
@@ -34,16 +32,13 @@ export const metadata: Metadata = {
   },
 };
 
-const dictionaries: Record<Locale, Dictionary> = { cs, en };
-
 export default async function HomePage() {
   const session = await auth();
   if (session?.user) {
     redirect("/planned");
   }
 
-  const cookieStore = await cookies();
-  const locale = (cookieStore.get("sweptmind-locale")?.value as Locale) || "cs";
+  const locale = await getRequestLocale();
   const t = dictionaries[locale];
 
   const currentYear = new Date().getFullYear();

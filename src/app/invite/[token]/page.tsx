@@ -1,11 +1,9 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { CheckCircle2 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { repos, services } from "@/infrastructure/container";
-import { cs } from "@/lib/i18n/dictionaries/cs";
-import { en } from "@/lib/i18n/dictionaries/en";
-import type { Locale } from "@/lib/i18n/types";
+import { dictionaries } from "@/lib/i18n/dictionaries";
+import { getRequestLocale } from "@/lib/i18n/server";
 import { Button } from "@/components/ui/button";
 import { AcceptButton } from "./accept-button";
 
@@ -16,9 +14,7 @@ interface InvitePageProps {
 export default async function InvitePage({ params }: InvitePageProps) {
   const { token } = await params;
 
-  const cookieStore = await cookies();
-  const locale = (cookieStore.get("sweptmind-locale")?.value as Locale) || "cs";
-  const dict = locale === "en" ? en : cs;
+  const dict = dictionaries[await getRequestLocale()];
   const t = dict.sharing;
 
   // Look up invite

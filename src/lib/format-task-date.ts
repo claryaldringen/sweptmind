@@ -4,8 +4,8 @@ import type { Locale } from "@/lib/i18n/types";
 
 /**
  * Formátovací vzory pro data úkolu. Datum i čas jsou lokalizované:
- * čeština používá číselné datum a 24hodinový čas, angličtina "MMM d" a AM/PM.
- * `sep` odděluje datum od času.
+ * angličtina používá "MMM d" a AM/PM, ostatní jazyky číselné datum ve svém
+ * pořadí a 24hodinový čas. `sep` odděluje datum od času.
  */
 const PATTERNS: Record<Locale, { date: string; sep: string; time: string }[]> = {
   cs: [
@@ -16,6 +16,22 @@ const PATTERNS: Record<Locale, { date: string; sep: string; time: string }[]> = 
   en: [
     { date: "MMM d", sep: ", ", time: "h:mm a" },
     { date: "MMM d, yyyy", sep: " ", time: "h:mm a" },
+  ],
+  de: [
+    { date: "d.M.", sep: ", ", time: "HH:mm" },
+    { date: "d.M.yyyy", sep: ", ", time: "HH:mm" },
+  ],
+  it: [
+    { date: "d/M", sep: ", ", time: "HH:mm" },
+    { date: "d/M/yyyy", sep: ", ", time: "HH:mm" },
+  ],
+  fr: [
+    { date: "d/M", sep: ", ", time: "HH:mm" },
+    { date: "d/M/yyyy", sep: ", ", time: "HH:mm" },
+  ],
+  es: [
+    { date: "d/M", sep: ", ", time: "H:mm" },
+    { date: "d/M/yyyy", sep: ", ", time: "H:mm" },
   ],
 };
 

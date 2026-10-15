@@ -1,14 +1,10 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { cs } from "@/lib/i18n/dictionaries/cs";
-import { en } from "@/lib/i18n/dictionaries/en";
-import type { Locale } from "@/lib/i18n/types";
+import { dictionaries } from "@/lib/i18n/dictionaries";
+import { getRequestLocale } from "@/lib/i18n/server";
 import { NotFoundDebug } from "@/components/layout/not-found-debug";
 
 export default async function RootNotFound() {
-  const cookieStore = await cookies();
-  const locale = (cookieStore.get("sweptmind-locale")?.value as Locale) || "cs";
-  const dict = locale === "en" ? en : cs;
+  const dict = dictionaries[await getRequestLocale()];
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">

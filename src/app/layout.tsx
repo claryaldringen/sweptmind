@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { ApolloProvider } from "@/lib/apollo/provider";
@@ -7,6 +6,7 @@ import { SessionProvider } from "@/components/providers/session-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LocaleProvider } from "@/components/providers/locale-provider";
+import { getRequestLocale } from "@/lib/i18n/server";
 import { SwProvider } from "@/components/providers/sw-provider";
 import "./globals.css";
 
@@ -71,8 +71,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
-  const locale = cookieStore.get("sweptmind-locale")?.value || "cs";
+  const locale = await getRequestLocale();
 
   return (
     <html lang={locale} suppressHydrationWarning>

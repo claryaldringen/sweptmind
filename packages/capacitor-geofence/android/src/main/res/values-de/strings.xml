@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="geofence_channel_name">Standort-Erinnerungen</string>
+    <string name="geofence_channel_description">Benachrichtigungen, wenn du in der Nähe eines Ortes bist, an dem du eine Aufgabe erledigen kannst</string>
+</resources>

@@ -33,7 +33,7 @@ export const users = pgTable("users", {
   sharingDefaultListId: text("sharing_default_list_id"),
   // Reported by the client; used to send notifications at the user's local time
   timezone: text("timezone"), // IANA, e.g. "Europe/Prague"
-  locale: text("locale"), // "cs" | "en"
+  locale: text("locale"), // UserLocale – "cs" | "en" | "de" | "it" | "fr" | "es"
   reminderDigestSentOn: text("reminder_digest_sent_on"), // YYYY-MM-DD (user's local date)
 });
 

@@ -194,11 +194,12 @@ describe("selectDigestTasks", () => {
 });
 
 describe("normalizeLocale", () => {
-  it("rozpozná angličtinu, jinak čeština", () => {
+  it("rozpozná podporované jazyky, jinak čeština", () => {
     expect(normalizeLocale("en")).toBe("en");
     expect(normalizeLocale("cs")).toBe("cs");
+    expect(normalizeLocale("de")).toBe("de");
     expect(normalizeLocale(null)).toBe("cs");
-    expect(normalizeLocale("de")).toBe("cs");
+    expect(normalizeLocale("pl")).toBe("cs");
   });
 });
 
@@ -232,5 +233,21 @@ describe("buildDigestMessage", () => {
       title: "Today's tasks (4)",
       body: "A, B, C and 1 more",
     });
+  });
+});
+
+describe("zprávy v dalších jazycích", () => {
+  it("termín i ranní přehled jsou přeložené", () => {
+    expect(buildDueMessage("Arzt anrufen", "2026-07-01T14:30", "de").body).toBe(
+      "Heute fällig um 14:30",
+    );
+    expect(buildDigestMessage(["A", "B", "C", "D"], "fr")).toEqual({
+      title: "Tâches du jour (4)",
+      body: "A, B, C et 1 de plus",
+    });
+    expect(buildDigestMessage(["A"], "es").title).toBe("Tareas de hoy (1)");
+    expect(buildDueMessage("Chiamare", "2026-07-01T09:00", "it").body).toBe(
+      "Scadenza: oggi alle 09:00",
+    );
   });
 });

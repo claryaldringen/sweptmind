@@ -1,4 +1,4 @@
-import type { User, ClientSettings } from "../entities/user";
+import { isUserLocale, type User, type ClientSettings } from "../entities/user";
 import { isValidTimeZone } from "./task-notifications";
 import type { IUserRepository } from "../repositories/user.repository";
 
@@ -56,7 +56,7 @@ export class UserService {
   ): Promise<void> {
     const settings: ClientSettings = {};
     if (input.timezone && isValidTimeZone(input.timezone)) settings.timezone = input.timezone;
-    if (input.locale === "cs" || input.locale === "en") settings.locale = input.locale;
+    if (isUserLocale(input.locale)) settings.locale = input.locale;
     if (Object.keys(settings).length === 0) return;
     return this.userRepo.updateClientSettings(userId, settings);
   }

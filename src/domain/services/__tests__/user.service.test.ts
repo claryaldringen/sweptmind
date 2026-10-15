@@ -125,8 +125,13 @@ describe("UserService", () => {
     });
 
     it("bez platných hodnot nic nezapisuje", async () => {
-      await service.updateClientSettings("user-1", { timezone: "nonsense", locale: "de" });
+      await service.updateClientSettings("user-1", { timezone: "nonsense", locale: "pl" });
       expect(userRepo.updateClientSettings).not.toHaveBeenCalled();
+    });
+
+    it("přijme všechny jazyky aplikace", async () => {
+      await service.updateClientSettings("user-1", { locale: "de" });
+      expect(userRepo.updateClientSettings).toHaveBeenCalledWith("user-1", { locale: "de" });
     });
   });
 

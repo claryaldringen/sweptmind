@@ -52,8 +52,7 @@ import { getTagColorClasses } from "@/lib/tag-colors";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { format, isPast, parseISO, startOfDay, addDays } from "date-fns";
-import { cs } from "date-fns/locale/cs";
-import { enUS } from "date-fns/locale/en-US";
+import { getDateFnsLocale } from "@/lib/i18n/date-fns-locale";
 import { useTranslations } from "@/lib/i18n";
 import { formatRecurrenceLabel } from "@/domain/services/recurrence";
 import { formatDueDate, formatTaskDate } from "@/lib/format-task-date";
@@ -134,7 +133,7 @@ export const TaskItem = memo(function TaskItem({
   const searchParams = useSearchParams();
   const { aiEnabled } = useIsPremium();
   const { t, tArray, locale: appLocale } = useTranslations();
-  const dateFnsLocale = appLocale === "cs" ? cs : enUS;
+  const dateFnsLocale = getDateFnsLocale(appLocale);
   const selectedTaskId = searchParams.get("task");
   const { isNearby: checkNearby } = useNearby();
   const deviceContext = useDeviceContext();

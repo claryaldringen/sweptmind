@@ -6,6 +6,7 @@ import { useQuery, useMutation } from "@apollo/client/react";
 import { Key, Copy, Trash2, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTranslations } from "@/lib/i18n";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +47,7 @@ const REVOKE_API_TOKEN = gql`
 `;
 
 export function ApiTokensSection() {
+  const { t, locale } = useTranslations();
   const [tokenName, setTokenName] = useState("CLI");
   const [newToken, setNewToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -90,10 +92,8 @@ export function ApiTokensSection() {
       <div className="mb-4 flex items-start gap-2">
         <Key className="mt-0.5 h-4 w-4 shrink-0" />
         <div>
-          <h2 className="text-sm font-semibold">API Tokeny</h2>
-          <p className="text-muted-foreground text-xs">
-            Tokeny pro přístup přes CLI (sm login --token ...)
-          </p>
+          <h2 className="text-sm font-semibold">{t("apiTokens.title")}</h2>
+          <p className="text-muted-foreground text-xs">{t("apiTokens.description")}</p>
         </div>
       </div>
 
@@ -102,12 +102,12 @@ export function ApiTokensSection() {
         <Input
           value={tokenName}
           onChange={(e) => setTokenName(e.target.value)}
-          placeholder="Název tokenu"
+          placeholder={t("apiTokens.namePlaceholder")}
           className="max-w-xs"
         />
         <Button onClick={handleCreate} disabled={creating || !tokenName}>
           <Plus className="mr-1 h-4 w-4" />
-          Vytvořit
+          {t("apiTokens.create")}
         </Button>
       </div>
 
@@ -134,9 +134,13 @@ export function ApiTokensSection() {
                   {token.name}
                 </p>
                 <p className="text-muted-foreground text-xs">
-                  Vytvořen: {new Date(token.createdAt).toLocaleDateString("cs")}
+                  {t("apiTokens.created", {
+                    date: new Date(token.createdAt).toLocaleDateString(locale),
+                  })}
                   {token.lastUsedAt &&
-                    ` · Naposledy použit: ${new Date(token.lastUsedAt).toLocaleDateString("cs")}`}
+                    ` · ${t("apiTokens.lastUsed", {
+                      date: new Date(token.lastUsedAt).toLocaleDateString(locale),
+                    })}`}
                 </p>
               </div>
               <AlertDialog>
@@ -147,16 +151,15 @@ export function ApiTokensSection() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Odvolat token?</AlertDialogTitle>
+                    <AlertDialogTitle>{t("apiTokens.revokeTitle")}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Token &quot;{token.name}&quot; bude trvale smazán. Všechna zařízení
-                      používající tento token se odpojí.
+                      {t("apiTokens.revokeDescription", { name: token.name })}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Zrušit</AlertDialogCancel>
+                    <AlertDialogCancel>{t("common.deleteConfirmCancel")}</AlertDialogCancel>
                     <AlertDialogAction onClick={() => handleRevoke(token.id)}>
-                      Odvolat
+                      {t("apiTokens.revoke")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

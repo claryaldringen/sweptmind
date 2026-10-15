@@ -327,6 +327,17 @@ describe("formatRecurrenceLabel", () => {
     );
   });
 
+  it("formats MONTHLY_LAST:2 keeping capitalized nouns (German)", () => {
+    const german = {
+      ...labels,
+      everyNMonths: (n: number) => `Alle ${n} Monate`,
+      everyLastDay: "Letzter Tag im Monat",
+    };
+    expect(formatRecurrenceLabel("MONTHLY_LAST:2", german)).toBe(
+      "Alle 2 Monate, letzter Tag im Monat",
+    );
+  });
+
   it("formats YEARLY", () => {
     expect(formatRecurrenceLabel("YEARLY", labels)).toBe("Every year");
   });

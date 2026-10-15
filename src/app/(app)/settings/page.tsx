@@ -35,6 +35,7 @@ import { useTaskCountMode } from "@/hooks/use-task-count-mode";
 import { useNewTaskPosition } from "@/hooks/use-new-task-position";
 import { useLocale } from "@/hooks/use-locale";
 import { useTranslations } from "@/lib/i18n";
+import { LOCALES, LOCALE_NAMES, resolveLocale } from "@/lib/i18n/locales";
 import { parseCSV, mapOutlookTaskRow, type MappedTask } from "@/lib/csv-import";
 import { getLocationAdapter, getPlatform, getPushAdapter } from "@sweptmind/native-bridge";
 import { nativePreferences } from "@/lib/native-preferences";
@@ -900,7 +901,7 @@ export default function SettingsPage() {
                   </p>
                   <p>
                     {t("premium.expiresOn", {
-                      date: new Date(subscription.currentPeriodEnd).toLocaleDateString(),
+                      date: new Date(subscription.currentPeriodEnd).toLocaleDateString(locale),
                     })}
                   </p>
                 </div>
@@ -909,7 +910,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2 rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-400">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     {t("premium.cancelledInfo", {
-                      date: new Date(subscription.currentPeriodEnd).toLocaleDateString(),
+                      date: new Date(subscription.currentPeriodEnd).toLocaleDateString(locale),
                     })}
                   </div>
                 )}
@@ -1138,21 +1139,21 @@ export default function SettingsPage() {
           <Separator className="my-4" />
 
           <div>
-            <h2 className="mb-3 text-sm font-semibold">{t("settings.language")}</h2>
-            <div className="flex gap-2">
-              <Button
-                variant={locale === "cs" ? "default" : "outline"}
-                onClick={() => setLocale("cs")}
-              >
-                Čeština
-              </Button>
-              <Button
-                variant={locale === "en" ? "default" : "outline"}
-                onClick={() => setLocale("en")}
-              >
-                English
-              </Button>
-            </div>
+            <h2 className="mb-3 text-sm font-semibold">
+              <label htmlFor="settings-language">{t("settings.language")}</label>
+            </h2>
+            <select
+              id="settings-language"
+              value={locale}
+              onChange={(e) => setLocale(resolveLocale(e.target.value, locale))}
+              className={SELECT_CLASS}
+            >
+              {LOCALES.map((l) => (
+                <option key={l} value={l}>
+                  {LOCALE_NAMES[l]}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

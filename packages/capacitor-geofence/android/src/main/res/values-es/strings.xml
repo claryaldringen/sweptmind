@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="geofence_channel_name">Avisos por ubicación</string>
+    <string name="geofence_channel_description">Notificaciones cuando estás cerca de un lugar donde puedes hacer una tarea</string>
+</resources>

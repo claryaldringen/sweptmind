@@ -11,8 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
-import { cs } from "date-fns/locale/cs";
-import { enUS } from "date-fns/locale/en-US";
+import { getDateFnsLocale } from "@/lib/i18n/date-fns-locale";
 import { useTranslations } from "@/lib/i18n";
 import { TaskSteps } from "./detail/task-steps";
 import { TaskTags } from "./detail/task-tags";
@@ -328,7 +327,7 @@ export function TaskDetailPanel() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { t, tArray, locale: appLocale } = useTranslations();
-  const dateFnsLocale = appLocale === "cs" ? cs : enUS;
+  const dateFnsLocale = getDateFnsLocale(appLocale);
   const taskId = searchParams.get("task");
   const showAi = searchParams.get("ai") === "1";
 

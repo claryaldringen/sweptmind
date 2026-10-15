@@ -10,6 +10,7 @@
  */
 
 import { computeDefaultReminder } from "./task-visibility";
+import { isUserLocale, type UserLocale } from "../entities/user";
 
 export const DEFAULT_TIME_ZONE = "Europe/Prague";
 export const DUE_GRACE_MINUTES = 60;
@@ -18,7 +19,47 @@ export const DIGEST_FROM_HOUR = 8;
 export const DIGEST_UNTIL_HOUR = 12;
 const DIGEST_MAX_TITLES = 3;
 
-export type NotificationLocale = "cs" | "en";
+export type NotificationLocale = UserLocale;
+
+const MESSAGES: Record<
+  NotificationLocale,
+  {
+    due: (time: string) => string;
+    digest: (count: number) => string;
+    more: (rest: number) => string;
+  }
+> = {
+  cs: {
+    due: (time) => `Termín: dnes ${time}`,
+    digest: (count) => `Úkoly na dnes (${count})`,
+    more: (rest) => `a další ${rest}`,
+  },
+  en: {
+    due: (time) => `Due today at ${time}`,
+    digest: (count) => `Today's tasks (${count})`,
+    more: (rest) => `and ${rest} more`,
+  },
+  de: {
+    due: (time) => `Heute fällig um ${time}`,
+    digest: (count) => `Aufgaben für heute (${count})`,
+    more: (rest) => `und ${rest} weitere`,
+  },
+  it: {
+    due: (time) => `Scadenza: oggi alle ${time}`,
+    digest: (count) => `Attività di oggi (${count})`,
+    more: (rest) => `e altre ${rest}`,
+  },
+  fr: {
+    due: (time) => `Échéance : aujourd'hui à ${time}`,
+    digest: (count) => `Tâches du jour (${count})`,
+    more: (rest) => `et ${rest} de plus`,
+  },
+  es: {
+    due: (time) => `Vence hoy a las ${time}`,
+    digest: (count) => `Tareas de hoy (${count})`,
+    more: (rest) => `y ${rest} más`,
+  },
+};
 
 export interface LocalDateTime {
   date: string; // YYYY-MM-DD
@@ -41,7 +82,7 @@ export function resolveTimeZone(timeZone: string | null | undefined): string {
 }
 
 export function normalizeLocale(locale: string | null | undefined): NotificationLocale {
-  return locale === "en" ? "en" : "cs";
+  return isUserLocale(locale) ? locale : "cs";
 }
 
 export function toLocalDateTime(now: Date, timeZone: string): LocalDateTime {
@@ -116,7 +157,7 @@ export function buildDueMessage(
   const time = dueDate.slice(11, 16);
   return {
     title: taskTitle,
-    body: locale === "en" ? `Due today at ${time}` : `Termín: dnes ${time}`,
+    body: MESSAGES[locale].due(time),
   };
 }
 
@@ -127,14 +168,9 @@ export function buildDigestMessage(
   const shown = taskTitles.slice(0, DIGEST_MAX_TITLES).join(", ");
   const rest = taskTitles.length - DIGEST_MAX_TITLES;
 
-  if (locale === "en") {
-    return {
-      title: `Today's tasks (${taskTitles.length})`,
-      body: rest > 0 ? `${shown} and ${rest} more` : shown,
-    };
-  }
+  const messages = MESSAGES[locale];
   return {
-    title: `Úkoly na dnes (${taskTitles.length})`,
-    body: rest > 0 ? `${shown} a další ${rest}` : shown,
+    title: messages.digest(taskTitles.length),
+    body: rest > 0 ? `${shown} ${messages.more(rest)}` : shown,
   };
 }

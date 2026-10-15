@@ -1,21 +1,25 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
-import type { Locale } from "@/lib/i18n/types";
+import { matchLocale, resolveLocale, type Locale } from "@/lib/i18n/locales";
 
 const STORAGE_KEY = "sweptmind-locale";
 const COOKIE_KEY = "sweptmind-locale";
 
 function detectLocale(): Locale {
-  if (typeof navigator !== "undefined" && navigator.language.startsWith("cs")) {
-    return "cs";
-  }
-  return "en";
+  if (typeof navigator === "undefined") return "en";
+  return matchLocale(navigator.languages ?? [navigator.language]) ?? "en";
 }
 
 function getSnapshot(): Locale {
   if (typeof window === "undefined") return "cs";
-  return (localStorage.getItem(STORAGE_KEY) as Locale) || detectLocale();
+  let stored: string | null = null;
+  try {
+    stored = localStorage.getItem(STORAGE_KEY);
+  } catch {
+    // Storage unavailable — fall back to the browser's language
+  }
+  return resolveLocale(stored, detectLocale());
 }
 
 function getServerSnapshot(): Locale {

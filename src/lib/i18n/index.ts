@@ -2,10 +2,9 @@
 
 import { createContext, useContext } from "react";
 import type { Dictionary, Locale } from "./types";
-import { cs } from "./dictionaries/cs";
-import { en } from "./dictionaries/en";
+import { dictionaries } from "./dictionaries";
 
-export const dictionaries: Record<Locale, Dictionary> = { cs, en };
+export { dictionaries };
 
 type TranslateFunction = (key: string, params?: Record<string, string | number>) => string;
 type TranslateArrayFunction = (key: string) => string[];

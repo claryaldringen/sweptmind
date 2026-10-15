@@ -235,6 +235,7 @@ export const en: Dictionary = {
   },
   pages: {
     planned: "Planned",
+    plannedDescription: "Your scheduled tasks by due date.",
     nearby: "Nearby",
     tag: "Tag",
     searchResults: "Search results",
@@ -325,6 +326,18 @@ export const en: Dictionary = {
     settingsInstalled: "SweptMind is installed – you'll find it among your apps.",
     settingsUnavailable:
       "Your browser doesn't offer installation right now. It works in Chrome and Edge; if SweptMind is already installed there, you'll find it among your apps.",
+  },
+  apiTokens: {
+    title: "API tokens",
+    description: "Tokens for CLI access (sm login --token …)",
+    namePlaceholder: "Token name",
+    create: "Create",
+    created: "Created: {date}",
+    lastUsed: "Last used: {date}",
+    revokeTitle: "Revoke token?",
+    revokeDescription:
+      "The token “{name}” will be permanently deleted. All devices using it will be disconnected.",
+    revoke: "Revoke",
   },
   desktopApp: {
     title: "Mac app",

@@ -235,6 +235,7 @@ export const cs: Dictionary = {
   },
   pages: {
     planned: "Plánované",
+    plannedDescription: "Přehled naplánovaných úkolů podle data splnění.",
     nearby: "V okolí",
     tag: "Štítek",
     searchResults: "Výsledky hledání",
@@ -325,6 +326,18 @@ export const cs: Dictionary = {
     settingsInstalled: "SweptMind je nainstalovaný – najdeš ho mezi aplikacemi.",
     settingsUnavailable:
       "Prohlížeč teď instalaci nenabízí. Funguje v Chromu a Edgi; pokud v nich SweptMind už nainstalovaný máš, najdeš ho mezi aplikacemi.",
+  },
+  apiTokens: {
+    title: "API tokeny",
+    description: "Tokeny pro přístup přes CLI (sm login --token …)",
+    namePlaceholder: "Název tokenu",
+    create: "Vytvořit",
+    created: "Vytvořen: {date}",
+    lastUsed: "Naposledy použit: {date}",
+    revokeTitle: "Odvolat token?",
+    revokeDescription:
+      "Token „{name}“ bude trvale smazán. Všechna zařízení, která ho používají, se odpojí.",
+    revoke: "Odvolat",
   },
   desktopApp: {
     title: "Aplikace pro Mac",

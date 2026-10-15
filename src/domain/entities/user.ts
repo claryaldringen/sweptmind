@@ -30,8 +30,17 @@ export interface CreateUserInput {
   hashedPassword: string;
 }
 
+/** Languages of the app — the UI, notifications and anything else sent to the user. */
+export const USER_LOCALES = ["cs", "en", "de", "it", "fr", "es"] as const;
+
+export type UserLocale = (typeof USER_LOCALES)[number];
+
+export function isUserLocale(value: unknown): value is UserLocale {
+  return typeof value === "string" && (USER_LOCALES as readonly string[]).includes(value);
+}
+
 /** Settings reported by the client so the server can act in the user's local time and language. */
 export interface ClientSettings {
   timezone?: string;
-  locale?: "cs" | "en";
+  locale?: UserLocale;
 }
