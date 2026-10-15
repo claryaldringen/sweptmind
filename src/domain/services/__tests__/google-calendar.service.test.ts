@@ -301,23 +301,159 @@ describe("GoogleCalendarService", () => {
       });
     });
 
-    it("čas s posunem (úkol z Google Kalendáře) pošle beze změny", async () => {
+    it("starší čas s posunem převede na místní čas s pásmem", async () => {
       await service.pushTask(
         "user-1",
         makeTask({ dueDate: "2026-10-27T10:45:00+01:00", dueDateEnd: "2026-10-27T11:30:00+01:00" }),
       );
 
-      expect(insertedEvent().start).toEqual({ dateTime: "2026-10-27T10:45:00+01:00" });
-      expect(insertedEvent().end).toEqual({ dateTime: "2026-10-27T11:30:00+01:00" });
+      expect(insertedEvent().start).toEqual({
+        dateTime: "2026-10-27T10:45:00",
+        timeZone: "Europe/Prague",
+      });
+      expect(insertedEvent().end).toEqual({
+        dateTime: "2026-10-27T11:30:00",
+        timeZone: "Europe/Prague",
+      });
     });
 
-    it("čas s posunem bez konce dostane hodinovou délku", async () => {
+    it("čas v UTC bez konce dostane hodinovou délku v místním čase", async () => {
       await service.pushTask(
         "user-1",
         makeTask({ dueDate: "2026-10-27T10:45:00Z", dueDateEnd: null }),
       );
 
-      expect(insertedEvent().end).toEqual({ dateTime: "2026-10-27T11:45:00.000Z" });
+      expect(insertedEvent().end).toEqual({
+        dateTime: "2026-10-27T12:45:00",
+        timeZone: "Europe/Prague",
+      });
+    });
+
+    it("opakovaný úkol pošle s pravidlem opakování", async () => {
+      await service.pushTask(
+        "user-1",
+        makeTask({ dueDate: "2026-10-19T18:00", dueDateEnd: null, recurrence: "WEEKLY:1" }),
+      );
+
+      expect(insertedEvent().recurrence).toEqual(["RRULE:FREQ=WEEKLY;BYDAY=MO"]);
+    });
+
+    it("úprava události zruší opakování odebrané v aplikaci", async () => {
+      vi.mocked(syncRepo.findByTaskId).mockResolvedValue(
+        makeSyncEntry({ googleCalendarEventId: "gcal-1" }),
+      );
+
+      await service.pushTask("user-1", makeTask({ dueDate: "2026-10-19T18:00", recurrence: null }));
+
+      expect(vi.mocked(gcalClient.patchEvent).mock.calls[0][3].recurrence).toEqual([]);
+    });
+  });
+
+  describe("pullChanges – import událostí", () => {
+    const event = (overrides: Record<string, unknown>) => ({
+      id: "ev-1",
+      summary: "Schůzka",
+      start: { dateTime: "2026-10-20T08:00:00Z" },
+      end: { dateTime: "2026-10-20T09:00:00Z" },
+      ...overrides,
+    });
+
+    function pull(items: ReturnType<typeof event>[]) {
+      vi.mocked(gcalClient.listEvents).mockResolvedValue({ items });
+      return service.pullChanges("user-1");
+    }
+
+    it("narozeniny, svátky a upravené výskyty série neimportuje", async () => {
+      await pull([
+        event({ id: "b", eventType: "birthday" }),
+        event({ id: "h", organizer: { email: "cs.czech#holiday@group.v.calendar.google.com" } }),
+        event({ id: "x", recurringEventId: "series-1" }),
+      ]);
+
+      expect(taskRepo.create).not.toHaveBeenCalled();
+    });
+
+    it("dříve naimportované narozeniny smaže", async () => {
+      vi.mocked(syncRepo.findByGoogleEventId).mockResolvedValue(
+        makeSyncEntry({ taskId: "task-b", icalUid: "gcal-b" }),
+      );
+
+      await pull([event({ id: "b", eventType: "birthday" })]);
+
+      expect(taskRepo.delete).toHaveBeenCalledWith("task-b", "user-1");
+      expect(syncRepo.deleteByTaskId).toHaveBeenCalledWith("task-b");
+    });
+
+    it("opakovanou sérii založí jako jeden úkol s opakováním od nejbližšího výskytu", async () => {
+      await pull([
+        event({
+          start: { date: "2024-01-08" },
+          end: { date: "2024-01-09" },
+          recurrence: ["RRULE:FREQ=YEARLY"],
+        }),
+      ]);
+
+      expect(taskRepo.create).toHaveBeenCalledTimes(1);
+      const created = vi.mocked(taskRepo.create).mock.calls[0][0];
+      expect(created.recurrence).toBe("YEARLY");
+      expect(created.dueDate! >= new Date().toISOString().slice(0, 10)).toBe(true);
+      expect(created.dueDate!.slice(5)).toBe("01-08");
+    });
+
+    it("čas uloží v místním formátu aplikace", async () => {
+      await pull([event({})]);
+
+      const created = vi.mocked(taskRepo.create).mock.calls[0][0];
+      expect(created.dueDate).toBe("2026-10-20T10:00");
+      expect(created.dueDateEnd).toBeNull();
+    });
+
+    it("u existujícího úkolu zapíše jen změny a nechá ruční připomínku", async () => {
+      vi.mocked(syncRepo.findByGoogleEventId).mockResolvedValue(
+        makeSyncEntry({ taskId: "task-1", icalUid: "gcal-ev-1" }),
+      );
+      vi.mocked(taskRepo.findById).mockResolvedValue(
+        makeTask({
+          title: "Schůzka",
+          notes: null,
+          dueDate: "2026-10-20T10:00",
+          dueDateEnd: null,
+          reminderAt: "2026-10-01",
+          recurrence: null,
+        }),
+      );
+
+      await pull([
+        event({
+          start: { dateTime: "2026-10-21T08:00:00Z" },
+          end: { dateTime: "2026-10-21T09:00:00Z" },
+        }),
+      ]);
+
+      expect(taskRepo.update).toHaveBeenCalledWith("task-1", "user-1", {
+        dueDate: "2026-10-21T10:00",
+      });
+    });
+
+    it("úkol poslaný z aplikace se po návratu z Google nezmění", async () => {
+      vi.mocked(syncRepo.findByGoogleEventId).mockResolvedValue(
+        makeSyncEntry({ taskId: "task-1", icalUid: "sweptmind-task-1" }),
+      );
+      vi.mocked(taskRepo.findById).mockResolvedValue(
+        makeTask({
+          title: "Schůzka",
+          notes: null,
+          dueDate: "2026-10-20T10:00",
+          dueDateEnd: null,
+          reminderAt: "2026-10-19",
+          recurrence: "WEEKLY:2",
+        }),
+      );
+
+      // Pushed before recurrence was sent to Google → the event has none
+      await pull([event({})]);
+
+      expect(taskRepo.update).not.toHaveBeenCalled();
     });
   });
 

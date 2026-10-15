@@ -10,53 +10,57 @@ import type {
 } from "../ports/google-calendar-client";
 import { addDays, format } from "date-fns";
 import { computeDefaultReminder } from "./task-visibility";
-import { resolveTimeZone } from "./task-notifications";
+import { resolveTimeZone, toLocalDateTime } from "./task-notifications";
+import {
+  eventToTaskFields,
+  isImportableEvent,
+  recurrenceToRrule,
+  type EventTaskFields,
+} from "./google-event-mapping";
 
-/** Ends with "Z" or a UTC offset — e.g. times pulled from Google Calendar. */
+/** Ends with "Z" or a UTC offset — e.g. times stored from Google before normalization. */
 const UTC_OFFSET_RE = /(Z|[+-]\d{2}:?\d{2})$/i;
 
-/**
- * Google requires RFC3339 (with seconds) plus an offset or an explicit time zone.
- * App times are naive local "YYYY-MM-DDTHH:mm" in the user's zone; times that came
- * from Google keep their offset.
- */
-function toEventDateTime(value: string, timeZone: string): { dateTime: string; timeZone?: string } {
-  if (UTC_OFFSET_RE.test(value)) return { dateTime: value };
-  const local = value.length === 16 ? `${value}:00` : value;
-  return { dateTime: local, timeZone };
+/** A task time as a naive local "YYYY-MM-DDTHH:mm" in the user's zone. */
+function toNaiveLocal(value: string, timeZone: string): string {
+  if (UTC_OFFSET_RE.test(value)) return toLocalDateTime(new Date(value), timeZone).dateTime;
+  return value.slice(0, 16);
 }
 
-/** Default event end: one hour after the start, on the wall clock for naive times. */
-function oneHourAfter(value: string): string {
-  if (UTC_OFFSET_RE.test(value)) {
-    return new Date(new Date(value).getTime() + 60 * 60 * 1000).toISOString();
-  }
-  const wallClock = Date.parse(`${value.slice(0, 16)}:00Z`) + 60 * 60 * 1000;
+/**
+ * Google requires RFC3339 (with seconds) plus an offset or an explicit time zone — and the
+ * time zone is mandatory for recurring events, so it's always sent.
+ */
+function toEventDateTime(value: string, timeZone: string): { dateTime: string; timeZone: string } {
+  return { dateTime: `${toNaiveLocal(value, timeZone)}:00`, timeZone };
+}
+
+/** Default event end: one hour after the start, on the wall clock. */
+function oneHourAfter(naiveLocal: string): string {
+  const wallClock = Date.parse(`${naiveLocal}:00Z`) + 60 * 60 * 1000;
   return new Date(wallClock).toISOString().slice(0, 16);
 }
 
-/** Convert Google RRULE array to SweptMind recurrence string. */
-function rruleToRecurrence(recurrence?: string[]): string | null {
-  if (!recurrence || recurrence.length === 0) return null;
-  const rrule = recurrence.find((r) => r.startsWith("RRULE:"));
-  if (!rrule) return null;
-  const freqMatch = rrule.match(/FREQ=(\w+)/);
-  if (!freqMatch) return null;
-  const intervalMatch = rrule.match(/INTERVAL=(\d+)/);
-  const interval = intervalMatch ? parseInt(intervalMatch[1], 10) : 1;
-  const freq = freqMatch[1];
-  const type =
-    freq === "DAILY"
-      ? "DAILY"
-      : freq === "WEEKLY"
-        ? "WEEKLY"
-        : freq === "MONTHLY"
-          ? "MONTHLY"
-          : freq === "YEARLY"
-            ? "YEARLY"
-            : null;
-  if (!type) return null;
-  return interval > 1 ? `${type}:${interval}` : type;
+/** Pull update for an existing task: only what actually changed in Google. */
+function changesFromEvent(
+  task: Task,
+  fields: EventTaskFields,
+  keepRecurrence: boolean,
+): Partial<Task> | null {
+  const changes: Partial<Task> = {};
+  if (task.title !== fields.title) changes.title = fields.title;
+  if ((task.notes ?? null) !== fields.notes) changes.notes = fields.notes;
+  if (task.dueDate !== fields.dueDate) {
+    changes.dueDate = fields.dueDate;
+    // Move only the automatic reminder; a reminder set by the user stays
+    if (!task.reminderAt || task.reminderAt === computeDefaultReminder(task.dueDate)) {
+      changes.reminderAt = computeDefaultReminder(fields.dueDate);
+    }
+  }
+  if ((task.dueDateEnd ?? null) !== fields.dueDateEnd) changes.dueDateEnd = fields.dueDateEnd;
+  const recurrence = fields.recurrence ?? (keepRecurrence ? (task.recurrence ?? null) : null);
+  if ((task.recurrence ?? null) !== recurrence) changes.recurrence = recurrence;
+  return Object.keys(changes).length > 0 ? changes : null;
 }
 
 /**
@@ -100,7 +104,8 @@ export class GoogleCalendarService {
         userId,
         settings.calendarId,
         syncEntry.googleCalendarEventId,
-        event,
+        // An empty list removes a recurrence dropped in SweptMind
+        { ...event, recurrence: event.recurrence ?? [] },
       );
     } else {
       // Create new event
@@ -155,17 +160,16 @@ export class GoogleCalendarService {
     const targetListId = settings.targetListId;
     if (!targetListId) return;
 
+    const timeZone = resolveTimeZone(settings.timeZone);
+    const today = toLocalDateTime(new Date(), timeZone).date;
+
     for (const event of result.items) {
       if (!event.id) continue;
 
-      // Skip events we pushed (our icalUid convention)
-      const existingByIcal = await this.syncRepo.findByIcalUid(userId, `sweptmind-${event.id}`);
-      if (existingByIcal) continue;
-
-      const cancelled = event.status === "cancelled";
       const syncEntry = await this.syncRepo.findByGoogleEventId(userId, event.id);
+      const fromGoogle = syncEntry?.icalUid.startsWith("gcal-") ?? false;
 
-      if (cancelled) {
+      if (event.status === "cancelled") {
         // Event deleted in Google Calendar → delete task
         if (syncEntry) {
           await this.taskRepo.delete(syncEntry.taskId, userId);
@@ -174,44 +178,46 @@ export class GoogleCalendarService {
         continue;
       }
 
-      const dueDate = this.eventToDueDate(event);
-      const dueDateEnd = this.eventToDueDateEnd(event);
-
-      const recurrence = rruleToRecurrence(event.recurrence);
+      if (!isImportableEvent(event)) {
+        // Birthday, holiday, … imported before this filter existed → remove it
+        if (syncEntry && fromGoogle) {
+          await this.taskRepo.delete(syncEntry.taskId, userId);
+          await this.syncRepo.deleteByTaskId(syncEntry.taskId);
+        }
+        continue;
+      }
 
       if (syncEntry) {
-        // Update existing task
-        await this.taskRepo.update(syncEntry.taskId, userId, {
-          title: event.summary,
-          notes: event.description ?? null,
-          dueDate,
-          dueDateEnd,
-          reminderAt: computeDefaultReminder(dueDate),
-          recurrence,
-        });
-        await this.syncRepo.updateEtag(syncEntry.id, `"${Date.now()}"`);
-      } else {
-        // Create new task
-        const minSort = await this.taskRepo.findMinSortOrder(targetListId);
-        const task = await this.taskRepo.create({
-          userId,
-          listId: targetListId,
-          title: event.summary,
-          notes: event.description ?? null,
-          dueDate,
-          dueDateEnd,
-          reminderAt: computeDefaultReminder(dueDate),
-          recurrence,
-          sortOrder: (minSort ?? 1) - 1,
-        });
-        const entry = await this.syncRepo.upsert({
-          userId,
-          taskId: task.id,
-          icalUid: `gcal-${event.id}`,
-          etag: `"${task.updatedAt.getTime()}"`,
-        });
-        await this.syncRepo.updateGoogleEventId(entry.id, event.id);
+        const task = await this.taskRepo.findById(syncEntry.taskId, userId);
+        if (!task) continue;
+        // A series stays on the task's current occurrence instead of jumping to today
+        const floor = task.dueDate?.slice(0, 10) ?? today;
+        const fields = eventToTaskFields(event, timeZone, floor);
+        // Recurrence of tasks created in SweptMind wasn't sent to Google before — keep it
+        const changes = changesFromEvent(task, fields, !fromGoogle);
+        if (changes) {
+          await this.taskRepo.update(syncEntry.taskId, userId, changes);
+          await this.syncRepo.updateEtag(syncEntry.id, `"${Date.now()}"`);
+        }
+        continue;
       }
+
+      const fields = eventToTaskFields(event, timeZone, today);
+      const minSort = await this.taskRepo.findMinSortOrder(targetListId);
+      const task = await this.taskRepo.create({
+        userId,
+        listId: targetListId,
+        ...fields,
+        reminderAt: computeDefaultReminder(fields.dueDate),
+        sortOrder: (minSort ?? 1) - 1,
+      });
+      const entry = await this.syncRepo.upsert({
+        userId,
+        taskId: task.id,
+        icalUid: `gcal-${event.id}`,
+        etag: `"${task.updatedAt.getTime()}"`,
+      });
+      await this.syncRepo.updateGoogleEventId(entry.id, event.id);
     }
   }
 
@@ -294,31 +300,6 @@ export class GoogleCalendarService {
     return syncDateRange && task.dueDateEnd != null;
   }
 
-  private eventToDueDate(event: GoogleCalendarEventData): string | null {
-    if ("dateTime" in event.start && event.start.dateTime) {
-      return event.start.dateTime;
-    }
-    if ("date" in event.start && event.start.date) {
-      return event.start.date;
-    }
-    return null;
-  }
-
-  private eventToDueDateEnd(event: GoogleCalendarEventData): string | null {
-    if ("dateTime" in event.end && event.end.dateTime) {
-      return event.end.dateTime;
-    }
-    if ("date" in event.end && event.end.date) {
-      // Google uses exclusive end date for all-day events, subtract 1 day
-      const endDate = addDays(new Date(event.end.date), -1);
-      const endStr = format(endDate, "yyyy-MM-dd");
-      // If start == end (single day), no end date needed
-      if ("date" in event.start && event.start.date === endStr) return null;
-      return endStr;
-    }
-    return null;
-  }
-
   private taskToEvent(task: Task, timeZone: string): GoogleCalendarEventData {
     const hasTime = task.dueDate?.includes("T") ?? false;
 
@@ -332,7 +313,7 @@ export class GoogleCalendarService {
         ? task.dueDateEnd.includes("T")
           ? task.dueDateEnd
           : `${task.dueDateEnd}T23:59`
-        : oneHourAfter(task.dueDate);
+        : oneHourAfter(toNaiveLocal(task.dueDate, timeZone));
 
       start = toEventDateTime(task.dueDate, timeZone);
       end = toEventDateTime(endValue, timeZone);
@@ -359,12 +340,15 @@ export class GoogleCalendarService {
       end = { date: tomorrow };
     }
 
+    const recurrence = task.recurrence ? recurrenceToRrule(task.recurrence) : null;
+
     return {
       summary: task.title,
       description: task.notes ?? undefined,
       start,
       end,
       status: task.isCompleted ? "cancelled" : "confirmed",
+      ...(recurrence ? { recurrence } : {}),
     };
   }
 }

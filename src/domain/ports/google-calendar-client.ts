@@ -7,6 +7,12 @@ export interface GoogleCalendarEventData {
   status?: string;
   /** RRULE strings from Google Calendar (e.g. ["RRULE:FREQ=YEARLY"]) */
   recurrence?: string[];
+  /** "default" for regular events; also "birthday", "fromGmail", "outOfOffice", ... */
+  eventType?: string;
+  /** Set on a modified/cancelled occurrence of a recurring series */
+  recurringEventId?: string;
+  organizer?: { email?: string; self?: boolean };
+  attendees?: { email?: string; self?: boolean; responseStatus?: string }[];
 }
 
 export interface IGoogleCalendarClient {
