@@ -1,6 +1,7 @@
 import { builder } from "../builder";
 import { SubscriptionRef } from "./refs";
 import type { BankPaymentVerificationResult } from "@/domain/services/payment.service";
+import { parseIban } from "@/lib/bank-account";
 
 const BankPaymentVerificationRef =
   builder.objectRef<BankPaymentVerificationResult>("BankPaymentVerification");
@@ -28,6 +29,29 @@ export const SubscriptionType = SubscriptionRef.implement({
     }),
   }),
 });
+
+const DonationInfoRef = builder.objectRef<{ qrCode: string; iban: string }>("DonationInfo");
+
+DonationInfoRef.implement({
+  fields: (t) => ({
+    qrCode: t.exposeString("qrCode"),
+    iban: t.exposeString("iban"),
+  }),
+});
+
+// Query: QR code and account for a voluntary donation (null when no account is configured)
+builder.queryField("donationInfo", (t) =>
+  t.field({
+    type: DonationInfoRef,
+    nullable: true,
+    authScopes: { authenticated: true },
+    resolve: async (_root, _args, ctx) => {
+      const iban = parseIban(process.env.FIO_ACCOUNT_NUMBER);
+      if (!iban) return null;
+      return { iban, qrCode: await ctx.services.payment.generateDonationQR(iban) };
+    },
+  }),
+);
 
 // Query: get current subscription
 builder.queryField("subscription", (t) =>
@@ -83,11 +107,9 @@ builder.mutationField("generateBankTransferQR", (t) =>
     },
     resolve: async (_root, args, ctx) => {
       const plan = args.plan === "yearly" ? "yearly" : "monthly";
-      return ctx.services.payment.generateBankTransferQR(
-        ctx.userId!,
-        plan,
-        process.env.FIO_ACCOUNT_NUMBER!,
-      );
+      const iban = parseIban(process.env.FIO_ACCOUNT_NUMBER);
+      if (!iban) throw new Error("Bank account is not configured");
+      return ctx.services.payment.generateBankTransferQR(ctx.userId!, plan, iban);
     },
   }),
 );

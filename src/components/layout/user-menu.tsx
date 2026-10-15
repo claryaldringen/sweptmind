@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
@@ -11,9 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Settings, User } from "lucide-react";
+import { Heart, LogOut, Settings, User } from "lucide-react";
 import { useTranslations } from "@/lib/i18n";
 import { useSidebarContext } from "@/components/layout/app-shell";
+import { DonateDialog } from "@/components/donate/donate-dialog";
 
 export function UserMenu() {
   const triggerId = useId();
@@ -21,6 +22,7 @@ export function UserMenu() {
   const { t } = useTranslations();
   const { close: closeSidebar } = useSidebarContext();
   const router = useRouter();
+  const [donateOpen, setDonateOpen] = useState(false);
 
   const initials = session?.user?.name
     ?.split(" ")
@@ -30,40 +32,49 @@ export function UserMenu() {
     .slice(0, 2);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        id={triggerId}
-        className="hover:bg-sidebar-accent flex items-center gap-3 rounded-md px-2 py-1.5 text-sm font-medium focus:outline-none"
-      >
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={session?.user?.image ?? undefined} />
-          <AvatarFallback className="text-xs">
-            {initials ?? <User className="h-4 w-4" />}
-          </AvatarFallback>
-        </Avatar>
-        <span className="truncate">{session?.user?.name ?? t("common.user")}</span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
-        <div className="px-2 py-1.5">
-          <p className="text-sm font-medium">{session?.user?.name}</p>
-          <p className="text-muted-foreground text-xs">{session?.user?.email}</p>
-        </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => {
-            closeSidebar();
-            router.push("/settings");
-          }}
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          id={triggerId}
+          className="hover:bg-sidebar-accent flex items-center gap-3 rounded-md px-2 py-1.5 text-sm font-medium focus:outline-none"
         >
-          <Settings className="mr-2 h-4 w-4" />
-          {t("sidebar.settings")}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
-          <LogOut className="mr-2 h-4 w-4" />
-          {t("common.signOut")}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={session?.user?.image ?? undefined} />
+            <AvatarFallback className="text-xs">
+              {initials ?? <User className="h-4 w-4" />}
+            </AvatarFallback>
+          </Avatar>
+          <span className="truncate">{session?.user?.name ?? t("common.user")}</span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56">
+          <div className="px-2 py-1.5">
+            <p className="text-sm font-medium">{session?.user?.name}</p>
+            <p className="text-muted-foreground text-xs">{session?.user?.email}</p>
+          </div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => {
+              closeSidebar();
+              router.push("/settings");
+            }}
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            {t("sidebar.settings")}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {/* Between Settings and Sign out, so a mis-tap doesn't sign anyone out */}
+          <DropdownMenuItem onClick={() => setDonateOpen(true)}>
+            <Heart className="mr-2 h-4 w-4 text-rose-500" />
+            {t("donate.menuItem")}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
+            <LogOut className="mr-2 h-4 w-4" />
+            {t("common.signOut")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DonateDialog open={donateOpen} onOpenChange={setDonateOpen} />
+    </>
   );
 }

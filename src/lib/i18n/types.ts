@@ -206,7 +206,10 @@ export interface Dictionary {
     ctaHeadline: string;
     ctaButton: string;
     ctaSignIn: string;
-    footerMadeWith: string;
+    businessIdLabel: string;
+    vatIdLabel: string;
+    businessCountry: string;
+    businessRegistered: string;
     footerRights: string;
     footerContact: string;
     footerPrivacy: string;
@@ -313,6 +316,14 @@ export interface Dictionary {
     revokeTitle: string;
     revokeDescription: string;
     revoke: string;
+  };
+  donate: {
+    title: string;
+    text: string;
+    scan: string;
+    qrAlt: string;
+    account: string;
+    menuItem: string;
   };
   desktopApp: {
     title: string;

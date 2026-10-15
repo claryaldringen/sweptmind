@@ -67,6 +67,12 @@ export class PaymentService {
     return this.qrGenerator.toDataURL(spayd);
   }
 
+  /** QR code (SPAYD) for a voluntary donation — no amount, the payer chooses it. */
+  async generateDonationQR(accountNumber: string): Promise<string> {
+    const spayd = ["SPD*1.0", `ACC:${accountNumber}`, "CC:CZK", "MSG:Dar SweptMind"].join("*");
+    return this.qrGenerator.toDataURL(spayd);
+  }
+
   async verifyBankPayment(userId: string): Promise<BankPaymentVerificationResult> {
     if (!this.fioBankGateway) {
       throw new Error("FIO bank gateway not configured");

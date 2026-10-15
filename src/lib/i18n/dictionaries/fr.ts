@@ -234,7 +234,11 @@ export const fr: Dictionary = {
     ctaHeadline: "Envie de vous lancer ?",
     ctaButton: "Créer un compte gratuit",
     ctaSignIn: "Vous avez déjà un compte ?",
-    footerMadeWith: "Fait avec amour à Prague",
+    businessIdLabel: "Numéro d'entreprise (IČO)",
+    vatIdLabel: "N° de TVA",
+    businessCountry: "République tchèque",
+    businessRegistered:
+      "Entrepreneur individuel inscrit au registre tchèque des licences professionnelles",
     footerRights: "Tous droits réservés.",
     footerContact: "Contact",
     footerPrivacy: "Confidentialité",
@@ -347,6 +351,14 @@ export const fr: Dictionary = {
     revokeDescription:
       "Le jeton « {name} » sera définitivement supprimé. Tous les appareils qui l'utilisent seront déconnectés.",
     revoke: "Révoquer",
+  },
+  donate: {
+    title: "Soutenez SweptMind",
+    text: "SweptMind est un projet indépendant. S'il vous est utile, une contribution à son développement et à ses frais de fonctionnement est la bienvenue.",
+    scan: "Scannez le code QR avec une application bancaire tchèque ou faites un virement vers l'IBAN ci-dessous. Vous choisissez le montant.",
+    qrAlt: "Code QR pour un don à SweptMind",
+    account: "Numéro de compte",
+    menuItem: "Soutenir SweptMind",
   },
   desktopApp: {
     title: "Application Mac",

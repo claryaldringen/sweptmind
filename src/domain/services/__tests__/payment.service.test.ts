@@ -149,4 +149,14 @@ describe("PaymentService", () => {
       expect(qr.toDataURL).toHaveBeenCalledWith(expect.stringContaining("AM:490.00"));
     });
   });
+
+  describe("generateDonationQR", () => {
+    it("generuje SPAYD QR kod bez castky", async () => {
+      await service.generateDonationQR("CZ1234567890");
+
+      expect(qr.toDataURL).toHaveBeenCalledWith(
+        "SPD*1.0*ACC:CZ1234567890*CC:CZK*MSG:Dar SweptMind",
+      );
+    });
+  });
 });

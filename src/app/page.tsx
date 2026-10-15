@@ -20,6 +20,10 @@ import {
 } from "lucide-react";
 import { dictionaries } from "@/lib/i18n/dictionaries";
 import { getRequestLocale } from "@/lib/i18n/server";
+import { services } from "@/infrastructure/container";
+import { parseIban } from "@/lib/bank-account";
+import { DonationPanel } from "@/components/donate/donation-panel";
+import { BUSINESS_INFO } from "@/lib/business-info";
 
 export const metadata: Metadata = {
   title: "SweptMind — GTD Task Management",
@@ -42,6 +46,11 @@ export default async function HomePage() {
   const t = dictionaries[locale];
 
   const currentYear = new Date().getFullYear();
+
+  const donationIban = parseIban(process.env.FIO_ACCOUNT_NUMBER);
+  const donationQr = donationIban
+    ? await services.payment.generateDonationQR(donationIban).catch(() => null)
+    : null;
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -369,19 +378,24 @@ export default async function HomePage() {
 
       {/* Footer */}
       <footer className="border-border/50 border-t px-6 py-8 2xl:py-10">
+        {donationIban && donationQr && (
+          <section className="bg-muted/40 mx-auto mb-8 max-w-5xl rounded-xl border p-5 2xl:max-w-6xl">
+            <DonationPanel
+              qrCode={donationQr}
+              iban={donationIban}
+              texts={t.donate}
+              showDomesticAccount={locale === "cs"}
+              variant="card"
+            />
+          </section>
+        )}
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 sm:flex-row sm:justify-between 2xl:max-w-6xl">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             <span className="text-sm font-medium">SweptMind</span>
           </div>
-          <div className="text-muted-foreground flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm 2xl:text-base">
-            <span>{t.landing.footerMadeWith}</span>
-            <span className="hidden sm:inline" aria-hidden="true">
-              &middot;
-            </span>
-            <span>
-              &copy; {currentYear} SweptMind. {t.landing.footerRights}
-            </span>
+          <div className="text-muted-foreground text-center text-sm 2xl:text-base">
+            &copy; {currentYear} SweptMind. {t.landing.footerRights}
           </div>
           <div className="text-muted-foreground flex gap-4 text-sm 2xl:text-base">
             <Link href="/privacy" className="hover:text-foreground transition-colors">
@@ -398,6 +412,11 @@ export default async function HomePage() {
             </Link>
           </div>
         </div>
+        <p className="text-muted-foreground mx-auto mt-6 max-w-5xl text-center text-xs leading-relaxed 2xl:max-w-6xl">
+          {BUSINESS_INFO.name} &middot; {BUSINESS_INFO.address}, {t.landing.businessCountry}{" "}
+          &middot; {t.landing.businessIdLabel}: {BUSINESS_INFO.businessId} &middot;{" "}
+          {t.landing.vatIdLabel}: {BUSINESS_INFO.vatId} &middot; {t.landing.businessRegistered}
+        </p>
       </footer>
     </div>
   );

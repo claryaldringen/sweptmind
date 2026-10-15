@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { BUSINESS_INFO } from "@/lib/business-info";
 
 export const metadata: Metadata = {
   title: "Privacy Policy - SweptMind",
@@ -160,9 +161,11 @@ export default function PrivacyPage() {
             .
           </p>
           <p className="mt-2">
-            Martin Zadrazil
+            {BUSINESS_INFO.name}
             <br />
-            Prague, Czech Republic
+            {BUSINESS_INFO.address}, Czech Republic
+            <br />
+            Company ID (IČO): {BUSINESS_INFO.businessId}, VAT ID: {BUSINESS_INFO.vatId}
           </p>
         </section>
       </div>

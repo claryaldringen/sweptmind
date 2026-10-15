@@ -226,7 +226,10 @@ export const en: Dictionary = {
     ctaHeadline: "Ready to start?",
     ctaButton: "Create a free account",
     ctaSignIn: "Already have an account?",
-    footerMadeWith: "Made with love in Prague",
+    businessIdLabel: "Company ID",
+    vatIdLabel: "VAT ID",
+    businessCountry: "Czech Republic",
+    businessRegistered: "Sole trader registered in the Czech Trade Licensing Register",
     footerRights: "All rights reserved.",
     footerContact: "Contact",
     footerPrivacy: "Privacy",
@@ -338,6 +341,14 @@ export const en: Dictionary = {
     revokeDescription:
       "The token “{name}” will be permanently deleted. All devices using it will be disconnected.",
     revoke: "Revoke",
+  },
+  donate: {
+    title: "Support SweptMind",
+    text: "SweptMind is an independent project. If it helps you, a contribution toward its development and running costs is much appreciated.",
+    scan: "Scan the QR code in a Czech banking app, or send a transfer to the IBAN below. You choose the amount.",
+    qrAlt: "QR code for a donation to SweptMind",
+    account: "Account number",
+    menuItem: "Support SweptMind",
   },
   desktopApp: {
     title: "Mac app",
