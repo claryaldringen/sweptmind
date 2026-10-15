@@ -263,6 +263,9 @@ export interface Dictionary {
     everyLastDay: string;
     everyYear: string;
     daysShort: string[];
+    missedLabel: string;
+    missedOverdue: string;
+    missedSkip: string;
     removeRecurrence: string;
     custom: string;
     back: string;

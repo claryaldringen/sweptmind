@@ -33,6 +33,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     shareCompletionAction: null,
     shareCompletionListId: null,
     forceCalendarSync: false,
+    skipMissedRecurrence: false,
     sortOrder: 0,
     createdAt: new Date("2025-01-01"),
     updatedAt: new Date("2025-01-01"),
@@ -99,6 +100,7 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     findUsersWithGoogleCalendarEnabled: vi.fn().mockResolvedValue([]),
     findUsersWithExpiringChannels: vi.fn().mockResolvedValue([]),
     updateSharingDefaultList: vi.fn(),
+    getTimeZone: vi.fn().mockResolvedValue(null),
     ...overrides,
   };
 }

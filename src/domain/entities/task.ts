@@ -12,6 +12,8 @@ export interface Task {
   dueDateEnd: string | null;
   reminderAt: string | null;
   recurrence: string | null;
+  /** A missed occurrence moves to the next one instead of staying overdue. */
+  skipMissedRecurrence: boolean;
   deviceContext: string | null;
   blockedByTaskId: string | null;
   shareCompletionMode: string | null;
@@ -60,6 +62,7 @@ export interface UpdateTaskInput {
   shareCompletionAction?: string | null;
   shareCompletionListId?: string | null;
   forceCalendarSync?: boolean | null;
+  skipMissedRecurrence?: boolean | null;
 }
 
 export interface ReorderItem {

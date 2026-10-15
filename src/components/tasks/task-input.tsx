@@ -86,6 +86,7 @@ export function TaskInput({ listId, placeholder, onTaskCreated }: TaskInputProps
       shareCompletionAction: null,
       shareCompletionListId: null,
       forceCalendarSync: false,
+      skipMissedRecurrence: false,
     };
 
     // Write optimistic data using writeQuery — this properly notifies useQuery

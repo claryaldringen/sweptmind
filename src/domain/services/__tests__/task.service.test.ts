@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { TaskService } from "../task.service";
 import type { ITaskRepository } from "../../repositories/task.repository";
 import type { IListRepository } from "../../repositories/list.repository";
@@ -30,6 +30,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     shareCompletionAction: null,
     shareCompletionListId: null,
     forceCalendarSync: false,
+    skipMissedRecurrence: false,
     sortOrder: 0,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
@@ -208,6 +209,14 @@ describe("TaskService", () => {
   });
 
   describe("toggleCompleted", () => {
+    // Completing on time: recurrence skips occurrences already in the past
+    beforeEach(() => {
+      vi.useFakeTimers({ now: new Date("2026-03-04T12:00:00Z"), toFake: ["Date"] });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it("nastaví isCompleted na true a completedAt na now", async () => {
       const task = makeTask({ isCompleted: false });
       vi.mocked(repo.findById).mockResolvedValue(task);
@@ -712,6 +721,14 @@ describe("TaskService", () => {
   });
 
   describe("toggleCompleted — recurrence edge cases", () => {
+    // Completing on time: recurrence skips occurrences already in the past
+    beforeEach(() => {
+      vi.useFakeTimers({ now: new Date("2026-03-04T12:00:00Z"), toFake: ["Date"] });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it("WEEKLY recurrence → posune dueDate na správný další den", async () => {
       // 2026-03-04 is Wednesday (day 3), WEEKLY:1,3,5 = Mon,Wed,Fri
       // Next after Wed(3) should be Fri(5), i.e. +2 days = 2026-03-06
@@ -1004,6 +1021,14 @@ describe("TaskService", () => {
   });
 
   describe("dueDateEnd", () => {
+    // Completing on time: recurrence skips occurrences already in the past
+    beforeEach(() => {
+      vi.useFakeTimers({ now: new Date("2026-03-04T12:00:00Z"), toFake: ["Date"] });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it("create passes dueDateEnd through", async () => {
       vi.mocked(repo.findMinSortOrder).mockResolvedValue(undefined);
       vi.mocked(repo.create).mockResolvedValue(makeTask());
@@ -1081,6 +1106,99 @@ describe("TaskService", () => {
       const updateCall = vi.mocked(repo.update).mock.calls[0];
       const updateData = updateCall[2];
       expect(updateData).not.toHaveProperty("dueDateEnd");
+    });
+  });
+
+  describe("opakování – zpoždění a zmeškané výskyty", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("splnění se zpožděním přes týden přeskočí prošlé výskyty", async () => {
+      vi.useFakeTimers({ now: new Date("2026-10-30T10:00:00Z"), toFake: ["Date"] }); // Friday
+      vi.mocked(repo.findById).mockResolvedValue(
+        makeTask({ dueDate: "2026-10-15T09:00", recurrence: "WEEKLY:4" }),
+      );
+      vi.mocked(repo.update).mockResolvedValue(makeTask());
+
+      await service.toggleCompleted("task-1", "user-1");
+
+      expect(repo.update).toHaveBeenCalledWith(
+        "task-1",
+        "user-1",
+        expect.objectContaining({ isCompleted: false, dueDate: "2026-11-05T09:00" }),
+      );
+    });
+
+    it("dnešek počítá v časovém pásmu uživatele", async () => {
+      // 05:00 UTC on the 16th is still the 15th in Los Angeles
+      vi.useFakeTimers({ now: new Date("2026-10-16T05:00:00Z"), toFake: ["Date"] });
+      const userRepo = { getTimeZone: vi.fn().mockResolvedValue("America/Los_Angeles") };
+      const zoned = new TaskService(repo, null, null, undefined, undefined, undefined, userRepo);
+      vi.mocked(repo.findById).mockResolvedValue(
+        makeTask({ dueDate: "2026-10-14", recurrence: "DAILY" }),
+      );
+      vi.mocked(repo.update).mockResolvedValue(makeTask());
+
+      await zoned.toggleCompleted("task-1", "user-1");
+
+      expect(repo.update).toHaveBeenCalledWith(
+        "task-1",
+        "user-1",
+        expect.objectContaining({ dueDate: "2026-10-16" }),
+      );
+    });
+
+    it("zmeškaný výskyt přeřadí na další termín, když to úkol má nastavené", async () => {
+      vi.mocked(repo.findById).mockResolvedValue(
+        makeTask({
+          dueDate: "2026-10-15T09:00",
+          recurrence: "WEEKLY:4",
+          skipMissedRecurrence: true,
+        }),
+      );
+      vi.mocked(repo.update).mockResolvedValue(makeTask({ dueDate: "2026-10-22T09:00" }));
+
+      const moved = await service.skipMissedOccurrence("task-1", "user-1", "2026-10-16");
+
+      expect(moved).not.toBeNull();
+      expect(repo.update).toHaveBeenCalledWith("task-1", "user-1", {
+        dueDate: "2026-10-22T09:00",
+        reminderAt: "2026-10-21",
+      });
+    });
+
+    it("zmeškaný výskyt může přeřadit i na dnešek", async () => {
+      vi.mocked(repo.findById).mockResolvedValue(
+        makeTask({ dueDate: "2026-10-12", recurrence: "WEEKLY:1,4", skipMissedRecurrence: true }),
+      );
+      vi.mocked(repo.update).mockResolvedValue(makeTask());
+
+      await service.skipMissedOccurrence("task-1", "user-1", "2026-10-15");
+
+      expect(repo.update).toHaveBeenCalledWith(
+        "task-1",
+        "user-1",
+        expect.objectContaining({ dueDate: "2026-10-15" }),
+      );
+    });
+
+    it("bez nastavení, s dnešním termínem nebo bez opakování nic nepřeřadí", async () => {
+      for (const task of [
+        makeTask({ dueDate: "2026-10-15", recurrence: "WEEKLY:4", skipMissedRecurrence: false }),
+        makeTask({ dueDate: "2026-10-16", recurrence: "WEEKLY:4", skipMissedRecurrence: true }),
+        makeTask({ dueDate: "2026-10-15", recurrence: null, skipMissedRecurrence: true }),
+        makeTask({
+          dueDate: "2026-10-15",
+          recurrence: "WEEKLY:4",
+          skipMissedRecurrence: true,
+          isCompleted: true,
+        }),
+      ]) {
+        vi.mocked(repo.findById).mockResolvedValue(task);
+        expect(await service.skipMissedOccurrence("task-1", "user-1", "2026-10-16")).toBeNull();
+      }
+      expect(repo.update).not.toHaveBeenCalled();
     });
   });
 

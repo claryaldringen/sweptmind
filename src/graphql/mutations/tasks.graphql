@@ -31,6 +31,7 @@ mutation UpdateTask($id: String!, $input: UpdateTaskInput!) {
     deviceContext
     listId
     forceCalendarSync
+    skipMissedRecurrence
   }
 }
 
@@ -69,5 +70,6 @@ mutation CloneTask($id: String!) {
     sortOrder
     createdAt
     forceCalendarSync
+    skipMissedRecurrence
   }
 }

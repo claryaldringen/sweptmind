@@ -42,6 +42,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     shareCompletionAction: null,
     shareCompletionListId: null,
     forceCalendarSync: false,
+    skipMissedRecurrence: false,
     sortOrder: 0,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),

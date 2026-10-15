@@ -19,6 +19,7 @@ import { DrizzleSharedTaskRepository } from "./persistence/drizzle-shared-task.r
 import { PushNotificationSender } from "./notification/push-notification-sender";
 import { PushDispatcher } from "./notification/push-dispatcher";
 import { TaskReminderJob } from "./notification/task-reminder-job";
+import { MissedRecurrenceJob } from "./recurrence/missed-recurrence-job";
 import { OpenAiCompatibleProvider } from "./llm/openai-compatible-provider";
 import { StripePaymentGateway } from "./payment/stripe-payment-gateway";
 import { QrCodeGenerator } from "./payment/qrcode-generator";
@@ -110,7 +111,10 @@ const taskService = new TaskService(
   googleCalendarService,
   taskSharingService,
   tagRepo,
+  userRepo,
 );
+
+export const missedRecurrenceJob = new MissedRecurrenceJob(db, taskService);
 
 export const repos = {
   task: taskRepo,

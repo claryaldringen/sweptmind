@@ -26,6 +26,7 @@ export const TaskType = TaskRef.implement({
     dueDateEnd: t.exposeString("dueDateEnd", { nullable: true }),
     reminderAt: t.exposeString("reminderAt", { nullable: true }),
     recurrence: t.exposeString("recurrence", { nullable: true }),
+    skipMissedRecurrence: t.exposeBoolean("skipMissedRecurrence"),
     locationRadius: t.exposeFloat("locationRadius", { nullable: true }),
     deviceContext: t.exposeString("deviceContext", { nullable: true }),
     forceCalendarSync: t.exposeBoolean("forceCalendarSync"),
@@ -297,6 +298,7 @@ const UpdateTaskInput = builder.inputType("UpdateTaskInput", {
     shareCompletionAction: t.string(),
     shareCompletionListId: t.string(),
     forceCalendarSync: t.boolean({ required: false }),
+    skipMissedRecurrence: t.boolean({ required: false }),
   }),
 });
 

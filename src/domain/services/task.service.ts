@@ -4,8 +4,10 @@ import type { ITaskRepository, PaginationOpts } from "../repositories/task.repos
 import type { IListRepository } from "../repositories/list.repository";
 import type { IStepRepository } from "../repositories/step.repository";
 import type { List } from "../entities/list";
-import { computeNextDueDate, alignDueDateToRecurrence } from "./recurrence";
+import type { IUserRepository } from "../repositories/user.repository";
+import { alignDueDateToRecurrence, nextOccurrenceFrom } from "./recurrence";
 import { computeDefaultReminder } from "./task-visibility";
+import { resolveTimeZone, toLocalDateTime } from "./task-notifications";
 import { format } from "date-fns";
 import type { TaskSharingService } from "./task-sharing.service";
 import type { ITagRepository } from "../repositories/tag.repository";
@@ -23,6 +25,19 @@ export interface ImportTasksResult {
   createdLists: string[];
 }
 
+/** End of a date range moved along with its start to `nextDueDate` (same length). */
+function shiftRangeEnd(task: Task, nextDueDate: string): string | undefined {
+  if (!task.dueDateEnd || !task.dueDate) return undefined;
+  const startMs = new Date(task.dueDate.split("T")[0]).getTime();
+  const endMs = new Date(task.dueDateEnd.split("T")[0]).getTime();
+  const durationDays = Math.round((endMs - startMs) / (1000 * 60 * 60 * 24));
+  if (durationDays <= 0) return undefined;
+  const newEnd = new Date(nextDueDate.split("T")[0]);
+  newEnd.setDate(newEnd.getDate() + durationDays);
+  const endTimeSuffix = task.dueDateEnd.includes("T") ? "T" + task.dueDateEnd.split("T")[1] : "";
+  return format(newEnd, "yyyy-MM-dd") + endTimeSuffix;
+}
+
 export class TaskService {
   constructor(
     private readonly taskRepo: ITaskRepository,
@@ -34,7 +49,14 @@ export class TaskService {
     },
     private readonly taskSharingService?: TaskSharingService,
     private readonly tagRepo?: ITagRepository,
+    private readonly userRepo?: Pick<IUserRepository, "getTimeZone">,
   ) {}
+
+  /** Today's date in the user's time zone (the server runs in UTC). */
+  private async localToday(userId: string): Promise<string> {
+    const timeZone = await this.userRepo?.getTimeZone(userId).catch(() => null);
+    return toLocalDateTime(new Date(), resolveTimeZone(timeZone)).date;
+  }
 
   async getByUser(userId: string): Promise<Task[]> {
     return this.taskRepo.findByUser(userId);
@@ -127,7 +149,7 @@ export class TaskService {
       if (input.recurrence && input.dueDate === undefined) {
         const currentTask = await this.taskRepo.findById(id, userId);
         if (currentTask) {
-          const today = new Date().toISOString().slice(0, 10);
+          const today = await this.localToday(userId);
           if (!currentTask.dueDate || currentTask.dueDate.slice(0, 10) < today) {
             const aligned = alignDueDateToRecurrence(input.recurrence, currentTask, today);
             if (aligned) {
@@ -154,6 +176,8 @@ export class TaskService {
       updates.blockedByTaskId = input.blockedByTaskId ?? null;
     if (input.forceCalendarSync !== undefined)
       updates.forceCalendarSync = input.forceCalendarSync ?? false;
+    if (input.skipMissedRecurrence !== undefined)
+      updates.skipMissedRecurrence = input.skipMissedRecurrence ?? false;
 
     const updated = await this.taskRepo.update(id, userId, updates);
 
@@ -202,31 +226,20 @@ export class TaskService {
     const task = await this.taskRepo.findById(id, userId);
     if (!task) throw new Error("Task not found");
 
-    // Recurring task being completed → reset with next dueDate
+    // Recurring task being completed → reset with next dueDate. Occurrences already in
+    // the past are skipped — completing it late shouldn't leave it overdue again.
     if (!task.isCompleted && task.recurrence) {
-      const baseDueDate = task.dueDate ?? format(new Date(), "yyyy-MM-dd");
-      const nextDueDate = computeNextDueDate(task.recurrence, baseDueDate);
+      const today = await this.localToday(userId);
+      const baseDueDate = task.dueDate ?? today;
+      const nextDueDate = nextOccurrenceFrom(task.recurrence, baseDueDate, today);
       const recurrenceUpdates: Partial<Task> = {
         isCompleted: false,
         completedAt: null,
         dueDate: nextDueDate ?? baseDueDate,
         reminderAt: computeDefaultReminder(nextDueDate ?? baseDueDate),
       };
-
-      // Preserve date range duration
-      if (task.dueDateEnd && task.dueDate && nextDueDate) {
-        const startMs = new Date(task.dueDate.split("T")[0]).getTime();
-        const endMs = new Date(task.dueDateEnd.split("T")[0]).getTime();
-        const durationDays = Math.round((endMs - startMs) / (1000 * 60 * 60 * 24));
-        if (durationDays > 0) {
-          const newEnd = new Date(nextDueDate.split("T")[0]);
-          newEnd.setDate(newEnd.getDate() + durationDays);
-          const endTimeSuffix = task.dueDateEnd.includes("T")
-            ? "T" + task.dueDateEnd.split("T")[1]
-            : "";
-          recurrenceUpdates.dueDateEnd = format(newEnd, "yyyy-MM-dd") + endTimeSuffix;
-        }
-      }
+      const dueDateEnd = nextDueDate ? shiftRangeEnd(task, nextDueDate) : undefined;
+      if (dueDateEnd) recurrenceUpdates.dueDateEnd = dueDateEnd;
 
       const toggled = await this.taskRepo.update(id, userId, recurrenceUpdates);
 
@@ -262,6 +275,36 @@ export class TaskService {
     return toggled;
   }
 
+  /**
+   * Moves a recurring task whose occurrence was missed (its day passed unfinished) to the
+   * next occurrence — today at the earliest — when the task is set to skip missed
+   * occurrences. Returns the moved task, or null when there's nothing to move.
+   */
+  async skipMissedOccurrence(id: string, userId: string, today: string): Promise<Task | null> {
+    const task = await this.taskRepo.findById(id, userId);
+    if (!task || task.isCompleted || !task.recurrence || !task.skipMissedRecurrence) return null;
+    if (!task.dueDate || task.dueDate.slice(0, 10) >= today) return null;
+
+    const nextDueDate = nextOccurrenceFrom(task.recurrence, task.dueDate, today, {
+      includeToday: true,
+    });
+    if (!nextDueDate) return null;
+
+    const updates: Partial<Task> = {
+      dueDate: nextDueDate,
+      reminderAt: computeDefaultReminder(nextDueDate),
+    };
+    const dueDateEnd = shiftRangeEnd(task, nextDueDate);
+    if (dueDateEnd) updates.dueDateEnd = dueDateEnd;
+
+    const moved = await this.taskRepo.update(id, userId, updates);
+    if (this.googleCalendarService && moved.dueDate) {
+      this.googleCalendarService
+        .pushTask(userId, moved)
+        .catch((err) => console.error("[TaskService] background operation failed:", err));
+    }
+    return moved;
+  }
   async reorder(userId: string, items: ReorderItem[]): Promise<boolean> {
     for (const item of items) {
       await this.taskRepo.updateSortOrder(item.id, userId, item.sortOrder);

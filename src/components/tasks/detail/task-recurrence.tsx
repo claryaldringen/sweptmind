@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Repeat } from "lucide-react";
+import { Check, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
@@ -18,6 +18,12 @@ interface TaskRecurrenceProps {
   weekStartsOn: number;
   /** Day the plain "Weekly" option repeats on — the due date's weekday, else today's. */
   defaultWeekday: number;
+  /** A missed occurrence moves to the next one instead of staying overdue. */
+  skipMissed: boolean;
+  onSetSkipMissed: (skip: boolean) => void;
+  missedLabel: string;
+  missedOverdueLabel: string;
+  missedSkipLabel: string;
   addRecurrenceLabel: string;
   dailyLabel: string;
   weeklyLabel: string;
@@ -40,6 +46,11 @@ export function TaskRecurrence({
   daysShort,
   weekStartsOn,
   defaultWeekday,
+  skipMissed,
+  onSetSkipMissed,
+  missedLabel,
+  missedOverdueLabel,
+  missedSkipLabel,
   addRecurrenceLabel,
   dailyLabel,
   weeklyLabel,
@@ -244,6 +255,30 @@ export function TaskRecurrence({
                       </Button>
                     );
                   })}
+                </div>
+              </>
+            )}
+
+            {recurrence && (
+              <>
+                <Separator />
+                <div className="space-y-1">
+                  <p className="text-muted-foreground px-3 text-xs">{missedLabel}</p>
+                  {[false, true].map((skip) => (
+                    <Button
+                      key={String(skip)}
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start gap-2"
+                      aria-pressed={skipMissed === skip}
+                      onClick={() => onSetSkipMissed(skip)}
+                    >
+                      <Check
+                        className={cn("h-4 w-4", skipMissed === skip ? "opacity-100" : "opacity-0")}
+                      />
+                      {skip ? missedSkipLabel : missedOverdueLabel}
+                    </Button>
+                  ))}
                 </div>
               </>
             )}

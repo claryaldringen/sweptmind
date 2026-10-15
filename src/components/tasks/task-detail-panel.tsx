@@ -106,6 +106,7 @@ const UPDATE_TASK = gql`
       shareCompletionAction
       shareCompletionListId
       forceCalendarSync
+      skipMissedRecurrence
     }
   }
 `;
@@ -243,6 +244,7 @@ interface TaskDetail {
   shareCompletionAction: string | null;
   shareCompletionListId: string | null;
   forceCalendarSync: boolean;
+  skipMissedRecurrence: boolean;
   isSharedTo: boolean;
   attachments: TaskAttachment[];
   aiAnalysis: {
@@ -789,6 +791,7 @@ export function TaskDetailPanel() {
       shareCompletionAction: null,
       shareCompletionListId: null,
       forceCalendarSync: false,
+      skipMissedRecurrence: false,
     };
 
     // Write optimistic data immediately
@@ -1295,6 +1298,11 @@ export function TaskDetailPanel() {
             formatRecurrence={(r) => formatRecurrenceLabel(r, recurrenceLabels)}
             daysShort={tArray("recurrence.daysShort")}
             weekStartsOn={recurrenceLabels.weekStartsOn}
+            skipMissed={task.skipMissedRecurrence}
+            onSetSkipMissed={(skip) => optimisticUpdate({ skipMissedRecurrence: skip })}
+            missedLabel={t("recurrence.missedLabel")}
+            missedOverdueLabel={t("recurrence.missedOverdue")}
+            missedSkipLabel={t("recurrence.missedSkip")}
             defaultWeekday={
               task.dueDate ? parseISO(task.dueDate.slice(0, 10)).getDay() : new Date().getDay()
             }

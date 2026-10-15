@@ -32,6 +32,7 @@ const makeTask = (overrides: Partial<Task> = {}): Task => ({
   shareCompletionAction: null,
   shareCompletionListId: null,
   forceCalendarSync: false,
+  skipMissedRecurrence: false,
   sortOrder: 1,
   createdAt: new Date("2026-01-01"),
   updatedAt: new Date("2026-01-01"),
@@ -198,6 +199,7 @@ function makeMocks() {
     findUsersWithGoogleCalendarEnabled: vi.fn(),
     findUsersWithExpiringChannels: vi.fn(),
     updateSharingDefaultList: vi.fn(),
+    getTimeZone: vi.fn().mockResolvedValue(null),
   };
   const notificationSender: INotificationSender = {
     send: vi.fn(),

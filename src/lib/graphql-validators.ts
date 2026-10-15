@@ -34,6 +34,7 @@ export const updateTaskSchema = z.object({
   shareCompletionAction: z.string().nullish(),
   shareCompletionListId: z.string().nullish(),
   forceCalendarSync: z.boolean().nullish(),
+  skipMissedRecurrence: z.boolean().nullish(),
 });
 
 export const importTaskSchema = z.object({

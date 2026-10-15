@@ -74,6 +74,7 @@ function makeUserRepo(overrides: Partial<IUserRepository> = {}): IUserRepository
     findUsersWithGoogleCalendarEnabled: vi.fn().mockResolvedValue([]),
     findUsersWithExpiringChannels: vi.fn().mockResolvedValue([]),
     updateSharingDefaultList: vi.fn(),
+    getTimeZone: vi.fn().mockResolvedValue(null),
     ...overrides,
   };
 }

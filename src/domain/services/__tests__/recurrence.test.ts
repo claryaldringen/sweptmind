@@ -6,6 +6,7 @@ import {
   formatRecurrenceLabel,
   alignDueDateToRecurrence,
   orderedWeekdays,
+  nextOccurrenceFrom,
 } from "../recurrence";
 
 describe("parseRecurrence", () => {
@@ -433,5 +434,33 @@ describe("orderedWeekdays", () => {
     };
     expect(formatRecurrenceLabel("WEEKLY:0,1", labels)).toBe("Ne, Po");
     expect(formatRecurrenceLabel("WEEKLY:0,1", { ...labels, weekStartsOn: 1 })).toBe("Po, Ne");
+  });
+});
+
+describe("nextOccurrenceFrom", () => {
+  const today = "2026-10-15"; // Thursday
+
+  it("splněno včas posune o jeden výskyt", () => {
+    expect(nextOccurrenceFrom("WEEKLY:4", "2026-10-15T09:00", today)).toBe("2026-10-22T09:00");
+  });
+
+  it("splněno se zpožděním do týdne vezme další výskyt od původního termínu", () => {
+    expect(nextOccurrenceFrom("WEEKLY:4", "2026-10-08", today)).toBe("2026-10-22");
+    expect(nextOccurrenceFrom("WEEKLY:4", "2026-10-09", "2026-10-13")).toBe("2026-10-15");
+  });
+
+  it("přeskočí všechny prošlé výskyty a dnešek", () => {
+    expect(nextOccurrenceFrom("WEEKLY:4", "2026-09-17", today)).toBe("2026-10-22");
+    expect(nextOccurrenceFrom("DAILY", "2026-10-01T07:00", today)).toBe("2026-10-16T07:00");
+    expect(nextOccurrenceFrom("MONTHLY", "2026-06-20", today)).toBe("2026-10-20");
+  });
+
+  it("s includeToday může vyjít i dnešek (zmeškaný výskyt)", () => {
+    expect(nextOccurrenceFrom("WEEKLY:1,4", "2026-10-12", today, { includeToday: true })).toBe(
+      "2026-10-15",
+    );
+    expect(nextOccurrenceFrom("WEEKLY:4", "2026-10-08", "2026-10-09", { includeToday: true })).toBe(
+      "2026-10-15",
+    );
   });
 });

@@ -236,6 +236,26 @@ export function formatRecurrenceLabel(
   }
 }
 
+/**
+ * The next occurrence after `dueDate` that falls after `today` — or on it, with
+ * `includeToday` — skipping occurrences already in the past. Keeps the time of day.
+ */
+export function nextOccurrenceFrom(
+  recurrence: string,
+  dueDate: string,
+  today: string,
+  { includeToday = false }: { includeToday?: boolean } = {},
+): string | null {
+  const isPast = (value: string) =>
+    includeToday ? value.slice(0, 10) < today : value.slice(0, 10) <= today;
+  let next = computeNextDueDate(recurrence, dueDate);
+  // A bounded loop: daily recurrence a few years overdue is still well under the cap
+  for (let i = 0; next && isPast(next) && i < 5000; i++) {
+    next = computeNextDueDate(recurrence, next);
+  }
+  return next;
+}
+
 export function computeNextDueDate(recurrence: string, currentDueDate: string): string | null {
   if (!currentDueDate) return null;
 

@@ -47,6 +47,8 @@ export interface IUserRepository {
     timeZone?: string | null;
   }>;
   findUsersWithGoogleCalendarEnabled(): Promise<Array<{ id: string }>>;
+  /** IANA time zone reported by the user's client (null = unknown). */
+  getTimeZone(userId: string): Promise<string | null>;
   findUsersWithExpiringChannels(
     before: Date,
   ): Promise<Array<{ id: string; googleCalendarChannelId: string }>>;

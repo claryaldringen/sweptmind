@@ -269,6 +269,14 @@ export class DrizzleUserRepository implements IUserRepository {
     };
   }
 
+  async getTimeZone(userId: string): Promise<string | null> {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      columns: { timezone: true },
+    });
+    return user?.timezone ?? null;
+  }
+
   async updateSharingDefaultList(userId: string, listId: string | null): Promise<void> {
     await this.db
       .update(schema.users)
