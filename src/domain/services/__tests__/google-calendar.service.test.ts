@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { GoogleCalendarService } from "../google-calendar.service";
+import { GoogleCalendarService, describePullStats } from "../google-calendar.service";
 import type { IUserRepository } from "../../repositories/user.repository";
 import type { ICalendarSyncRepository } from "../../repositories/calendar-sync.repository";
 import type { IGoogleCalendarClient } from "../../ports/google-calendar-client";
@@ -399,13 +399,14 @@ describe("GoogleCalendarService", () => {
     }
 
     it("narozeniny, svátky a upravené výskyty série neimportuje", async () => {
-      await pull([
+      const stats = await pull([
         event({ id: "b", eventType: "birthday" }),
         event({ id: "h", organizer: { email: "cs.czech#holiday@group.v.calendar.google.com" } }),
         event({ id: "x", recurringEventId: "series-1" }),
       ]);
 
       expect(taskRepo.create).not.toHaveBeenCalled();
+      expect(stats).toMatchObject({ events: 3, created: 0, skipped: 3 });
     });
 
     it("dříve naimportované narozeniny smaže", async () => {
@@ -413,10 +414,11 @@ describe("GoogleCalendarService", () => {
         makeSyncEntry({ taskId: "task-b", icalUid: "gcal-b" }),
       );
 
-      await pull([event({ id: "b", eventType: "birthday" })]);
+      const stats = await pull([event({ id: "b", eventType: "birthday" })]);
 
       expect(taskRepo.delete).toHaveBeenCalledWith("task-b", "user-1");
       expect(syncRepo.deleteByTaskId).toHaveBeenCalledWith("task-b");
+      expect(stats).toMatchObject({ events: 1, deleted: 1, skipped: 0 });
     });
 
     it("opakovanou sérii založí jako jeden úkol s opakováním od nejbližšího výskytu", async () => {
@@ -785,8 +787,7 @@ describe("GoogleCalendarService", () => {
         enabled: false,
       });
 
-      await service.pullChanges("user-1");
-
+      expect(await service.pullChanges("user-1")).toBeNull();
       expect(gcalClient.listEvents).not.toHaveBeenCalled();
     });
 
@@ -814,11 +815,22 @@ describe("GoogleCalendarService", () => {
         nextSyncToken: "new-token",
       });
 
-      await service.pullChanges("user-1");
+      const stats = await service.pullChanges("user-1");
 
       expect(gcalClient.listEvents).toHaveBeenCalledWith("user-1", "primary", undefined);
       expect(userRepo.updateGoogleCalendarSyncToken).toHaveBeenCalledWith("user-1", "new-token");
       expect(taskRepo.create).toHaveBeenCalled();
+      expect(stats).toEqual({
+        events: 1,
+        created: 1,
+        updated: 0,
+        deleted: 0,
+        skipped: 0,
+        fullSync: true,
+      });
+      expect(describePullStats(stats)).toBe(
+        "1 events (full sync): 1 created, 0 updated, 0 deleted, 0 unchanged",
+      );
     });
 
     it("použije existující syncToken", async () => {

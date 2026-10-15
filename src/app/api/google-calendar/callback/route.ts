@@ -3,6 +3,7 @@ import { db } from "@/server/db";
 import * as schema from "@/server/db/schema/auth";
 import { eq, and } from "drizzle-orm";
 import { services } from "@/infrastructure/container";
+import { describePullStats } from "@/domain/services/google-calendar.service";
 import { auth } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
@@ -55,7 +56,8 @@ export async function GET(req: NextRequest) {
 
     const webhookUrl = `${process.env.AUTH_URL}/api/google-calendar/webhook`;
     await services.googleCalendar.registerWatch(userId, webhookUrl);
-    await services.googleCalendar.pullChanges(userId);
+    const stats = await services.googleCalendar.pullChanges(userId);
+    console.log(`[gcal] initial pull user ${userId}: ${describePullStats(stats)}`);
 
     return NextResponse.redirect(new URL("/settings?gcal=connected", req.url));
   } catch {

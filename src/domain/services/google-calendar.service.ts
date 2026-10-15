@@ -76,6 +76,26 @@ export function computeChannelToken(channelId: string): string {
   return createHmac("sha256", secret).update(channelId).digest("hex");
 }
 
+/** What one pull from Google Calendar did; `skipped` = events that changed nothing. */
+export interface GoogleCalendarPullStats {
+  events: number;
+  created: number;
+  updated: number;
+  deleted: number;
+  skipped: number;
+  fullSync: boolean;
+}
+
+/** One-line summary of a pull for the server log. */
+export function describePullStats(stats: GoogleCalendarPullStats | null): string {
+  if (!stats) return "pull disabled";
+  return (
+    `${stats.events} events${stats.fullSync ? " (full sync)" : ""}: ` +
+    `${stats.created} created, ${stats.updated} updated, ${stats.deleted} deleted, ` +
+    `${stats.skipped} unchanged`
+  );
+}
+
 export class GoogleCalendarService {
   constructor(
     private readonly userRepo: IUserRepository,
@@ -153,12 +173,13 @@ export class GoogleCalendarService {
   }
 
   /**
-   * Pull changes from Google Calendar and create/update tasks.
+   * Pull changes from Google Calendar and create/update tasks. Returns what changed
+   * (null when pulling is off) so the caller can log it.
    */
-  async pullChanges(userId: string): Promise<void> {
+  async pullChanges(userId: string): Promise<GoogleCalendarPullStats | null> {
     const settings = await this.userRepo.getGoogleCalendarSettings(userId);
-    if (!settings.enabled || settings.direction === "push") return;
-    if (!this.taskRepo || !this.listRepo) return;
+    if (!settings.enabled || settings.direction === "push") return null;
+    if (!this.taskRepo || !this.listRepo) return null;
 
     const result = await this.gcalClient.listEvents(
       userId,
@@ -170,14 +191,26 @@ export class GoogleCalendarService {
       await this.userRepo.updateGoogleCalendarSyncToken(userId, result.nextSyncToken);
     }
 
+    const stats: GoogleCalendarPullStats = {
+      events: result.items.length,
+      created: 0,
+      updated: 0,
+      deleted: 0,
+      skipped: 0,
+      fullSync: !settings.syncToken,
+    };
+
     const targetListId = settings.targetListId;
-    if (!targetListId) return;
+    if (!targetListId) return { ...stats, skipped: stats.events };
 
     const timeZone = resolveTimeZone(settings.timeZone);
     const today = toLocalDateTime(new Date(), timeZone).date;
 
     for (const event of result.items) {
-      if (!event.id) continue;
+      if (!event.id) {
+        stats.skipped++;
+        continue;
+      }
 
       const syncEntry = await this.syncRepo.findByGoogleEventId(userId, event.id);
       const fromGoogle = syncEntry?.icalUid.startsWith("gcal-") ?? false;
@@ -187,6 +220,9 @@ export class GoogleCalendarService {
         if (syncEntry) {
           await this.taskRepo.delete(syncEntry.taskId, userId);
           await this.syncRepo.deleteByTaskId(syncEntry.taskId);
+          stats.deleted++;
+        } else {
+          stats.skipped++;
         }
         continue;
       }
@@ -196,13 +232,19 @@ export class GoogleCalendarService {
         if (syncEntry && fromGoogle) {
           await this.taskRepo.delete(syncEntry.taskId, userId);
           await this.syncRepo.deleteByTaskId(syncEntry.taskId);
+          stats.deleted++;
+        } else {
+          stats.skipped++;
         }
         continue;
       }
 
       if (syncEntry) {
         const task = await this.taskRepo.findById(syncEntry.taskId, userId);
-        if (!task) continue;
+        if (!task) {
+          stats.skipped++;
+          continue;
+        }
         // A series stays on the task's current occurrence instead of jumping to today
         const floor = task.dueDate?.slice(0, 10) ?? today;
         const fields = eventToTaskFields(event, timeZone, floor);
@@ -211,6 +253,9 @@ export class GoogleCalendarService {
         if (changes) {
           await this.taskRepo.update(syncEntry.taskId, userId, changes);
           await this.syncRepo.updateEtag(syncEntry.id, `"${Date.now()}"`);
+          stats.updated++;
+        } else {
+          stats.skipped++;
         }
         continue;
       }
@@ -231,7 +276,10 @@ export class GoogleCalendarService {
         etag: `"${task.updatedAt.getTime()}"`,
       });
       await this.syncRepo.updateGoogleEventId(entry.id, event.id);
+      stats.created++;
     }
+
+    return stats;
   }
 
   /**
