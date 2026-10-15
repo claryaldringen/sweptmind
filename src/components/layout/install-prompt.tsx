@@ -1,54 +1,37 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { Download, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n";
+import { isStandalone, promptPwaInstall, usePwaInstallState } from "@/lib/pwa-install";
 
 const DISMISSED_KEY = "sweptmind-install-dismissed";
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt(): Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+function wasDismissed(): boolean {
+  try {
+    return localStorage.getItem(DISMISSED_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 export function InstallPrompt() {
   const { t } = useTranslations();
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [visible, setVisible] = useState(false);
+  const installState = usePwaInstallState();
+  // Read lazily: the state is "unavailable" on the server and during hydration anyway
+  const [dismissed, setDismissed] = useState(() => typeof window !== "undefined" && wasDismissed());
 
-  useEffect(() => {
-    // Don't show if already installed (standalone mode) or previously dismissed
-    if (window.matchMedia("(display-mode: standalone)").matches) return;
-    if (localStorage.getItem(DISMISSED_KEY)) return;
+  if (installState !== "available" || dismissed || isStandalone()) return null;
 
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setVisible(true);
-    };
-
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
-  const handleInstall = useCallback(async () => {
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") {
-      setVisible(false);
+  function handleDismiss() {
+    setDismissed(true);
+    try {
+      localStorage.setItem(DISMISSED_KEY, "1");
+    } catch {
+      // Storage unavailable — the banner just comes back next time
     }
-    setDeferredPrompt(null);
-  }, [deferredPrompt]);
-
-  const handleDismiss = useCallback(() => {
-    setVisible(false);
-    setDeferredPrompt(null);
-    localStorage.setItem(DISMISSED_KEY, "1");
-  }, []);
-
-  if (!visible) return null;
+  }
 
   return (
     <div className="bg-primary/10 border-primary/20 flex items-center gap-3 border-b px-4 py-2">
@@ -57,7 +40,7 @@ export function InstallPrompt() {
         <p className="text-sm font-medium">{t("pwa.installTitle")}</p>
         <p className="text-muted-foreground text-xs">{t("pwa.installDescription")}</p>
       </div>
-      <Button size="sm" onClick={handleInstall}>
+      <Button size="sm" onClick={() => promptPwaInstall()}>
         {t("pwa.installButton")}
       </Button>
       <button onClick={handleDismiss} className="text-muted-foreground hover:text-foreground p-1">

@@ -319,6 +319,12 @@ export const cs: Dictionary = {
     installDismiss: "Teď ne",
     updateAvailable: "Je dostupná nová verze",
     updateAction: "Aktualizovat",
+    settingsTitle: "Nainstalovat jako aplikaci",
+    settingsDescription:
+      "SweptMind ve vlastním okně s vlastní ikonou mezi aplikacemi, bez lišty prohlížeče.",
+    settingsInstalled: "SweptMind je nainstalovaný – najdeš ho mezi aplikacemi.",
+    settingsUnavailable:
+      "Prohlížeč teď instalaci nenabízí. Funguje v Chromu a Edgi; pokud v nich SweptMind už nainstalovaný máš, najdeš ho mezi aplikacemi.",
   },
   desktopApp: {
     title: "Aplikace pro Mac",

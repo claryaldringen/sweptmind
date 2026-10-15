@@ -44,6 +44,7 @@ import { useIsPremium } from "@/hooks/use-is-premium";
 import { SharingSection } from "@/components/settings/sharing-section";
 import { ApiTokensSection } from "@/components/settings/api-tokens-section";
 import { DesktopAppSection } from "@/components/settings/desktop-app-section";
+import { PwaInstallSection } from "@/components/settings/pwa-install-section";
 import { ROW_CLASS, SELECT_CLASS } from "@/components/settings/styles";
 
 interface ElectronAPI {
@@ -1374,8 +1375,10 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {/* Mac app — only in a Mac browser; fills the slot next to Notifications */}
+        {/* Mac app in a Mac browser, installing the web app elsewhere — at most one shows,
+            filling the slot next to Notifications */}
         <DesktopAppSection />
+        <PwaInstallSection />
 
         {/* Calendar */}
         <div className="rounded-lg border p-5 md:col-span-2">

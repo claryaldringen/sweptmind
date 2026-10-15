@@ -319,6 +319,12 @@ export const en: Dictionary = {
     installDismiss: "Not now",
     updateAvailable: "A new version is available",
     updateAction: "Update",
+    settingsTitle: "Install as an app",
+    settingsDescription:
+      "SweptMind in its own window with its own icon among your apps, without the browser bar.",
+    settingsInstalled: "SweptMind is installed – you'll find it among your apps.",
+    settingsUnavailable:
+      "Your browser doesn't offer installation right now. It works in Chrome and Edge; if SweptMind is already installed there, you'll find it among your apps.",
   },
   desktopApp: {
     title: "Mac app",

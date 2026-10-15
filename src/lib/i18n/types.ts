@@ -297,6 +297,10 @@ export interface Dictionary {
     installDismiss: string;
     updateAvailable: string;
     updateAction: string;
+    settingsTitle: string;
+    settingsDescription: string;
+    settingsInstalled: string;
+    settingsUnavailable: string;
   };
   desktopApp: {
     title: string;
