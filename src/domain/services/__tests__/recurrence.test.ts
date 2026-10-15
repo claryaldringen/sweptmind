@@ -4,6 +4,8 @@ import {
   computeNextDueDate,
   computeFirstOccurrence,
   formatRecurrenceLabel,
+  alignDueDateToRecurrence,
+  orderedWeekdays,
 } from "../recurrence";
 
 describe("parseRecurrence", () => {
@@ -344,5 +346,92 @@ describe("formatRecurrenceLabel", () => {
 
   it("formats YEARLY:2", () => {
     expect(formatRecurrenceLabel("YEARLY:2", labels)).toBe("Every 2 years");
+  });
+});
+
+describe("alignDueDateToRecurrence", () => {
+  const today = "2026-10-15"; // Thursday
+
+  it("bez termínu vezme nejbližší zvolený den od dneška", () => {
+    expect(
+      alignDueDateToRecurrence("WEEKLY:1", { dueDate: null, dueDateEnd: null }, today),
+    ).toEqual({ dueDate: "2026-10-19", dueDateEnd: null });
+    expect(
+      alignDueDateToRecurrence("WEEKLY:4", { dueDate: null, dueDateEnd: null }, today),
+    ).toEqual({ dueDate: "2026-10-15", dueDateEnd: null });
+  });
+
+  it("posune termín na zvolený den a zachová čas", () => {
+    expect(
+      alignDueDateToRecurrence(
+        "WEEKLY:1",
+        { dueDate: "2026-10-15T09:30", dueDateEnd: null },
+        today,
+      ),
+    ).toEqual({ dueDate: "2026-10-19T09:30", dueDateEnd: null });
+  });
+
+  it("budoucí termín bere jako začátek, nepřeskočí ho na tento týden", () => {
+    expect(
+      alignDueDateToRecurrence("WEEKLY:1", { dueDate: "2026-11-04", dueDateEnd: null }, today),
+    ).toEqual({ dueDate: "2026-11-09", dueDateEnd: null }); // 4. 11. is a Wednesday
+    expect(
+      alignDueDateToRecurrence("MONTHLY", { dueDate: "2026-10-20", dueDateEnd: null }, today),
+    ).toEqual({ dueDate: "2026-10-20", dueDateEnd: null });
+  });
+
+  it("prošlý termín nahradí nejbližším výskytem od dneška", () => {
+    expect(
+      alignDueDateToRecurrence(
+        "WEEKLY:1,4",
+        { dueDate: "2026-10-01T08:00", dueDateEnd: null },
+        today,
+      ),
+    ).toEqual({ dueDate: "2026-10-15T08:00", dueDateEnd: null });
+  });
+
+  it("při úpravě dnů existujícího opakování počítá od dneška", () => {
+    // Mondays first moved the task to Monday; adding Thursday should bring it to today
+    expect(
+      alignDueDateToRecurrence(
+        "WEEKLY:1,4",
+        { dueDate: "2026-10-19T09:30", dueDateEnd: null },
+        today,
+        { fromToday: true },
+      ),
+    ).toEqual({ dueDate: "2026-10-15T09:30", dueDateEnd: null });
+  });
+
+  it("posune i konec rozsahu o stejný počet dní", () => {
+    expect(
+      alignDueDateToRecurrence(
+        "WEEKLY:1",
+        { dueDate: "2026-10-15T10:00", dueDateEnd: "2026-10-15T12:00" },
+        today,
+      ),
+    ).toEqual({ dueDate: "2026-10-19T10:00", dueDateEnd: "2026-10-19T12:00" });
+  });
+});
+
+describe("orderedWeekdays", () => {
+  it("týden od neděle nebo od pondělí", () => {
+    expect(orderedWeekdays()).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(orderedWeekdays(1)).toEqual([1, 2, 3, 4, 5, 6, 0]);
+  });
+
+  it("v popisku řadí dny podle začátku týdne", () => {
+    const labels = {
+      everyDay: "Denně",
+      everyNDays: (n: number) => `Každé ${n} dny`,
+      everyNWeeks: (n: number) => `Každé ${n} týdny`,
+      everyMonth: "Každý měsíc",
+      everyNMonths: (n: number) => `Každé ${n} měsíce`,
+      everyLastDay: "Poslední den v měsíci",
+      everyYear: "Každý rok",
+      everyNYears: (n: number) => `Každé ${n} roky`,
+      daysShort: ["Ne", "Po", "Út", "St", "Čt", "Pá", "So"],
+    };
+    expect(formatRecurrenceLabel("WEEKLY:0,1", labels)).toBe("Ne, Po");
+    expect(formatRecurrenceLabel("WEEKLY:0,1", { ...labels, weekStartsOn: 1 })).toBe("Po, Ne");
   });
 });

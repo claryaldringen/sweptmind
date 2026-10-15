@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { orderedWeekdays, parseRecurrence } from "@/domain/services/recurrence";
 
 interface TaskRecurrenceProps {
   recurrence: string | null;
@@ -13,6 +14,10 @@ interface TaskRecurrenceProps {
   onToggleWeeklyDay: (day: number) => void;
   formatRecurrence: (recurrence: string | null) => string | null;
   daysShort: string[];
+  /** First day of the week in the day pickers (1 = Monday). */
+  weekStartsOn: number;
+  /** Day the plain "Weekly" option repeats on — the due date's weekday, else today's. */
+  defaultWeekday: number;
   addRecurrenceLabel: string;
   dailyLabel: string;
   weeklyLabel: string;
@@ -33,6 +38,8 @@ export function TaskRecurrence({
   onToggleWeeklyDay,
   formatRecurrence,
   daysShort,
+  weekStartsOn,
+  defaultWeekday,
   addRecurrenceLabel,
   dailyLabel,
   weeklyLabel,
@@ -60,7 +67,7 @@ export function TaskRecurrence({
   function openCustomView() {
     setCustomInterval(2);
     setCustomUnit("months");
-    setCustomDays([new Date().getDay()]);
+    setCustomDays([defaultWeekday]);
     setCustomView(true);
   }
 
@@ -112,7 +119,9 @@ export function TaskRecurrence({
     { type: "YEARLY" as const, label: yearlyLabel },
   ];
 
-  const isWeeklyActive = recurrence?.startsWith("WEEKLY:");
+  const parsed = recurrence ? parseRecurrence(recurrence) : null;
+  const weeklyDays = parsed?.type === "WEEKLY" ? parsed.days : [];
+  const weekdays = orderedWeekdays(weekStartsOn);
 
   return (
     <Popover
@@ -169,15 +178,16 @@ export function TaskRecurrence({
               <>
                 <Separator />
                 <div className="flex gap-0.5">
-                  {daysShort.map((dayName, index) => (
+                  {weekdays.map((day) => (
                     <Button
-                      key={index}
-                      variant={customDays.includes(index) ? "default" : "outline"}
+                      key={day}
+                      variant={customDays.includes(day) ? "default" : "outline"}
                       size="sm"
                       className="h-7 w-7 p-0 text-xs"
-                      onClick={() => toggleCustomDay(index)}
+                      aria-pressed={customDays.includes(day)}
+                      onClick={() => toggleCustomDay(day)}
                     >
-                      {dayName}
+                      {daysShort[day]}
                     </Button>
                   ))}
                 </div>
@@ -204,39 +214,33 @@ export function TaskRecurrence({
                   className={cn(
                     "w-full justify-start",
                     recurrence === type && "bg-accent",
-                    type === "WEEKLY" && isWeeklyActive && "bg-accent",
+                    type === "WEEKLY" && parsed?.type === "WEEKLY" && "bg-accent",
                   )}
-                  onClick={() => {
-                    if (type === "WEEKLY") {
-                      const today = new Date().getDay();
-                      handleSetRecurrence(`WEEKLY:${today}`);
-                    } else {
-                      handleSetRecurrence(type);
-                    }
-                  }}
+                  onClick={() =>
+                    handleSetRecurrence(type === "WEEKLY" ? `WEEKLY:${defaultWeekday}` : type)
+                  }
                 >
                   {label}
                 </Button>
               ))}
             </div>
 
-            {isWeeklyActive && (
+            {parsed?.type === "WEEKLY" && (
               <>
                 <Separator />
                 <div className="flex gap-0.5">
-                  {daysShort.map((dayName, index) => {
-                    const parts = recurrence!.split(":");
-                    const daysStr = parts.length === 3 ? parts[2] : parts[1];
-                    const isActive = daysStr.split(",").map(Number).includes(index);
+                  {weekdays.map((day) => {
+                    const isActive = weeklyDays.includes(day);
                     return (
                       <Button
-                        key={index}
+                        key={day}
                         variant={isActive ? "default" : "outline"}
                         size="sm"
                         className="h-7 w-7 p-0 text-xs"
-                        onClick={() => onToggleWeeklyDay(index)}
+                        aria-pressed={isActive}
+                        onClick={() => onToggleWeeklyDay(day)}
                       >
-                        {dayName}
+                        {daysShort[day]}
                       </Button>
                     );
                   })}

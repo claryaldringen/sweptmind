@@ -336,6 +336,26 @@ describe("TaskService", () => {
   });
 
   describe("update", () => {
+    it("opakování u prošlého termínu posune termín na nejbližší výskyt a zachová čas", async () => {
+      vi.useFakeTimers({ now: new Date("2026-10-15T10:00:00Z") }); // Thursday
+      try {
+        vi.mocked(repo.findById).mockResolvedValue(
+          makeTask({ dueDate: "2026-10-01T09:30", dueDateEnd: null }),
+        );
+        vi.mocked(repo.update).mockResolvedValue(makeTask());
+
+        await service.update("task-1", "user-1", { recurrence: "WEEKLY:1" });
+
+        expect(repo.update).toHaveBeenCalledWith(
+          "task-1",
+          "user-1",
+          expect.objectContaining({ recurrence: "WEEKLY:1", dueDate: "2026-10-19T09:30" }),
+        );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it("uloží reminderAt přímo jako string", async () => {
       vi.mocked(repo.update).mockResolvedValue(makeTask());
 

@@ -4,7 +4,7 @@ import type { ITaskRepository, PaginationOpts } from "../repositories/task.repos
 import type { IListRepository } from "../repositories/list.repository";
 import type { IStepRepository } from "../repositories/step.repository";
 import type { List } from "../entities/list";
-import { computeNextDueDate, computeFirstOccurrence } from "./recurrence";
+import { computeNextDueDate, alignDueDateToRecurrence } from "./recurrence";
 import { computeDefaultReminder } from "./task-visibility";
 import { format } from "date-fns";
 import type { TaskSharingService } from "./task-sharing.service";
@@ -129,10 +129,11 @@ export class TaskService {
         if (currentTask) {
           const today = new Date().toISOString().slice(0, 10);
           if (!currentTask.dueDate || currentTask.dueDate.slice(0, 10) < today) {
-            const nextDue = computeFirstOccurrence(input.recurrence);
-            if (nextDue) {
-              updates.dueDate = nextDue;
-              updates.reminderAt = computeDefaultReminder(nextDue);
+            const aligned = alignDueDateToRecurrence(input.recurrence, currentTask, today);
+            if (aligned) {
+              updates.dueDate = aligned.dueDate;
+              if (input.dueDateEnd === undefined) updates.dueDateEnd = aligned.dueDateEnd;
+              updates.reminderAt = computeDefaultReminder(aligned.dueDate);
             }
           }
         }

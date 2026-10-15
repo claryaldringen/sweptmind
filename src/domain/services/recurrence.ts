@@ -1,4 +1,13 @@
-import { addDays, addMonths, addYears, getDay, format, lastDayOfMonth } from "date-fns";
+import {
+  addDays,
+  addMonths,
+  addYears,
+  differenceInCalendarDays,
+  getDay,
+  format,
+  lastDayOfMonth,
+  parseISO,
+} from "date-fns";
 
 interface RecurrenceDaily {
   type: "DAILY";
@@ -140,6 +149,39 @@ export function computeFirstOccurrence(recurrence: string, todayOverride?: strin
 }
 
 /**
+ * Due date for a task whose recurrence was just set: the first occurrence on or after its
+ * current due date (today when it has none or it's past). `fromToday` counts from today
+ * instead — for editing an existing recurrence, where the due date only reflects the old
+ * pattern. Keeps the time of day and shifts the end of a date range by the same number
+ * of days.
+ */
+export function alignDueDateToRecurrence(
+  recurrence: string,
+  current: { dueDate: string | null; dueDateEnd: string | null },
+  today: string,
+  { fromToday = false }: { fromToday?: boolean } = {},
+): { dueDate: string; dueDateEnd: string | null } | null {
+  const currentDate = current.dueDate?.slice(0, 10) ?? null;
+  const base = !fromToday && currentDate && currentDate >= today ? currentDate : today;
+  const date = computeFirstOccurrence(recurrence, base);
+  if (!date) return null;
+
+  const time = current.dueDate?.slice(10) ?? ""; // "T09:00" or ""
+  let dueDateEnd = current.dueDateEnd;
+  if (dueDateEnd && currentDate) {
+    const shift = differenceInCalendarDays(parseISO(date), parseISO(currentDate));
+    const endDate = addDays(parseISO(dueDateEnd.slice(0, 10)), shift);
+    dueDateEnd = format(endDate, "yyyy-MM-dd") + dueDateEnd.slice(10);
+  }
+  return { dueDate: date + time, dueDateEnd };
+}
+
+/** Days of the week (0=Sun … 6=Sat) in display order for a week starting on `weekStartsOn`. */
+export function orderedWeekdays(weekStartsOn: number = 0): number[] {
+  return Array.from({ length: 7 }, (_, i) => (weekStartsOn + i) % 7);
+}
+
+/**
  * Format a recurrence string into a human-readable label.
  * Pure function — all translated strings are passed as parameters.
  */
@@ -155,6 +197,8 @@ export function formatRecurrenceLabel(
     everyYear: string;
     everyNYears: (n: number) => string;
     daysShort: string[];
+    /** First day of the week for listing days (1 = Monday); Sunday by default. */
+    weekStartsOn?: number;
   },
 ): string | null {
   if (!recurrence) return null;
@@ -169,7 +213,10 @@ export function formatRecurrenceLabel(
       const daysLabel =
         parsed.days.length === 7
           ? labels.everyDay
-          : parsed.days.map((d) => labels.daysShort[d]).join(", ");
+          : orderedWeekdays(labels.weekStartsOn)
+              .filter((d) => parsed.days.includes(d))
+              .map((d) => labels.daysShort[d])
+              .join(", ");
       if (parsed.interval === 1) return daysLabel;
       return `${labels.everyNWeeks(parsed.interval)}: ${daysLabel}`;
     }

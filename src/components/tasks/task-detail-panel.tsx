@@ -26,7 +26,7 @@ import { TaskSharing } from "./detail/task-sharing";
 import { TaskCompletionRules } from "./detail/task-completion-rules";
 import { DeviceContextPicker } from "@/components/ui/device-context-picker";
 import {
-  computeFirstOccurrence,
+  alignDueDateToRecurrence,
   parseRecurrence,
   formatRecurrenceLabel,
 } from "@/domain/services/recurrence";
@@ -1077,17 +1077,29 @@ export function TaskDetailPanel() {
     everyYear: t("recurrence.everyYear"),
     everyNYears: (n: number) => t("recurrence.everyNYears", { n }),
     daysShort: tArray("recurrence.daysShort"),
+    weekStartsOn: dateFnsLocale.options?.weekStartsOn ?? 0,
   };
 
   function handleSetRecurrence(value: string | null) {
     if (!task) return;
+    const input: Record<string, unknown> = { recurrence: value };
     if (value) {
-      // Always recompute dueDate to match the new recurrence pattern
-      const dueDate = computeFirstOccurrence(value);
-      optimisticUpdate({ recurrence: value, dueDate });
-    } else {
-      optimisticUpdate({ recurrence: value });
+      // Move the due date onto the pattern (keeping its time); send it only when it
+      // changes, since a new due date also resets a manual reminder. Editing an existing
+      // recurrence counts from today — the due date only reflects the old pattern.
+      const today = format(new Date(), "yyyy-MM-dd");
+      const aligned = alignDueDateToRecurrence(
+        value,
+        { dueDate: task.dueDate ?? null, dueDateEnd: task.dueDateEnd ?? null },
+        today,
+        { fromToday: Boolean(task.recurrence) },
+      );
+      if (aligned && aligned.dueDate !== task.dueDate) input.dueDate = aligned.dueDate;
+      if (aligned && aligned.dueDateEnd !== (task.dueDateEnd ?? null)) {
+        input.dueDateEnd = aligned.dueDateEnd;
+      }
     }
+    optimisticUpdate(input);
   }
 
   function handleToggleWeeklyDay(day: number) {
@@ -1282,6 +1294,10 @@ export function TaskDetailPanel() {
             onToggleWeeklyDay={handleToggleWeeklyDay}
             formatRecurrence={(r) => formatRecurrenceLabel(r, recurrenceLabels)}
             daysShort={tArray("recurrence.daysShort")}
+            weekStartsOn={recurrenceLabels.weekStartsOn}
+            defaultWeekday={
+              task.dueDate ? parseISO(task.dueDate.slice(0, 10)).getDay() : new Date().getDay()
+            }
             addRecurrenceLabel={t("recurrence.addRecurrence")}
             dailyLabel={t("recurrence.daily")}
             weeklyLabel={t("recurrence.weekly")}

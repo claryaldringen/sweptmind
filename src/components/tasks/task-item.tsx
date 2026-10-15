@@ -632,6 +632,7 @@ export const TaskItem = memo(function TaskItem({
                         everyYear: t("recurrence.everyYear"),
                         everyNYears: (n) => t("recurrence.everyNYears", { n }),
                         daysShort: tArray("recurrence.daysShort"),
+                        weekStartsOn: dateFnsLocale.options?.weekStartsOn ?? 0,
                       })}
                     </span>
                   )}
