@@ -717,7 +717,7 @@ export function TaskDetailPanel() {
     }
   }
 
-  function handleDelete() {
+  function handleDelete(deleteFromCalendar = false) {
     // Optimistic removal via writeQuery (same pattern as task creation)
     const existing = apolloClient.cache.readQuery<GetAppDataResult>({ query: GET_APP_DATA });
     if (existing) {
@@ -740,7 +740,7 @@ export function TaskDetailPanel() {
         },
       });
     }
-    deleteTask({ variables: { id: taskId } });
+    deleteTask({ variables: { id: taskId, deleteFromCalendar } });
     closePanel();
   }
 
@@ -1425,11 +1425,8 @@ export function TaskDetailPanel() {
               })
             : ""
         }
+        taskId={task.id}
         onDelete={handleDelete}
-        deleteConfirmTitle={t("common.deleteConfirmTitle")}
-        deleteConfirmDesc={t("tasks.deleteConfirmDesc")}
-        deleteConfirmCancel={t("common.deleteConfirmCancel")}
-        deleteConfirmAction={t("common.deleteConfirmAction")}
       />
     </div>
   );

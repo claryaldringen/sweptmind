@@ -339,8 +339,15 @@ builder.mutationField("deleteTask", (t) =>
   t.field({
     type: "Boolean",
     authScopes: { authenticated: true },
-    args: { id: t.arg.string({ required: true }) },
-    resolve: async (_root, args, ctx) => ctx.services.task.delete(args.id, ctx.userId!),
+    args: {
+      id: t.arg.string({ required: true }),
+      // Also delete the task's Google Calendar event (the user is asked in the UI)
+      deleteFromCalendar: t.arg.boolean(),
+    },
+    resolve: async (_root, args, ctx) =>
+      ctx.services.task.delete(args.id, ctx.userId!, {
+        deleteFromCalendar: args.deleteFromCalendar ?? false,
+      }),
   }),
 );
 
@@ -395,8 +402,14 @@ builder.mutationField("deleteTasks", (t) =>
   t.field({
     type: "Boolean",
     authScopes: { authenticated: true },
-    args: { ids: t.arg.stringList({ required: true }) },
-    resolve: async (_root, args, ctx) => ctx.services.task.deleteMany(args.ids, ctx.userId!),
+    args: {
+      ids: t.arg.stringList({ required: true }),
+      deleteFromCalendar: t.arg.boolean(),
+    },
+    resolve: async (_root, args, ctx) =>
+      ctx.services.task.deleteMany(args.ids, ctx.userId!, {
+        deleteFromCalendar: args.deleteFromCalendar ?? false,
+      }),
   }),
 );
 

@@ -75,6 +75,12 @@ export const en: Dictionary = {
     searchResults: "Search results",
     removeLocation: "Remove location",
     deleteConfirmDesc: "Are you sure you want to delete this task? This action cannot be undone.",
+    bulkDeleteConfirmDesc:
+      "Are you sure you want to delete the selected tasks ({count})? This can't be undone.",
+    deleteInCalendarNote: "This task is also in Google Calendar. Delete it there too?",
+    bulkDeleteInCalendarNote: "{count} of them are also in Google Calendar. Delete them there too?",
+    deleteOnlyHere: "Only in SweptMind",
+    deleteAlsoInCalendar: "Also delete in Google Calendar",
     moveTo: "Move to",
     convertToList: "Convert to list",
     cloneTask: "Clone task",

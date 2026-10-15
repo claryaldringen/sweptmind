@@ -22,13 +22,20 @@ export const TOGGLE_TASK_COMPLETED = gql`
 `;
 
 export const DELETE_TASK = gql`
-  mutation DeleteTask($id: String!) {
-    deleteTask(id: $id)
+  mutation DeleteTask($id: String!, $deleteFromCalendar: Boolean) {
+    deleteTask(id: $id, deleteFromCalendar: $deleteFromCalendar)
   }
 `;
 
 export const DELETE_TASKS = gql`
-  mutation DeleteTasks($ids: [String!]!) {
-    deleteTasks(ids: $ids)
+  mutation DeleteTasks($ids: [String!]!, $deleteFromCalendar: Boolean) {
+    deleteTasks(ids: $ids, deleteFromCalendar: $deleteFromCalendar)
+  }
+`;
+
+/** Which of the tasks have an event in Google Calendar (asked before deleting). */
+export const TASKS_IN_GOOGLE_CALENDAR = gql`
+  query TasksInGoogleCalendar($ids: [String!]!) {
+    tasksInGoogleCalendar(ids: $ids)
   }
 `;

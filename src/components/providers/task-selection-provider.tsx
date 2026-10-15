@@ -6,6 +6,7 @@ import { useMutation } from "@apollo/client/react";
 import { useSelectionBehavior, type SelectionBehavior } from "@/hooks/use-selection-behavior";
 import { getFocusArea, setFocusArea, registerTasksFocusCallback } from "@/lib/focus-area";
 import { DELETE_TASKS } from "@/graphql/shared/task-mutations";
+import { useBulkDeleteWithCalendarChoice } from "@/components/tasks/delete-task-dialog";
 
 const TaskSelectionContext = createContext<SelectionBehavior | null>(null);
 
@@ -20,6 +21,29 @@ export function TaskSelectionProvider({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [deleteTasks] = useMutation(DELETE_TASKS);
+
+  const performBulkDelete = useCallback(
+    (ids: string[], deleteFromCalendar: boolean) => {
+      deleteTasks({
+        variables: { ids, deleteFromCalendar },
+        update(cache) {
+          for (const id of ids) {
+            cache.evict({ id: cache.identify({ __typename: "Task", id }) });
+          }
+          cache.gc();
+        },
+      });
+      selection.clear();
+      const params = new URLSearchParams(searchParams.toString());
+      if (params.has("task")) {
+        params.delete("task");
+        router.replace(`?${params.toString()}`, { scroll: false });
+      }
+    },
+    [deleteTasks, selection, searchParams, router],
+  );
+  const { requestDelete, dialog: bulkDeleteDialog } =
+    useBulkDeleteWithCalendarChoice(performBulkDelete);
 
   // When sidebar sends focus to tasks (ArrowRight), focus the first task
   const focusFirstTask = useCallback(() => {
@@ -94,31 +118,19 @@ export function TaskSelectionProvider({
         selection.selectedIds.size > 0
       ) {
         e.preventDefault();
-        const ids = [...selection.selectedIds];
-        deleteTasks({
-          variables: { ids },
-          update(cache) {
-            for (const id of ids) {
-              cache.evict({ id: cache.identify({ __typename: "Task", id }) });
-            }
-            cache.gc();
-          },
-        });
-        selection.clear();
-        const params = new URLSearchParams(searchParams.toString());
-        if (params.has("task")) {
-          params.delete("task");
-          router.replace(`?${params.toString()}`, { scroll: false });
-        }
+        void requestDelete([...selection.selectedIds]);
       }
     }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [selection, router, searchParams, deleteTasks]);
+  }, [selection, router, searchParams, requestDelete]);
 
   return (
-    <TaskSelectionContext.Provider value={selection}>{children}</TaskSelectionContext.Provider>
+    <TaskSelectionContext.Provider value={selection}>
+      {children}
+      {bulkDeleteDialog}
+    </TaskSelectionContext.Provider>
   );
 }
 

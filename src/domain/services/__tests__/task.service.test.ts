@@ -474,6 +474,64 @@ describe("TaskService", () => {
       expect(repo.delete).toHaveBeenCalledWith("task-1", "user-1");
       expect(result).toBe(true);
     });
+
+    describe("s Google Kalendářem", () => {
+      const calls: string[] = [];
+      const gcal = {
+        pushTask: vi.fn<(userId: string, task: Task) => Promise<void>>(),
+        deleteTaskEvent: vi.fn<(userId: string, taskId: string) => Promise<void>>(),
+      };
+      let serviceWithCalendar: TaskService;
+
+      beforeEach(() => {
+        calls.length = 0;
+        gcal.pushTask.mockReset().mockResolvedValue(undefined);
+        gcal.deleteTaskEvent.mockReset().mockImplementation(async (_u, id) => {
+          calls.push(`event:${id}`);
+        });
+        vi.mocked(repo.delete).mockImplementation(async (id: string) => {
+          calls.push(`task:${id}`);
+        });
+        vi.mocked(repo.deleteMany).mockImplementation(async (ids: string[]) => {
+          calls.push(`tasks:${ids.join(",")}`);
+        });
+        serviceWithCalendar = new TaskService(repo, null, null, gcal);
+      });
+
+      it("bez volby událost v kalendáři nechá", async () => {
+        await serviceWithCalendar.delete("task-1", "user-1");
+
+        expect(gcal.deleteTaskEvent).not.toHaveBeenCalled();
+        expect(calls).toEqual(["task:task-1"]);
+      });
+
+      it("s volbou smaže událost ještě před úkolem (dokud vazba existuje)", async () => {
+        await serviceWithCalendar.delete("task-1", "user-1", { deleteFromCalendar: true });
+
+        expect(calls).toEqual(["event:task-1", "task:task-1"]);
+      });
+
+      it("když smazání události selže, úkol se smaže stejně", async () => {
+        gcal.deleteTaskEvent.mockRejectedValue(new Error("Google down"));
+        vi.spyOn(console, "error").mockImplementation(() => {});
+
+        await serviceWithCalendar.delete("task-1", "user-1", { deleteFromCalendar: true });
+
+        expect(calls).toEqual(["task:task-1"]);
+      });
+
+      it("hromadné mazání s volbou smaže události všech úkolů", async () => {
+        await serviceWithCalendar.deleteMany(["a", "b"], "user-1", { deleteFromCalendar: true });
+
+        expect(calls).toEqual(["event:a", "event:b", "tasks:a,b"]);
+      });
+
+      it("hromadné mazání bez volby kalendář nechá", async () => {
+        await serviceWithCalendar.deleteMany(["a", "b"], "user-1");
+
+        expect(gcal.deleteTaskEvent).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe("TaskSharingService sync hooks", () => {

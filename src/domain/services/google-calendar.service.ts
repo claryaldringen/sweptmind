@@ -125,6 +125,19 @@ export class GoogleCalendarService {
     }
   }
 
+  /** Which of the tasks have an event in Google Calendar that SweptMind may delete. */
+  async findTasksInCalendar(userId: string, taskIds: string[]): Promise<string[]> {
+    if (taskIds.length === 0) return [];
+    const settings = await this.userRepo.getGoogleCalendarSettings(userId);
+    if (!settings.enabled || settings.direction === "pull") return [];
+
+    const entries = await this.syncRepo.findByTaskIds(taskIds);
+    return taskIds.filter((id) => {
+      const entry = entries.get(id);
+      return entry?.userId === userId && !!entry.googleCalendarEventId;
+    });
+  }
+
   /**
    * Delete the Google Calendar event associated with a task.
    */

@@ -72,6 +72,11 @@ export interface Dictionary {
     searchResults: string;
     removeLocation: string;
     deleteConfirmDesc: string;
+    bulkDeleteConfirmDesc: string;
+    deleteInCalendarNote: string;
+    bulkDeleteInCalendarNote: string;
+    deleteOnlyHere: string;
+    deleteAlsoInCalendar: string;
     moveTo: string;
     convertToList: string;
     cloneTask: string;

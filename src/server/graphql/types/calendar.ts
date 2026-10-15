@@ -131,6 +131,15 @@ builder.mutationField("updateGoogleCalendarTargetListId", (t) =>
   }),
 );
 
+builder.queryField("tasksInGoogleCalendar", (t) =>
+  t.stringList({
+    authScopes: { authenticated: true },
+    args: { ids: t.arg.stringList({ required: true }) },
+    resolve: (_root, args, ctx) =>
+      ctx.services.googleCalendar.findTasksInCalendar(ctx.userId!, args.ids),
+  }),
+);
+
 builder.mutationField("disconnectGoogleCalendar", (t) =>
   t.boolean({
     authScopes: { authenticated: true },

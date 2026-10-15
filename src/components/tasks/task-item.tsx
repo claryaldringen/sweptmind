@@ -35,16 +35,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteTaskDialog, useBulkDeleteWithCalendarChoice } from "./delete-task-dialog";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -160,6 +151,41 @@ export const TaskItem = memo(function TaskItem({
   const { cache } = client;
 
   const [deleteTasks] = useMutation(DELETE_TASKS);
+  const performBulkDelete = (ids: string[], deleteFromCalendar: boolean) => {
+    // Optimistic removal via writeQuery
+    const bulkSet = new Set(ids);
+    const existing = client.cache.readQuery<GetAppDataResult>({
+      query: GET_APP_DATA,
+    });
+    if (existing) {
+      const removed = existing.activeTasks.filter((t) => bulkSet.has(t.id));
+      const countByList = new Map<string, number>();
+      for (const t of removed) {
+        countByList.set(t.listId, (countByList.get(t.listId) ?? 0) + 1);
+      }
+      client.cache.writeQuery({
+        query: GET_APP_DATA,
+        data: {
+          ...existing,
+          activeTasks: existing.activeTasks.filter((t) => !bulkSet.has(t.id)),
+          lists: existing.lists.map((l) => {
+            const n = countByList.get(l.id) ?? 0;
+            return n > 0
+              ? {
+                  ...l,
+                  taskCount: Math.max(0, l.taskCount - n),
+                  visibleTaskCount: Math.max(0, l.visibleTaskCount - n),
+                }
+              : l;
+          }),
+        },
+      });
+    }
+    deleteTasks({ variables: { ids, deleteFromCalendar } });
+    taskSelection?.clear();
+  };
+  const { requestDelete: requestBulkDelete, dialog: bulkDeleteDialog } =
+    useBulkDeleteWithCalendarChoice(performBulkDelete);
   const [updateTasks] = useMutation(UPDATE_TASKS);
   const [setTasksCompleted] = useMutation(SET_TASKS_COMPLETED);
 
@@ -932,42 +958,7 @@ export const TaskItem = memo(function TaskItem({
                 </ContextMenuSubContent>
               </ContextMenuSub>
               <ContextMenuSeparator />
-              <ContextMenuItem
-                variant="destructive"
-                onClick={() => {
-                  // Optimistic removal via writeQuery
-                  const bulkSet = new Set(bulkIds);
-                  const existing = client.cache.readQuery<GetAppDataResult>({
-                    query: GET_APP_DATA,
-                  });
-                  if (existing) {
-                    const removed = existing.activeTasks.filter((t) => bulkSet.has(t.id));
-                    const countByList = new Map<string, number>();
-                    for (const t of removed) {
-                      countByList.set(t.listId, (countByList.get(t.listId) ?? 0) + 1);
-                    }
-                    client.cache.writeQuery({
-                      query: GET_APP_DATA,
-                      data: {
-                        ...existing,
-                        activeTasks: existing.activeTasks.filter((t) => !bulkSet.has(t.id)),
-                        lists: existing.lists.map((l) => {
-                          const n = countByList.get(l.id) ?? 0;
-                          return n > 0
-                            ? {
-                                ...l,
-                                taskCount: Math.max(0, l.taskCount - n),
-                                visibleTaskCount: Math.max(0, l.visibleTaskCount - n),
-                              }
-                            : l;
-                        }),
-                      },
-                    });
-                  }
-                  deleteTasks({ variables: { ids: bulkIds } });
-                  taskSelection?.clear();
-                }}
-              >
+              <ContextMenuItem variant="destructive" onClick={() => requestBulkDelete(bulkIds)}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 {t("bulkDelete")}
               </ContextMenuItem>
@@ -1037,52 +1028,42 @@ export const TaskItem = memo(function TaskItem({
         </ContextMenuContent>
       </ContextMenu>
 
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("common.deleteConfirmTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("tasks.deleteConfirmDesc")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.deleteConfirmCancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                // Optimistic removal via writeQuery
-                const existing = client.cache.readQuery<GetAppDataResult>({ query: GET_APP_DATA });
-                if (existing) {
-                  client.cache.writeQuery({
-                    query: GET_APP_DATA,
-                    data: {
-                      ...existing,
-                      activeTasks: existing.activeTasks.filter((t) => t.id !== task.id),
-                      lists: existing.lists.map((l) =>
-                        l.id === task.list?.id
-                          ? {
-                              ...l,
-                              taskCount: Math.max(0, l.taskCount - 1),
-                              visibleTaskCount: Math.max(0, l.visibleTaskCount - 1),
-                            }
-                          : l,
-                      ),
-                    },
-                  });
-                }
-                deleteTask({ variables: { id: task.id } });
-                // Close detail panel if it's showing this task
-                if (selectedTaskId === task.id) {
-                  const params = new URLSearchParams(searchParams.toString());
-                  params.delete("task");
-                  router.push(`?${params.toString()}`, { scroll: false });
-                }
-                onDelete?.();
-              }}
-            >
-              {t("common.deleteConfirmAction")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteTaskDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        taskIds={[task.id]}
+        onConfirm={(deleteFromCalendar) => {
+          // Optimistic removal via writeQuery
+          const existing = client.cache.readQuery<GetAppDataResult>({ query: GET_APP_DATA });
+          if (existing) {
+            client.cache.writeQuery({
+              query: GET_APP_DATA,
+              data: {
+                ...existing,
+                activeTasks: existing.activeTasks.filter((t) => t.id !== task.id),
+                lists: existing.lists.map((l) =>
+                  l.id === task.list?.id
+                    ? {
+                        ...l,
+                        taskCount: Math.max(0, l.taskCount - 1),
+                        visibleTaskCount: Math.max(0, l.visibleTaskCount - 1),
+                      }
+                    : l,
+                ),
+              },
+            });
+          }
+          deleteTask({ variables: { id: task.id, deleteFromCalendar } });
+          // Close detail panel if it's showing this task
+          if (selectedTaskId === task.id) {
+            const params = new URLSearchParams(searchParams.toString());
+            params.delete("task");
+            router.push(`?${params.toString()}`, { scroll: false });
+          }
+          onDelete?.();
+        }}
+      />
+      {bulkDeleteDialog}
     </>
   );
 });

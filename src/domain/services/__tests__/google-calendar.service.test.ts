@@ -349,6 +349,41 @@ describe("GoogleCalendarService", () => {
     });
   });
 
+  describe("findTasksInCalendar", () => {
+    it("vrátí úkoly uživatele, které mají událost v kalendáři", async () => {
+      vi.mocked(syncRepo.findByTaskIds).mockResolvedValue(
+        new Map([
+          ["a", makeSyncEntry({ taskId: "a", googleCalendarEventId: "ev-a" })],
+          ["b", makeSyncEntry({ taskId: "b", googleCalendarEventId: null })],
+          [
+            "c",
+            makeSyncEntry({ taskId: "c", userId: "someone-else", googleCalendarEventId: "ev-c" }),
+          ],
+        ]),
+      );
+
+      expect(await service.findTasksInCalendar("user-1", ["a", "b", "c", "d"])).toEqual(["a"]);
+    });
+
+    it("při vypnuté synchronizaci nebo jen importu nevrátí nic", async () => {
+      vi.mocked(syncRepo.findByTaskIds).mockResolvedValue(
+        new Map([["a", makeSyncEntry({ taskId: "a", googleCalendarEventId: "ev-a" })]]),
+      );
+
+      vi.mocked(userRepo.getGoogleCalendarSettings).mockResolvedValue({
+        ...defaultSettings,
+        direction: "pull",
+      });
+      expect(await service.findTasksInCalendar("user-1", ["a"])).toEqual([]);
+
+      vi.mocked(userRepo.getGoogleCalendarSettings).mockResolvedValue({
+        ...defaultSettings,
+        enabled: false,
+      });
+      expect(await service.findTasksInCalendar("user-1", ["a"])).toEqual([]);
+    });
+  });
+
   describe("pullChanges – import událostí", () => {
     const event = (overrides: Record<string, unknown>) => ({
       id: "ev-1",

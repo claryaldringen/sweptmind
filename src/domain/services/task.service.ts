@@ -175,14 +175,18 @@ export class TaskService {
     return updated;
   }
 
-  async delete(id: string, userId: string): Promise<boolean> {
+  /**
+   * `deleteFromCalendar` also removes the task's Google Calendar event (the user is asked
+   * in the UI). It must run before the task is deleted — the calendar link is deleted
+   * with the task.
+   */
+  async delete(
+    id: string,
+    userId: string,
+    options: { deleteFromCalendar?: boolean } = {},
+  ): Promise<boolean> {
+    if (options.deleteFromCalendar) await this.deleteCalendarEvents(userId, [id]);
     await this.taskRepo.delete(id, userId);
-
-    if (this.googleCalendarService) {
-      this.googleCalendarService
-        .deleteTaskEvent(userId, id)
-        .catch((err) => console.error("[TaskService] background operation failed:", err));
-    }
 
     if (this.taskSharingService) {
       this.taskSharingService
@@ -362,9 +366,24 @@ export class TaskService {
     return this.taskRepo.update(taskId, userId, { blockedByTaskId });
   }
 
-  async deleteMany(ids: string[], userId: string): Promise<boolean> {
+  async deleteMany(
+    ids: string[],
+    userId: string,
+    options: { deleteFromCalendar?: boolean } = {},
+  ): Promise<boolean> {
+    if (options.deleteFromCalendar) await this.deleteCalendarEvents(userId, ids);
     await this.taskRepo.deleteMany(ids, userId);
     return true;
+  }
+
+  /** Best effort — a Google failure must not prevent deleting the task. */
+  private async deleteCalendarEvents(userId: string, ids: string[]): Promise<void> {
+    if (!this.googleCalendarService) return;
+    for (const id of ids) {
+      await this.googleCalendarService
+        .deleteTaskEvent(userId, id)
+        .catch((err) => console.error("[TaskService] calendar event deletion failed:", err));
+    }
   }
 
   async updateMany(

@@ -75,6 +75,13 @@ export const cs: Dictionary = {
     searchResults: "Výsledky hledání",
     removeLocation: "Odebrat místo",
     deleteConfirmDesc: "Opravdu chceš smazat tento úkol? Tuto akci nelze vrátit zpět.",
+    bulkDeleteConfirmDesc:
+      "Opravdu chceš smazat vybrané úkoly ({count})? Tuto akci nelze vrátit zpět.",
+    deleteInCalendarNote: "Úkol je i v Google Kalendáři. Chceš ho smazat i tam?",
+    bulkDeleteInCalendarNote:
+      "Některé z nich ({count}) jsou i v Google Kalendáři. Chceš je smazat i tam?",
+    deleteOnlyHere: "Jen ve SweptMind",
+    deleteAlsoInCalendar: "Smazat i v Google Kalendáři",
     moveTo: "Přesunout do",
     convertToList: "Udělat seznam z úkolu",
     cloneTask: "Klonovat úkol",
