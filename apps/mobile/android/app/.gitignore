@@ -1,2 +1,5 @@
 /build/*
 !/build/.npmkeep
+
+# Firebase config – the repo is public; CI writes it from the GOOGLE_SERVICES_JSON secret
+/google-services.json

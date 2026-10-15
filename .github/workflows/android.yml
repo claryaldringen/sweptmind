@@ -23,6 +23,18 @@ jobs:
       - name: Sync Capacitor plugins into the Android project
         run: npx cap sync android
         working-directory: apps/mobile
+      # Firebase config for push notifications — kept out of the public repo. Without it
+      # the APK still builds, the app just doesn't offer push (AppInfo.pushConfigured).
+      - name: Write google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > apps/mobile/android/app/google-services.json
+            echo "google-services.json written"
+          else
+            echo "::warning::GOOGLE_SERVICES_JSON secret not set — the APK won't offer push notifications"
+          fi
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
         working-directory: apps/mobile/android

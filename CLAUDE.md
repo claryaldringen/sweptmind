@@ -164,7 +164,7 @@ src/
 - Capacitor wrapper (iOS + Android) — WebView shell načítající sweptmind.com
 - Electron wrapper (macOS) — Dock persistence, nativní menu
 - Nativní push přes FCM/APNs (Firebase Admin SDK) — hybridní model (web: VAPID, nativní: FCM)
-  - Android potřebuje `apps/mobile/android/app/google-services.json` (Firebase konzole → Android app `com.sweptmind.app`). Bez něj aplikace push nenabízí (plugin `AppInfo` hlásí `pushConfigured: false`), jinak by registrace aplikaci shodila.
+  - Android potřebuje `apps/mobile/android/app/google-services.json` (Firebase projekt `sweptmind-app` → Android app `com.sweptmind.app`). Soubor je v `.gitignore` (veřejné repo) – CI ho zapisuje z GitHub secretu `GOOGLE_SERVICES_JSON`, lokálně ho stačí mít ve složce. Bez něj aplikace push nenabízí (plugin `AppInfo` hlásí `pushConfigured: false`), jinak by registrace aplikaci shodila.
   - Server posílá na kanál `reminders` (vytváří ho aplikace při registraci)
 - Upozornění podle polohy: opt-in v Nastavení (poloha „vždy“), geofence registruje `packages/capacitor-geofence`, notifikaci zobrazí OS lokálně – poloha se na server neposílá
 - Background geolocation + geofencing (stabilní lokace: nativní geofencing, ad-hoc: periodické kontroly)
