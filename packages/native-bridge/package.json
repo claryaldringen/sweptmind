@@ -8,12 +8,12 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@capacitor-community/contacts": "^7.1.0",
-    "@capacitor/app": "^6",
-    "@capacitor/browser": "^6",
-    "@capacitor/core": "^6.0.0",
-    "@capacitor/geolocation": "^6.0.0",
-    "@capacitor/push-notifications": "^6.0.0",
+    "@capacitor-community/contacts": "^8.0.0",
+    "@capacitor/app": "^8",
+    "@capacitor/browser": "^8",
+    "@capacitor/core": "^8",
+    "@capacitor/geolocation": "^8",
+    "@capacitor/push-notifications": "^8",
     "@sweptmind/capacitor-geofence": "workspace:*",
     "typescript": "^5"
   }

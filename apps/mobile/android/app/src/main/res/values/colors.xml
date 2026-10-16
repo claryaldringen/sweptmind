@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Behind the status and navigation bars: the web app's background color (globals.css) -->
+    <color name="sweptmind_window_background">#FFFFFF</color>
+</resources>

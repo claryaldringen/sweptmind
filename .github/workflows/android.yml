@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
       - name: Sync Capacitor plugins into the Android project
         run: npx cap sync android
         working-directory: apps/mobile
@@ -47,8 +47,9 @@ jobs:
           else
             echo "::warning::ANDROID_DEBUG_KEYSTORE secret not set — the APK is signed with a throwaway key"
           fi
-      - name: Build debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+      # The bundle (AAB, the Google Play format) only checks that it builds; no artifact
+      - name: Build debug APK and app bundle
+        run: ./gradlew assembleDebug bundleDebug --no-daemon --stacktrace
         working-directory: apps/mobile/android
       - name: Show the signing certificate
         run: |

@@ -2,6 +2,8 @@ name: Android release
 # Release: bump versionCode and versionName in apps/mobile/android/app/build.gradle, then
 #   git tag android-vX.Y.Z && git push origin android-vX.Y.Z
 # The settings page offers the newest android-v* release's SweptMind.apk (/api/app-downloads).
+# SweptMind.aab (same signing key) is the Google Play build; with the PLAY_SERVICE_ACCOUNT_JSON
+# secret it's also uploaded to Play's internal testing track.
 on:
   push:
     tags: ["android-v*"]
@@ -21,7 +23,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
       - name: Check that the tag matches the app version
         run: |
           version=$(sed -nE 's/^ *versionName "([^"]+)".*/\1/p' apps/mobile/android/app/build.gradle)
@@ -29,6 +31,7 @@ jobs:
             echo "Tag $GITHUB_REF_NAME does not match versionName $version"
             exit 1
           fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
       - name: Sync Capacitor plugins into the Android project
         run: npx cap sync android
         working-directory: apps/mobile
@@ -44,22 +47,55 @@ jobs:
           printf '%s' "$GOOGLE_SERVICES_JSON" > apps/mobile/android/app/google-services.json
           printf '%s' "$ANDROID_RELEASE_KEYSTORE" | base64 -d > "$RUNNER_TEMP/release.keystore"
           echo "ANDROID_RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
-      - name: Build release APK
+      - name: Build release APK and app bundle
         env:
           ANDROID_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
         working-directory: apps/mobile/android
-      - name: Verify the signature
+      # The bundle must carry the APK's key: it's uploaded to Play Console as the app signing
+      # key, so the GitHub and Play builds update each other
+      - name: Verify the signatures
         run: |
           apk=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          aab=apps/mobile/android/app/build/outputs/bundle/release/app-release.aab
           apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
           "$apksigner" verify --print-certs "$apk" | grep "SHA-256"
+          apk_sha=$("$apksigner" verify --print-certs "$apk" | sed -nE 's/.*certificate SHA-256 digest: ([0-9a-f]+).*/\1/p' | head -1)
+          aab_sha=$(keytool -printcert -jarfile "$aab" | sed -nE 's/^[[:space:]]*SHA256: ([0-9A-F:]+).*/\1/p' | head -1 | tr -d ':' | tr 'A-F' 'a-f')
+          echo "AAB certificate SHA-256 digest: $aab_sha"
+          if [ -z "$apk_sha" ] || [ "$apk_sha" != "$aab_sha" ]; then
+            echo "::error::The app bundle isn't signed with the APK's key"
+            exit 1
+          fi
           cp "$apk" SweptMind.apk
+          cp "$aab" SweptMind.aab
       - name: Publish the release
         run: |
-          gh release create "$GITHUB_REF_NAME" SweptMind.apk \
-            --title "SweptMind pro Android ${GITHUB_REF_NAME#android-v}" \
-            --notes "Aplikace pro Android. Instalace mimo Google Play: otevři SweptMind.apk a povol instalaci z tohoto zdroje." \
+          gh release create "$GITHUB_REF_NAME" SweptMind.apk SweptMind.aab \
+            --title "SweptMind pro Android $VERSION" \
+            --notes "Aplikace pro Android. Instalace mimo Google Play: otevři SweptMind.apk a povol instalaci z tohoto zdroje. SweptMind.aab je balíček pro Google Play." \
             --latest=false
         env:
           GH_TOKEN: ${{ github.token }}
+      - name: Check for the Google Play service account
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -n "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "PLAY_UPLOAD=true" >> "$GITHUB_ENV"
+          else
+            echo "::notice::PLAY_SERVICE_ACCOUNT_JSON secret not set — upload SweptMind.aab to Google Play Console by hand"
+          fi
+      # A new app accepts only draft releases until it's published; switch the repository
+      # variable PLAY_RELEASE_STATUS to "completed" to roll out to internal testers directly.
+      # The very first bundle has to be uploaded by hand in Play Console.
+      - name: Upload to Google Play (internal testing)
+        if: env.PLAY_UPLOAD == 'true'
+        uses: r0adkll/upload-google-play@v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.sweptmind.app
+          releaseFiles: SweptMind.aab
+          releaseName: ${{ env.VERSION }}
+          track: internal
+          status: ${{ vars.PLAY_RELEASE_STATUS || 'draft' }}

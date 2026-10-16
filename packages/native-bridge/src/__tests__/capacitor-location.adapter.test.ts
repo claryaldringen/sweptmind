@@ -56,6 +56,10 @@ describe("CapacitorLocationAdapter", () => {
         altitudeAccuracy: null,
         heading: null,
         speed: null,
+        magneticHeading: null,
+        trueHeading: null,
+        headingAccuracy: null,
+        course: null,
       },
       timestamp: Date.now(),
     });

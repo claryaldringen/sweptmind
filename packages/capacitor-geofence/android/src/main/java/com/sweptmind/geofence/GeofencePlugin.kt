@@ -15,6 +15,7 @@ import com.getcapacitor.annotation.CapacitorPlugin
 import com.getcapacitor.annotation.Permission
 import com.getcapacitor.annotation.PermissionCallback
 import org.json.JSONArray
+import org.json.JSONObject
 
 @CapacitorPlugin(
     name = "Geofence",
@@ -188,12 +189,16 @@ class GeofencePlugin : Plugin() {
                     radiusMeters = obj.getDouble("radiusMeters").toFloat(),
                     notifyOnEntry = obj.optBoolean("notifyOnEntry", true),
                     notifyOnExit = obj.optBoolean("notifyOnExit", false),
-                    notificationTitle = obj.optString("notificationTitle", null),
-                    notificationBody = obj.optString("notificationBody", null),
-                    notificationUrl = obj.optString("notificationUrl", null),
+                    notificationTitle = obj.optStringOrNull("notificationTitle"),
+                    notificationBody = obj.optStringOrNull("notificationBody"),
+                    notificationUrl = obj.optStringOrNull("notificationUrl"),
                 )
             )
         }
         return configs
     }
+
+    /** The string at [name], or null when missing or JSON null (optString would give "null"). */
+    private fun JSONObject.optStringOrNull(name: String): String? =
+        if (isNull(name)) null else optString(name)
 }

@@ -9,16 +9,16 @@
     "open:ios": "npx cap open ios"
   },
   "dependencies": {
-    "@capacitor/android": "^6",
-    "@capacitor/app": "^6",
-    "@capacitor/browser": "^6",
-    "@capacitor/core": "^6",
-    "@capacitor/geolocation": "^6",
-    "@capacitor/ios": "^6",
-    "@capacitor/push-notifications": "^6",
+    "@capacitor/android": "^8",
+    "@capacitor/app": "^8",
+    "@capacitor/browser": "^8",
+    "@capacitor/core": "^8",
+    "@capacitor/geolocation": "^8",
+    "@capacitor/ios": "^8",
+    "@capacitor/push-notifications": "^8",
     "@sweptmind/capacitor-geofence": "workspace:*"
   },
   "devDependencies": {
-    "@capacitor/cli": "^6"
+    "@capacitor/cli": "^8"
   }
 }

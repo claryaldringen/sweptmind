@@ -16,7 +16,7 @@ Komunikuj se mnou vždy v češtině a tykej mi, jako kdybych byl tvůj kolega. 
 - **DnD:** @dnd-kit/core + @dnd-kit/sortable
 - **Validace:** Zod v4
 - **Testy:** Vitest (unit testy domain services)
-- **Nativní:** Capacitor 6 (iOS + Android), Electron (macOS), Firebase Admin SDK (FCM/APNs)
+- **Nativní:** Capacitor 8 (iOS + Android, cílí na Android 16 / API 36, build Java 21), Electron (macOS), Firebase Admin SDK (FCM/APNs)
 
 ## Příkazy
 
@@ -40,10 +40,12 @@ cd apps/mobile && npx cap sync android    # Sync web → Android
 cd apps/mobile && npx cap sync ios        # Sync web → iOS
 cd apps/mobile && npx cap open android    # Otevřít v Android Studio
 cd apps/mobile && npx cap open ios        # Otevřít v Xcode
-# Debug APK sestavuje CI (.github/workflows/android.yml) → artefakt „sweptmind-debug-apk“ u běhu workflow
+# Debug APK sestavuje CI (.github/workflows/android.yml) → artefakt „sweptmind-debug-apk“ u běhu workflow (ověřuje i sestavení AAB)
 # Vydání Android aplikace: zvednout versionCode + versionName v apps/mobile/android/app/build.gradle, commit, push, pak
-# git tag android-vX.Y.Z && git push origin android-vX.Y.Z   # .github/workflows/android-release.yml → GitHub Release se SweptMind.apk
-# Release APK podepisuje klíč ze secretů ANDROID_RELEASE_KEYSTORE(_PASSWORD) – stejný klíč je nutný pro každou další verzi (i Google Play)
+# git tag android-vX.Y.Z && git push origin android-vX.Y.Z   # .github/workflows/android-release.yml → GitHub Release se SweptMind.apk + SweptMind.aab
+# Release APK i AAB podepisuje klíč ze secretů ANDROID_RELEASE_KEYSTORE(_PASSWORD) – stejný klíč je nutný pro každou další verzi (i Google Play)
+# Google Play: SweptMind.aab je balíček pro Play Console; v Play Console je stejný klíč nahraný jako app signing key, takže verze z GitHubu a z Play jdou přes sebe aktualizovat
+# Se secretem PLAY_SERVICE_ACCOUNT_JSON workflow nahraje AAB do interního testování (status podle proměnné repa PLAY_RELEASE_STATUS, default draft; první AAB se nahrává ručně)
 # Nastavení v prohlížeči na Androidu nabídne nejnovější APK přes /api/app-downloads
 # Ikony a úvodní obrazovky Android aplikace: node scripts/generate-android-icons.mjs (blesk jako u PWA ikon)
 
@@ -169,6 +171,7 @@ src/
 
 ### Fáze 2 (implementováno): Capacitor + Electron
 - Capacitor wrapper (iOS + Android) — WebView shell načítající sweptmind.com
+  - Android kreslí edge-to-edge; WebView odsazuje od systémových lišt a klávesnice `MainActivity` (SystemBars `insetsHandling: "disable"`) – web má `viewport-fit=cover`, ale safe-area nepaduje. Barva pod lištami = pozadí webu (`res/values(-night)/colors.xml`), řídí se systémovým tmavým režimem
 - Electron wrapper (macOS) — Dock persistence, nativní menu
 - Nativní push přes FCM/APNs (Firebase Admin SDK) — hybridní model (web: VAPID, nativní: FCM)
   - Android potřebuje `apps/mobile/android/app/google-services.json` (Firebase projekt `sweptmind-app` → Android app `com.sweptmind.app`). Soubor je v `.gitignore` (veřejné repo) – CI ho zapisuje z GitHub secretu `GOOGLE_SERVICES_JSON`, lokálně ho stačí mít ve složce. Bez něj aplikace push nenabízí (plugin `AppInfo` hlásí `pushConfigured: false`), jinak by registrace aplikaci shodila.
