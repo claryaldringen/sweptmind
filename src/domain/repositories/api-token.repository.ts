@@ -5,5 +5,5 @@ export interface IApiTokenRepository {
   findByTokenHash(tokenHash: string): Promise<ApiToken | undefined>;
   findByUserId(userId: string): Promise<ApiToken[]>;
   updateLastUsed(id: string): Promise<void>;
-  delete(id: string): Promise<void>;
+  delete(id: string, userId: string): Promise<void>;
 }

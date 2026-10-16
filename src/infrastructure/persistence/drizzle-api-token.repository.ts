@@ -1,4 +1,4 @@
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import type { Database } from "@/server/db";
 import { apiTokens } from "@/server/db/schema";
 import type { IApiTokenRepository } from "@/domain/repositories/api-token.repository";
@@ -33,7 +33,7 @@ export class DrizzleApiTokenRepository implements IApiTokenRepository {
     await this.db.update(apiTokens).set({ lastUsedAt: new Date() }).where(eq(apiTokens.id, id));
   }
 
-  async delete(id: string): Promise<void> {
-    await this.db.delete(apiTokens).where(eq(apiTokens.id, id));
+  async delete(id: string, userId: string): Promise<void> {
+    await this.db.delete(apiTokens).where(and(eq(apiTokens.id, id), eq(apiTokens.userId, userId)));
   }
 }

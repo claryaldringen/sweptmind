@@ -98,9 +98,9 @@ describe("ApiTokenService", () => {
   });
 
   describe("revokeToken", () => {
-    it("should delete the token", async () => {
-      await service.revokeToken("tok-1");
-      expect(repo.delete).toHaveBeenCalledWith("tok-1");
+    it("should delete only the user's own token", async () => {
+      await service.revokeToken("tok-1", "user-1");
+      expect(repo.delete).toHaveBeenCalledWith("tok-1", "user-1");
     });
   });
 });

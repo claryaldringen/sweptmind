@@ -63,7 +63,7 @@ builder.mutationField("revokeApiToken", (t) =>
       id: t.arg.string({ required: true }),
     },
     resolve: async (_root, { id }, ctx) => {
-      await ctx.services.apiToken.revokeToken(id);
+      await ctx.services.apiToken.revokeToken(id, ctx.userId!);
       return true;
     },
   }),

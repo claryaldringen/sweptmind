@@ -28,7 +28,7 @@ export class ApiTokenService {
     return this.repo.findByUserId(userId);
   }
 
-  async revokeToken(id: string): Promise<void> {
-    await this.repo.delete(id);
+  async revokeToken(id: string, userId: string): Promise<void> {
+    await this.repo.delete(id, userId);
   }
 }
