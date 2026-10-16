@@ -45,6 +45,7 @@ cd apps/mobile && npx cap open ios        # Otevřít v Xcode
 # git tag android-vX.Y.Z && git push origin android-vX.Y.Z   # .github/workflows/android-release.yml → GitHub Release se SweptMind.apk
 # Release APK podepisuje klíč ze secretů ANDROID_RELEASE_KEYSTORE(_PASSWORD) – stejný klíč je nutný pro každou další verzi (i Google Play)
 # Nastavení v prohlížeči na Androidu nabídne nejnovější APK přes /api/app-downloads
+# Ikony a úvodní obrazovky Android aplikace: node scripts/generate-android-icons.mjs (blesk jako u PWA ikon)
 
 # Desktop (Electron)
 cd apps/desktop && yarn dev               # Dev mode (macOS)
