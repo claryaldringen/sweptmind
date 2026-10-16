@@ -5,18 +5,19 @@ import { eq, and } from "drizzle-orm";
 import { services } from "@/infrastructure/container";
 import { describePullStats } from "@/domain/services/google-calendar.service";
 import { auth } from "@/lib/auth";
+import { publicUrl } from "@/lib/public-url";
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
 
   if (!code || !state) {
-    return NextResponse.redirect(new URL("/settings?gcal=error", req.url));
+    return NextResponse.redirect(publicUrl("/settings?gcal=error", req));
   }
 
   const session = await auth();
   if (!session?.user?.id || session.user.id !== state) {
-    return NextResponse.redirect(new URL("/settings?gcal=error", req.url));
+    return NextResponse.redirect(publicUrl("/settings?gcal=error", req));
   }
 
   const userId = session.user.id;
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!tokenRes.ok) {
-      return NextResponse.redirect(new URL("/settings?gcal=error", req.url));
+      return NextResponse.redirect(publicUrl("/settings?gcal=error", req));
     }
 
     const tokens = await tokenRes.json();
@@ -59,8 +60,8 @@ export async function GET(req: NextRequest) {
     const stats = await services.googleCalendar.pullChanges(userId);
     console.log(`[gcal] initial pull user ${userId}: ${describePullStats(stats)}`);
 
-    return NextResponse.redirect(new URL("/settings?gcal=connected", req.url));
+    return NextResponse.redirect(publicUrl("/settings?gcal=connected", req));
   } catch {
-    return NextResponse.redirect(new URL("/settings?gcal=error", req.url));
+    return NextResponse.redirect(publicUrl("/settings?gcal=error", req));
   }
 }
