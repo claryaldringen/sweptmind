@@ -353,6 +353,16 @@ export const cs: Dictionary = {
     account: "Číslo účtu",
     menuItem: "Podpořit SweptMind",
   },
+  nativeLogin: {
+    failed: "Přihlášení se nepodařilo, zkus to znovu.",
+    title: "Přihlášení do aplikace SweptMind",
+    signingIn: "Přesměrovávám na přihlášení přes Google…",
+    done: "Hotovo, vracím tě do aplikace SweptMind.",
+    openApp: "Otevřít SweptMind",
+    expired: "Přihlášení vypršelo. Zkus to znovu v aplikaci.",
+    account: "Účet: {email}",
+    otherAccount: "Použít jiný účet",
+  },
   androidApp: {
     title: "Aplikace pro Android",
     description: "SweptMind s upozorněními podle polohy a nativními notifikacemi.",

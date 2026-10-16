@@ -1,16 +1,80 @@
 "use client";
 
+import { useEffect, useSyncExternalStore } from "react";
 import { signIn } from "next-auth/react";
+import { toast } from "sonner";
+import {
+  closeSystemBrowser,
+  isNativeApp,
+  onAppUrlOpen,
+  openInSystemBrowser,
+} from "@sweptmind/native-bridge";
 import { useTranslations } from "@/lib/i18n";
+import {
+  clearVerifier,
+  createNativeLoginChallenge,
+  readVerifier,
+  storeVerifier,
+  takeNativeLoginCode,
+} from "@/lib/native-login-client";
+
+const AFTER_SIGN_IN = "/onboarding";
+const noSubscribe = () => () => {};
 
 export function OAuthButtons() {
   const { t } = useTranslations();
+  // Google refuses OAuth inside an app's WebView — the app signs in through the system
+  // browser and gets back a code (src/lib/native-login.ts)
+  const native = useSyncExternalStore(noSubscribe, isNativeApp, () => false);
+
+  useEffect(() => {
+    if (!native) return;
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+
+    async function handleUrl(url: string) {
+      const code = takeNativeLoginCode(url);
+      const verifier = readVerifier();
+      if (!code || !verifier) return;
+      await closeSystemBrowser();
+      const result = await signIn("native-code", { code, verifier, redirect: false });
+      if (result?.ok && !result.error) {
+        clearVerifier();
+        window.location.href = AFTER_SIGN_IN;
+      } else {
+        toast.error(t("nativeLogin.failed"));
+      }
+    }
+
+    onAppUrlOpen((url) => void handleUrl(url)).then((off) => {
+      if (cancelled) off();
+      else unsubscribe = off;
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [native, t]);
+
+  async function handleGoogle() {
+    if (!native) {
+      signIn("google", { callbackUrl: AFTER_SIGN_IN });
+      return;
+    }
+    try {
+      const { verifier, challenge } = await createNativeLoginChallenge();
+      storeVerifier(verifier);
+      await openInSystemBrowser(`${window.location.origin}/native-login?challenge=${challenge}`);
+    } catch {
+      toast.error(t("nativeLogin.failed"));
+    }
+  }
 
   return (
     <div className="flex flex-col gap-3">
       <button
         type="button"
-        onClick={() => signIn("google", { callbackUrl: "/onboarding" })}
+        onClick={handleGoogle}
         className="border-border hover:bg-accent flex h-11 w-full items-center justify-center gap-3 rounded-lg border text-sm font-medium transition-colors"
       >
         <svg className="h-5 w-5" viewBox="0 0 24 24">

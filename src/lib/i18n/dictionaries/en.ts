@@ -353,6 +353,16 @@ export const en: Dictionary = {
     account: "Account number",
     menuItem: "Support SweptMind",
   },
+  nativeLogin: {
+    failed: "Sign-in failed, please try again.",
+    title: "Sign in to the SweptMind app",
+    signingIn: "Redirecting to Google sign-in…",
+    done: "Done – taking you back to the SweptMind app.",
+    openApp: "Open SweptMind",
+    expired: "The sign-in expired. Try again in the app.",
+    account: "Account: {email}",
+    otherAccount: "Use another account",
+  },
   androidApp: {
     title: "Android app",
     description: "SweptMind with location-based reminders and native notifications.",

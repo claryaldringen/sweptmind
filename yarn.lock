@@ -587,6 +587,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@capacitor/app@npm:^6":
+  version: 6.0.3
+  resolution: "@capacitor/app@npm:6.0.3"
+  peerDependencies:
+    "@capacitor/core": ^6.0.0
+  checksum: 10c0/f5da7375829bc2f4687e7e4001c471e3f5cc780142fa63facb22ec3e9fa907c7c7ec1df93e94ffc7b09976f8b08fb6daef2fe3585fd92051dad967eef56fcbc7
+  languageName: node
+  linkType: hard
+
+"@capacitor/browser@npm:^6":
+  version: 6.0.6
+  resolution: "@capacitor/browser@npm:6.0.6"
+  peerDependencies:
+    "@capacitor/core": ^6.0.0
+  checksum: 10c0/35a529f4b040ecee7faa7e1c976bb328597a62cba07d03274f98322227854d7c7b305ab5d84d9cf80109bf6142aaba2d2df5cb41291100c7d84d96cffd650f0e
+  languageName: node
+  linkType: hard
+
 "@capacitor/cli@npm:^6":
   version: 6.2.1
   resolution: "@capacitor/cli@npm:6.2.1"
@@ -5783,6 +5801,8 @@ __metadata:
   resolution: "@sweptmind/mobile@workspace:apps/mobile"
   dependencies:
     "@capacitor/android": "npm:^6"
+    "@capacitor/app": "npm:^6"
+    "@capacitor/browser": "npm:^6"
     "@capacitor/cli": "npm:^6"
     "@capacitor/core": "npm:^6"
     "@capacitor/geolocation": "npm:^6"
@@ -5797,6 +5817,8 @@ __metadata:
   resolution: "@sweptmind/native-bridge@workspace:packages/native-bridge"
   dependencies:
     "@capacitor-community/contacts": "npm:^7.1.0"
+    "@capacitor/app": "npm:^6"
+    "@capacitor/browser": "npm:^6"
     "@capacitor/core": "npm:^6.0.0"
     "@capacitor/geolocation": "npm:^6.0.0"
     "@capacitor/push-notifications": "npm:^6.0.0"

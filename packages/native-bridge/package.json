@@ -9,6 +9,8 @@
   },
   "devDependencies": {
     "@capacitor-community/contacts": "^7.1.0",
+    "@capacitor/app": "^6",
+    "@capacitor/browser": "^6",
     "@capacitor/core": "^6.0.0",
     "@capacitor/geolocation": "^6.0.0",
     "@capacitor/push-notifications": "^6.0.0",

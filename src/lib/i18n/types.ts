@@ -328,6 +328,16 @@ export interface Dictionary {
     account: string;
     menuItem: string;
   };
+  nativeLogin: {
+    failed: string;
+    title: string;
+    signingIn: string;
+    done: string;
+    openApp: string;
+    expired: string;
+    account: string;
+    otherAccount: string;
+  };
   androidApp: {
     title: string;
     description: string;

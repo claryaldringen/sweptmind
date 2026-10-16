@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@capacitor/android": "^6",
+    "@capacitor/app": "^6",
+    "@capacitor/browser": "^6",
     "@capacitor/core": "^6",
     "@capacitor/geolocation": "^6",
     "@capacitor/ios": "^6",

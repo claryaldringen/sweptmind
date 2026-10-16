@@ -6,6 +6,7 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/server/db";
 import { users, accounts, verificationTokens } from "@/server/db/schema/auth";
 import { services } from "@/infrastructure/container";
+import { verifyNativeLoginCode } from "@/lib/native-login";
 
 declare module "next-auth" {
   interface User {
@@ -63,6 +64,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email,
           image: user.image,
         };
+      },
+    }),
+    // The native app signs in through the system browser and trades the code it gets back
+    // for a session (see src/lib/native-login.ts)
+    Credentials({
+      id: "native-code",
+      credentials: {
+        code: { label: "Code", type: "text" },
+        verifier: { label: "Verifier", type: "text" },
+      },
+      async authorize(credentials) {
+        const secret = process.env.AUTH_SECRET;
+        if (typeof credentials?.code !== "string" || typeof credentials?.verifier !== "string") {
+          return null;
+        }
+        if (!secret) return null;
+
+        const userId = verifyNativeLoginCode(credentials.code, credentials.verifier, secret);
+        if (!userId) return null;
+        const user = await services.user.getById(userId);
+        if (!user) return null;
+
+        return { id: user.id, name: user.name, email: user.email, image: user.image };
       },
     }),
   ],

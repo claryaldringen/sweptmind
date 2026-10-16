@@ -360,6 +360,16 @@ export const de: Dictionary = {
     account: "Kontonummer",
     menuItem: "SweptMind unterstützen",
   },
+  nativeLogin: {
+    failed: "Die Anmeldung ist fehlgeschlagen, versuche es erneut.",
+    title: "Anmeldung in der SweptMind-App",
+    signingIn: "Weiterleitung zur Anmeldung mit Google…",
+    done: "Fertig – zurück zur SweptMind-App.",
+    openApp: "SweptMind öffnen",
+    expired: "Die Anmeldung ist abgelaufen. Versuche es in der App erneut.",
+    account: "Konto: {email}",
+    otherAccount: "Anderes Konto verwenden",
+  },
   androidApp: {
     title: "App für Android",
     description: "SweptMind mit standortbasierten Erinnerungen und nativen Benachrichtigungen.",

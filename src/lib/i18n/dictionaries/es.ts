@@ -361,6 +361,16 @@ export const es: Dictionary = {
     account: "Número de cuenta",
     menuItem: "Apoyar SweptMind",
   },
+  nativeLogin: {
+    failed: "No se pudo iniciar sesión, inténtalo de nuevo.",
+    title: "Inicio de sesión en la app SweptMind",
+    signingIn: "Redirigiendo al inicio de sesión con Google…",
+    done: "Listo, volviendo a la app SweptMind.",
+    openApp: "Abrir SweptMind",
+    expired: "El inicio de sesión ha caducado. Inténtalo de nuevo desde la app.",
+    account: "Cuenta: {email}",
+    otherAccount: "Usar otra cuenta",
+  },
   androidApp: {
     title: "App para Android",
     description: "SweptMind con recordatorios según tu ubicación y notificaciones nativas.",
