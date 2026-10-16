@@ -421,6 +421,11 @@ export const fr: Dictionary = {
     denied: "L'accès à la position est bloqué. Autorisez-le dans les paramètres de l'application.",
     notificationsDenied: "Les notifications sont bloquées, les rappels ne s'afficheront pas.",
     andMore: "{titles} et {count} de plus",
+    disclosureTitle: "Localisation même quand l'application est fermée",
+    disclosureBody:
+      "SweptMind utilise la localisation de votre téléphone pour vous rappeler des tâches aux lieux que vous avez ajoutés à vos tâches et listes, même lorsque l'application est fermée ou n'est pas utilisée. Votre position reste sur votre téléphone : elle n'est pas envoyée à notre serveur ni partagée avec qui que ce soit. À l'étape suivante, autorisez l'accès à la localisation et choisissez « Toujours autoriser ».",
+    disclosureAccept: "Continuer",
+    disclosureDecline: "Plus tard",
   },
   calendar: {
     title: "Calendrier",
@@ -501,6 +506,8 @@ export const fr: Dictionary = {
     downloadFile: "Télécharger",
     premiumRequired: "Fonctionnalité Premium",
     premiumRequiredDesc: "Passez à Premium pour envoyer et télécharger des pièces jointes",
+    premiumRequiredNativeDesc:
+      "L'envoi et le téléchargement de pièces jointes font partie de Premium.",
     storageUsed: "{used} utilisés sur {total}",
     fileTooLarge: "Fichier trop volumineux (10 Mo max.)",
     storageFull: "Limite de stockage atteinte (1 Go)",
@@ -633,5 +640,41 @@ export const fr: Dictionary = {
     completionActionMove: "déplacer vers une liste",
     completionSelectList: "Choisir une liste",
     completionNoRule: "aucune règle",
+  },
+  deleteAccount: {
+    title: "Supprimer le compte",
+    description:
+      "Supprime votre compte avec toutes ses données : tâches, listes, pièces jointes, connexions et paramètres. Un abonnement actif est résilié. Cette action est irréversible.",
+    button: "Supprimer le compte",
+    dialogTitle: "Supprimer vraiment le compte ?",
+    dialogDescription:
+      "Toutes vos données seront supprimées immédiatement et ne pourront pas être récupérées. Pour confirmer, saisissez votre e-mail {email}.",
+    emailPlaceholder: "Votre e-mail",
+    confirm: "Supprimer définitivement",
+    deleting: "Suppression…",
+    emailMismatch: "L'e-mail ne correspond pas à votre compte.",
+    error: "Le compte n'a pas pu être supprimé. Veuillez réessayer.",
+  },
+  deleteAccountPage: {
+    metaTitle: "Supprimer le compte",
+    title: "Supprimer votre compte SweptMind",
+    intro:
+      "Vous pouvez supprimer à tout moment votre compte SweptMind (web, Android, Mac) et toutes ses données vous-même dans les Paramètres.",
+    stepsTitle: "Comment supprimer votre compte",
+    step1: "Connectez-vous sur sweptmind.com ou dans l'application SweptMind.",
+    step2: "Ouvrez les Paramètres.",
+    step3: "En bas, dans la section « Supprimer le compte », appuyez sur « Supprimer le compte ».",
+    step4: "Saisissez votre e-mail pour confirmer et choisissez « Supprimer définitivement ».",
+    signIn: "Se connecter et supprimer le compte",
+    deletedTitle: "Ce qui est supprimé",
+    deletedBody:
+      "Votre compte et toutes ses données : tâches, listes, étapes, étiquettes, lieux, pièces jointes, la connexion à Google Agenda, le partage avec d'autres utilisateurs, les jetons API et les inscriptions aux notifications. Un abonnement actif payé par carte est résilié et aucun autre paiement n'est prélevé. La suppression est immédiate et irréversible.",
+    keptTitle: "Ce qui est conservé",
+    keptBody:
+      "Les justificatifs des paiements reçus, que nous devons conserver pendant la durée prévue par la loi. Les tâches que vous avez partagées auparavant avec d'autres utilisateurs restent dans leurs listes.",
+    noAccessTitle: "Vous ne pouvez pas vous connecter ?",
+    noAccessBody:
+      "Écrivez à {email} depuis l'adresse e-mail de votre compte. Nous supprimerons le compte sous 30 jours.",
+    back: "Retour à SweptMind",
   },
 };

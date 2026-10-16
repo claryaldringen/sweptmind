@@ -23,6 +23,7 @@ import { getRequestLocale } from "@/lib/i18n/server";
 import { services } from "@/infrastructure/container";
 import { parseIban } from "@/lib/bank-account";
 import { DonationPanel } from "@/components/donate/donation-panel";
+import { WebOnly } from "@/components/layout/web-only";
 import { BUSINESS_INFO } from "@/lib/business-info";
 
 export const metadata: Metadata = {
@@ -379,15 +380,17 @@ export default async function HomePage() {
       {/* Footer */}
       <footer className="border-border/50 border-t px-6 py-8 2xl:py-10">
         {donationIban && donationQr && (
-          <section className="bg-muted/40 mx-auto mb-8 max-w-5xl rounded-xl border p-5 2xl:max-w-6xl">
-            <DonationPanel
-              qrCode={donationQr}
-              iban={donationIban}
-              texts={t.donate}
-              showDomesticAccount={locale === "cs"}
-              variant="card"
-            />
-          </section>
+          <WebOnly>
+            <section className="bg-muted/40 mx-auto mb-8 max-w-5xl rounded-xl border p-5 2xl:max-w-6xl">
+              <DonationPanel
+                qrCode={donationQr}
+                iban={donationIban}
+                texts={t.donate}
+                showDomesticAccount={locale === "cs"}
+                variant="card"
+              />
+            </section>
+          </WebOnly>
         )}
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 sm:flex-row sm:justify-between 2xl:max-w-6xl">
           <div className="flex items-center gap-2">

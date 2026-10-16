@@ -415,6 +415,11 @@ export const it: Dictionary = {
     denied: "L'accesso alla posizione è bloccato. Consentilo nelle impostazioni dell'app.",
     notificationsDenied: "Le notifiche sono bloccate, i promemoria non verranno mostrati.",
     andMore: "{titles} e altre {count}",
+    disclosureTitle: "Posizione anche ad app chiusa",
+    disclosureBody:
+      "SweptMind usa la posizione del telefono per ricordarti le attività nei luoghi che hai aggiunto ad attività e liste, anche quando l'app è chiusa o non in uso. La tua posizione resta sul telefono: non viene inviata al nostro server né condivisa con nessuno. Nel passaggio successivo consenti l'accesso alla posizione e scegli “Consenti sempre”.",
+    disclosureAccept: "Continua",
+    disclosureDecline: "Non ora",
   },
   calendar: {
     title: "Calendario",
@@ -495,6 +500,8 @@ export const it: Dictionary = {
     downloadFile: "Scarica",
     premiumRequired: "Funzione Premium",
     premiumRequiredDesc: "Passa a Premium per caricare e scaricare allegati",
+    premiumRequiredNativeDesc:
+      "Il caricamento e il download degli allegati fanno parte di Premium.",
     storageUsed: "{used} di {total} utilizzati",
     fileTooLarge: "File troppo grande (max 10 MB)",
     storageFull: "Spazio di archiviazione esaurito (1 GB)",
@@ -626,5 +633,41 @@ export const it: Dictionary = {
     completionActionMove: "sposta nella lista",
     completionSelectList: "Seleziona lista",
     completionNoRule: "nessuna regola",
+  },
+  deleteAccount: {
+    title: "Elimina account",
+    description:
+      "Elimina l'account con tutti i dati: attività, liste, allegati, collegamenti e impostazioni. Un abbonamento attivo viene annullato. L'operazione non può essere annullata.",
+    button: "Elimina account",
+    dialogTitle: "Eliminare davvero l'account?",
+    dialogDescription:
+      "Tutti i dati verranno eliminati subito e non potranno essere recuperati. Per confermare, scrivi la tua email {email}.",
+    emailPlaceholder: "La tua email",
+    confirm: "Elimina definitivamente",
+    deleting: "Eliminazione…",
+    emailMismatch: "L'email non corrisponde al tuo account.",
+    error: "Non è stato possibile eliminare l'account. Riprova.",
+  },
+  deleteAccountPage: {
+    metaTitle: "Elimina account",
+    title: "Eliminare l'account SweptMind",
+    intro:
+      "Puoi eliminare in qualsiasi momento il tuo account SweptMind (web, Android, Mac) e tutti i suoi dati direttamente nelle Impostazioni.",
+    stepsTitle: "Come eliminare l'account",
+    step1: "Accedi su sweptmind.com o nell'app SweptMind.",
+    step2: "Apri le Impostazioni.",
+    step3: "In fondo, nella sezione “Elimina account”, tocca “Elimina account”.",
+    step4: "Scrivi la tua email per confermare e scegli “Elimina definitivamente”.",
+    signIn: "Accedi ed elimina l'account",
+    deletedTitle: "Cosa viene eliminato",
+    deletedBody:
+      "L'account e tutti i suoi dati: attività, liste, passaggi, tag, luoghi, allegati, il collegamento a Google Calendar, la condivisione con altri utenti, i token API e le registrazioni per le notifiche. Un abbonamento attivo pagato con carta viene annullato e non vengono addebitati altri pagamenti. L'eliminazione è immediata e non può essere annullata.",
+    keptTitle: "Cosa resta",
+    keptBody:
+      "Le ricevute dei pagamenti ricevuti, che dobbiamo conservare per il periodo previsto dalla legge. Le attività che hai condiviso in precedenza con altri utenti restano nelle loro liste.",
+    noAccessTitle: "Non riesci ad accedere?",
+    noAccessBody:
+      "Scrivi a {email} dall'indirizzo email del tuo account. Elimineremo l'account entro 30 giorni.",
+    back: "Torna a SweptMind",
   },
 };

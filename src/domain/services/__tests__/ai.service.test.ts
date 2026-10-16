@@ -188,6 +188,7 @@ function makeUserRepo(overrides: Partial<User> = {}): IUserRepository {
   return {
     findById: vi.fn().mockResolvedValue(user),
     findByEmail: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn(),
     create: vi.fn(),
     findByCalendarToken: vi.fn().mockResolvedValue(undefined),
     getCalendarToken: vi.fn().mockResolvedValue(""),

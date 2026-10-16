@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       </Link>
 
       <h1 className="mb-8 text-3xl font-bold">Privacy Policy</h1>
-      <p className="text-muted-foreground mb-8 text-sm">Last updated: March 13, 2026</p>
+      <p className="text-muted-foreground mb-8 text-sm">Last updated: October 16, 2026</p>
 
       <div className="prose dark:prose-invert max-w-none space-y-6 text-sm leading-relaxed">
         <section>
@@ -37,8 +37,7 @@ export default function PrivacyPage() {
           <h3 className="mt-4 mb-2 text-lg font-medium">Account Information</h3>
           <p>
             When you create an account, we collect your name, email address, and profile picture. If
-            you sign in with Google or Facebook, we receive basic profile information from those
-            services.
+            you sign in with Google, we receive basic profile information from Google.
           </p>
 
           <h3 className="mt-4 mb-2 text-lg font-medium">Task Data</h3>
@@ -49,9 +48,16 @@ export default function PrivacyPage() {
 
           <h3 className="mt-4 mb-2 text-lg font-medium">Location Data</h3>
           <p>
-            If you enable location features, we collect your approximate location to show nearby
-            tasks. Location data is processed in your browser and is not stored on our servers.
-            Saved locations (places you attach to tasks) are stored as part of your task data.
+            If you enable location features, we use your location to show nearby tasks. Location
+            data is processed on your device and is not stored on our servers. Saved locations
+            (places you attach to tasks) are stored as part of your task data.
+          </p>
+          <p className="mt-2">
+            In the Android app, if you turn on location reminders, the app uses your location in the
+            background, even when the app is closed or not in use, to notify you when you are near a
+            place attached to a task. This happens entirely on your device: your location is not
+            sent to our servers or shared with anyone. You can turn location reminders off in
+            Settings at any time.
           </p>
 
           <h3 className="mt-4 mb-2 text-lg font-medium">Google Contacts (Optional)</h3>
@@ -64,7 +70,14 @@ export default function PrivacyPage() {
           <h3 className="mt-4 mb-2 text-lg font-medium">Push Notifications</h3>
           <p>
             If you enable push notifications, we store a device token to deliver reminders. You can
-            disable notifications at any time in your device or browser settings.
+            disable notifications at any time in Settings or in your device or browser settings.
+          </p>
+
+          <h3 className="mt-4 mb-2 text-lg font-medium">Payments</h3>
+          <p>
+            If you buy Premium by card, the payment is processed by Stripe; we never see or store
+            your card details. For bank transfers we match incoming payments by their variable
+            symbol.
           </p>
         </section>
 
@@ -87,16 +100,11 @@ export default function PrivacyPage() {
           <p>We use the following third-party services:</p>
           <ul className="list-disc space-y-1 pl-6">
             <li>
-              <strong>Vercel</strong> &mdash; hosting and serverless functions (your data is
-              processed on Vercel infrastructure)
+              <strong>Hetzner</strong> &mdash; the server and database that run SweptMind
             </li>
             <li>
               <strong>Google OAuth</strong> &mdash; authentication (we receive your name, email, and
               profile picture)
-            </li>
-            <li>
-              <strong>Facebook Login</strong> &mdash; authentication (we receive your name, email,
-              and profile picture)
             </li>
             <li>
               <strong>Google Calendar</strong> &mdash; bidirectional calendar synchronization (we
@@ -105,14 +113,22 @@ export default function PrivacyPage() {
             <li>
               <strong>Firebase Cloud Messaging</strong> &mdash; push notification delivery
             </li>
+            <li>
+              <strong>Stripe</strong> &mdash; card payments for Premium
+            </li>
+            <li>
+              <strong>OpenAI</strong> &mdash; optional AI features for Premium users (the text of
+              the analyzed tasks is sent for processing; you can turn AI off in Settings)
+            </li>
           </ul>
         </section>
 
         <section>
           <h2 className="mb-3 text-xl font-semibold">5. Data Storage</h2>
           <p>
-            Your data is stored in a PostgreSQL database hosted by Vercel. Data is encrypted in
-            transit (TLS) and at rest. We retain your data for as long as your account is active.
+            Your data is stored in a PostgreSQL database on a server rented from Hetzner. Data is
+            encrypted in transit (TLS). We retain your data for as long as your account is active;
+            when you delete your account, your data is deleted immediately.
           </p>
         </section>
 
@@ -122,8 +138,14 @@ export default function PrivacyPage() {
           <ul className="list-disc space-y-1 pl-6">
             <li>Access your personal data</li>
             <li>Export your task data</li>
-            <li>Delete your account and all associated data</li>
-            <li>Revoke Google or Facebook access at any time</li>
+            <li>
+              Delete your account and all associated data at any time in Settings (
+              <Link href="/delete-account" className="text-primary underline">
+                how to delete your account
+              </Link>
+              )
+            </li>
+            <li>Revoke Google access at any time</li>
             <li>Disable location tracking and push notifications</li>
           </ul>
           <p className="mt-3">

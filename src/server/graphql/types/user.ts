@@ -1,6 +1,8 @@
+import { GraphQLError } from "graphql";
 import { builder } from "../builder";
 import { UserRef } from "./refs";
 import { AI_MODELS, DEFAULT_AI_MODEL, isValidModel } from "@/domain/config/ai-models";
+import { EmailMismatchError } from "@/domain/services/account.service";
 
 export const UserType = UserRef.implement({
   fields: (t) => ({
@@ -108,6 +110,34 @@ builder.mutationField("updateClientSettings", (t) =>
     resolve: async (_root, { timezone, locale }, ctx) => {
       if (!ctx.userId) return false;
       await ctx.services.user.updateClientSettings(ctx.userId, { timezone, locale });
+      return true;
+    },
+  }),
+);
+
+builder.mutationField("deleteAccount", (t) =>
+  t.field({
+    type: "Boolean",
+    authScopes: { authenticated: true },
+    args: {
+      email: t.arg.string({ required: true }),
+    },
+    resolve: async (_root, { email }, ctx) => {
+      // A leaked CLI/MCP token must not be able to wipe the whole account
+      if (ctx.viaApiToken) {
+        throw new GraphQLError("Account deletion requires signing in", {
+          extensions: { code: "FORBIDDEN" },
+        });
+      }
+      try {
+        await ctx.services.account.deleteAccount(ctx.userId!, email);
+      } catch (err) {
+        // Unlike plain errors, a GraphQLError reaches the client unmasked
+        if (err instanceof EmailMismatchError) {
+          throw new GraphQLError(err.message, { extensions: { code: "EMAIL_MISMATCH" } });
+        }
+        throw err;
+      }
       return true;
     },
   }),

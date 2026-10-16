@@ -51,4 +51,13 @@ export class DrizzleAttachmentRepository implements IAttachmentRepository {
       .where(eq(schema.tasks.userId, userId));
     return Number(result[0]?.total ?? 0);
   }
+
+  async findBlobUrlsByUser(userId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ blobUrl: schema.taskAttachments.blobUrl })
+      .from(schema.taskAttachments)
+      .innerJoin(schema.tasks, eq(schema.taskAttachments.taskId, schema.tasks.id))
+      .where(eq(schema.tasks.userId, userId));
+    return rows.map((row) => row.blobUrl);
+  }
 }

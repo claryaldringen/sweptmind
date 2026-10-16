@@ -15,6 +15,7 @@ import { Heart, LogOut, Settings, User } from "lucide-react";
 import { useTranslations } from "@/lib/i18n";
 import { useSidebarContext } from "@/components/layout/app-shell";
 import { DonateDialog } from "@/components/donate/donate-dialog";
+import { useIsNativeApp } from "@/hooks/use-is-native-app";
 
 export function UserMenu() {
   const triggerId = useId();
@@ -23,6 +24,8 @@ export function UserMenu() {
   const { close: closeSidebar } = useSidebarContext();
   const router = useRouter();
   const [donateOpen, setDonateOpen] = useState(false);
+  // Store rules don't allow donations outside Google Play / App Store
+  const isNativeApp = useIsNativeApp();
 
   const initials = session?.user?.name
     ?.split(" ")
@@ -61,12 +64,16 @@ export function UserMenu() {
             <Settings className="mr-2 h-4 w-4" />
             {t("sidebar.settings")}
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          {/* Between Settings and Sign out, so a mis-tap doesn't sign anyone out */}
-          <DropdownMenuItem onClick={() => setDonateOpen(true)}>
-            <Heart className="mr-2 h-4 w-4 text-rose-500" />
-            {t("donate.menuItem")}
-          </DropdownMenuItem>
+          {!isNativeApp && (
+            <>
+              <DropdownMenuSeparator />
+              {/* Between Settings and Sign out, so a mis-tap doesn't sign anyone out */}
+              <DropdownMenuItem onClick={() => setDonateOpen(true)}>
+                <Heart className="mr-2 h-4 w-4 text-rose-500" />
+                {t("donate.menuItem")}
+              </DropdownMenuItem>
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
             <LogOut className="mr-2 h-4 w-4" />
@@ -74,7 +81,7 @@ export function UserMenu() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <DonateDialog open={donateOpen} onOpenChange={setDonateOpen} />
+      {!isNativeApp && <DonateDialog open={donateOpen} onOpenChange={setDonateOpen} />}
     </>
   );
 }

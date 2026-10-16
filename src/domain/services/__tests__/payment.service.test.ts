@@ -26,6 +26,7 @@ function makePaymentGateway(): IPaymentGateway {
   return {
     createCheckoutSession: vi.fn().mockResolvedValue("https://checkout.stripe.com/session-1"),
     createCustomerPortalSession: vi.fn().mockResolvedValue("https://billing.stripe.com/portal-1"),
+    cancelSubscription: vi.fn().mockResolvedValue(undefined),
   };
 }
 

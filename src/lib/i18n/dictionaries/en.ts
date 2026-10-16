@@ -409,6 +409,11 @@ export const en: Dictionary = {
     denied: "Location access is blocked. Allow it in the app settings.",
     notificationsDenied: "Notifications are blocked, reminders won't be shown.",
     andMore: "{titles} and {count} more",
+    disclosureTitle: "Location even when the app is closed",
+    disclosureBody:
+      "SweptMind uses your phone's location to remind you of tasks at places you've added to tasks and lists, even when the app is closed or not in use. Your location stays on your phone – it isn't sent to our server or shared with anyone. In the next step, allow location access and choose “Allow all the time”.",
+    disclosureAccept: "Continue",
+    disclosureDecline: "Not now",
   },
   calendar: {
     title: "Calendar",
@@ -489,6 +494,7 @@ export const en: Dictionary = {
     downloadFile: "Download",
     premiumRequired: "Premium feature",
     premiumRequiredDesc: "Upgrade to Premium to upload and download attachments",
+    premiumRequiredNativeDesc: "Uploading and downloading attachments is part of Premium.",
     storageUsed: "{used} of {total} used",
     fileTooLarge: "File is too large (max 10 MB)",
     storageFull: "Storage limit reached (1 GB)",
@@ -620,5 +626,41 @@ export const en: Dictionary = {
     completionActionMove: "move to list",
     completionSelectList: "Select list",
     completionNoRule: "no rule",
+  },
+  deleteAccount: {
+    title: "Delete account",
+    description:
+      "Deletes your account with all its data – tasks, lists, attachments, connections and settings. An active subscription is canceled. This can't be undone.",
+    button: "Delete account",
+    dialogTitle: "Delete your account?",
+    dialogDescription:
+      "All your data will be deleted right away and can't be recovered. To confirm, type your email {email}.",
+    emailPlaceholder: "Your email",
+    confirm: "Delete permanently",
+    deleting: "Deleting…",
+    emailMismatch: "The email doesn't match your account.",
+    error: "The account couldn't be deleted. Please try again.",
+  },
+  deleteAccountPage: {
+    metaTitle: "Delete account",
+    title: "Delete your SweptMind account",
+    intro:
+      "You can delete your SweptMind account (web, Android, Mac) and all its data yourself at any time in Settings.",
+    stepsTitle: "How to delete your account",
+    step1: "Sign in at sweptmind.com or in the SweptMind app.",
+    step2: "Open Settings.",
+    step3: "At the bottom, in the “Delete account” section, tap “Delete account”.",
+    step4: "Type your email to confirm and choose “Delete permanently”.",
+    signIn: "Sign in and delete account",
+    deletedTitle: "What gets deleted",
+    deletedBody:
+      "Your account and all its data: tasks, lists, steps, tags, places, attachments, the Google Calendar connection, sharing with other users, API tokens and notification registrations. An active card subscription is canceled and no further payments are taken. Deletion is immediate and can't be undone.",
+    keptTitle: "What is kept",
+    keptBody:
+      "Records of received payments, which we must keep for the period required by law. Tasks you previously shared with other users stay in their lists.",
+    noAccessTitle: "Can't sign in?",
+    noAccessBody:
+      "Email {email} from the address your account uses. We'll delete the account within 30 days.",
+    back: "Back to SweptMind",
   },
 };

@@ -169,6 +169,7 @@ function makeMocks() {
   const userRepo: IUserRepository = {
     findById: vi.fn(),
     findByEmail: vi.fn(),
+    delete: vi.fn(),
     create: vi.fn(),
     findByCalendarToken: vi.fn(),
     getCalendarToken: vi.fn(),

@@ -44,6 +44,7 @@ import { PushSubscriptionService } from "@/domain/services/push-subscription.ser
 import { ConnectionService } from "@/domain/services/connection.service";
 import { TaskSharingService } from "@/domain/services/task-sharing.service";
 import { ApiTokenService } from "@/domain/services/api-token.service";
+import { AccountService } from "@/domain/services/account.service";
 import { DrizzleApiTokenRepository } from "./persistence/drizzle-api-token.repository";
 import * as googleCalendarClient from "./google-calendar/google-calendar-client";
 
@@ -179,6 +180,13 @@ export const services = {
   ),
   taskSharing: taskSharingService,
   apiToken: new ApiTokenService(apiTokenRepo),
+  account: new AccountService(
+    userRepo,
+    subscriptionRepo,
+    paymentGateway,
+    attachmentRepo,
+    blobStorage,
+  ),
 };
 
 // Wire circular dependency: connection ↔ taskSharing

@@ -57,6 +57,7 @@ function makeAttachmentRepo(overrides: Partial<IAttachmentRepository> = {}): IAt
     create: vi.fn(),
     delete: vi.fn(),
     getTotalSizeByUser: vi.fn().mockResolvedValue(0),
+    findBlobUrlsByUser: vi.fn().mockResolvedValue([]),
     ...overrides,
   };
 }

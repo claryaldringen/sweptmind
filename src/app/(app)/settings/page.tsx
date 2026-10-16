@@ -47,6 +47,7 @@ import { ApiTokensSection } from "@/components/settings/api-tokens-section";
 import { DesktopAppSection } from "@/components/settings/desktop-app-section";
 import { AndroidAppSection } from "@/components/settings/android-app-section";
 import { PwaInstallSection } from "@/components/settings/pwa-install-section";
+import { DeleteAccountSection } from "@/components/settings/delete-account-section";
 import { ROW_CLASS, SELECT_CLASS } from "@/components/settings/styles";
 
 interface ElectronAPI {
@@ -541,6 +542,8 @@ export default function SettingsPage() {
 
   // Platform detection
   const [platform, setPlatform] = useState<ReturnType<typeof getPlatform>>("web");
+  // Store rules: no purchases outside Google Play / App Store in the native apps
+  const isNativeApp = platform === "android" || platform === "ios";
   useEffect(() => setPlatform(getPlatform()), []);
 
   // Push notification state
@@ -870,196 +873,202 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Premium Section */}
-        <div className="rounded-lg border p-5 md:col-span-2">
-          <div className="mb-4 flex items-center gap-2">
-            <Crown className="h-5 w-5 text-amber-500" />
-            <div>
-              <h2 className="text-lg font-semibold">{t("premium.title")}</h2>
-              <p className="text-muted-foreground text-sm">{t("premium.subtitle")}</p>
+        {/* Premium Section — in the native apps only the status of an existing subscription */}
+        {(!isNativeApp || (isPremium && subscription)) && (
+          <div className="rounded-lg border p-5 md:col-span-2">
+            <div className="mb-4 flex items-center gap-2">
+              <Crown className="h-5 w-5 text-amber-500" />
+              <div>
+                <h2 className="text-lg font-semibold">{t("premium.title")}</h2>
+                <p className="text-muted-foreground text-sm">{t("premium.subtitle")}</p>
+              </div>
             </div>
-          </div>
 
-          {isPremium && subscription ? (
-            /* ---- Premium User: Subscription Status ---- */
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{t("premium.currentPlan")}</span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
-                    <Crown className="h-3 w-3" />
-                    {t("premium.premiumPlan")}
-                  </span>
-                </div>
-
-                <div className="text-muted-foreground space-y-1 text-sm">
-                  <p>
-                    {subscription.plan === "monthly" ? t("premium.monthly") : t("premium.yearly")}{" "}
-                    &middot;{" "}
-                    {subscription.paymentMethod === "stripe"
-                      ? t("premium.paymentMethodCard")
-                      : t("premium.paymentMethodBank")}
-                  </p>
-                  <p>
-                    {t("premium.expiresOn", {
-                      date: new Date(subscription.currentPeriodEnd).toLocaleDateString(locale),
-                    })}
-                  </p>
-                </div>
-
-                {subscription.status === "canceled" && (
-                  <div className="flex items-center gap-2 rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-400">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                    {t("premium.cancelledInfo", {
-                      date: new Date(subscription.currentPeriodEnd).toLocaleDateString(locale),
-                    })}
+            {isPremium && subscription ? (
+              /* ---- Premium User: Subscription Status ---- */
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{t("premium.currentPlan")}</span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                      <Crown className="h-3 w-3" />
+                      {t("premium.premiumPlan")}
+                    </span>
                   </div>
+
+                  <div className="text-muted-foreground space-y-1 text-sm">
+                    <p>
+                      {subscription.plan === "monthly" ? t("premium.monthly") : t("premium.yearly")}{" "}
+                      &middot;{" "}
+                      {subscription.paymentMethod === "stripe"
+                        ? t("premium.paymentMethodCard")
+                        : t("premium.paymentMethodBank")}
+                    </p>
+                    <p>
+                      {t("premium.expiresOn", {
+                        date: new Date(subscription.currentPeriodEnd).toLocaleDateString(locale),
+                      })}
+                    </p>
+                  </div>
+
+                  {subscription.status === "canceled" && (
+                    <div className="flex items-center gap-2 rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-400">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      {t("premium.cancelledInfo", {
+                        date: new Date(subscription.currentPeriodEnd).toLocaleDateString(locale),
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {subscription.paymentMethod === "stripe" && !isNativeApp && (
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={handleManageSubscription}
+                    disabled={portalLoading}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    {portalLoading ? t("premium.redirecting") : t("premium.manageSubscription")}
+                  </Button>
                 )}
               </div>
-
-              {subscription.paymentMethod === "stripe" && (
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={handleManageSubscription}
-                  disabled={portalLoading}
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  {portalLoading ? t("premium.redirecting") : t("premium.manageSubscription")}
-                </Button>
-              )}
-            </div>
-          ) : (
-            /* ---- Free User: Upgrade Card ---- */
-            <div className="space-y-4">
-              {/* Features list */}
-              <div>
-                <p className="mb-2 text-sm font-medium">{t("premium.features")}</p>
-                <div className="flex items-start gap-2 rounded-md bg-amber-50 p-3 dark:bg-amber-900/10">
-                  <Paperclip className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                  <div>
-                    <p className="text-sm font-medium">{t("premium.attachments")}</p>
-                    <p className="text-muted-foreground text-xs">{t("premium.attachmentsDesc")}</p>
+            ) : (
+              /* ---- Free User: Upgrade Card ---- */
+              <div className="space-y-4">
+                {/* Features list */}
+                <div>
+                  <p className="mb-2 text-sm font-medium">{t("premium.features")}</p>
+                  <div className="flex items-start gap-2 rounded-md bg-amber-50 p-3 dark:bg-amber-900/10">
+                    <Paperclip className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                    <div>
+                      <p className="text-sm font-medium">{t("premium.attachments")}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {t("premium.attachmentsDesc")}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Plan toggle */}
-              <div>
-                {/* Stacked on phones: a narrow yearly button would let the discount
+                {/* Plan toggle */}
+                <div>
+                  {/* Stacked on phones: a narrow yearly button would let the discount
                     badge cover its label. */}
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button
+                      variant={selectedPlan === "monthly" ? "default" : "outline"}
+                      onClick={() => setSelectedPlan("monthly")}
+                      className="flex-1"
+                    >
+                      <div className="text-center">
+                        <div className="text-sm">{t("premium.monthly")}</div>
+                        <div className="text-xs opacity-80">{t("premium.monthlyPrice")}</div>
+                      </div>
+                    </Button>
+                    <Button
+                      variant={selectedPlan === "yearly" ? "default" : "outline"}
+                      onClick={() => setSelectedPlan("yearly")}
+                      className="relative flex-1"
+                    >
+                      <div className="text-center">
+                        <div className="text-sm">{t("premium.yearly")}</div>
+                        <div className="text-xs opacity-80">{t("premium.yearlyPrice")}</div>
+                      </div>
+                      <span className="absolute -top-2 -right-2 rounded-full bg-green-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        {t("premium.yearlyDiscount")}
+                      </span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Payment buttons */}
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
-                    variant={selectedPlan === "monthly" ? "default" : "outline"}
-                    onClick={() => setSelectedPlan("monthly")}
-                    className="flex-1"
+                    className="flex-1 gap-2"
+                    onClick={handlePayByCard}
+                    disabled={checkoutLoading}
                   >
-                    <div className="text-center">
-                      <div className="text-sm">{t("premium.monthly")}</div>
-                      <div className="text-xs opacity-80">{t("premium.monthlyPrice")}</div>
-                    </div>
+                    <CreditCard className="h-4 w-4" />
+                    {checkoutLoading ? t("premium.redirecting") : t("premium.payByCard")}
                   </Button>
                   <Button
-                    variant={selectedPlan === "yearly" ? "default" : "outline"}
-                    onClick={() => setSelectedPlan("yearly")}
-                    className="relative flex-1"
+                    variant="outline"
+                    className="flex-1 gap-2"
+                    onClick={handlePayByTransfer}
+                    disabled={qrLoading}
                   >
-                    <div className="text-center">
-                      <div className="text-sm">{t("premium.yearly")}</div>
-                      <div className="text-xs opacity-80">{t("premium.yearlyPrice")}</div>
-                    </div>
-                    <span className="absolute -top-2 -right-2 rounded-full bg-green-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                      {t("premium.yearlyDiscount")}
-                    </span>
+                    <Landmark className="h-4 w-4" />
+                    {t("premium.payByTransfer")}
                   </Button>
                 </div>
-              </div>
 
-              {/* Payment buttons */}
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button
-                  className="flex-1 gap-2"
-                  onClick={handlePayByCard}
-                  disabled={checkoutLoading}
-                >
-                  <CreditCard className="h-4 w-4" />
-                  {checkoutLoading ? t("premium.redirecting") : t("premium.payByCard")}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 gap-2"
-                  onClick={handlePayByTransfer}
-                  disabled={qrLoading}
-                >
-                  <Landmark className="h-4 w-4" />
-                  {t("premium.payByTransfer")}
-                </Button>
-              </div>
-
-              {/* QR Code Dialog (inline) */}
-              {qrDataUrl && (
-                <div className="space-y-3 rounded-md border p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">{t("premium.scanQR")}</p>
-                      <p className="text-muted-foreground text-xs">{t("premium.scanQRDesc")}</p>
-                    </div>
-                    <Button variant="ghost" size="icon-xs" onClick={() => setQrDataUrl(null)}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="flex justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- data URL, next/image ho neoptimalizuje */}
-                    <img
-                      src={qrDataUrl}
-                      alt="QR code for bank transfer"
-                      className="h-48 w-48 rounded-md"
-                    />
-                  </div>
-
-                  {/* Verify payment button + cooldown */}
-                  <div className="space-y-2">
-                    <Button
-                      variant="outline"
-                      className="w-full gap-2"
-                      onClick={handleVerifyPayment}
-                      disabled={verifyLoading || verifyCooldownLeft > 0}
-                    >
-                      <Check className="h-4 w-4" />
-                      {verifyLoading
-                        ? t("premium.verifying")
-                        : verifyCooldownLeft > 0
-                          ? t("premium.nextCheckIn", { seconds: String(verifyCooldownLeft) })
-                          : t("premium.alreadyPaid")}
-                    </Button>
-
-                    {verifyCooldownLeft > 0 && (
-                      <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
-                        <div
-                          className="bg-primary h-full rounded-full transition-all duration-1000 ease-linear"
-                          style={{ width: `${(1 - verifyCooldownLeft / 60) * 100}%` }}
-                        />
+                {/* QR Code Dialog (inline) */}
+                {qrDataUrl && (
+                  <div className="space-y-3 rounded-md border p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">{t("premium.scanQR")}</p>
+                        <p className="text-muted-foreground text-xs">{t("premium.scanQRDesc")}</p>
                       </div>
-                    )}
+                      <Button variant="ghost" size="icon-xs" onClick={() => setQrDataUrl(null)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- data URL, next/image ho neoptimalizuje */}
+                      <img
+                        src={qrDataUrl}
+                        alt="QR code for bank transfer"
+                        className="h-48 w-48 rounded-md"
+                      />
+                    </div>
 
-                    {verifyResult === "found" && (
-                      <p className="text-sm font-medium text-green-600">
-                        {t("premium.paymentFound")}
-                      </p>
-                    )}
-                    {verifyResult === "not_found" && (
-                      <p className="text-muted-foreground text-sm">
-                        {t("premium.paymentNotFound")}
-                      </p>
-                    )}
+                    {/* Verify payment button + cooldown */}
+                    <div className="space-y-2">
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={handleVerifyPayment}
+                        disabled={verifyLoading || verifyCooldownLeft > 0}
+                      >
+                        <Check className="h-4 w-4" />
+                        {verifyLoading
+                          ? t("premium.verifying")
+                          : verifyCooldownLeft > 0
+                            ? t("premium.nextCheckIn", { seconds: String(verifyCooldownLeft) })
+                            : t("premium.alreadyPaid")}
+                      </Button>
+
+                      {verifyCooldownLeft > 0 && (
+                        <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+                          <div
+                            className="bg-primary h-full rounded-full transition-all duration-1000 ease-linear"
+                            style={{ width: `${(1 - verifyCooldownLeft / 60) * 100}%` }}
+                          />
+                        </div>
+                      )}
+
+                      {verifyResult === "found" && (
+                        <p className="text-sm font-medium text-green-600">
+                          {t("premium.paymentFound")}
+                        </p>
+                      )}
+                      {verifyResult === "not_found" && (
+                        <p className="text-muted-foreground text-sm">
+                          {t("premium.paymentNotFound")}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {subLoading && <p className="text-muted-foreground text-sm">{t("common.loading")}</p>}
-            </div>
-          )}
-        </div>
+                {subLoading && (
+                  <p className="text-muted-foreground text-sm">{t("common.loading")}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* General Settings */}
         <div className="rounded-lg border p-5">
@@ -1629,6 +1638,8 @@ export default function SettingsPage() {
             )}
           </div>
         )}
+
+        {meData?.me?.email && <DeleteAccountSection email={meData.me.email} />}
 
         <div className="text-muted-foreground border-t pt-4 text-xs md:col-span-2">
           <p>

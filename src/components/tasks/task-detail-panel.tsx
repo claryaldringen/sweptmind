@@ -41,6 +41,7 @@ import {
 import { useTaskDates } from "@/hooks/use-task-dates";
 import { useApplyDecomposition } from "@/hooks/use-apply-decomposition";
 import { useApplyShoppingDistribution } from "@/hooks/use-apply-shopping-distribution";
+import { useIsNativeApp } from "@/hooks/use-is-native-app";
 import {
   TOGGLE_TASK_COMPLETED as TOGGLE_COMPLETED,
   DELETE_TASK,
@@ -329,6 +330,7 @@ export function TaskDetailPanel() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { t, tArray, locale: appLocale } = useTranslations();
+  const isNativeApp = useIsNativeApp();
   const dateFnsLocale = getDateFnsLocale(appLocale);
   const taskId = searchParams.get("task");
   const showAi = searchParams.get("ai") === "1";
@@ -1426,7 +1428,10 @@ export function TaskDetailPanel() {
           deleteLabel={t("premium.deleteFile")}
           downloadLabel={t("premium.downloadFile")}
           premiumRequiredLabel={t("premium.premiumRequired")}
-          premiumRequiredDesc={t("premium.premiumRequiredDesc")}
+          premiumRequiredDesc={
+            // No call to upgrade in the native apps — purchases stay outside the stores
+            isNativeApp ? t("premium.premiumRequiredNativeDesc") : t("premium.premiumRequiredDesc")
+          }
           fileTooLargeLabel={t("premium.fileTooLarge")}
           storageFullLabel={t("premium.storageFull")}
           dragDropHintLabel={t("premium.dragDropHint")}

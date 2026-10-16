@@ -25,6 +25,21 @@ export class DrizzleUserRepository implements IUserRepository {
     return user;
   }
 
+  async delete(userId: string): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      const [user] = await tx
+        .delete(schema.users)
+        .where(eq(schema.users.id, userId))
+        .returning({ email: schema.users.email });
+      // Password reset tokens are keyed by email, not by a foreign key
+      if (user?.email) {
+        await tx
+          .delete(schema.verificationTokens)
+          .where(eq(schema.verificationTokens.identifier, user.email));
+      }
+    });
+  }
+
   async findByCalendarToken(token: string): Promise<User | undefined> {
     return this.db.query.users.findFirst({
       where: eq(schema.users.calendarToken, token),

@@ -123,6 +123,8 @@ src/
 - **Pothos type refs** žijí v `types/refs.ts` aby se zabránilo kruhovým závislostem mezi typy
 - **Apollo Client v4:** hooky se importují z `@apollo/client/react`, core z `@apollo/client`. `ApolloClient` + `InMemoryCache` z `@apollo/client-integration-nextjs` pro provider.
 - **JWT sessions** (žádná sessions tabulka) — Credentials provider vyžaduje JWT strategii
+- **Nativní aplikace (Android/iOS) nenabízí nákup Premium ani donace** – pravidla Google Play / App Store zakazují platby mimo obchod. Platí i pro výzvy „upgradujte“. Hlídá to `useIsNativeApp()` / `<WebOnly>`, v Nastavení `isNativeApp`.
+- **Smazání účtu** (`AccountService`, Nastavení + veřejná stránka `/delete-account`, kterou chce Google Play) – data mizí přes `ON DELETE CASCADE`; nová tabulka s daty uživatele musí mít kaskádu na `users`, soubory na disku maže služba zvlášť. Mutace nejde přes API token.
 - **Zod v4:** používá `.issues` (ne `.errors`) na ZodError
 - **i18n:** Vlastní lokalizace (cs, en, de, it, fr, es) bez externích knihoven. Seznam jazyků je `USER_LOCALES` v `src/domain/entities/user.ts` (používá ho i server pro notifikace), klient ho bere přes `src/lib/i18n/locales.ts`. `useLocale()` hook (localStorage + cookie `sweptmind-locale`, jinak jazyk prohlížeče), `useTranslations()` vrací `t(key, params?)`. Slovníky v `src/lib/i18n/dictionaries/` – nový klíč patří do `types.ts` a všech šesti slovníků (test `i18n.test.ts` hlídá shodu s angličtinou). Pro server components: `dictionaries` z `@/lib/i18n/dictionaries` + `getRequestLocale()` z `@/lib/i18n/server` (cookie, jinak Accept-Language). Texty stránky GTD jsou v `src/app/gtd/content/`. Jazyk se přepíná v Settings.
 

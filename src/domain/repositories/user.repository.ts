@@ -4,6 +4,8 @@ export interface IUserRepository {
   findById(id: string): Promise<User | undefined>;
   findByEmail(email: string): Promise<User | undefined>;
   create(input: CreateUserInput): Promise<User>;
+  /** Deletes the user; everything owned by them goes along via ON DELETE CASCADE. */
+  delete(userId: string): Promise<void>;
   findByCalendarToken(token: string): Promise<User | undefined>;
   getCalendarToken(userId: string): Promise<string>;
   regenerateCalendarToken(userId: string): Promise<string>;

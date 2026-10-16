@@ -6,16 +6,20 @@ export interface GraphQLContext {
   services: Services;
   loaders: DataLoaders;
   userId: string | null;
+  /** Authenticated with an API token (CLI, MCP) rather than the browser session */
+  viaApiToken: boolean;
 }
 
 export async function createContext(request?: Request): Promise<GraphQLContext> {
   let userId: string | null = null;
+  let viaApiToken = false;
 
   // Try API token first (Authorization: Bearer sm_...)
   const authHeader = request?.headers.get("authorization");
   if (authHeader?.startsWith("Bearer sm_")) {
     const token = authHeader.slice(7); // "Bearer ".length
     userId = await services.apiToken.validateToken(token);
+    viaApiToken = userId !== null;
   }
 
   // Fall back to session auth
@@ -28,5 +32,6 @@ export async function createContext(request?: Request): Promise<GraphQLContext> 
     services,
     loaders: createDataLoaders(repos, userId ?? ""),
     userId,
+    viaApiToken,
   };
 }

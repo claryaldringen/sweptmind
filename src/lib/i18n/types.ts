@@ -377,6 +377,10 @@ export interface Dictionary {
     denied: string;
     notificationsDenied: string;
     andMore: string;
+    disclosureTitle: string;
+    disclosureBody: string;
+    disclosureAccept: string;
+    disclosureDecline: string;
   };
   calendar: {
     title: string;
@@ -452,6 +456,7 @@ export interface Dictionary {
     downloadFile: string;
     premiumRequired: string;
     premiumRequiredDesc: string;
+    premiumRequiredNativeDesc: string;
     storageUsed: string;
     fileTooLarge: string;
     storageFull: string;
@@ -579,6 +584,36 @@ export interface Dictionary {
     completionActionMove: string;
     completionSelectList: string;
     completionNoRule: string;
+  };
+  deleteAccount: {
+    title: string;
+    description: string;
+    button: string;
+    dialogTitle: string;
+    dialogDescription: string;
+    emailPlaceholder: string;
+    confirm: string;
+    deleting: string;
+    emailMismatch: string;
+    error: string;
+  };
+  deleteAccountPage: {
+    metaTitle: string;
+    title: string;
+    intro: string;
+    stepsTitle: string;
+    step1: string;
+    step2: string;
+    step3: string;
+    step4: string;
+    signIn: string;
+    deletedTitle: string;
+    deletedBody: string;
+    keptTitle: string;
+    keptBody: string;
+    noAccessTitle: string;
+    noAccessBody: string;
+    back: string;
   };
 }
 

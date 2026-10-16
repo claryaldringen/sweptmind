@@ -407,6 +407,11 @@ export const cs: Dictionary = {
     denied: "Přístup k poloze je zakázaný. Povol ho v nastavení aplikace.",
     notificationsDenied: "Notifikace jsou zakázané, upozornění se nezobrazí.",
     andMore: "{titles} a další {count}",
+    disclosureTitle: "Poloha i při zavřené aplikaci",
+    disclosureBody:
+      "SweptMind používá polohu telefonu k upozorněním na úkoly u míst, která máš u úkolů a seznamů, i když je aplikace zavřená nebo ji nepoužíváš. Poloha zůstává v telefonu – na server se neposílá a nikomu ji nepředáváme. V dalším kroku povol přístup k poloze a zvol „Povolit vždy“.",
+    disclosureAccept: "Pokračovat",
+    disclosureDecline: "Teď ne",
   },
   calendar: {
     title: "Kalendář",
@@ -486,6 +491,7 @@ export const cs: Dictionary = {
     downloadFile: "Stáhnout",
     premiumRequired: "Premium funkce",
     premiumRequiredDesc: "Upgradujte na Premium pro nahrávání a stahování příloh",
+    premiumRequiredNativeDesc: "Nahrávání a stahování příloh je součástí Premium.",
     storageUsed: "{used} z {total} využito",
     fileTooLarge: "Soubor je příliš velký (max 10 MB)",
     storageFull: "Úložiště je plné (1 GB)",
@@ -615,5 +621,40 @@ export const cs: Dictionary = {
     completionActionMove: "přesunout do seznamu",
     completionSelectList: "Vyber seznam",
     completionNoRule: "žádné pravidlo",
+  },
+  deleteAccount: {
+    title: "Smazání účtu",
+    description:
+      "Smaže účet se všemi daty – úkoly, seznamy, přílohy, propojení i nastavení. Aktivní předplatné se zruší. Smazání nejde vrátit.",
+    button: "Smazat účet",
+    dialogTitle: "Opravdu smazat účet?",
+    dialogDescription:
+      "Všechna data se smažou hned a nepůjde je obnovit. Pro potvrzení napiš svůj e-mail {email}.",
+    emailPlaceholder: "Tvůj e-mail",
+    confirm: "Smazat natrvalo",
+    deleting: "Mažu…",
+    emailMismatch: "E-mail nesouhlasí s tvým účtem.",
+    error: "Účet se nepodařilo smazat. Zkus to prosím znovu.",
+  },
+  deleteAccountPage: {
+    metaTitle: "Smazání účtu",
+    title: "Smazání účtu SweptMind",
+    intro:
+      "Účet v aplikaci SweptMind (web, Android, Mac) i všechna data v něm můžeš kdykoli smazat sám v Nastavení.",
+    stepsTitle: "Jak účet smazat",
+    step1: "Přihlas se na sweptmind.com nebo v aplikaci SweptMind.",
+    step2: "Otevři Nastavení.",
+    step3: "Dole v sekci „Smazání účtu“ klepni na „Smazat účet“.",
+    step4: "Pro potvrzení napiš svůj e-mail a zvol „Smazat natrvalo“.",
+    signIn: "Přihlásit se a smazat účet",
+    deletedTitle: "Co se smaže",
+    deletedBody:
+      "Účet a všechna data v něm: úkoly, seznamy, kroky, štítky, místa, přílohy, propojení s Google Kalendářem, sdílení s ostatními uživateli, API tokeny a registrace pro notifikace. Aktivní předplatné placené kartou se zruší a další platby se už nestrhávají. Smazání proběhne hned a nejde vrátit.",
+    keptTitle: "Co zůstane",
+    keptBody:
+      "Doklady o přijatých platbách, které musíme uchovávat po dobu stanovenou zákonem. Úkoly, které jsi dřív nasdílel(a) jiným uživatelům, zůstanou v jejich seznamech.",
+    noAccessTitle: "Nemůžeš se přihlásit?",
+    noAccessBody: "Napiš z e-mailu, pod kterým máš účet, na {email}. Účet smažeme do 30 dnů.",
+    back: "Zpět na SweptMind",
   },
 };

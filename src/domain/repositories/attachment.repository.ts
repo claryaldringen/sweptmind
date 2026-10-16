@@ -7,4 +7,6 @@ export interface IAttachmentRepository {
   create(input: CreateAttachmentInput): Promise<TaskAttachment>;
   delete(id: string): Promise<void>;
   getTotalSizeByUser(userId: string): Promise<number>;
+  /** Stored files of all the user's attachments */
+  findBlobUrlsByUser(userId: string): Promise<string[]>;
 }

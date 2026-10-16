@@ -7,7 +7,8 @@ import { persistCache } from "apollo3-cache-persist";
 import { print } from "graphql";
 import { syncManager } from "./sync-manager";
 
-const CACHE_KEY = "apollo-cache-persist";
+/** localStorage key of the persisted cache — the signed-in user's data for offline use */
+export const CACHE_KEY = "apollo-cache-persist";
 
 export function makeClient() {
   const errorLink = new ErrorLink(({ error }) => {

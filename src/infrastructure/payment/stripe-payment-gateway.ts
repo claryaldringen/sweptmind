@@ -40,4 +40,17 @@ export class StripePaymentGateway implements IPaymentGateway {
 
     return session.url;
   }
+
+  async cancelSubscription(stripeSubscriptionId: string): Promise<void> {
+    const { default: Stripe } = await import("stripe");
+    const stripe = new Stripe(this.secretKey);
+
+    try {
+      await stripe.subscriptions.cancel(stripeSubscriptionId);
+    } catch (err) {
+      // Already canceled or deleted in Stripe — nothing left to charge
+      if ((err as { code?: string }).code === "resource_missing") return;
+      throw err;
+    }
+  }
 }

@@ -417,6 +417,11 @@ export const de: Dictionary = {
     denied: "Der Standortzugriff ist blockiert. Erlaube ihn in den App-Einstellungen.",
     notificationsDenied: "Benachrichtigungen sind blockiert, Erinnerungen werden nicht angezeigt.",
     andMore: "{titles} und {count} weitere",
+    disclosureTitle: "Standort auch bei geschlossener App",
+    disclosureBody:
+      "SweptMind nutzt den Standort deines Telefons, um dich an Aufgaben an Orten zu erinnern, die du bei Aufgaben und Listen hinterlegt hast – auch wenn die App geschlossen ist oder nicht verwendet wird. Dein Standort bleibt auf dem Telefon – er wird nicht an unseren Server gesendet und an niemanden weitergegeben. Erlaube im nächsten Schritt den Standortzugriff und wähle „Immer zulassen“.",
+    disclosureAccept: "Weiter",
+    disclosureDecline: "Jetzt nicht",
   },
   calendar: {
     title: "Kalender",
@@ -497,6 +502,7 @@ export const de: Dictionary = {
     downloadFile: "Herunterladen",
     premiumRequired: "Premium-Funktion",
     premiumRequiredDesc: "Upgrade auf Premium, um Anhänge hoch- und herunterzuladen",
+    premiumRequiredNativeDesc: "Das Hoch- und Herunterladen von Anhängen ist Teil von Premium.",
     storageUsed: "{used} von {total} belegt",
     fileTooLarge: "Die Datei ist zu groß (max. 10 MB)",
     storageFull: "Speicherlimit erreicht (1 GB)",
@@ -629,5 +635,41 @@ export const de: Dictionary = {
     completionActionMove: "in Liste verschieben",
     completionSelectList: "Liste wählen",
     completionNoRule: "keine Regel",
+  },
+  deleteAccount: {
+    title: "Konto löschen",
+    description:
+      "Löscht dein Konto mit allen Daten – Aufgaben, Listen, Anhänge, Verbindungen und Einstellungen. Ein aktives Abo wird gekündigt. Das kann nicht rückgängig gemacht werden.",
+    button: "Konto löschen",
+    dialogTitle: "Konto wirklich löschen?",
+    dialogDescription:
+      "Alle Daten werden sofort gelöscht und können nicht wiederhergestellt werden. Gib zur Bestätigung deine E-Mail-Adresse {email} ein.",
+    emailPlaceholder: "Deine E-Mail-Adresse",
+    confirm: "Endgültig löschen",
+    deleting: "Wird gelöscht…",
+    emailMismatch: "Die E-Mail-Adresse stimmt nicht mit deinem Konto überein.",
+    error: "Das Konto konnte nicht gelöscht werden. Bitte versuche es erneut.",
+  },
+  deleteAccountPage: {
+    metaTitle: "Konto löschen",
+    title: "SweptMind-Konto löschen",
+    intro:
+      "Du kannst dein SweptMind-Konto (Web, Android, Mac) mit allen Daten jederzeit selbst in den Einstellungen löschen.",
+    stepsTitle: "So löschst du dein Konto",
+    step1: "Melde dich auf sweptmind.com oder in der SweptMind-App an.",
+    step2: "Öffne die Einstellungen.",
+    step3: "Tippe unten im Abschnitt „Konto löschen“ auf „Konto löschen“.",
+    step4: "Gib zur Bestätigung deine E-Mail-Adresse ein und wähle „Endgültig löschen“.",
+    signIn: "Anmelden und Konto löschen",
+    deletedTitle: "Was gelöscht wird",
+    deletedBody:
+      "Dein Konto mit allen Daten: Aufgaben, Listen, Schritte, Tags, Orte, Anhänge, die Verbindung zu Google Kalender, das Teilen mit anderen Nutzern, API-Tokens und Registrierungen für Benachrichtigungen. Ein aktives Kartenabo wird gekündigt, es werden keine weiteren Zahlungen abgebucht. Die Löschung erfolgt sofort und kann nicht rückgängig gemacht werden.",
+    keptTitle: "Was erhalten bleibt",
+    keptBody:
+      "Belege über erhaltene Zahlungen, die wir für die gesetzlich vorgeschriebene Dauer aufbewahren müssen. Aufgaben, die du zuvor mit anderen Nutzern geteilt hast, bleiben in deren Listen.",
+    noAccessTitle: "Du kannst dich nicht anmelden?",
+    noAccessBody:
+      "Schreib von der E-Mail-Adresse deines Kontos an {email}. Wir löschen das Konto innerhalb von 30 Tagen.",
+    back: "Zurück zu SweptMind",
   },
 };
