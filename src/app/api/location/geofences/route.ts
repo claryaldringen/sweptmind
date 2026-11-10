@@ -1,41 +1,32 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { services } from "@/infrastructure/container";
+import { dictionaries } from "@/lib/i18n/dictionaries";
+import { getRequestLocale } from "@/lib/i18n/server";
+import { interpolate } from "@/lib/i18n/interpolate";
+import { formatGeofenceBody } from "@/domain/services/geofence-registrations";
 
-export async function GET() {
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Location reminders as they should be now. The Android app asks right before showing a
+ * geofence notification (with the WebView's session cookie), so a task completed on another
+ * device doesn't announce itself from the phone's stale copy. The request carries no location
+ * and no place — the app looks its geofence up in the whole list. `?today=YYYY-MM-DD` is the
+ * phone's date, which the app built its geofences for.
+ */
+export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = session.user.id;
+  const today = request.nextUrl.searchParams.get("today");
+  const andMore = dictionaries[await getRequestLocale()].locationReminders.andMore;
+  const geofences = await services.locationReminder.getGeofences(
+    session.user.id,
+    (titles) =>
+      formatGeofenceBody(titles, (shown, count) => interpolate(andMore, { titles: shown, count })),
+    today && DATE_RE.test(today) ? today : undefined,
+  );
 
-  // Get all user locations
-  const locations = await services.location.getByUser(userId);
-  if (locations.length === 0) {
-    return NextResponse.json({ geofences: [] });
-  }
-
-  // Get all tasks with location assigned (non-completed only)
-  const tasksWithLocation = await services.task.getWithLocation(userId);
-  const activeTasks = tasksWithLocation.filter((t) => !t.isCompleted);
-
-  // Build geofence registrations — one per location that has active tasks
-  const activeLocationIds = new Set(activeTasks.map((t) => t.locationId).filter(Boolean));
-
-  const geofences = locations
-    .filter((loc) => activeLocationIds.has(loc.id))
-    .map((loc) => {
-      const tasks = activeTasks.filter((t) => t.locationId === loc.id);
-      const body = tasks.length === 1 ? tasks[0].title : `${tasks[0].title} (+${tasks.length - 1})`;
-
-      return {
-        identifier: `location:${loc.id}`,
-        latitude: loc.latitude,
-        longitude: loc.longitude,
-        radiusMeters: Math.max(loc.radius * 1000, 200),
-        notificationTitle: loc.name,
-        notificationBody: body,
-      };
-    });
-
-  return NextResponse.json({ geofences });
+  return NextResponse.json({ geofences }, { headers: { "Cache-Control": "no-store" } });
 }

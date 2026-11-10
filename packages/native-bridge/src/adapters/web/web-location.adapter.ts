@@ -4,6 +4,7 @@ import type {
   GeofenceConfig,
   GeofenceEvent,
   GeofenceRegistration,
+  GeofenceSyncOptions,
   LocationPermissions,
   TrackingConfig,
 } from "../../types";
@@ -60,7 +61,10 @@ export class WebLocationAdapter implements LocationPort {
     // Not available on web
   }
 
-  async syncGeofences(_fences: GeofenceRegistration[]): Promise<void> {
+  async syncGeofences(
+    _fences: GeofenceRegistration[],
+    _options?: GeofenceSyncOptions,
+  ): Promise<void> {
     // Geofencing not supported on web — no-op
   }
 

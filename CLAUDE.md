@@ -178,6 +178,7 @@ src/
   - Server posílá na kanál `reminders` (vytváří ho aplikace při registraci)
 - Přihlášení přes Google v nativní aplikaci jde přes systémový prohlížeč (Google OAuth ve WebView odmítá): `/native-login` → Google → jednorázový kód přes `com.sweptmind.app://auth` → provider `native-code` (`src/lib/native-login.ts`, kód svázaný s tajemstvím aplikace jako PKCE)
 - Upozornění podle polohy: opt-in v Nastavení (poloha „vždy“), geofence registruje `packages/capacitor-geofence`, notifikaci zobrazí OS lokálně – poloha se na server neposílá
+  - Geofence se mění, jen když aplikace běží (úkol splněný na webu by jinak dál upozorňoval). Před zobrazením se proto Android zeptá `GET /api/location/geofences?today=<datum v telefonu>` (cookie z WebView, bez polohy a bez místa), jestli tam ještě je nesplněný úkol, a vezme aktuální text. Odhlášený (401) = nic neukáže, bez odpovědi do 8 s ukáže uložený text. Server se tak dozví jen čas vstupu do některého z míst (ne kterého) a nikam ho neloguje. Server i aplikace počítají místa stejnou funkcí (`src/domain/services/geofence-registrations.ts`)
 - Background geolocation + geofencing (stabilní lokace: nativní geofencing, ad-hoc: periodické kontroly)
 - Port/adapter pattern v `packages/native-bridge/` pro clean architecture
 - Později: Biometrics, App badge count, Home screen widgets, Share target

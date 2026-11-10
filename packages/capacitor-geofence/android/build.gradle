@@ -41,6 +41,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_21
         targetCompatibility JavaVersion.VERSION_21
     }
+    testOptions {
+        // android.util.Log in JVM unit tests
+        unitTests.returnDefaultValues = true
+    }
 }
 
 kotlin {
@@ -60,6 +64,8 @@ dependencies {
     implementation "androidx.core:core-ktx:$androidxCoreVersion"
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     testImplementation "junit:junit:$junitVersion"
+    // The real org.json — android.jar only has stubs in JVM unit tests
+    testImplementation "org.json:json:20240303"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
 }

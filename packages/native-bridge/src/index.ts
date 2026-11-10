@@ -12,6 +12,7 @@ export type {
   GeofenceConfig,
   GeofenceEvent,
   GeofenceRegistration,
+  GeofenceSyncOptions,
   PushPermissionStatus,
   LocationPermissionStatus,
   LocationPermissions,

@@ -1,96 +1,55 @@
 import { describe, it, expect } from "vitest";
-import { buildGeofenceRegistrations, MAX_GEOFENCES } from "../geofence-registrations";
-import type {
-  AppTask,
-  ListItem,
-  TagItem,
-  LocationItem,
-} from "@/components/providers/app-data-provider";
+import {
+  buildGeofenceRegistrations,
+  formatGeofenceBody,
+  MAX_GEOFENCES,
+  type GeofenceLocatable,
+  type GeofenceLocation,
+  type GeofenceTask,
+} from "../geofence-registrations";
 
 const TODAY = "2026-07-01";
 
-const shop: LocationItem = {
+const shop: GeofenceLocation = {
   id: "shop",
   name: "Obchod",
   latitude: 50,
   longitude: 14,
   radius: 0.5,
-  address: null,
 };
-const office: LocationItem = { ...shop, id: "office", name: "Kancelář", latitude: 49 };
+const office: GeofenceLocation = { ...shop, id: "office", name: "Kancelář", latitude: 49 };
 
-function task(overrides: Partial<AppTask>): AppTask {
+function task(overrides: Partial<GeofenceTask>): GeofenceTask {
   return {
-    id: "t",
+    title: "Úkol",
     listId: "inbox",
     locationId: null,
     locationRadius: null,
-    title: "Úkol",
-    notes: null,
     isCompleted: false,
-    completedAt: null,
     dueDate: null,
-    dueDateEnd: null,
     reminderAt: null,
     recurrence: null,
-    deviceContext: null,
-    sortOrder: 0,
-    createdAt: "2026-06-01",
-    steps: [],
-    tags: [],
-    location: null,
-    list: null,
     blockedByTaskId: null,
-    blockedByTask: null,
     blockedByTaskIsCompleted: null,
-    ...overrides,
-  } as AppTask;
-}
-
-function list(overrides: Partial<ListItem>): ListItem {
-  return {
-    id: "inbox",
-    name: "Inbox",
-    icon: null,
-    themeColor: null,
-    isDefault: true,
-    sortOrder: 0,
-    groupId: null,
-    locationId: null,
-    locationRadius: null,
-    location: null,
-    deviceContext: null,
-    taskCount: 0,
-    visibleTaskCount: 0,
+    tags: [],
     ...overrides,
   };
 }
 
-function tag(overrides: Partial<TagItem>): TagItem {
-  return {
-    id: "tag",
-    name: "Nákup",
-    color: "blue",
-    taskCount: 0,
-    lastUsedAt: null,
-    deviceContext: null,
-    locationId: null,
-    locationRadius: null,
-    location: null,
-    ...overrides,
-  };
+function place(overrides: Partial<GeofenceLocatable>): GeofenceLocatable {
+  return { id: "inbox", locationId: null, locationRadius: null, ...overrides };
 }
 
 const formatBody = (titles: string[]) => titles.join(" | ");
 
 function build(input: {
-  tasks: AppTask[];
-  lists?: ListItem[];
-  tags?: TagItem[];
-  locations?: LocationItem[];
+  tasks: GeofenceTask[];
+  lists?: GeofenceLocatable[];
+  tags?: GeofenceLocatable[];
+  locations?: GeofenceLocation[];
 }) {
   return buildGeofenceRegistrations({
-    lists: [list({})],
+    lists: [place({})],
     tags: [],
     locations: [shop, office],
     today: TODAY,
@@ -101,7 +60,7 @@ function build(input: {
 
 describe("buildGeofenceRegistrations", () => {
   it("vytvoří geofence pro místo přiřazené přímo úkolu", () => {
-    const regs = build({ tasks: [task({ id: "a", title: "Mléko", locationId: "shop" })] });
+    const regs = build({ tasks: [task({ title: "Mléko", locationId: "shop" })] });
     expect(regs).toEqual([
       {
         identifier: "location:shop:500",
@@ -129,11 +88,11 @@ describe("buildGeofenceRegistrations", () => {
   it("zdědí místo ze seznamu i ze štítku", () => {
     const regs = build({
       tasks: [
-        task({ id: "a", title: "Ze seznamu", listId: "groceries" }),
-        task({ id: "b", title: "Ze štítku", tags: [{ id: "work", name: "Práce", color: "red" }] }),
+        task({ title: "Ze seznamu", listId: "groceries" }),
+        task({ title: "Ze štítku", tags: [{ id: "work" }] }),
       ],
-      lists: [list({}), list({ id: "groceries", locationId: "shop" })],
-      tags: [tag({ id: "work", locationId: "office", locationRadius: 1 })],
+      lists: [place({}), place({ id: "groceries", locationId: "shop" })],
+      tags: [place({ id: "work", locationId: "office", locationRadius: 1 })],
     });
     expect(regs.map((r) => [r.identifier, r.notificationBody])).toEqual([
       ["location:shop:500", "Ze seznamu"],
@@ -144,8 +103,8 @@ describe("buildGeofenceRegistrations", () => {
   it("sloučí úkoly stejného místa a okruhu do jedné geofence", () => {
     const regs = build({
       tasks: [
-        task({ id: "a", title: "Mléko", locationId: "shop" }),
-        task({ id: "b", title: "Chléb", locationId: "shop" }),
+        task({ title: "Mléko", locationId: "shop" }),
+        task({ title: "Chléb", locationId: "shop" }),
       ],
     });
     expect(regs).toHaveLength(1);
@@ -155,14 +114,9 @@ describe("buildGeofenceRegistrations", () => {
   it("vynechá dokončené, budoucí a blokované úkoly", () => {
     const regs = build({
       tasks: [
-        task({ id: "done", locationId: "shop", isCompleted: true }),
-        task({ id: "future", locationId: "shop", dueDate: "2026-07-10" }),
-        task({
-          id: "blocked",
-          locationId: "shop",
-          blockedByTaskId: "x",
-          blockedByTaskIsCompleted: false,
-        }),
+        task({ locationId: "shop", isCompleted: true }),
+        task({ locationId: "shop", dueDate: "2026-07-10" }),
+        task({ locationId: "shop", blockedByTaskId: "x", blockedByTaskIsCompleted: false }),
       ],
     });
     expect(regs).toEqual([]);
@@ -177,11 +131,23 @@ describe("buildGeofenceRegistrations", () => {
       ...shop,
       id: `loc-${i}`,
     }));
-    const tasks = locations.map((loc, i) => task({ id: `t-${i}`, locationId: loc.id }));
-    tasks.push(task({ id: "extra", locationId: "loc-94" }));
+    const tasks = locations.map((loc) => task({ locationId: loc.id }));
+    tasks.push(task({ locationId: "loc-94" }));
 
     const regs = build({ tasks, locations });
     expect(regs).toHaveLength(MAX_GEOFENCES);
     expect(regs[0].identifier).toBe("location:loc-94:500");
+  });
+});
+
+describe("formatGeofenceBody", () => {
+  const andMore = (shown: string, rest: number) => `${shown} +${rest}`;
+
+  it("vypíše až tři názvy", () => {
+    expect(formatGeofenceBody(["A", "B", "C"], andMore)).toBe("A, B, C");
+  });
+
+  it("zbytek nad tři názvy shrne počtem", () => {
+    expect(formatGeofenceBody(["A", "B", "C", "D", "E"], andMore)).toBe("A, B, C +2");
   });
 });

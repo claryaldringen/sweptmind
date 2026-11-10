@@ -47,6 +47,9 @@ jobs:
           else
             echo "::warning::ANDROID_DEBUG_KEYSTORE secret not set — the APK is signed with a throwaway key"
           fi
+      - name: Unit tests of the geofence plugin
+        run: ./gradlew :sweptmind-capacitor-geofence:testDebugUnitTest --no-daemon --stacktrace
+        working-directory: apps/mobile/android
       # The bundle (AAB, the Google Play format) only checks that it builds; no artifact
       - name: Build debug APK and app bundle
         run: ./gradlew assembleDebug bundleDebug --no-daemon --stacktrace

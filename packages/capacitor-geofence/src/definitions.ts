@@ -1,8 +1,12 @@
 import type { PluginListenerHandle } from "@capacitor/core";
 
 export interface GeofencePlugin {
-  /** Atomically replaces all monitored geofences (Android only). */
-  setGeofences(options: { geofences: GeofenceConfig[] }): Promise<void>;
+  /**
+   * Atomically replaces all monitored geofences (Android only). With `verifyUrl`, a notification
+   * is shown only if a GET there (with the WebView's cookies) still lists its geofence, with the
+   * text from the response; when the server can't be asked, the registered text is shown.
+   */
+  setGeofences(options: { geofences: GeofenceConfig[]; verifyUrl?: string }): Promise<void>;
   addGeofences(options: { geofences: GeofenceConfig[] }): Promise<void>;
   removeGeofences(options: { identifiers: string[] }): Promise<void>;
   removeAllGeofences(): Promise<void>;

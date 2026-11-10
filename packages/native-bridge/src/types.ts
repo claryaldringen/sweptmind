@@ -41,6 +41,15 @@ export interface GeofenceRegistration {
   notificationUrl?: string;
 }
 
+export interface GeofenceSyncOptions {
+  /**
+   * Android: the app asks this endpoint (with the WebView's session) right before showing a
+   * notification and stays quiet about places it no longer returns — the registered geofences
+   * only change while the app runs. Offline it shows the registered text.
+   */
+  verifyUrl?: string;
+}
+
 export type PushPermissionStatus = "granted" | "denied" | "prompt";
 
 export type LocationPermissionStatus = "always" | "whenInUse" | "denied" | "notDetermined";

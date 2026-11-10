@@ -1,16 +1,55 @@
-import type { GeofenceRegistration } from "@sweptmind/native-bridge";
-import type {
-  AppTask,
-  ListItem,
-  TagItem,
-  LocationItem,
-} from "@/components/providers/app-data-provider";
-import { isFutureTask } from "@/domain/services/task-visibility";
+/**
+ * Location reminders: one geofence per place (location + radius) where an actionable task can
+ * be done. The Android app registers them with the OS, and the server computes the same ones
+ * so the app can check, right before showing a notification, that the place still has one.
+ */
+import { isFutureTask } from "./task-visibility";
 
 /** Android allows 100 geofences per app; keep a margin. (iOS would need 20 — Android-only for now.) */
 export const MAX_GEOFENCES = 90;
 const MIN_RADIUS_METERS = 200;
 const NOTIFICATION_URL = "/context";
+const BODY_MAX_TITLES = 3;
+
+export interface GeofenceTask {
+  title: string;
+  listId: string;
+  locationId: string | null;
+  locationRadius: number | null; // km, null = location's default radius
+  isCompleted: boolean;
+  dueDate: string | null;
+  reminderAt: string | null;
+  recurrence?: string | null;
+  blockedByTaskId?: string | null;
+  blockedByTaskIsCompleted?: boolean | null;
+  tags?: { id: string }[] | null;
+}
+
+/** A list or a tag — both can carry a location for all their tasks. */
+export interface GeofenceLocatable {
+  id: string;
+  locationId: string | null;
+  locationRadius: number | null;
+}
+
+export interface GeofenceLocation {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  radius: number; // km
+}
+
+export interface GeofenceRegistration {
+  identifier: string;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+  notificationTitle: string;
+  notificationBody: string;
+  /** App path opened when the notification is tapped */
+  notificationUrl: string;
+}
 
 interface Place {
   locationId: string;
@@ -22,9 +61,9 @@ interface Place {
  * location, its list's location and the locations of its tags, each with its own radius.
  */
 function placesOf(
-  task: AppTask,
-  listsById: Map<string, ListItem>,
-  tagsById: Map<string, TagItem>,
+  task: GeofenceTask,
+  listsById: Map<string, GeofenceLocatable>,
+  tagsById: Map<string, GeofenceLocatable>,
 ): Place[] {
   const places: Place[] = [];
   if (task.locationId) places.push({ locationId: task.locationId, radiusKm: task.locationRadius });
@@ -39,14 +78,28 @@ function placesOf(
   return places;
 }
 
-/** One geofence per (location, radius) with at least one actionable task. */
+/** Notification text: the first few task titles, the rest as a count ("A, B, C and 2 more"). */
+export function formatGeofenceBody(
+  titles: string[],
+  andMore: (shownTitles: string, restCount: number) => string,
+): string {
+  const shown = titles.slice(0, BODY_MAX_TITLES).join(", ");
+  const rest = titles.length - BODY_MAX_TITLES;
+  return rest > 0 ? andMore(shown, rest) : shown;
+}
+
+/**
+ * One geofence per (location, radius) with at least one actionable task — at most
+ * [maxGeofences] (default [MAX_GEOFENCES], the OS limit), the places with most tasks first.
+ */
 export function buildGeofenceRegistrations(input: {
-  tasks: AppTask[];
-  lists: ListItem[];
-  tags: TagItem[];
-  locations: LocationItem[];
+  tasks: GeofenceTask[];
+  lists: GeofenceLocatable[];
+  tags: GeofenceLocatable[];
+  locations: GeofenceLocation[];
   today: string;
   formatBody: (taskTitles: string[]) => string;
+  maxGeofences?: number;
 }): GeofenceRegistration[] {
   const locationsById = new Map(input.locations.map((l) => [l.id, l]));
   const listsById = new Map(input.lists.map((l) => [l.id, l]));
@@ -54,7 +107,7 @@ export function buildGeofenceRegistrations(input: {
 
   const groups = new Map<
     string,
-    { location: LocationItem; radiusMeters: number; titles: string[] }
+    { location: GeofenceLocation; radiusMeters: number; titles: string[] }
   >();
 
   for (const task of input.tasks) {
@@ -81,7 +134,7 @@ export function buildGeofenceRegistrations(input: {
 
   return [...groups.entries()]
     .sort(([, a], [, b]) => b.titles.length - a.titles.length)
-    .slice(0, MAX_GEOFENCES)
+    .slice(0, input.maxGeofences ?? MAX_GEOFENCES)
     .map(([identifier, { location, radiusMeters, titles }]) => ({
       identifier,
       latitude: location.latitude,

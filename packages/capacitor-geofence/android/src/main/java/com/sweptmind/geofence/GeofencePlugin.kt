@@ -59,7 +59,9 @@ class GeofencePlugin : Plugin() {
     @PluginMethod
     fun setGeofences(call: PluginCall) {
         val configs = parseConfigs(call) ?: return
-        geofenceManager.setGeofences(configs) { error -> resolveOrReject(call, error) }
+        geofenceManager.setGeofences(configs, call.getString("verifyUrl")) { error ->
+            resolveOrReject(call, error)
+        }
     }
 
     @PluginMethod

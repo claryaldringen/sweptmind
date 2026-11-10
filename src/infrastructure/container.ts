@@ -31,6 +31,7 @@ import { StepService } from "@/domain/services/step.service";
 import { ListGroupService } from "@/domain/services/list-group.service";
 import { TagService } from "@/domain/services/tag.service";
 import { LocationService } from "@/domain/services/location.service";
+import { LocationReminderService } from "@/domain/services/location-reminder.service";
 import { CalendarService } from "@/domain/services/calendar.service";
 import { AuthService, type IPasswordHasher } from "@/domain/services/auth.service";
 import { UserService } from "@/domain/services/user.service";
@@ -148,6 +149,13 @@ export const services = {
   listGroup: new ListGroupService(groupRepo, listRepo),
   tag: new TagService(tagRepo, taskRepo),
   location: new LocationService(locationRepo),
+  locationReminder: new LocationReminderService(
+    taskRepo,
+    listRepo,
+    tagRepo,
+    locationRepo,
+    userRepo,
+  ),
   calendar: new CalendarService(calendarSyncRepo, taskRepo),
   auth: new AuthService(userRepo, bcryptHasher),
   user: new UserService(userRepo),

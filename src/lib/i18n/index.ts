@@ -3,6 +3,7 @@
 import { createContext, useContext } from "react";
 import type { Dictionary, Locale } from "./types";
 import { dictionaries } from "./dictionaries";
+import { interpolate } from "./interpolate";
 
 export { dictionaries };
 
@@ -37,13 +38,6 @@ function getNestedArray(obj: Record<string, unknown>, path: string): string[] {
     current = (current as Record<string, unknown>)[key];
   }
   return Array.isArray(current) ? (current as string[]) : [];
-}
-
-function interpolate(template: string, params?: Record<string, string | number>): string {
-  if (!params) return template;
-  return template.replace(/\{(\w+)\}/g, (_, key) =>
-    key in params ? String(params[key]) : `{${key}}`,
-  );
 }
 
 export function createTranslate(locale: Locale): {

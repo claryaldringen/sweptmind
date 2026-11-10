@@ -10,10 +10,14 @@ import {
 import { useAppData } from "@/components/providers/app-data-provider";
 import { useToday } from "@/hooks/use-today";
 import { useTranslations } from "@/lib/i18n";
-import { buildGeofenceRegistrations } from "@/lib/geofence-registrations";
+import {
+  buildGeofenceRegistrations,
+  formatGeofenceBody,
+} from "@/domain/services/geofence-registrations";
 import { useLocationRemindersEnabled } from "@/lib/native-preferences";
 
-const BODY_MAX_TITLES = 3;
+/** Asked by the app before it shows a notification — see the route. */
+const VERIFY_PATH = "/api/location/geofences";
 
 let syncQueue: Promise<void> = Promise.resolve();
 let latestSyncId = 0;
@@ -24,8 +28,11 @@ let latestSyncId = 0;
  */
 function queueGeofenceSync(registrations: GeofenceRegistration[]): Promise<void> {
   const id = ++latestSyncId;
+  const verifyUrl = new URL(VERIFY_PATH, window.location.origin).href;
   const run = syncQueue.then(() =>
-    id === latestSyncId ? getLocationAdapter().syncGeofences(registrations) : undefined,
+    id === latestSyncId
+      ? getLocationAdapter().syncGeofences(registrations, { verifyUrl })
+      : undefined,
   );
   syncQueue = run.catch(() => {});
   return run;
@@ -34,7 +41,8 @@ function queueGeofenceSync(registrations: GeofenceRegistration[]): Promise<void>
 /**
  * Android: keeps OS geofences in sync with places of actionable tasks while location
  * reminders are on, and removes them when off. The OS shows the notification itself,
- * even when the app is not running.
+ * even when the app is not running — after checking the place against the server, since
+ * these geofences only change while the app runs.
  */
 export function useGeofenceSync() {
   const { allTasks, lists, tags, locations, loading } = useAppData();
@@ -55,11 +63,10 @@ export function useGeofenceSync() {
         tags,
         locations,
         today,
-        formatBody: (titles) => {
-          const shown = titles.slice(0, BODY_MAX_TITLES).join(", ");
-          const rest = titles.length - BODY_MAX_TITLES;
-          return rest > 0 ? t("locationReminders.andMore", { titles: shown, count: rest }) : shown;
-        },
+        formatBody: (titles) =>
+          formatGeofenceBody(titles, (shown, count) =>
+            t("locationReminders.andMore", { titles: shown, count }),
+          ),
       });
     }
 

@@ -149,6 +149,16 @@ describe("CapacitorLocationAdapter", () => {
     });
   });
 
+  it("syncGeofences on Android passes the URL to verify notifications against", async () => {
+    mockPlatform.value = "android";
+    await adapter.syncGeofences([], { verifyUrl: "https://sweptmind.com/api/location/geofences" });
+
+    expect(mockGeofence.setGeofences).toHaveBeenCalledWith({
+      geofences: [],
+      verifyUrl: "https://sweptmind.com/api/location/geofences",
+    });
+  });
+
   it("syncGeofences on iOS removes all and adds new", async () => {
     await adapter.syncGeofences([
       {

@@ -3,6 +3,7 @@ import type {
   GeofenceConfig,
   GeofenceEvent,
   GeofenceRegistration,
+  GeofenceSyncOptions,
   LocationPermissions,
   TrackingConfig,
 } from "../types";
@@ -20,7 +21,7 @@ export interface LocationPort {
   getPermissionStatus(): Promise<LocationPermissions>;
   /** Opens the app's page in system settings (no-op where unsupported). */
   openAppSettings(): Promise<void>;
-  syncGeofences(fences: GeofenceRegistration[]): Promise<void>;
+  syncGeofences(fences: GeofenceRegistration[], options?: GeofenceSyncOptions): Promise<void>;
   removeAllGeofences(): Promise<void>;
   /** Fires when the user taps a geofence notification; receives the app path to open. */
   onNotificationOpened(cb: (url: string) => void): () => void;

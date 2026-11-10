@@ -4,6 +4,7 @@ import type {
   GeofenceConfig,
   GeofenceEvent,
   GeofenceRegistration,
+  GeofenceSyncOptions,
   LocationPermissions,
   TrackingConfig,
 } from "../../types";
@@ -95,7 +96,10 @@ export class CapacitorLocationAdapter implements LocationPort {
     await Geofence.openAppSettings();
   }
 
-  async syncGeofences(fences: GeofenceRegistration[]): Promise<void> {
+  async syncGeofences(
+    fences: GeofenceRegistration[],
+    options?: GeofenceSyncOptions,
+  ): Promise<void> {
     const { Geofence } = await import("@sweptmind/capacitor-geofence");
     const { Capacitor } = await import("@capacitor/core");
     const geofences = fences.map((f) => ({
@@ -112,7 +116,10 @@ export class CapacitorLocationAdapter implements LocationPort {
 
     if (Capacitor.getPlatform() === "android") {
       // Atomic replace — removal can't race with the new registrations
-      await Geofence.setGeofences({ geofences });
+      await Geofence.setGeofences({
+        geofences,
+        ...(options?.verifyUrl ? { verifyUrl: options.verifyUrl } : {}),
+      });
       return;
     }
     await Geofence.removeAllGeofences();

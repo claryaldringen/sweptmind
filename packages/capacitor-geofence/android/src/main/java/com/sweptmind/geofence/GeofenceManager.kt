@@ -10,6 +10,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
+import android.webkit.CookieManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -18,6 +19,9 @@ import com.google.android.gms.location.GeofenceStatusCodes
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.common.api.ApiException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class GeofenceConfig(
     val identifier: String,
@@ -40,6 +44,7 @@ class GeofenceManager(private val context: Context) {
         const val TAG = "SweptMindGeofence"
         const val CHANNEL_ID = "geofence_notifications"
         const val GEOFENCE_PREFS_KEY = "registered_geofences"
+        const val VERIFY_URL_PREFS_KEY = "verify_url"
         const val MIN_RADIUS_METERS = 200f
 
         /** Don't notify about the same place more often than this. */
@@ -55,9 +60,13 @@ class GeofenceManager(private val context: Context) {
     /**
      * Replaces all monitored geofences with [configs]. Removal and registration are chained,
      * so the removal can never race with (and delete) the freshly added geofences.
+     * [verifyUrl]: where to check a geofence before notifying (see [GeofenceVerifier]).
      * [onResult] receives null on success or an error message.
      */
-    fun setGeofences(configs: List<GeofenceConfig>, onResult: (String?) -> Unit) {
+    fun setGeofences(configs: List<GeofenceConfig>, verifyUrl: String?, onResult: (String?) -> Unit) {
+        prefs.edit().apply {
+            if (verifyUrl != null) putString(VERIFY_URL_PREFS_KEY, verifyUrl) else remove(VERIFY_URL_PREFS_KEY)
+        }.apply()
         geofencingClient.removeGeofences(getGeofencePendingIntent()).addOnCompleteListener {
             clearStoredGeofences()
             if (configs.isEmpty()) {
@@ -178,21 +187,60 @@ class GeofenceManager(private val context: Context) {
 
     fun notificationsEnabled(): Boolean = NotificationManagerCompat.from(context).areNotificationsEnabled()
 
-    /** Shows the "you are near ..." notification for [identifier], respecting the cooldown. */
-    fun showNotification(identifier: String) {
-        val title = prefs.getString("notif:$identifier:title", null) ?: return
-        val body = prefs.getString("notif:$identifier:body", "") ?: ""
-        val url = prefs.getString("notif:$identifier:url", null) ?: DEFAULT_URL
+    /** The text registered with [identifier]; null for an unknown geofence. */
+    fun storedNotification(identifier: String): NotificationText? {
+        val title = prefs.getString("notif:$identifier:title", null) ?: return null
+        return NotificationText(
+            title = title,
+            body = prefs.getString("notif:$identifier:body", "") ?: "",
+            url = prefs.getString("notif:$identifier:url", null),
+        )
+    }
 
-        val now = System.currentTimeMillis()
-        val lastNotified = prefs.getLong("lastNotified:$identifier", 0L)
-        if (now - lastNotified < NOTIFICATION_COOLDOWN_MS) return
+    /**
+     * Starts the place's cooldown at [now] unless it was announced less than
+     * [NOTIFICATION_COOLDOWN_MS] ago. Returns the previous start (for [releaseCooldown]) or null
+     * when cooling down. Claiming before the server check, on the main thread, keeps two quick
+     * entries from both notifying.
+     */
+    fun claimCooldown(identifier: String, now: Long): Long? {
+        val key = "lastNotified:$identifier"
+        val previous = prefs.getLong(key, 0L)
+        if (now - previous < NOTIFICATION_COOLDOWN_MS) return null
+        prefs.edit().putLong(key, now).apply()
+        return previous
+    }
 
-        if (!notificationsEnabled()) return
+    /** Undoes [claimCooldown] when nothing was shown after all. */
+    fun releaseCooldown(identifier: String, previous: Long) {
+        prefs.edit().putLong("lastNotified:$identifier", previous).apply()
+    }
+
+    /**
+     * What to send to the server to check the geofences, or null when it can't be asked
+     * (registered by an app version without the check, or the cookies can't be read). Call on
+     * the main thread: reading the WebView's cookies may initialize WebView.
+     */
+    fun verificationRequest(): GeofenceVerifier.Request? {
+        val url = prefs.getString(VERIFY_URL_PREFS_KEY, null) ?: return null
+        val cookie = try {
+            CookieManager.getInstance().getCookie(url)
+        } catch (e: Exception) {
+            // e.g. WebView being updated — without cookies the server would answer "signed out"
+            Log.w(TAG, "Cannot read cookies: ${e.message}")
+            return null
+        }
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        return GeofenceVerifier.Request(url, cookie, Locale.getDefault().toLanguageTag(), today)
+    }
+
+    /** Shows the "you are near ..." notification for [identifier]; false when it couldn't. */
+    fun showNotification(identifier: String, text: NotificationText): Boolean {
+        if (!notificationsEnabled()) return false
 
         val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra(GeofencePlugin.EXTRA_URL, url)
+            putExtra(GeofencePlugin.EXTRA_URL, text.url ?: DEFAULT_URL)
         }
         val pendingIntent = launchIntent?.let {
             PendingIntent.getActivity(
@@ -203,20 +251,20 @@ class GeofenceManager(private val context: Context) {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(smallIcon())
-            .setContentTitle(title)
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentTitle(text.title)
+            .setContentText(text.body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text.body))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .apply { if (pendingIntent != null) setContentIntent(pendingIntent) }
             .build()
 
-        try {
+        return try {
             NotificationManagerCompat.from(context).notify(identifier.hashCode(), notification)
-            prefs.edit().putLong("lastNotified:$identifier", now).apply()
+            true
         } catch (_: SecurityException) {
-            // POST_NOTIFICATIONS permission not granted
+            false // POST_NOTIFICATIONS permission not granted
         }
     }
 
